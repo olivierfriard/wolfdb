@@ -1,3 +1,8 @@
+"""
+WolfDB web service
+(c) Olivier Friard
+"""
+
 from flask import Flask
 
 import psycopg2
