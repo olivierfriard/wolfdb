@@ -50,6 +50,10 @@ app.debug = True
 def hello_world():
     return render_template("home.html")
 
+@app.route("/new_scat")
+def new_scat():
+    return "new scat"
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1")
 
