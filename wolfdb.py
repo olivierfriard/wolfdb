@@ -3,7 +3,7 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-from flask import Flask
+from flask import Flask, render_template
 import psycopg2
 from config import config
 
@@ -44,9 +44,11 @@ def connect():
 
 app = Flask(__name__)
 
+app.debug = True
+
 @app.route("/")
 def hello_world():
-    return "<p>Hello, Wolf!</p>"
+    return render_template("home.html")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1")
