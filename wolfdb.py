@@ -4,9 +4,7 @@ WolfDB web service
 """
 
 from flask import Flask
-
 import psycopg2
-
 from config import config
 
 
@@ -42,8 +40,7 @@ def connect():
             print('Database connection closed.')
 
 
-connect()
-
+# connect()
 
 app = Flask(__name__)
 
