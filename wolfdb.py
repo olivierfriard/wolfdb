@@ -3,11 +3,24 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, Markup, g
 import psycopg2
+from psycopg2 import pool
 from config import config
+import datetime
 from wtforms import (Form, BooleanField, StringField,
                      validators, SelectField, IntegerField)
+
+from wtforms.validators import Optional, Required, ValidationError
+
+from new_scat import New_scat
+
+
+def get_db():
+    print ('GETTING CONN')
+    if 'db' not in g:
+        g.db = app.config['postgreSQL_pool'].getconn()
+    return g.db
 
 
 def connect():
@@ -42,60 +55,85 @@ def connect():
             print('Database connection closed.')
 
 
-connect()
+# connect()
 
 app = Flask(__name__)
 
 app.debug = True
 
+params = config()
+app.config['postgreSQL_pool'] = psycopg2.pool.SimpleConnectionPool(1, 20,
+                                                  user = params["user"],
+                                                  password = params["password"],
+                                                  host = params["host"],
+                                                  
+                                                  database = params["database"])
+
+
+@app.teardown_appcontext
+def close_conn(e):
+    print('CLOSING CONN')
+    db = g.pop('db', None)
+    if db is not None:
+        app.config['postgreSQL_pool'].putconn(db)
+
+
+
 @app.route("/")
-def hello_world():
+def home():
+
     return render_template("home.html")
 
 
-class New_scat(Form):
-    scat_id = StringField("Scat ID", [])
-    # genetic_id = StringField('Genetic ID', [])
-    # genetic_id = StringField('Genetic ID', [])
-    date = StringField("Date", [])
-    sampling_year = StringField("Sampling year", [])
-    sampling_type = SelectField("Sampling type", choices=[('-', '-'),
-                                                          ('Opportunistico', 'Opportunistico'),
-                                                          ('Sistematico', 'Sistematico')],
-                                default="-")
-    transect_id = StringField("Transect ID", [])
-    st_id = StringField("ST ID", [])
-    localita = StringField("Località", [])
-    comune = StringField("Comune", [])
-    provincia = StringField("Provincia", [])
-    deposition = SelectField("Deposition", choices=[('-', '-'),('fresca', 'fresca'), ('vecchia', 'vecchia')], default="-")
-    matrix = SelectField("Matrix", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
-    collected_scat = SelectField("Collected scat", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
-    sample_genetic = SelectField("Sample genetic", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
-    coord_east = IntegerField("Coordinate East (UTM 32N WGS84)")
-    coord_north  = IntegerField("Coordinate North (UTM 32N WGS84)")
-    rilevatore_ente = StringField("Rilevatore / Ente", [])
-    scalp_category = StringField("SCALP category", [])
 
 
 
-@app.route("/new_scat")
+@app.route("/new_scat", methods=("GET", "POST"))
 def new_scat():
     
-    if request.method == 'POST':
+    if request.method == "POST":
         form = New_scat(request.form)
+        print(request.form["scat_id"])
         if form.validate():
             #user = User(form.username.data, form.email.data,
             #        form.password.data)
-        
-           
-            return "OK"
 
 
-    form = New_scat()
-    return render_template('new_scat.html',
-                           form=form,
-                           default_values={})
+            db = get_db()
+            cursor = db.cursor()
+
+            sql = ("INSERT INTO scat (scat_id, date, sampling_year, sampling_type, transect_id, st_id, "
+                   "localita, comune, provincia, "
+                   "deposition, matrix,collected_scat, "
+                   "coord_east, coord_north, rilevatore_ente, scalp_category) "
+                   "VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s)")
+            cursor.execute(sql,
+                           [
+                            request.form["scat_id"],
+                            request.form["date"],
+                            request.form["sampling_year"],
+                            request.form["sampling_type"],
+                            request.form["transect_id"],
+                            request.form["st_id"],
+                            request.form["localita"], request.form["comune"], request.form["provincia"],
+                            request.form["deposition"], request.form["matrix"], request.form["collected_scat"],
+                            request.form["coord_east"], request.form["coord_north"],
+                            request.form["rilevatore_ente"], request.form["scalp_category"]
+                           ]
+                           )
+            
+            db.commit()
+
+
+            return 'Scat inserted<br><a href="/">Home</a>'
+        else:
+            return "form not validated"
+
+    if request.method == "GET":
+        form = New_scat()
+        return render_template('new_scat.html',
+                            form=form,
+                            default_values={})
 
 
 if __name__ == "__main__":

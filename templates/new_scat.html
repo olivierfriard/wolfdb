@@ -4,7 +4,14 @@
 
 <h1>New scat</h1>
 <hr>
-<div class="mb-3">
+
+
+
+
+<form method="POST" action="/new_scat">
+
+
+    <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.scat_id.label }} 
     </div><!-- col --><div class="col-8">
     {{ form.scat_id(size=30, class="form-control",  value=default_values["scat_id"]) }}
@@ -19,7 +26,10 @@
     </div><!-- col --><div class="col-8">
     {{ form.date(size=16, class="form-control", value=default_values["date"]) }}
     {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
+
+    <span class="form-text">Allowed formats: YYYY, YYYY-MM, YYYY-MM-DD</span>
+
+</div></div>
 </div>
 
 
@@ -28,7 +38,10 @@
     </div><!-- col --><div class="col-8">
     {{ form.sampling_year(size=16, class="form-control", value=default_values["sampling_year"]) }}
     {% for message in form.sampling_year.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
+
+    <span class="form-text">Allowed formats: YYYY-YYYY</span>
+
+</div></div>
 </div>
 
 
@@ -151,24 +164,10 @@
 </div>
 
 
-
-<!--
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.matrix.label }} 
-    </div><div class="col-8"><select class="form-control" id="matrix" name="matrix">
-    <option value="-" {% if "Not known" == default_values["matrix"] %} selected {% endif %}>-</option>
-    <option value="Yes" {% if "Yes" == default_values["matrix"] %} selected {% endif %}>Yes</option>
-    <option value="No" {% if "No" == default_values["matrix"] %} selected {% endif %}>No</option>
-    </select>{% for message in form.matrix.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    
-    </div></div>
-    </div>
-    
+<button type="submit" class="btn btn-primary" >Submit</button>
+</form>
 
 
-
--->
 
 
 
