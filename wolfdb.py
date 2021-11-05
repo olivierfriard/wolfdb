@@ -77,7 +77,7 @@ def scats_list():
                                   host=params["host"],
                                   #port="5432",
                                   database=params["database"])
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor = connection.cursor()
 
     #db = get_db()
     #cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
