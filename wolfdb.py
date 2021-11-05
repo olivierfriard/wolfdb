@@ -34,7 +34,6 @@ app.config['postgreSQL_pool'] = psycopg2.pool.SimpleConnectionPool(1, 20,
                                                   user = params["user"],
                                                   password = params["password"],
                                                   host = params["host"],
-                                                  
                                                   database = params["database"])
 
 
@@ -72,8 +71,18 @@ def snow_tracks():
 @app.route("/scats_list")
 def scats_list():
     # get all tscats
-    db = get_db()
-    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    connection = psycopg2.connect(user=params["user"],
+                                  password=params["password"],
+                                  host=params["host"],
+                                  #port="5432",
+                                  database=params["database"])
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    #db = get_db()
+    #cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+
     cursor.execute("SELECT * FROM scat ORDER BY scat_id")
 
     results = cursor.fetchall()
