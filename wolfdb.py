@@ -5,7 +5,6 @@ WolfDB web service
 
 from flask import Flask, render_template, redirect, request, Markup, g, flash, session
 import psycopg2
-from psycopg2 import pool
 import psycopg2.extras
 from config import config
 
@@ -16,13 +15,6 @@ from path import Path
 from track import Track
 
 
-def get_db():
-    print ('GETTING CONN')
-    if 'db' not in g:
-        g.db = app.config['postgreSQL_pool'].getconn()
-    return g.db
-
-
 app = Flask(__name__)
 
 app.debug = True
@@ -30,11 +22,6 @@ app.debug = True
 app.secret_key = "dfhsdlfsdhflsdfhsnqq45"
 
 params = config()
-app.config['postgreSQL_pool'] = psycopg2.pool.SimpleConnectionPool(1, 20,
-                                                  user = params["user"],
-                                                  password = params["password"],
-                                                  host = params["host"],
-                                                  database = params["database"])
 
 
 @app.teardown_appcontext
@@ -84,10 +71,6 @@ def scats_list():
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    #db = get_db()
-    #cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-
     cursor.execute("SELECT * FROM scat ORDER BY scat_id")
 
     results = cursor.fetchall()
@@ -96,14 +79,14 @@ def scats_list():
 
 
 def all_transect_id():
-    db = get_db()
-    cursor = db.cursor()
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
     return [x[0].strip() for x in cursor.fetchall()]
 
 def all_snow_tracks_id():
-    db = get_db()
-    cursor = db.cursor()
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT snowtracking_id FROM snow_tracks ORDER BY snowtracking_id")
     return [x[0].strip() for x in cursor.fetchall()]
 
@@ -123,8 +106,8 @@ def new_scat():
 
         if form.validate():
 
-            db = get_db()
-            cursor = db.cursor()
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
             sql = ("INSERT INTO scat (scat_id, date, sampling_year, sampling_type, transect_id, snowtrack_id, "
                    "localita, comune, provincia, "
@@ -146,7 +129,7 @@ def new_scat():
                            ]
                            )
             
-            db.commit()
+            connection.commit()
 
             return 'Scat inserted<br><a href="/">Home</a>'
         else:
@@ -179,8 +162,8 @@ def new_scat():
 @app.route("/transects_list")
 def transects_list():
     # get all transects
-    db = get_db()
-    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM transect ORDER BY transect_id")
 
     results = cursor.fetchall()
@@ -198,8 +181,8 @@ def new_transect():
 
         if form.validate():
 
-            db = get_db()
-            cursor = db.cursor()
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
             sql = ("INSERT INTO transect (transect_id, sector, localita, provincia, regione) "
                    "VALUES (%s, %s, %s, %s, %s)")
@@ -210,7 +193,7 @@ def new_transect():
                            ]
                            )
             
-            db.commit()
+            connection.commit()
 
             return 'Transect inserted<br><a href="/">Home</a>'
         else:
@@ -226,12 +209,12 @@ def new_transect():
 @app.route("/paths_list")
 def paths_list():
     # get  all path
-    db = get_db()
-    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     cursor.execute("SELECT * FROM paths ORDER BY date DESC")
 
     results = cursor.fetchall()
-    print(results)
     return render_template("paths_list.html",
                            results=results)
 
@@ -247,8 +230,8 @@ def new_path():
 
         if form.validate():
 
-            db = get_db()
-            cursor = db.cursor()
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("INSERT INTO paths (transect_id, date, sampling_year, completeness, numero_segni_trovati, numero_campioni, operatore, note) "
                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
@@ -262,7 +245,7 @@ def new_path():
                             request.form["operatore"], request.form["note"]
                            ]
                            )
-            db.commit()
+            connection.commit()
 
             return 'New path inserted<br><a href="/">Home</a>'
         else:
@@ -292,8 +275,8 @@ def new_path():
 @app.route("/snow_tracks_list")
 def tracks_list():
     # get  all tracks
-    db = get_db()
-    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM snow_tracks ORDER BY date DESC")
 
     results = cursor.fetchall()
@@ -313,8 +296,8 @@ def new_track():
 
         if form.validate():
 
-            db = get_db()
-            cursor = db.cursor()
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("INSERT INTO snow_tracks (snowtracking_id, date, sampling_season, comune, "
                                              "provincia, regione, rilevatore, scalp_category, "
                                              "systematic_sampling, transect_id, giorni_dopo_nevicata, n_minimo_individui, track_format) "
@@ -338,7 +321,7 @@ def new_track():
                             request.form["track_format"],
                             ]   
                            )
-            db.commit()
+            connection.commit()
 
             return 'New track inserted<br><a href="/">Home</a>'
         else:
