@@ -68,16 +68,20 @@ def snow_tracks():
     return render_template("snow_tracks.html")
 
 
-@app.route("/scats_list")
-def scats_list():
-    # get all tscats
-
-    
-    connection = psycopg2.connect(user=params["user"],
+def connection():
+    return psycopg2.connect(user=params["user"],
                                   password=params["password"],
                                   host=params["host"],
                                   #port="5432",
                                   database=params["database"])
+
+
+
+@app.route("/scats_list")
+def scats_list():
+    # get all tscats
+
+    connection = connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     #db = get_db()
@@ -87,7 +91,6 @@ def scats_list():
     cursor.execute("SELECT * FROM scat ORDER BY scat_id")
 
     results = cursor.fetchall()
-    print(results)
     return render_template("scats_list.html",
                            results=results)
 
