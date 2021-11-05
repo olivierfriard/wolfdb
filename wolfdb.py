@@ -10,12 +10,10 @@ import psycopg2.extras
 from config import config
 
 
-
 from scat import Scat
 from transect import Transect
 from path import Path
 from track import Track
-
 
 
 def get_db():
@@ -48,7 +46,6 @@ def close_conn(e):
         app.config['postgreSQL_pool'].putconn(db)
 
 
-
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -72,18 +69,51 @@ def snow_tracks():
     return render_template("snow_tracks.html")
 
 
+@app.route("/scats_list")
+def scats_list():
+    # get all tscats
+    db = get_db()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM scat ORDER BY scat_id")
+
+    results = cursor.fetchall()
+    print(results)
+    return render_template("scats_list.html",
+                           results=results)
+
+
+def all_transect_id():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
+    return [x[0].strip() for x in cursor.fetchall()]
+
+def all_snow_tracks_id():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT snowtracking_id FROM snow_tracks ORDER BY snowtracking_id")
+    return [x[0].strip() for x in cursor.fetchall()]
+
+
 @app.route("/new_scat", methods=("GET", "POST"))
 def new_scat():
     
     if request.method == "POST":
         form = Scat(request.form)
 
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+        # get id of all snow tracks
+        form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
+
+
         if form.validate():
 
             db = get_db()
             cursor = db.cursor()
 
-            sql = ("INSERT INTO scat (scat_id, date, sampling_year, sampling_type, transect_id, snowtracking_id, "
+            sql = ("INSERT INTO scat (scat_id, date, sampling_year, sampling_type, transect_id, snowtrack_id, "
                    "localita, comune, provincia, "
                    "deposition, matrix,collected_scat, "
                    "coord_east, coord_north, rilevatore_ente, scalp_category) "
@@ -95,7 +125,7 @@ def new_scat():
                             request.form["sampling_year"],
                             request.form["sampling_type"],
                             request.form["transect_id"],
-                            request.form["snowtracking_id"],
+                            request.form["snowtrack_id"],
                             request.form["localita"], request.form["comune"], request.form["provincia"],
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"],
                             request.form["coord_east"], request.form["coord_north"],
@@ -107,25 +137,26 @@ def new_scat():
 
             return 'Scat inserted<br><a href="/">Home</a>'
         else:
-            return "form NOT validated<br><a href="/">Home</a>"
+            # default values
+            default_values = {}
+            for k in request.form:
+                default_values[k] = request.form[k]
+
+            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
+
+            return render_template('new_scat.html',
+                                    form=form,
+                                    default_values=default_values)
+
 
     if request.method == "GET":
         form = Scat()
 
         # get id of all transects
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
-        transect_id_list = cursor.fetchall()
-        form.transect_id.choices = [("-", "-")] + [(x[0].strip(), x[0].strip()) for x in transect_id_list]
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
 
         # get id of all snow tracks
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT snowtracking_id FROM snow_tracks ORDER BY snowtracking_id")
-        track_id_list = cursor.fetchall()
-        form.snowtracking_id.choices = [("-", "-")] + [(x[0].strip(), x[0].strip()) for x in track_id_list]
-
+        form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
 
         return render_template("new_scat.html",
                             form=form,
@@ -140,7 +171,7 @@ def transects_list():
     cursor.execute("SELECT * FROM transect ORDER BY transect_id")
 
     results = cursor.fetchall()
-    print(results)
+
     return render_template("transects_list.html",
                            results=results)
 
@@ -199,12 +230,7 @@ def new_path():
         form = Path(request.form)
 
         # get id of all transects
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
-        transect_id_list = cursor.fetchall()
-
-        form.transect_id.choices = [("-", "-")] + [(x[0].strip(), x[0].strip()) for x in transect_id_list]
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
 
         if form.validate():
 
@@ -243,12 +269,8 @@ def new_path():
         form = Path()
 
         # get id of all transects
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
-        transect_id_list = cursor.fetchall()
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
 
-        form.transect_id.choices = [("-", "-")] + [(x[0].strip(), x[0].strip()) for x in transect_id_list]
         return render_template('new_path.html',
                             form=form,
                             default_values={})
@@ -274,12 +296,7 @@ def new_track():
         form = Track(request.form)
 
         # get id of all transects
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
-        transect_id_list = cursor.fetchall()
-
-        form.transect_id.choices = [("-", "-")] + [(x[0].strip(), x[0].strip()) for x in transect_id_list]
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
 
         if form.validate():
 
@@ -328,12 +345,7 @@ def new_track():
         form = Track()
 
         # get id of all transects
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
-        transect_id_list = cursor.fetchall()
-
-        form.transect_id.choices = [("-", "-")] + [(x[0].strip(), x[0].strip()) for x in transect_id_list]
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
         return render_template('new_track.html',
                             form=form,
                             default_values={})

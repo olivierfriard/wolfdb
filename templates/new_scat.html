@@ -5,7 +5,13 @@
 <h1>New scat</h1>
 <hr>
 
-
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+      {% for message in messages %}
+         {{ message }}
+      {% endfor %}
+   {% endif %}
+{% endwith %}
 
 
 <form method="POST" action="/new_scat">
@@ -64,10 +70,10 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtracking_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }} 
     </div><!-- col --><div class="col-8">
-    {{ form.snowtracking_id(class="form-control", value=default_values["snowtracking_id"]) }}
-    {% for message in form.snowtracking_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.snowtrack_id(class="form-control", value=default_values["snowtrack_id"]) }}
+    {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 

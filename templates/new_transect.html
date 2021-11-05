@@ -5,6 +5,13 @@
 <h1>New transect</h1>
 <hr>
 
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+      {% for message in messages %}
+         {{ message }}
+      {% endfor %}
+   {% endif %}
+{% endwith %}
 
 
 

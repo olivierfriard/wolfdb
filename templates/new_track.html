@@ -5,7 +5,13 @@
 <h1>New snow track</h1>
 <hr>
 
-
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+      {% for message in messages %}
+         {{ message }}
+      {% endfor %}
+   {% endif %}
+{% endwith %}
 
 
 <form method="POST" action="/new_track">
