@@ -68,7 +68,7 @@ def snow_tracks():
     return render_template("snow_tracks.html")
 
 
-def connection():
+def get_connection():
     return psycopg2.connect(user=params["user"],
                                   password=params["password"],
                                   host=params["host"],
@@ -81,7 +81,7 @@ def connection():
 def scats_list():
     # get all tscats
 
-    connection = connection()
+    connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     #db = get_db()
