@@ -1,0 +1,74 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a><br>
+<br>
+
+
+{% if results %}
+<h2>List of snow tracks</h2>
+<table class="table table-striped">
+<tr>
+<th>snow-tracking ID</th>
+<th>Date</th>
+<th>Sampling season</th>
+<th>Comune</th>
+<th>provincia</th>
+<th>regione</th>
+<th>rilevatore</th>
+<th>scalp category</th>
+<th>systematic sampling</th>
+<th>transect ID</th>
+<th>giorni dopo nevicata</th>
+<th>numero minimo di individui</th>
+<th>track format</th>
+
+
+</tr>
+{% for result in results %}
+<tr>
+
+    <td>{{ result['snowtracking_id'] }}</td>
+    <td>{{ result['date'] }}</td>
+    <td>{{ result['sampling_season'] }}</td>
+    <td>{{ result['comune'] }}</td>
+    <td>{{ result['provincia'] }}</td>
+    <td>{{ result['regione'] }}</td>
+    <td>{{ result['rilevatore'] }}</td>
+    <td>{{ result['scalp_category'] }}</td>
+    <td>{{ result['systematic_sampling'] }}</td>
+
+    <td>{{ result['transect_id'] }}</td>
+    <td>{{ result['giorni_dopo_nevicata'] }}</td>
+    <td>{{ result['n_minimo_individui'] }}</td>
+    <td>{{ result['track_format'] }}</td>
+
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No snow track found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
+
+

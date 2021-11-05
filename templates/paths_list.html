@@ -1,0 +1,59 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a><br>
+<br>
+
+
+{% if results %}
+<h2>List of paths</h2>
+<table class="table table-striped">
+<tr>
+<th>Transect ID</th>
+<th>Date</th>
+<th>Sampling year</th>
+<th>completeness</th>
+<th>numero_segni_trovati</th>
+<th>numero_campioni</th>
+<th>operatore</th>
+<th>note</th>
+</tr>
+{% for result in results %}
+<tr>
+
+    <td>{{ result['transect_id'] }}</td>
+    <td>{{ result['date'] }}</td>
+    <td>{{ result['sampling_year'] }}</td>
+    <td>{{ result['completeness'] }}</td>
+    <td>{{ result['numero_segni_trovati'] }}</td>
+    <td>{{ result['numero_campioni'] }}</td>
+    <td>{{ result['operatore'] }}</td>
+    <td>{{ result['note'] }}</td>
+
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No path found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
