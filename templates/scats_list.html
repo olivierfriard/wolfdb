@@ -1,0 +1,88 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a><br>
+<br>
+
+
+{% if results %}
+<h2>List of scats</h2>
+<table class="table table-striped">
+<tr>
+<th>Scat ID</th>
+<th>Genetic ID</th>
+<th>Genotype ID</th>
+<th>Date</th>
+<th>Sampling year</th>
+<th>Sampling type</th>
+<th>Transect ID</th>
+<th>Snowtrack ID</th>
+<th>Localita</th>
+<th>Comune</th>
+<th>Provincia</th>
+<th>Deposition</th>
+<th>Matrix</th>
+<th>Collected scat</th>
+<th>Sample genetic</th>
+<th>Coord</th>
+<th>rilevatore_ente</th>
+<th>scalp_category</th>
+
+
+</tr>
+{% for result in results %}
+<tr>
+
+    <td>{{ result['scat_id'] }}</td>
+    <td>{{ result['genetic_id'] }}</td>
+    <td>{{ result['genotype_id'] }}</td>
+    <td>{{ result['date'] }}</td>
+    <td>{{ result['sampling_year'] }}</td>
+    <td>{{ result['sampling_type'] }}</td>
+    <td>{{ result['transect_id'] }}</td>
+    <td>{{ result['snowtrack_id'] }}</td>
+    
+    <td>{{ result['localita'] }}</td>
+    <td>{{ result['comune'] }}</td>
+    <td>{{ result['provincia'] }}</td>
+
+    <td>{{ result['deposition'] }}</td>
+    <td>{{ result['matrix'] }}</td>
+    <td>{{ result['collected_scat'] }}</td>
+    <td>{{ result['sample_genetic'] }}</td>
+
+    <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
+
+    <td>{{ result['rilevatore_ente'] }}</td>
+    <td>{{ result['scalp_category'] }}</td>
+
+
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No scats found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
+
+
