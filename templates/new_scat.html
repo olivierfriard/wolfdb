@@ -57,17 +57,17 @@
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }} 
     </div><!-- col --><div class="col-8">
-    {{ form.transect_id(size=16, class="form-control", value=default_values["transect_id"]) }}
+    {{ form.transect_id(class="form-control") }}
     {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.st_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtracking_id.label }} 
     </div><!-- col --><div class="col-8">
-    {{ form.st_id(size=16, class="form-control", value=default_values["st_id"]) }}
-    {% for message in form.st_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.snowtracking_id(class="form-control", value=default_values["snowtracking_id"]) }}
+    {% for message in form.snowtracking_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
@@ -129,21 +129,24 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.coord_east.label }} 
-    </div><!-- col --><div class="col-8">
+    <div class="row g-3 align-items-top">
+    <div class="col-2">{{ form.coord_east.label }}</div>
+    <div class="col-3">
     {{ form.coord_east(class="form-control",  value=default_values["coord_east"]) }}
     {% for message in form.coord_east.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
+    </div>
+
+    <div class="col-2">{{ form.coord_north.label }} </div>
+
+    <div class="col-3">
+        {{ form.coord_north(class="form-control",  value=default_values["coord_north"]) }}
+        {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+        </div>
+    
+
+    </div>
 </div>
 
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.coord_north.label }} 
-    </div><!-- col --><div class="col-8">
-    {{ form.coord_north(class="form-control",  value=default_values["coord_north"]) }}
-    {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
 
 
 <div class="mb-3">
