@@ -72,16 +72,16 @@ def snow_tracks():
 def scats_list():
     # get all tscats
 
-    '''
+    
     connection = psycopg2.connect(user=params["user"],
                                   password=params["password"],
                                   host=params["host"],
                                   #port="5432",
                                   database=params["database"])
-    cursor = connection.cursor()
-    '''
-    db = get_db()
-    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    #db = get_db()
+    #cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 
     cursor.execute("SELECT * FROM scat ORDER BY scat_id")
