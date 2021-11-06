@@ -2,7 +2,7 @@
 <main class="flex-shrink-0">
 <div class="container">
 
-<h1>New transect</h1>
+<h1>{{ title }}</h1>
 <hr>
 
 {% with messages = get_flashed_messages() %}
@@ -14,8 +14,7 @@
 {% endwith %}
 
 
-
-<form method="POST" action="/new_transect">
+<form method="POST" action="{{ action }}">
 
 
     <div class="mb-3">

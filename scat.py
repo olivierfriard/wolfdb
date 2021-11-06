@@ -48,7 +48,7 @@ class Scat(Form):
     # genetic_id = StringField('Genetic ID', [])
     # genetic_id = StringField('Genetic ID', [])
     date = StringField("Date", validators=[Required(), iso_date_validator])
-    sampling_year = StringField("Sampling year", [])
+    sampling_season = StringField("Sampling season", [])
     sampling_type = SelectField("Sampling type", choices=[('-', '-'),
                                                           ('Opportunistico', 'Opportunistico'),
                                                           ('Sistematico', 'Sistematico')],

@@ -9,7 +9,9 @@
 <h1>WolfDB</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a><br>
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<!--<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;-->
+<a href="/new_scat" class="btn btn-primary">New scat</a>&nbsp;
 <br>
 
 
@@ -21,7 +23,7 @@
 <th>Genetic ID</th>
 <th>Genotype ID</th>
 <th>Date</th>
-<th>Sampling year</th>
+<th>Sampling season</th>
 <th>Sampling type</th>
 <th>Transect ID</th>
 <th>Snowtrack ID</th>
@@ -45,11 +47,21 @@
     <td>{{ result['genetic_id'] }}</td>
     <td>{{ result['genotype_id'] }}</td>
     <td>{{ result['date'] }}</td>
-    <td>{{ result['sampling_year'] }}</td>
+    <td>{{ result['sampling_season'] }}</td>
     <td>{{ result['sampling_type'] }}</td>
+
+    {% if result['transect_id'] != "-" %}
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
+    {% else %}
+    <td>{{ result['transect_id'] }}</td>
+    {% endif %}
+
+    {% if result['snowtrack_id'] != "-" %}
     <td><a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
-    
+    {% else %}
+    <td>{{ result['snowtrack_id'] }}</td>
+    {% endif %}
+
     <td>{{ result['localita'] }}</td>
     <td>{{ result['comune'] }}</td>
     <td>{{ result['provincia'] }}</td>

@@ -2,7 +2,7 @@
 <main class="flex-shrink-0">
 <div class="container">
 
-<h1>New snow track</h1>
+<h1>{{ title }}</h1>
 <hr>
 
 {% with messages = get_flashed_messages() %}
@@ -14,14 +14,14 @@
 {% endwith %}
 
 
-<form method="POST" action="/new_track">
+<form method="POST" action="{{ action }}">
 
 
     <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtracking_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }} 
     </div><!-- col --><div class="col-8">
-    {{ form.snowtracking_id(size=30, class="form-control",  value=default_values["snowtracking_id"]) }}
-    {% for message in form.snowtracking_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.snowtrack_id(size=30, class="form-control",  value=default_values["snowtrack_id"]) }}
+    {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     
     </div></div>
 </div>

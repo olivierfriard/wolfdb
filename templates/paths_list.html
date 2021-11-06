@@ -9,7 +9,12 @@
 <h1>WolfDB</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a><br>
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/new_path" class="btn btn-primary">New path</a>
+
+
+<br>
 <br>
 
 
@@ -21,9 +26,9 @@
 <th>Transect ID</th>
 <th>Date</th>
 <th>Sampling year</th>
-<th>completeness</th>
-<th>numero_segni_trovati</th>
-<th>numero_campioni</th>
+<th>Completeness</th>
+<th>Numero segni trovati</th>
+<th>numero campioni</th>
 <th>operatore</th>
 <th>note</th>
 </tr>
@@ -32,7 +37,7 @@
 <td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
-    <td>{{ result['sampling_year'] }}</td>
+    <td>{{ result['sampling_season'] }}</td>
     <td>{{ result['completeness'] }} %</td>
     <td>{{ result['numero_segni_trovati'] }}</td>
     <td>{{ result['numero_campioni'] }}</td>

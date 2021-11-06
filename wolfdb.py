@@ -40,7 +40,7 @@ def all_transect_id():
 def all_snow_tracks_id():
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT snowtracking_id FROM snow_tracks ORDER BY snowtracking_id")
+    cursor.execute("SELECT snowtrack_id FROM snow_tracks ORDER BY snowtrack_id")
     return [x[0].strip() for x in cursor.fetchall()]
 
 
@@ -65,6 +65,10 @@ def paths():
 @app.route("/snow_tracks")
 def snow_tracks():
     return render_template("snow_tracks.html")
+
+
+
+# scats
 
 
 @app.route("/view_scat/<scat_id>")
@@ -100,6 +104,19 @@ def scats_list():
 @app.route("/new_scat", methods=("GET", "POST"))
 def new_scat():
     
+    if request.method == "GET":
+        form = Scat()
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+        # get id of all snow tracks
+        form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
+
+        return render_template("new_scat.html",
+                               title="New scat",
+                               action=f"/new_scat",
+                               form=form,
+                               default_values={})
+
     if request.method == "POST":
         form = Scat(request.form)
 
@@ -114,7 +131,7 @@ def new_scat():
             connection = get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("INSERT INTO scat (scat_id, date, sampling_year, sampling_type, transect_id, snowtrack_id, "
+            sql = ("INSERT INTO scat (scat_id, date, sampling_season, sampling_type, transect_id, snowtrack_id, "
                    "localita, comune, provincia, "
                    "deposition, matrix,collected_scat, "
                    "coord_east, coord_north, rilevatore_ente, scalp_category) "
@@ -123,7 +140,7 @@ def new_scat():
                            [
                             request.form["scat_id"],
                             request.form["date"],
-                            request.form["sampling_year"],
+                            request.form["sampling_season"],
                             request.form["sampling_type"],
                             request.form["transect_id"],
                             request.form["snowtrack_id"],
@@ -136,7 +153,7 @@ def new_scat():
             
             connection.commit()
 
-            return 'Scat inserted<br><a href="/">Home</a>'
+            return redirect("/scats_list")
         else:
             # default values
             default_values = {}
@@ -146,25 +163,16 @@ def new_scat():
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
 
             return render_template("new_scat.html",
+                                   title="New scat",
+                                   action=f"/new_scat",
                                    form=form,
                                    default_values=default_values)
 
 
-    if request.method == "GET":
-        form = Scat()
-        # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
-        # get id of all snow tracks
-        form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
-
-        return render_template("new_scat.html",
-                                title="New scat",
-                            form=form,
-                            default_values={})
-
 
 @app.route("/edit_scat/<scat_id>", methods=("GET", "POST"))
 def edit_scat(scat_id):
+
     if request.method == "GET":
         connection = get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -172,22 +180,88 @@ def edit_scat(scat_id):
                     [scat_id])
         default_values = cursor.fetchone()
 
-        form = Scat(transect_id=default_values["transect_id"].strip(),
-                    snowtrack_id=default_values["snowtrack_id"].strip(),
-                    sampling_type=default_values["sampling_type"].strip(),
-                    deposition=default_values["deposition"].strip(),
-                    matrix=default_values["matrix"].strip(),
-                    collected_scat=default_values["collected_scat"].strip(),)
+        form = Scat(transect_id=default_values["transect_id"],
+                    snowtrack_id=default_values["snowtrack_id"],
+                    sampling_type=default_values["sampling_type"],
+                    deposition=default_values["deposition"],
+                    matrix=default_values["matrix"],
+                    collected_scat=default_values["collected_scat"])
         # get id of all transects
         form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
 
-
         return render_template("new_scat.html",
                             title="Edit scat",
+                            action=f"/edit_scat/{scat_id}",
                             form=form,
                             default_values=default_values)
+
+
+    if request.method == "POST":
+
+        form = Scat(request.form)
+
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+        # get id of all snow tracks
+        form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
+
+        if form.validate():
+
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            sql = ("UPDATE scat SET scat_id = %s, "
+                   "                date = %s,"
+                   "                sampling_season = %s,"
+                   "                sampling_type = %s,"
+                   "                transect_id = %s, "
+                   "                snowtrack_id = %s, "
+                   "                localita = %s, "
+                   "                comune = %s, "
+                   "                provincia = %s, "
+                   "                deposition = %s, "
+                   "                matrix = %s, "
+                   "                collected_scat = %s, "
+                   "                coord_east = %s, "
+                   "                coord_north = %s, "
+                   "                rilevatore_ente = %s, "
+                   "                scalp_category = %s "
+                   "WHERE scat_id = %s")
+            cursor.execute(sql,
+                           [
+                            request.form["scat_id"],
+                            request.form["date"],
+                            request.form["sampling_season"],
+                            request.form["sampling_type"],
+                            request.form["transect_id"],
+                            request.form["snowtrack_id"],
+                            request.form["localita"], request.form["comune"], request.form["provincia"],
+                            request.form["deposition"], request.form["matrix"], request.form["collected_scat"],
+                            request.form["coord_east"], request.form["coord_north"],
+                            request.form["rilevatore_ente"], request.form["scalp_category"],
+                            scat_id
+                           ]
+                           )
+            
+            connection.commit()
+
+            return redirect(f"/view_scat/{scat_id}")
+        else:
+            # default values
+            default_values = {}
+            for k in request.form:
+                default_values[k] = request.form[k]
+
+            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
+
+            return render_template("new_scat.html",
+                                   title="Edit scat",
+                                   action=f"/edit_scat/{scat_id}",
+                                   form=form,
+                                   default_values=default_values)
 
 
 
@@ -232,7 +306,16 @@ def transects_list():
 
 @app.route("/new_transect", methods=("GET", "POST"))
 def new_transect():
-    
+
+    if request.method == "GET":
+        form = Transect()
+        return render_template('new_transect.html',
+                               title="New transect",
+                               action=f"/new_transect",
+                            form=form,
+                            default_values={})
+
+
     if request.method == "POST":
         form = Transect(request.form)
 
@@ -254,14 +337,51 @@ def new_transect():
 
             return 'Transect inserted<br><a href="/">Home</a>'
         else:
-            return "form NOT validated<br><a href="/">Home</a>"
+            return "Transect form NOT validated<br><a href="/">Home</a>"
+
+
+
+@app.route("/edit_transect/<transect_id>", methods=("GET", "POST"))
+def edit_transect(transect_id):
 
     if request.method == "GET":
-        form = Transect()
-        return render_template('new_transect.html',
-                            form=form,
-                            default_values={})
+        connection = get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM transect WHERE transect_id = %s",
+                    [transect_id])
+        default_values = cursor.fetchone()
 
+        form = Transect()
+
+        return render_template("new_transect.html",
+                            title="Edit transect",
+                            action=f"/edit_transect/{transect_id}",
+                            form=form,
+                            default_values=default_values)
+
+    if request.method == "POST":
+
+        form = Transect(request.form)
+        if form.validate():
+
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            sql = ("UPDATE transect SET transect_id = %s, sector =%s, localita = %s, provincia = %s, regione = %s "
+                   "WHERE transect_id = %s")
+            cursor.execute(sql,
+                           [
+                            request.form["transect_id"], request.form["sector"],
+                            request.form["localita"], request.form["provincia"], request.form["regione"],
+                            transect_id
+                           ]
+                           )
+            
+            connection.commit()
+
+            return redirect(f"/view_transect/{transect_id}")
+        else:
+            return "Transect form NOT validated<br><a href="/">Home</a>"
 
 # path
 
@@ -292,6 +412,18 @@ def paths_list():
 @app.route("/new_path", methods=("GET", "POST"))
 def new_path():
     
+    if request.method == "GET":
+        form = Path()
+
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+        return render_template('new_path.html',
+                               title="New path",
+                               action=f"/new_path",
+                               form=form,
+                               default_values={})
+
     if request.method == "POST":
         form = Path(request.form)
 
@@ -302,13 +434,13 @@ def new_path():
 
             connection = get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            sql = ("INSERT INTO paths (transect_id, date, sampling_year, completeness, numero_segni_trovati, numero_campioni, operatore, note) "
+            sql = ("INSERT INTO paths (transect_id, date, sampling_season, completeness, numero_segni_trovati, numero_campioni, operatore, note) "
                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["transect_id"],
                             request.form["date"],
-                            request.form["sampling_year"],
+                            request.form["sampling_season"],
                             request.form["completeness"] if request.form["completeness"] else None,
                             request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
                             request.form["numero_campioni"] if request.form["numero_campioni"] else None,
@@ -326,37 +458,103 @@ def new_path():
 
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
             return render_template('new_path.html',
+                                    title="New path",
+                                    action=f"/new_path",
                                     form=form,
                                     default_values=default_values)
 
 
 
+
+
+@app.route("/edit_path/<path_id>", methods=("GET", "POST"))
+def edit_path(path_id):
+
     if request.method == "GET":
-        form = Path()
+        connection = get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM paths WHERE path_id = %s",
+                    [path_id])
+        default_values = cursor.fetchone()
+
+        form = Path(transect_id=default_values["transect_id"],)
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+
+        return render_template("new_path.html",
+                            title="Edit path",
+                            action=f"/edit_path/{path_id}",
+                            form=form,
+                            default_values=default_values)
+
+
+    if request.method == "POST":
+        form = Path(request.form)
 
         # get id of all transects
         form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
 
-        return render_template('new_path.html',
-                            form=form,
-                            default_values={})
+        if form.validate():
+
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            sql = ("UPDATE paths SET "
+                   "transect_id=%s, "
+                   "date=%s, "
+                   "sampling_season=%s, "
+                   "completeness=%s, "
+                   "numero_segni_trovati=%s, "
+                   "numero_campioni=%s, "
+                   "operatore=%s, "
+                   "note=%s "
+                   "WHERE path_id = %s")
+
+            cursor.execute(sql,
+                           [
+                            request.form["transect_id"],
+                            request.form["date"],
+                            request.form["sampling_season"],
+                            request.form["completeness"] if request.form["completeness"] else None,
+                            request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
+                            request.form["numero_campioni"] if request.form["numero_campioni"] else None,
+                            request.form["operatore"], request.form["note"],
+                            path_id
+                           ]
+                           )
+            connection.commit()
+
+            return redirect(f"/view_path/{path_id}")
+        else:
+            # default values
+            default_values = {}
+            for k in request.form:
+                default_values[k] = request.form[k]
+
+            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
+            return render_template('new_path.html',
+                                    title="Edit path",
+                                    action=f"/edit_path/{path_id}",
+                                    form=form,
+                                    default_values=default_values)
+
 
 # snow track
 
-@app.route("/view_snowtrack/<snowtracking_id>")
-def view_snow_track(snowtracking_id):
+@app.route("/view_snowtrack/<snowtrack_id>")
+def view_snowtrack(snowtrack_id):
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM snow_tracks WHERE snowtracking_id = %s",
-                   [snowtracking_id])
+    cursor.execute("SELECT * FROM snow_tracks WHERE snowtrack_id = %s",
+                   [snowtrack_id])
 
-    return render_template("view_snow_track.html",
+    return render_template("view_snowtrack.html",
                            results=cursor.fetchone())
 
 
 
-@app.route("/snow_tracks_list")
-def tracks_list():
+@app.route("/snowtracks_list")
+def snowtracks_list():
     # get  all tracks
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -364,13 +562,13 @@ def tracks_list():
 
     results = cursor.fetchall()
 
-    return render_template("tracks_list.html",
+    return render_template("snowtracks_list.html",
                            results=results)
 
 
 
-@app.route("/new_track", methods=("GET", "POST"))
-def new_track():
+@app.route("/new_snowtrack", methods=("GET", "POST"))
+def new_snowtrack():
     if request.method == "POST":
         form = Track(request.form)
 
@@ -381,24 +579,22 @@ def new_track():
 
             connection = get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            sql = ("INSERT INTO snow_tracks (snowtracking_id, date, sampling_season, comune, "
+            sql = ("INSERT INTO snow_tracks (snowtrack_id, date, sampling_season, comune, "
                                              "provincia, regione, rilevatore, scalp_category, "
                                              "systematic_sampling, transect_id, giorni_dopo_nevicata, n_minimo_individui, track_format) "
                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
-                            request.form["snowtracking_id"],
+                            request.form["snowtrack_id"],
                             request.form["date"],
                             request.form["sampling_season"],
                             request.form["comune"],
                             request.form["provincia"],
                             request.form["regione"],                            
                             request.form["rilevatore"],
-
                             request.form["scalp_category"],
                             request.form["systematic_sampling"],
                             request.form["transect_id"],
-
                             request.form["giorni_dopo_nevicata"],
                             request.form["n_minimo_individui"],
                             request.form["track_format"],
@@ -425,9 +621,93 @@ def new_track():
 
         # get id of all transects
         form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
-        return render_template('new_track.html',
+        return render_template('new_snowtrack.html',
                             form=form,
                             default_values={})
+
+
+@app.route("/edit_snowtrack/<snowtrack_id>", methods=("GET", "POST"))
+def edit_snowtrack(snowtrack_id):
+
+    if request.method == "GET":
+        connection = get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM snow_tracks WHERE snowtrack_id = %s",
+                    [snowtrack_id])
+        default_values = cursor.fetchone()
+
+        form = Track(transect_id=default_values["transect_id"],)
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+
+        return render_template("new_track.html",
+                            title="Edit track",
+                            action=f"/edit_snowtrack/{snowtrack_id}",
+                            form=form,
+                            default_values=default_values)
+
+
+    if request.method == "POST":
+        form = Track(request.form)
+
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+        if form.validate():
+
+            connection = get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            sql = ("UPDATE snow_tracks SET "
+                        "snowtrack_id = %s,"
+                        "date = %s,"
+                        "sampling_season = %s,"
+                        "comune = %s,"
+                        "provincia = %s,"
+                        "regione = %s,"
+                        "rilevatore = %s,"
+                        "scalp_category = %s,"
+                        "systematic_sampling = %s,"
+                        "transect_id = %s,"
+                        "giorni_dopo_nevicata = %s,"
+                        "n_minimo_individui = %s,"
+                        "track_format = %s"
+                   "WHERE snowtrack_id = %s")
+
+            cursor.execute(sql,
+                           [
+                            request.form["snowtrack_id"],
+                            request.form["date"],
+                            request.form["sampling_season"],
+                            request.form["comune"],
+                            request.form["provincia"],
+                            request.form["regione"],                            
+                            request.form["rilevatore"],
+                            request.form["scalp_category"],
+                            request.form["systematic_sampling"],
+                            request.form["transect_id"],
+                            request.form["giorni_dopo_nevicata"],
+                            request.form["n_minimo_individui"],
+                            request.form["track_format"],
+                            snowtrack_id
+                           ]
+                           )
+            connection.commit()
+
+            return redirect(f"/view_snowtrack/{snowtrack_id}")
+        else:
+            # default values
+            default_values = {}
+            for k in request.form:
+                default_values[k] = request.form[k]
+
+            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
+            return render_template('new_track.html',
+                                    title="Edit track",
+                                    action=f"/edit_snowtrack/{snowtrack_id}",
+                                    form=form,
+                                    default_values=default_values)
+
 
 
 if __name__ == "__main__":

@@ -44,7 +44,7 @@ class Track(Form):
                     raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid (YYYY or YYYY-MM or YYY-MM-DD)</div>'))
 
 
-    snowtracking_id = StringField("Snow-tracking ID", validators=[Required(),])
+    snowtrack_id = StringField("Snow-tracking ID", validators=[Required(),])
     date = StringField("Date", validators=[Required(), iso_date_validator])
     sampling_season = StringField("Sampling season", [])
 

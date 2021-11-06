@@ -51,7 +51,7 @@ class Path(Form):
 
     transect_id = SelectField("Transect ID")
     date = StringField("Date", validators=[Required(), iso_date_validator])
-    sampling_year = StringField("Sampling year", [])
+    sampling_season = StringField("Sampling season", [])
 
     completeness  = StringField("Completeness", validators=[integer_validator,])
     numero_segni_trovati  = StringField("Numero di segni trovati", validators=[integer_validator,])

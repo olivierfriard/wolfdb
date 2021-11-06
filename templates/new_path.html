@@ -2,7 +2,7 @@
 <main class="flex-shrink-0">
 <div class="container">
 
-<h1>New path</h1>
+<h1>{{ title }}</h1>
 <hr>
 
 
@@ -15,7 +15,7 @@
 {% endwith %}
 
 
-<form method="POST" action="/new_path">
+<form method="POST" action="{{ action }}">
 
 
     <div class="mb-3">
@@ -43,10 +43,10 @@
     
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_year.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }} 
     </div><!-- col --><div class="col-8">
-    {{ form.sampling_year(size=16, class="form-control", value=default_values["sampling_year"]) }}
-    {% for message in form.sampling_year.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.sampling_season(size=16, class="form-control", value=default_values["sampling_season"]) }}
+    {% for message in form.sampling_season.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
 </div></div>
 </div>
