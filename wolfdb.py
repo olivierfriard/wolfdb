@@ -48,6 +48,18 @@ def all_snow_tracks_id():
 def home():
     return render_template("home.html")
 
+
+@app.route("/test1")
+def test1():
+    return render_template("test.html")
+
+
+
+@app.route("/test", methods=("GET", "POST"))
+def test():
+    return "test!"
+
+
 @app.route("/scats")
 def scats():
     return render_template("scats.html")
