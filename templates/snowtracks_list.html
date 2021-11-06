@@ -1,0 +1,76 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<br>
+<br>
+
+
+{% if results %}
+<h2>List of snow tracks</h2>
+<table class="table table-striped">
+<tr>
+<th>snow-tracking ID</th>
+<th>Date</th>
+<th>Sampling season</th>
+<th>Comune</th>
+<th>provincia</th>
+<th>regione</th>
+<th>rilevatore</th>
+<th>scalp category</th>
+<th>systematic sampling</th>
+<th>transect ID</th>
+<th>giorni dopo nevicata</th>
+<th>numero minimo di individui</th>
+<th>track format</th>
+
+
+</tr>
+{% for result in results %}
+<tr>
+
+    <td><a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
+    <td>{{ result['date'] }}</td>
+    <td>{{ result['sampling_season'] }}</td>
+    <td>{{ result['comune'] }}</td>
+    <td>{{ result['provincia'] }}</td>
+    <td>{{ result['regione'] }}</td>
+    <td>{{ result['rilevatore'] }}</td>
+    <td>{{ result['scalp_category'] }}</td>
+    <td>{{ result['systematic_sampling'] }}</td>
+
+    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
+    <td>{{ result['giorni_dopo_nevicata'] }}</td>
+    <td>{{ result['n_minimo_individui'] }}</td>
+    <td>{{ result['track_format'] }}</td>
+
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No snow track found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
+
+

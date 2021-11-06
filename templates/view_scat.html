@@ -1,0 +1,75 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/scats_list" class="btn btn-primary">Scats</a>
+
+<br><br>
+
+
+
+<h2>scat ID: {{ results["scat_id"] }}</h2>
+
+<a href="/edit_scat/{{ results["scat_id"] }}" class="btn btn-danger">Edit Scat</a>
+
+<a href="/add_wa/{{ results["scat_id"] }}" class="btn btn-primary">Add WA code / Genetic ID</a><br>
+
+<table class="table table-striped">
+
+<tr><td>Genetic ID</td><td>{{ results["genetic_id"] }}</td></tr>
+<tr><td>Genotype ID</td><td>{{ results["genotype_id"] }}</td></tr>
+<tr><td>Date</td><td>{{ results["date"] }}</td></tr>
+<tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
+<tr><td>Sampling type</td><td>{{ results["sampling_type"] }}</td></tr>
+<tr>
+    <td>Transect ID</td>
+    <td>
+        {% if results['transect_id'] != "-" %}    
+        <a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a>
+        {% else %}
+    {{ results['transect_id'] }}
+    {% endif %}
+    
+    </td>
+</tr>
+<tr><td>Snowtrack ID</td><td>
+
+    {% if results['snowtrack_id'] != "-" %}    
+    <a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
+    {% else %}
+    {{ results['snowtrack_id'] }}
+    {% endif %}
+
+</td></tr>
+<tr><td>Località</td><td>{{ results["localita"] }}</td></tr>
+<tr><td>Comune</td><td>{{ results["comune"] }}</td></tr>
+<tr><td>Provincia</td><td>{{ results["provincia"] }}</td></tr>
+<tr><td>Deposition</td><td>{{ results["deposition"] }}</td></tr>
+<tr><td>Matrix</td><td>{{ results["matrix"] }}</td></tr>
+<tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
+<tr><td>Sample genetic</td><td>{{ results["sample_genetic"] }}</td></tr>
+<tr><td>Coordonates (UTM 32N WGS84)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
+<tr><td>rilevatore_ente</td><td>{{ results["rilevatore_ente"] }}</td></tr>
+<tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
+
+
+</table>
+
+</div>
+</main>
+
+
+
+
+
+
+
