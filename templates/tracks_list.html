@@ -36,7 +36,7 @@
 {% for result in results %}
 <tr>
 
-    <td>{{ result['snowtracking_id'] }}</td>
+    <td><a href="/view_snowtrack/{{ result['snowtracking_id'] }}">{{ result['snowtracking_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
     <td>{{ result['comune'] }}</td>
@@ -46,7 +46,7 @@
     <td>{{ result['scalp_category'] }}</td>
     <td>{{ result['systematic_sampling'] }}</td>
 
-    <td>{{ result['transect_id'] }}</td>
+    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['giorni_dopo_nevicata'] }}</td>
     <td>{{ result['n_minimo_individui'] }}</td>
     <td>{{ result['track_format'] }}</td>

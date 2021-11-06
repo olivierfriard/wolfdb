@@ -27,7 +27,7 @@
 {% for result in results %}
 <tr>
 
-    <td>{{ result['transect_id'] }}</td>
+    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['sector'] }}</td>
     <td>{{ result['localita'] }}</td>
     <td>{{ result['provincia'] }}</td>

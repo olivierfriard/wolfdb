@@ -23,13 +23,25 @@ app.secret_key = "dfhsdlfsdhflsdfhsnqq45"
 
 params = config()
 
+def get_connection():
+    return psycopg2.connect(user=params["user"],
+                                  password=params["password"],
+                                  host=params["host"],
+                                  #port="5432",
+                                  database=params["database"])
 
-@app.teardown_appcontext
-def close_conn(e):
-    print('CLOSING CONN')
-    db = g.pop('db', None)
-    if db is not None:
-        app.config['postgreSQL_pool'].putconn(db)
+
+def all_transect_id():
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
+    return [x[0].strip() for x in cursor.fetchall()]
+
+def all_snow_tracks_id():
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT snowtracking_id FROM snow_tracks ORDER BY snowtracking_id")
+    return [x[0].strip() for x in cursor.fetchall()]
 
 
 @app.route("/")
@@ -55,40 +67,34 @@ def snow_tracks():
     return render_template("snow_tracks.html")
 
 
-def get_connection():
-    return psycopg2.connect(user=params["user"],
-                                  password=params["password"],
-                                  host=params["host"],
-                                  #port="5432",
-                                  database=params["database"])
+@app.route("/view_scat/<scat_id>")
+def view_scat(scat_id):
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM scat WHERE scat_id = %s",
+                   [scat_id])
+
+    return render_template("view_scat.html",
+                           results=cursor.fetchone())
+
+
+@app.route("/add_wa/<scat_id>")
+def add_wa(scat_id):
+
+    return "not yet implemented"
 
 
 
 @app.route("/scats_list")
 def scats_list():
-    # get all tscats
+    # get all scats
 
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    
     cursor.execute("SELECT * FROM scat ORDER BY scat_id")
 
-    results = cursor.fetchall()
     return render_template("scats_list.html",
-                           results=results)
-
-
-def all_transect_id():
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
-    return [x[0].strip() for x in cursor.fetchall()]
-
-def all_snow_tracks_id():
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT snowtracking_id FROM snow_tracks ORDER BY snowtracking_id")
-    return [x[0].strip() for x in cursor.fetchall()]
+                           results=cursor.fetchall())
 
 
 @app.route("/new_scat", methods=("GET", "POST"))
@@ -102,7 +108,6 @@ def new_scat():
 
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
-
 
         if form.validate():
 
@@ -140,23 +145,76 @@ def new_scat():
 
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
 
-            return render_template('new_scat.html',
-                                    form=form,
-                                    default_values=default_values)
+            return render_template("new_scat.html",
+                                   form=form,
+                                   default_values=default_values)
 
 
     if request.method == "GET":
         form = Scat()
-
         # get id of all transects
         form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
-
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
 
         return render_template("new_scat.html",
+                                title="New scat",
                             form=form,
                             default_values={})
+
+
+@app.route("/edit_scat/<scat_id>", methods=("GET", "POST"))
+def edit_scat(scat_id):
+    if request.method == "GET":
+        connection = get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM scat WHERE scat_id = %s",
+                    [scat_id])
+        default_values = cursor.fetchone()
+
+        form = Scat(transect_id=default_values["transect_id"].strip(),
+                    snowtrack_id=default_values["snowtrack_id"].strip(),
+                    sampling_type=default_values["sampling_type"].strip(),
+                    deposition=default_values["deposition"].strip(),
+                    matrix=default_values["matrix"].strip(),
+                    collected_scat=default_values["collected_scat"].strip(),)
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+        # get id of all snow tracks
+        form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
+
+
+        return render_template("new_scat.html",
+                            title="Edit scat",
+                            form=form,
+                            default_values=default_values)
+
+
+
+# transects
+
+@app.route("/view_transect/<transect_id>")
+def view_transect(transect_id):
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM transect WHERE transect_id = %s",
+                   [transect_id])
+    transect = cursor.fetchone()
+
+    # path
+    cursor.execute("SELECT * FROM paths WHERE transect_id = %s ORDER BY date DESC",
+                   [transect_id])
+    results_paths = cursor.fetchall()
+
+    # snow tracks
+    cursor.execute("SELECT * FROM snow_tracks WHERE transect_id = %s ORDER BY date DESC",
+                   [transect_id])
+    results_snowtracks = cursor.fetchall()
+
+    return render_template("view_transect.html",
+                           transect=transect,
+                           paths=results_paths,
+                           snowtracks=results_snowtracks)
 
 
 @app.route("/transects_list")
@@ -170,7 +228,6 @@ def transects_list():
 
     return render_template("transects_list.html",
                            results=results)
-
 
 
 @app.route("/new_transect", methods=("GET", "POST"))
@@ -204,6 +261,19 @@ def new_transect():
         return render_template('new_transect.html',
                             form=form,
                             default_values={})
+
+
+# path
+
+@app.route("/view_path/<path_id>")
+def view_path(path_id):
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM paths WHERE path_id = %s",
+                   [path_id])
+
+    return render_template("view_path.html",
+                           results=cursor.fetchone())
 
 
 @app.route("/paths_list")
@@ -270,6 +340,19 @@ def new_path():
         return render_template('new_path.html',
                             form=form,
                             default_values={})
+
+# snow track
+
+@app.route("/view_snowtrack/<snowtracking_id>")
+def view_snow_track(snowtracking_id):
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM snow_tracks WHERE snowtracking_id = %s",
+                   [snowtracking_id])
+
+    return render_template("view_snow_track.html",
+                           results=cursor.fetchone())
+
 
 
 @app.route("/snow_tracks_list")

@@ -17,6 +17,7 @@
 <h2>List of paths</h2>
 <table class="table table-striped">
 <tr>
+<th>Path ID</th>
 <th>Transect ID</th>
 <th>Date</th>
 <th>Sampling year</th>
@@ -28,11 +29,11 @@
 </tr>
 {% for result in results %}
 <tr>
-
-    <td>{{ result['transect_id'] }}</td>
+<td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
+    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_year'] }}</td>
-    <td>{{ result['completeness'] }}</td>
+    <td>{{ result['completeness'] }} %</td>
     <td>{{ result['numero_segni_trovati'] }}</td>
     <td>{{ result['numero_campioni'] }}</td>
     <td>{{ result['operatore'] }}</td>
