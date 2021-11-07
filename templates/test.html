@@ -1,0 +1,10 @@
+<html>
+    <!-- Load from unpkg -->
+  <script src="https://unpkg.com/htmx.org@1.6.0"></script>
+  <!-- have a button POST a click via AJAX -->
+  <button hx-post="http://127.0.0.1:5000/wa_form" hx-include="[name=scat_id]" hx-swap="outerHTML" hx-target="#result">
+    Click Me
+  </button>
+  <input type="hidden" id="custId" name="scat_id" value="abc3487">
+  <div id="result"></div>
+    </html>
