@@ -55,9 +55,23 @@ def test1():
 
 
 
-@app.route("/test", methods=("GET", "POST"))
+@app.route("/wa_form", methods=("GET", "POST"))
 def test():
-    return "test!"
+
+    data = request.form
+    print(data)
+
+    return """<br><b>Input a WA code / Genetic ID</b>
+<form action="/add_wa/">
+  <div class="form-group">
+  <label for="usr">WA code:</label>
+  <input type="text" class="form-control" id="wa">
+</div>  
+
+<button type="submit" class="btn btn-default">Add code</button>
+</form>
+"""
+
 
 
 @app.route("/scats")
