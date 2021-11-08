@@ -49,6 +49,11 @@ def all_snow_tracks_id():
 def home():
     return render_template("home.html")
 
+@app.route("/version")
+def version():
+    return __version__
+
+
 
 @app.route("/test1")
 def test1():
@@ -56,28 +61,45 @@ def test1():
 
 
 
-@app.route("/wa_form", methods=("GET", "POST"))
-def test():
+@app.route("/wa_form", methods=("POST",))
+def wa_form():
 
     data = request.form
     print(data)
 
-    return """<br><b>Input a WA code / Genetic ID</b>
-<form action="/add_wa/">
+    return f"""
+<form action="/add_wa" method="POST" style="padding-top:30px; padding-bottom:30px">
+
+  <input type="hidden" id="scat_id" name="scat_id" value="{request.form['scat_id']}">
+
   <div class="form-group">
-  <label for="usr">WA code:</label>
-  <input type="text" class="form-control" id="wa">
+  <label for="usr">WA code/genetic ID</label>
+  <input type="text" class="form-control" id="wa" name="wa">
 </div>
 
-<button type="submit" class="btn btn-default">Add code</button>
+<button type="submit" class="btn btn-primary">Add code</button>
 </form>
 """
+
+
+@app.route("/add_wa", methods=("POST",))
+def add_wa():
+
+    print(request.form)
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("UPDATE scat SET genetic_id = %s WHERE scat_id = %s",
+                   [request.form['wa'], request.form['scat_id']])
+
+    connection.commit()
+    return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
 
 @app.route("/scats")
 def scats():
     return render_template("scats.html")
+
 
 @app.route("/transects")
 def transects():
@@ -108,11 +130,6 @@ def view_scat(scat_id):
     return render_template("view_scat.html",
                            results=cursor.fetchone())
 
-
-@app.route("/add_wa/<scat_id>")
-def add_wa(scat_id):
-
-    return "not yet implemented"
 
 
 

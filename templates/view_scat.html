@@ -1,5 +1,6 @@
 {% include "header.html" %}
 
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
 
 <main class="flex-shrink-0">
 
@@ -21,7 +22,21 @@
 
 <a href="/edit_scat/{{ results["scat_id"] }}" class="btn btn-danger">Edit Scat</a>
 
+<!--
+
+
 <a href="/add_wa/{{ results["scat_id"] }}" class="btn btn-primary">Add WA code / Genetic ID</a><br>
+
+
+-->
+
+<button class="btn btn-primary" hx-post="/wa_form" hx-include="[name=scat_id]" hx-swap="outerHTML" hx-target="#wa_form">Add WA code / Genetic ID</button>
+
+
+<div id="wa_form"></div>
+
+
+<input type="hidden" id="scat_id" name="scat_id" value="{{ results["scat_id"] }}">
 
 <table class="table table-striped">
 
@@ -33,17 +48,17 @@
 <tr>
     <td>Transect ID</td>
     <td>
-        {% if results['transect_id'] != "-" %}    
+        {% if results['transect_id'] != "-" %}
         <a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a>
         {% else %}
     {{ results['transect_id'] }}
     {% endif %}
-    
+
     </td>
 </tr>
 <tr><td>Snowtrack ID</td><td>
 
-    {% if results['snowtrack_id'] != "-" %}    
+    {% if results['snowtrack_id'] != "-" %}
     <a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
     {% else %}
     {{ results['snowtrack_id'] }}
