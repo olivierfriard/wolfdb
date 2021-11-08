@@ -33,22 +33,14 @@ class Scat(Form):
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
             return
         except ValueError:
-            try:  # YYYY-MM
-                datetime.datetime.strptime(field.data, '%Y-%m')
-                return
-            except ValueError:
-                try:  # YYYY-MM-DD
-                    datetime.datetime.strptime(field.data, '%Y')
-                    return
-                except ValueError:
-                    raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid (YYYY or YYYY-MM or YYY-MM-DD)</div>'))
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'))
 
 
     scat_id = StringField("Scat ID", validators=[Required(),])
     # genetic_id = StringField('Genetic ID', [])
     # genetic_id = StringField('Genetic ID', [])
     date = StringField("Date", validators=[Required(), iso_date_validator])
-    sampling_season = StringField("Sampling season", [])
+    #sampling_season = StringField("Sampling season", [])
     sampling_type = SelectField("Sampling type", choices=[('-', '-'),
                                                           ('Opportunistico', 'Opportunistico'),
                                                           ('Sistematico', 'Sistematico')],

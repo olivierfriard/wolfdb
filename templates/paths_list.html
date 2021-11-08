@@ -34,13 +34,17 @@
 </tr>
 {% for result in results %}
 <tr>
-<td><a href="/view_path/{{ result['id'] }}">{{ result['transect_id'] }} {{ result['date'] }}</a></td>
+<td><a href="/view_path/{{ result['transect_id'] }} {{ result['date'] }}">{{ result['transect_id'] }} {{ result['date'] }}</a></td>
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
-    <td>{{ result['completeness'] }} %</td>
-    <td>{{ result['numero_segni_trovati'] }}</td>
-    <td>{{ result['numero_campioni'] }}</td>
+    <td>
+    {% if result['completeness'] %}
+    {{ result['completeness'] }} %
+    {% endif %}
+</td>
+    <td>{{ result['n_tracks'] }}</td>
+    <td>{{ result['n_samples'] }}</td>
     <td>{{ result['operatore'] }}</td>
     <td>{{ result['note'] }}</td>
 

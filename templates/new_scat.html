@@ -28,27 +28,37 @@
 
 
 <div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.path_id(class="form-control") }}
+    {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.snowtrack_id(class="form-control", value=default_values["snowtrack_id"]) }}
+    {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+<div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
     </div><!-- col --><div class="col-8">
     {{ form.date(size=16, class="form-control", value=default_values["date"]) }}
     {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
-    <span class="form-text">Allowed formats: YYYY, YYYY-MM, YYYY-MM-DD</span>
+    <span class="form-text">Allowed format:  YYYY-MM-DD</span>
 
 </div></div>
 </div>
 
 
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.sampling_season(size=16, class="form-control", value=default_values["sampling_season"]) }}
-    {% for message in form.sampling_season.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
-    <span class="form-text">Allowed formats: YYYY-YYYY</span>
-
-</div></div>
-</div>
 
 
 <div class="mb-3">
@@ -60,22 +70,7 @@
 </div>
 
 
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.path_id(class="form-control") }}
-    {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
 
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.snowtrack_id(class="form-control", value=default_values["snowtrack_id"]) }}
-    {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
 
 
 

@@ -62,9 +62,20 @@ def version():
 
 
 
-@app.route("/test1")
-def test1():
+@app.route("/test")
+def test():
     return render_template("test.html")
+
+
+@app.route("/test_action", methods=("POST",))
+def test_action():
+    print(request.form)
+    return f"""
+<input id="date" type="text" value="{request.form["path_id"].split(" ")[-1]}">
+"""
+
+
+
 
 
 
@@ -72,7 +83,6 @@ def test1():
 def wa_form():
 
     data = request.form
-    print(data)
 
     return f"""
 <form action="/add_wa" method="POST" style="padding-top:30px; padding-bottom:30px">
@@ -172,7 +182,7 @@ def new_scat():
         form = Scat(request.form)
 
         # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+        form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
 
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
@@ -182,7 +192,7 @@ def new_scat():
             connection = get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("INSERT INTO scat (scat_id, date, sampling_season, sampling_type, transect_id, snowtrack_id, "
+            sql = ("INSERT INTO scat (scat_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "
                    "localita, comune, provincia, "
                    "deposition, matrix,collected_scat, "
                    "coord_east, coord_north, rilevatore_ente, scalp_category) "
@@ -191,9 +201,9 @@ def new_scat():
                            [
                             request.form["scat_id"],
                             request.form["date"],
-                            request.form["sampling_season"],
+                            sampling_season(request.form["date"]),
                             request.form["sampling_type"],
-                            request.form["transect_id"],
+                            request.form["path_id"],
                             request.form["snowtrack_id"],
                             request.form["localita"], request.form["comune"], request.form["provincia"],
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"],
@@ -452,7 +462,7 @@ def sampling_season(date):
 def view_path(id):
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM paths WHERE id = %s",
+    cursor.execute("SELECT * FROM paths WHERE concat(transect_id, ' ', date) = %s",
                    [id])
 
     results = cursor.fetchone()
@@ -481,11 +491,17 @@ def paths_list():
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM paths ORDER BY date DESC")
+    cursor.execute(("SELECT *, "
+                    "(SELECT COUNT(*) FROM scat WHERE path_id = CONCAT(paths.transect_id, ' ', paths.date)) AS n_samples, "
+                    "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
+                   "FROM paths ORDER BY date DESC"
+                   ))
 
     results = cursor.fetchall()
     return render_template("paths_list.html",
-                           results=results)
+                           results=results,
+                            )
+
 
 
 
@@ -692,7 +708,7 @@ def new_snowtrack():
                 default_values[k] = request.form[k]
 
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
-            return render_template('new_track.html',
+            return render_template('new_snowtrack.html',
                                     form=form,
                                     default_values=default_values)
 

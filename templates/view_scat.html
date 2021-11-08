@@ -46,12 +46,12 @@
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 <tr><td>Sampling type</td><td>{{ results["sampling_type"] }}</td></tr>
 <tr>
-    <td>Transect ID</td>
+    <td>Path ID</td>
     <td>
-        {% if results['transect_id'] != "-" %}
-        <a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a>
+        {% if results['path_id'] != "-" %}
+        <a href="/view_path/{{ results['path_id'] }}">{{ results['path_id'] }}</a>
         {% else %}
-    {{ results['transect_id'] }}
+    {{ results['path_id'] }}
     {% endif %}
 
     </td>

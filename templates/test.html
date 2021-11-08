@@ -3,10 +3,43 @@
 <!-- Load from unpkg -->
   <script src="https://unpkg.com/htmx.org@1.6.0"></script>
   <!-- have a button POST a click via AJAX -->
-  <button hx-post="/wa_form" hx-include="[name=scat_id]" hx-swap="outerHTML" hx-target="#result">
+
+  <button hx-post="/test_action" hx-include="[name=scat_id]" hx-swap="outerHTML" hx-target="#result">
     Click Me
   </button>
   <input type="hidden" id="custId" name="scat_id" value="abc3487">
   <div id="result"></div>
+
+
+<input type="text"
+hx-post="/test_action"
+          hx-trigger="keyup changed delay:500ms"
+          hx-target="#search-results"
+
+
+id="a" name ="b" >
+
+<div id="search-results"></div>
+
+
+
+<div class="mb-3">
+  <div class="row g-3 align-items-top"><div class="col-2"><label for="path_id">Path ID</label>
+  </div><!-- col --><div class="col-8">
+  <select class="form-control" id="path_id" name="path_id"
+  hx-post="/test_action"
+  hx-target="#date"
+  hx-swap="outerHTML"
+  >
+    <option value="-">-</option>
+    <option value="CN_21 2021-11-08">CN_21 2021-11-08</option>
+    <option value="CN_16 2021-11-06">CN_16 2021-11-06</option>
+  </select>
+
+  </div></div>
+</div>
+
+<input id="date" type="text">
+
 
 </html>
