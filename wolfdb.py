@@ -667,6 +667,20 @@ def snowtracks_list():
 
 @app.route("/new_snowtrack", methods=("GET", "POST"))
 def new_snowtrack():
+
+
+    if request.method == "GET":
+        form = Track()
+
+        # get id of all transects
+        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+        return render_template('new_snowtrack.html',
+                                title="New snow track",
+                                action="/new_snowtrack",
+                                form=form,
+                                default_values={})
+
+
     if request.method == "POST":
         form = Track(request.form)
 
@@ -709,19 +723,12 @@ def new_snowtrack():
 
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
             return render_template('new_snowtrack.html',
+                                   title="New snow track",
+                                   action="/new_snowtrack",
+
                                     form=form,
                                     default_values=default_values)
 
-
-
-    if request.method == "GET":
-        form = Track()
-
-        # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
-        return render_template('new_snowtrack.html',
-                            form=form,
-                            default_values={})
 
 
 @app.route("/edit_snowtrack/<snowtrack_id>", methods=("GET", "POST"))
