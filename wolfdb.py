@@ -14,6 +14,7 @@ from transect import Transect
 from path import Path
 from track import Track
 
+__version__ = "1"
 
 app = Flask(__name__)
 
@@ -66,7 +67,7 @@ def test():
   <div class="form-group">
   <label for="usr">WA code:</label>
   <input type="text" class="form-control" id="wa">
-</div>  
+</div>
 
 <button type="submit" class="btn btn-default">Add code</button>
 </form>
@@ -129,7 +130,7 @@ def scats_list():
 
 @app.route("/new_scat", methods=("GET", "POST"))
 def new_scat():
-    
+
     if request.method == "GET":
         form = Scat()
         # get id of all transects
@@ -176,7 +177,7 @@ def new_scat():
                             request.form["rilevatore_ente"], request.form["scalp_category"]
                            ]
                            )
-            
+
             connection.commit()
 
             return redirect("/scats_list")
@@ -271,7 +272,7 @@ def edit_scat(scat_id):
                             scat_id
                            ]
                            )
-            
+
             connection.commit()
 
             return redirect(f"/view_scat/{scat_id}")
@@ -358,7 +359,7 @@ def new_transect():
                             request.form["localita"], request.form["provincia"], request.form["regione"]
                            ]
                            )
-            
+
             connection.commit()
 
             return 'Transect inserted<br><a href="/">Home</a>'
@@ -402,7 +403,7 @@ def edit_transect(transect_id):
                             transect_id
                            ]
                            )
-            
+
             connection.commit()
 
             return redirect(f"/view_transect/{transect_id}")
@@ -437,7 +438,7 @@ def paths_list():
 
 @app.route("/new_path", methods=("GET", "POST"))
 def new_path():
-    
+
     if request.method == "GET":
         form = Path()
 
@@ -616,7 +617,7 @@ def new_snowtrack():
                             request.form["sampling_season"],
                             request.form["comune"],
                             request.form["provincia"],
-                            request.form["regione"],                            
+                            request.form["regione"],
                             request.form["rilevatore"],
                             request.form["scalp_category"],
                             request.form["systematic_sampling"],
@@ -624,7 +625,7 @@ def new_snowtrack():
                             request.form["giorni_dopo_nevicata"],
                             request.form["n_minimo_individui"],
                             request.form["track_format"],
-                            ]   
+                            ]
                            )
             connection.commit()
 
@@ -707,7 +708,7 @@ def edit_snowtrack(snowtrack_id):
                             request.form["sampling_season"],
                             request.form["comune"],
                             request.form["provincia"],
-                            request.form["regione"],                            
+                            request.form["regione"],
                             request.form["rilevatore"],
                             request.form["scalp_category"],
                             request.form["systematic_sampling"],
