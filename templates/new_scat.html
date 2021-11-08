@@ -18,17 +18,17 @@
 
 
     <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scat_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scat_id.label }}
     </div><!-- col --><div class="col-8">
     {{ form.scat_id(size=30, class="form-control",  value=default_values["scat_id"]) }}
     {% for message in form.scat_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    
+
     </div></div>
 </div>
-    
+
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
     </div><!-- col --><div class="col-8">
     {{ form.date(size=16, class="form-control", value=default_values["date"]) }}
     {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -40,7 +40,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }}
     </div><!-- col --><div class="col-8">
     {{ form.sampling_season(size=16, class="form-control", value=default_values["sampling_season"]) }}
     {% for message in form.sampling_season.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -52,7 +52,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_type.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_type.label }}
     </div><!-- col --><div class="col-8">
     {{ form.sampling_type(class="form-control", value=default_values["sampling_type"]) }}
     {% for message in form.sampling_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -61,16 +61,16 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.transect_id(class="form-control") }}
-    {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.path_id(class="form-control") }}
+    {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
     </div><!-- col --><div class="col-8">
     {{ form.snowtrack_id(class="form-control", value=default_values["snowtrack_id"]) }}
     {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -106,7 +106,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.deposition.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.deposition.label }}
     </div><!-- col --><div class="col-8">
     {{ form.deposition(class="form-control",  value=default_values["deposition"]) }}
     {% for message in form.deposition.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -116,7 +116,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.matrix.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.matrix.label }}
     </div><!-- col --><div class="col-8">
     {{ form.matrix(class="form-control",  value=default_values["matrix"]) }}
     {% for message in form.matrix.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -125,7 +125,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.collected_scat.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.collected_scat.label }}
     </div><!-- col --><div class="col-8">
     {{ form.collected_scat(class="form-control",  value=default_values["collected_scat"]) }}
     {% for message in form.collected_scat.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -148,7 +148,7 @@
         {{ form.coord_north(class="form-control",  value=default_values["coord_north"]) }}
         {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
         </div>
-    
+
 
     </div>
 </div>
@@ -156,7 +156,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.rilevatore_ente.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.rilevatore_ente.label }}
     </div><!-- col --><div class="col-8">
     {{ form.rilevatore_ente(class="form-control",  value=default_values["rilevatore_ente"]) }}
     {% for message in form.rilevatore_ente.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -165,7 +165,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scalp_category.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scalp_category.label }}
     </div><!-- col --><div class="col-8">
     {{ form.scalp_category(class="form-control",  value=default_values["scalp_category"]) }}
     {% for message in form.scalp_category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}

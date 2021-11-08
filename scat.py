@@ -53,7 +53,7 @@ class Scat(Form):
                                                           ('Opportunistico', 'Opportunistico'),
                                                           ('Sistematico', 'Sistematico')],
                                 default="-")
-    transect_id = SelectField("Transect ID")
+    path_id = SelectField("Path ID")
     snowtrack_id = SelectField("Snow-tracking ID")
     localita = StringField("Località", [])
     comune = StringField("Comune", [])

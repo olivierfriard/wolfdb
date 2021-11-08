@@ -29,15 +29,7 @@ class Path(Form):
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
             return
         except ValueError:
-            try:  # YYYY-MM
-                datetime.datetime.strptime(field.data, '%Y-%m')
-                return
-            except ValueError:
-                try:  # YYYY-MM-DD
-                    datetime.datetime.strptime(field.data, '%Y')
-                    return
-                except ValueError:
-                    raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid (YYYY or YYYY-MM or YYY-MM-DD)</div>'))
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. The format must be YYYY-MM-DD.</div>'))
 
     def integer_validator(form, field):
         if not field.data:
@@ -49,13 +41,13 @@ class Path(Form):
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
 
 
-    transect_id = SelectField("Transect ID")
+    transect_id = SelectField("Transect ID", validators=[Required()])
     date = StringField("Date", validators=[Required(), iso_date_validator])
     sampling_season = StringField("Sampling season", [])
 
     completeness  = StringField("Completeness", validators=[integer_validator,])
-    numero_segni_trovati  = StringField("Numero di segni trovati", validators=[integer_validator,])
-    numero_campioni  = StringField("Numero di campioni", validators=[integer_validator,])
+    #numero_segni_trovati  = StringField("Numero di segni trovati", validators=[integer_validator,])
+    #numero_campioni  = StringField("Numero di campioni", validators=[integer_validator,])
 
     operatore = StringField("Operatore", [])
     note = TextAreaField("Note", [])

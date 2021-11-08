@@ -38,6 +38,13 @@ def all_transect_id():
     cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
     return [x[0].strip() for x in cursor.fetchall()]
 
+def all_path_id():
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT CONCAT(transect_id, ' ',  date) FROM paths ORDER BY date DESC")
+    return [x[0].strip() for x in cursor.fetchall()]
+
+
 def all_snow_tracks_id():
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -150,8 +157,8 @@ def new_scat():
 
     if request.method == "GET":
         form = Scat()
-        # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+        # get id of all paths
+        form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
 
@@ -427,17 +434,45 @@ def edit_transect(transect_id):
         else:
             return "Transect form NOT validated<br><a href="/">Home</a>"
 
+
+
+def sampling_season(date):
+    month = int(request.form['date'][5:6+1])
+    year = int(request.form['date'][0:3+1])
+    if 5 <= month <= 12:
+        return f"{year}-{year + 1}"
+    if 1 <= month <= 4:
+        return f"{year - 1}-{year}"
+
+
+
 # path
 
-@app.route("/view_path/<path_id>")
-def view_path(path_id):
+@app.route("/view_path/<id>")
+def view_path(id):
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM paths WHERE path_id = %s",
-                   [path_id])
+    cursor.execute("SELECT * FROM paths WHERE id = %s",
+                   [id])
+
+    results = cursor.fetchone()
+
+    # n samples
+    path_id = f'{results["transect_id"]} {results["date"]}'
+    cursor.execute("SELECT COUNT(*) AS n_samples FROM scat WHERE path_id = %s ", [path_id])
+    n_samples = cursor.fetchone()["n_samples"]
+
+    # n tracks
+    path_id = f'{results["transect_id"]} {results["date"]}'
+    cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = %s AND date = %s",
+    [results["transect_id"], results["date"]])
+    n_tracks = cursor.fetchone()["n_tracks"]
+
 
     return render_template("view_path.html",
-                           results=cursor.fetchone())
+                           results=results,
+                           n_samples=n_samples,
+                           n_tracks=n_tracks)
 
 
 @app.route("/paths_list")
@@ -453,6 +488,7 @@ def paths_list():
                            results=results)
 
 
+
 @app.route("/new_path", methods=("GET", "POST"))
 def new_path():
 
@@ -462,7 +498,7 @@ def new_path():
         # get id of all transects
         form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
 
-        return render_template('new_path.html',
+        return render_template("new_path.html",
                                title="New path",
                                action=f"/new_path",
                                form=form,
@@ -478,22 +514,24 @@ def new_path():
 
             connection = get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            sql = ("INSERT INTO paths (transect_id, date, sampling_season, completeness, numero_segni_trovati, numero_campioni, operatore, note) "
-                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+            sql = ("INSERT INTO paths (transect_id, date, sampling_season, completeness, "
+                   #"numero_segni_trovati, numero_campioni, "
+                   "operatore, note) "
+                   "VALUES (%s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["transect_id"],
                             request.form["date"],
-                            request.form["sampling_season"],
+                            sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
-                            request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
-                            request.form["numero_campioni"] if request.form["numero_campioni"] else None,
+                            #request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
+                            #request.form["numero_campioni"] if request.form["numero_campioni"] else None,
                             request.form["operatore"], request.form["note"]
                            ]
                            )
             connection.commit()
 
-            return 'New path inserted<br><a href="/">Home</a>'
+            return redirect("/paths_list")
         else:
             # default values
             default_values = {}
@@ -511,14 +549,14 @@ def new_path():
 
 
 
-@app.route("/edit_path/<path_id>", methods=("GET", "POST"))
-def edit_path(path_id):
+@app.route("/edit_path/<id>", methods=("GET", "POST"))
+def edit_path(id):
 
     if request.method == "GET":
         connection = get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM paths WHERE path_id = %s",
-                    [path_id])
+        cursor.execute("SELECT * FROM paths WHERE id = %s",
+                    [id])
         default_values = cursor.fetchone()
 
         form = Path(transect_id=default_values["transect_id"],)
@@ -528,7 +566,7 @@ def edit_path(path_id):
 
         return render_template("new_path.html",
                             title="Edit path",
-                            action=f"/edit_path/{path_id}",
+                            action=f"/edit_path/{id}",
                             form=form,
                             default_values=default_values)
 
@@ -548,27 +586,27 @@ def edit_path(path_id):
                    "date=%s, "
                    "sampling_season=%s, "
                    "completeness=%s, "
-                   "numero_segni_trovati=%s, "
-                   "numero_campioni=%s, "
+                   #"numero_segni_trovati=%s, "
+                   #"numero_campioni=%s, "
                    "operatore=%s, "
                    "note=%s "
-                   "WHERE path_id = %s")
+                   "WHERE id = %s")
 
             cursor.execute(sql,
                            [
                             request.form["transect_id"],
                             request.form["date"],
-                            request.form["sampling_season"],
+                            sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
-                            request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
-                            request.form["numero_campioni"] if request.form["numero_campioni"] else None,
+                            #request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
+                            #request.form["numero_campioni"] if request.form["numero_campioni"] else None,
                             request.form["operatore"], request.form["note"],
-                            path_id
+                            id
                            ]
                            )
             connection.commit()
 
-            return redirect(f"/view_path/{path_id}")
+            return redirect(f"/view_path/{id}")
         else:
             # default values
             default_values = {}
@@ -576,9 +614,9 @@ def edit_path(path_id):
                 default_values[k] = request.form[k]
 
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
-            return render_template('new_path.html',
+            return render_template("new_path.html",
                                     title="Edit path",
-                                    action=f"/edit_path/{path_id}",
+                                    action=f"/edit_path/{id}",
                                     form=form,
                                     default_values=default_values)
 

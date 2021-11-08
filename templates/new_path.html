@@ -19,41 +19,41 @@
 
 
     <div class="mb-3">
-        <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }} 
+        <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}
         </div><!-- col --><div class="col-8">
         {{ form.transect_id(class="form-control") }}
         {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-        
-   
+
+
         </div></div>
     </div>
-    
+
 
 
     <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
     </div><!-- col --><div class="col-8">
     {{ form.date(size=30, class="form-control",  value=default_values["date"]) }}
     {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    
-    <span class="form-text">Allowed formats: YYYY, YYYY-MM, YYYY-MM-DD</span>
+
+    <span class="form-text">format must be YYYY-MM-DD</span>
 
     </div></div>
 </div>
-    
 
+<!--
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }} 
-    </div><!-- col --><div class="col-8">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }}
+    </div><div class="col-8">
     {{ form.sampling_season(size=16, class="form-control", value=default_values["sampling_season"]) }}
     {% for message in form.sampling_season.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
 </div></div>
 </div>
-
+-->
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.completeness.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.completeness.label }}
     </div><!-- col --><div class="col-8">
     {{ form.completeness(size=16, class="form-control", value=default_values["completeness"]) }}
     {% for message in form.completeness.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -63,26 +63,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.numero_segni_trovati.label }} 
-    </div><!-- col --><div class="col-8">
-    {{ form.numero_segni_trovati(class="form-control", value=default_values["numero_segni_trovati"]) }}
-    {% for message in form.numero_segni_trovati.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.numero_campioni.label }} 
-    </div><!-- col --><div class="col-8">
-    {{ form.numero_campioni(size=16, class="form-control", value=default_values["numero_campioni"]) }}
-    {% for message in form.numero_campioni.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.operatore.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.operatore.label }}
     </div><!-- col --><div class="col-8">
     {{ form.operatore(size=16, class="form-control", value=default_values["operatore"]) }}
     {% for message in form.operatore.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -91,7 +72,7 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.note.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.note.label }}
     </div><!-- col --><div class="col-8">
     {{ form.note(size=20, class="form-control", value=default_values["note"]) }}
     {% for message in form.note.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}

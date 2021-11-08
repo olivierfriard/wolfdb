@@ -28,11 +28,21 @@
 <tr><td>Date</td><td>{{ results["date"] }}</td></tr>
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 
-<tr><td>Completeness</td><td>{{ results["completeness"] }} %</td></tr>
-<tr><td>Numero di segni trovati</td><td>{{ results["numero_segni_trovati"] }}</td></tr>
-<tr><td>Numero di campioni</td><td>{{ results["numero_campioni"] }}</td></tr>
+<tr><td>Completeness</td><td>
+{% if results["completeness"] %}
+    {{ results["completeness"] }} %
+{% else %}
+
+{% endif %}
+</td></tr>
 <tr><td>Operatore</td><td>{{ results["operatore"] }}</td></tr>
 <tr><td>Note</td><td>{{ results["note"] }}</td></tr>
+
+
+
+<tr><td>Numero di segni trovati</td><td>{{ n_tracks }}</td></tr>
+<tr><td>Numero di campioni</td><td>{{ n_samples }}</td></tr>
+
 
 </table>
 
