@@ -1,0 +1,114 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<!--<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;-->
+<a href="/new_scat" class="btn btn-primary">New scat</a>&nbsp;
+<br>
+
+
+{% if results %}
+<h2>List of scats</h2>
+<table class="table table-striped">
+<tr>
+<th>Scat ID</th>
+<th>Genetic ID</th>
+<th>Genotype ID</th>
+<th>Path ID</th>
+<th>Snowtrack ID</th>
+<th>Date</th>
+<th>Sampling season</th>
+<th>Sampling type</th>
+<th>Localita</th>
+<th>Comune</th>
+<th>Provincia</th>
+<th>Deposition</th>
+<th>Matrix</th>
+<th>Collected scat</th>
+<th>Sample genetic</th>
+<th>Coord</th>
+<th>rilevatore_ente</th>
+<th>scalp_category</th>
+
+
+</tr>
+{% for result in results %}
+<tr>
+
+    <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
+
+    <td>
+        {% if result['genetic_id'] %}{{ result['genetic_id'] }}{% endif %}
+    </td>
+
+    <td>
+        {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
+    </td>
+
+    <td>
+    {% if result['path_id'] != "-" %}
+    <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
+    {% else %}
+        {{ result['path_id'] }}
+    {% endif %}
+    </td>
+
+    <td>
+    {% if result['snowtrack_id'] != "-" %}
+    <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
+    {% else %}
+    {{ result['snowtrack_id'] }}
+    {% endif %}
+    </td>
+
+    <td>{{ result['date'] }}</td>
+    <td>{{ result['sampling_season'] }}</td>
+    <td>{{ result['sampling_type'] }}</td>
+
+
+    <td>{{ result['localita'] }}</td>
+    <td>{{ result['comune'] }}</td>
+    <td>{{ result['provincia'] }}</td>
+
+    <td>{{ result['deposition'] }}</td>
+    <td>{{ result['matrix'] }}</td>
+    <td>{{ result['collected_scat'] }}</td>
+    <td>
+        {% if result['sample_genetic'] %}{{ result['sample_genetic'] }}{% endif %}
+    </td>
+
+    <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
+
+    <td>{{ result['rilevatore_ente'] }}</td>
+    <td>{{ result['scalp_category'] }}</td>
+
+
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No scats found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
+
+

@@ -1,0 +1,59 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/paths_list" class="btn btn-primary">Paths</a>
+
+<br>
+<br>
+
+<h2>path ID: {{ results['transect_id'] }} {{ results['date'] }}</h2>
+
+<a href="/edit_path/{{ results['transect_id'] }} {{ results['date'] }}" class="btn btn-danger">Edit</a>
+
+<br><br>
+<table class="table table-striped">
+
+<tr><td>Path ID</td><td>{{ results['transect_id'] }} {{ results["date"] }}</td></tr>
+<tr><td>Transect ID</td><td><a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a></td></tr>
+<tr><td>Date</td><td>{{ results["date"] }}</td></tr>
+<tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
+
+<tr><td>Completeness</td><td>
+{% if results["completeness"] %}
+    {{ results["completeness"] }} %
+{% else %}
+
+{% endif %}
+</td></tr>
+<tr><td>Operatore</td><td>{{ results["operatore"] }}</td></tr>
+<tr><td>Note</td><td>{{ results["note"] }}</td></tr>
+
+
+
+<tr><td>Numero di segni trovati</td><td>{{ n_tracks }}</td></tr>
+<tr><td>Numero di campioni</td><td>{{ n_samples }}</td></tr>
+
+
+</table>
+
+
+
+</div>
+</main>
+
+
+
+
+
+
+

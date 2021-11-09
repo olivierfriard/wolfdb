@@ -1,0 +1,54 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/new_transect" class="btn btn-primary">New transect</a>
+
+<br>
+
+
+{% if results %}
+<h2>List of transects</h2>
+<table class="table table-striped">
+<tr>
+<th>Transect ID</th>
+<th>Sector</th>
+<th>Località</th>
+<th>Provincia</th>
+<th>Regione</th>
+
+</tr>
+{% for result in results %}
+<tr>
+
+    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
+    <td>{{ result['sector'] }}</td>
+    <td>{{ result['localita'] }}</td>
+    <td>{{ result['provincia'] }}</td>
+    <td>{{ result['regione'] }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No transect found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+

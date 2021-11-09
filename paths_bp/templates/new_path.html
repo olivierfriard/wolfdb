@@ -1,0 +1,101 @@
+{% include "header.html" %}
+<main class="flex-shrink-0">
+<div class="container">
+
+    <h1>WolfDB</h1>
+    <hr>
+
+    <a href="/" class="btn btn-primary">Home</a>&nbsp;
+    <a href="/paths_list" class="btn btn-primary">Paths</a>
+    
+
+    <br><br>
+
+<h2>{{ title }}</h2>
+<hr>
+
+
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+      {% for message in messages %}
+         {{ message }}
+      {% endfor %}
+   {% endif %}
+{% endwith %}
+
+
+<form method="POST" action="{{ action }}">
+
+
+    <div class="mb-3">
+        <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}
+        </div><!-- col --><div class="col-8">
+        {{ form.transect_id(class="form-control") }}
+        {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+
+        </div></div>
+    </div>
+
+
+
+    <div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.date(size=30, class="form-control",  value=default_values["date"]) }}
+    {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+    <span class="form-text">format must be YYYY-MM-DD</span>
+
+    </div></div>
+</div>
+
+<!--
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }}
+    </div><div class="col-8">
+    {{ form.sampling_season(size=16, class="form-control", value=default_values["sampling_season"]) }}
+    {% for message in form.sampling_season.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+</div></div>
+</div>
+-->
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.completeness.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.completeness(size=16, class="form-control", value=default_values["completeness"]) }}
+    {% for message in form.completeness.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+</div></div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.operatore.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.operatore(size=16, class="form-control", value=default_values["operatore"]) }}
+    {% for message in form.operatore.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.note.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.note(size=20, class="form-control", value=default_values["note"]) }}
+    {% for message in form.note.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+<button type="submit" class="btn btn-primary" >Submit</button>
+</form>
+
+
+
+
+
+</div>
+
+</main>

@@ -1,0 +1,162 @@
+{% include "header.html" %}
+<main class="flex-shrink-0">
+<div class="container">
+
+    <h1>WolfDB</h1>
+    <hr>
+
+    <a href="/" class="btn btn-primary">Home</a>&nbsp;
+    <a href="/snowtracks_list" class="btn btn-primary">Snow tracks</a>
+
+
+    <br><br>
+
+
+
+<h2>{{ title }}</h2>
+<hr>
+
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+      {% for message in messages %}
+         {{ message }}
+      {% endfor %}
+   {% endif %}
+{% endwith %}
+
+
+<form method="POST" action="{{ action }}">
+
+
+    <div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.snowtrack_id(size=30, class="form-control",  value=default_values["snowtrack_id"]) }}
+    {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+    </div></div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
+    </div><div class="col-8">
+    {{ form.path_id(class="form-control") }}
+    {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.date(size=16, class="form-control", value=default_values["date"]) }}
+    {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+    <span class="form-text">Format YYYY-MM-DD (<a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a>)</span>
+
+</div></div>
+</div>
+
+
+
+
+<div class="mb-3">
+<div class="row g-3 align-items-top">
+
+    <div class="col-2">{{ form.comune.label }}</div>
+    <div class="col-2">
+        {{ form.comune(size=16, class="form-control", value=default_values["comune"]) }}
+        {% for message in form.comune.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div>
+
+
+    <div class="col-1">{{ form.provincia.label }}</div>
+    <div class="col-1">
+        {{ form.provincia(size=16, class="form-control", value=default_values["provincia"]) }}
+        {% for message in form.provincia.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div>
+
+
+    <div class="col-1">{{ form.regione.label }}</div>
+    <div class="col-3">
+        {{ form.regione(size=16, class="form-control", value=default_values["regione"]) }}
+        {% for message in form.regione.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div>
+
+</div></div>
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top">
+<div class="col-2">{{ form.rilevatore.label }}</div>
+<div class="col-8">
+    {{ form.rilevatore(size=16, class="form-control", value=default_values["rilevatore"]) }}
+    {% for message in form.rilevatore.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div>
+</div></div>
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top">
+<div class="col-2">{{ form.scalp_category.label }}</div>
+<div class="col-8">
+    {{ form.scalp_category(size=16, class="form-control", value=default_values["scalp_category"]) }}
+    {% for message in form.scalp_category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div>
+</div></div>
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top">
+<div class="col-2">{{ form.systematic_sampling.label }}</div>
+<div class="col-8">
+    {{ form.systematic_sampling(class="form-control", value=default_values["systematic_sampling"]) }}
+    {% for message in form.systematic_sampling.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div>
+</div></div>
+
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.giorni_dopo_nevicata.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.giorni_dopo_nevicata(size=16, class="form-control", value=default_values["giorni_dopo_nevicata"]) }}
+    {% for message in form.giorni_dopo_nevicata.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+
+<div class="mb-3">
+<div class="row g-3 align-items-top">
+
+    <div class="col-2">{{ form.n_minimo_individui.label }}</div>
+    <div class="col-3">
+    {{ form.n_minimo_individui(size=16, class="form-control", value=default_values["n_minimo_individui"]) }}
+    {% for message in form.n_minimo_individui.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div>
+
+
+</div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.track_format.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.track_format(class="form-control",  value=default_values["track_format"]) }}
+    {% for message in form.track_format.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+
+
+<button type="submit" class="btn btn-primary" >Submit</button>
+</form>
+
+
+
+
+
+</div>
+
+</main>
