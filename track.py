@@ -45,6 +45,7 @@ class Track(Form):
 
 
     snowtrack_id = StringField("Snow-tracking ID", validators=[Required(),])
+    path_id = SelectField("Path ID")
     date = StringField("Date", validators=[Required(), iso_date_validator])
     sampling_season = StringField("Sampling season", [])
 
@@ -55,7 +56,6 @@ class Track(Form):
     rilevatore = StringField("Rilevatore", [])
     scalp_category = StringField("SCALP category", [])
     systematic_sampling = SelectField("systematic_sampling", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
-    transect_id = SelectField("Transect ID")
 
     giorni_dopo_nevicata = StringField("Numero di giorni dopo nevicata", [])
     n_minimo_individui = StringField("numero minimo di individui", [])

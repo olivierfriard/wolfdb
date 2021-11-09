@@ -2,7 +2,16 @@
 <main class="flex-shrink-0">
 <div class="container">
 
-<h1>{{ title }}</h1>
+
+    <h1>WolfDB</h1>
+    <hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/scats_list" class="btn btn-primary">Scats</a>&nbsp;
+
+<br><br>
+
+<h2>{{ title }}</h2>
 <hr>
 
 {% with messages = get_flashed_messages() %}
@@ -12,6 +21,7 @@
       {% endfor %}
    {% endif %}
 {% endwith %}
+
 
 
 <form method="POST" action="{{ action }}"">

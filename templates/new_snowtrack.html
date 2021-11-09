@@ -2,7 +2,18 @@
 <main class="flex-shrink-0">
 <div class="container">
 
-<h1>{{ title }}</h1>
+    <h1>WolfDB</h1>
+    <hr>
+
+    <a href="/" class="btn btn-primary">Home</a>&nbsp;
+    <a href="/snowtracks_list" class="btn btn-primary">Snow tracks</a>
+    
+
+    <br><br>
+
+
+
+<h2>{{ title }}</h2>
 <hr>
 
 {% with messages = get_flashed_messages() %}
@@ -25,7 +36,16 @@
     
     </div></div>
 </div>
-    
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }} 
+    </div><div class="col-8">
+    {{ form.path_id(class="form-control") }}
+    {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
 
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }} 
@@ -103,15 +123,6 @@
 </div>
 </div></div>
 
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }} 
-    </div><!-- col --><div class="col-8">
-    {{ form.transect_id(class="form-control") }}
-    {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
 
 
 <div class="mb-3">
