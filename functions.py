@@ -1,4 +1,13 @@
+"""
+WolfDB web service
+(c) Olivier Friard
 
+functions module
+
+"""
+
+
+from flask import Flask, request
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -36,9 +45,12 @@ def all_snow_tracks_id():
 
 
 def sampling_season(date):
-    month = int(request.form['date'][5:6+1])
-    year = int(request.form['date'][0:3+1])
-    if 5 <= month <= 12:
-        return f"{year}-{year + 1}"
-    if 1 <= month <= 4:
-        return f"{year - 1}-{year}"
+    try:
+        month = int(request.form['date'][5:6+1])
+        year = int(request.form['date'][0:3+1])
+        if 5 <= month <= 12:
+            return f"{year}-{year + 1}"
+        if 1 <= month <= 4:
+            return f"{year - 1}-{year}"
+    except Exception:
+        return "Error"

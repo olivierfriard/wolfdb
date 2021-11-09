@@ -91,7 +91,7 @@ def new_snowtrack():
                             request.form["date"],
                             fn.sampling_season(request.form["date"]),
                             request.form["comune"],
-                            request.form["provincia"],
+                            request.form["provincia"].upper(),
                             request.form["regione"],
                             request.form["rilevatore"],
                             request.form["scalp_category"],
