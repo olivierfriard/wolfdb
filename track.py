@@ -55,7 +55,7 @@ class Track(Form):
 
     rilevatore = StringField("Rilevatore", [])
     scalp_category = StringField("SCALP category", [])
-    systematic_sampling = SelectField("systematic_sampling", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
+    systematic_sampling = SelectField("Systematic sampling", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
 
     giorni_dopo_nevicata = StringField("Numero di giorni dopo nevicata", [])
     n_minimo_individui = StringField("numero minimo di individui", [])

@@ -241,14 +241,15 @@ def edit_scat(scat_id):
                     [scat_id])
         default_values = cursor.fetchone()
 
-        form = Scat(transect_id=default_values["transect_id"],
+        form = Scat(path_id=default_values["path_id"],
                     snowtrack_id=default_values["snowtrack_id"],
                     sampling_type=default_values["sampling_type"],
                     deposition=default_values["deposition"],
                     matrix=default_values["matrix"],
                     collected_scat=default_values["collected_scat"])
-        # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+
+        # get id of all paths
+        form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
 
@@ -263,8 +264,8 @@ def edit_scat(scat_id):
 
         form = Scat(request.form)
 
-        # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in all_transect_id()]
+        # get id of all paths
+        form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
 
         # get id of all snow tracks
         form.snowtrack_id.choices = [("-", "-")] + [(x, x) for x in all_snow_tracks_id()]
@@ -278,7 +279,7 @@ def edit_scat(scat_id):
                    "                date = %s,"
                    "                sampling_season = %s,"
                    "                sampling_type = %s,"
-                   "                transect_id = %s, "
+                   "                path_id = %s, "
                    "                snowtrack_id = %s, "
                    "                localita = %s, "
                    "                comune = %s, "
@@ -295,9 +296,9 @@ def edit_scat(scat_id):
                            [
                             request.form["scat_id"],
                             request.form["date"],
-                            request.form["sampling_season"],
+                            sampling_season(request.form["date"]),
                             request.form["sampling_type"],
-                            request.form["transect_id"],
+                            request.form["path_id"],
                             request.form["snowtrack_id"],
                             request.form["localita"], request.form["comune"], request.form["provincia"],
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"],
@@ -574,7 +575,7 @@ def edit_path(id):
     if request.method == "GET":
         connection = get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM paths WHERE id = %s",
+        cursor.execute("SELECT * FROM paths WHERE concat(transect_id, ' ', date) = %s",
                     [id])
         default_values = cursor.fetchone()
 
@@ -609,7 +610,7 @@ def edit_path(id):
                    #"numero_campioni=%s, "
                    "operatore=%s, "
                    "note=%s "
-                   "WHERE id = %s")
+                   "WHERE concat(transect_id, ' ', date) = %s")
 
             cursor.execute(sql,
                            [
@@ -687,7 +688,7 @@ def new_snowtrack():
     if request.method == "POST":
         form = Track(request.form)
 
-        # get id of all transects
+        # get id of all path
         form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
 
         if form.validate():
@@ -703,7 +704,7 @@ def new_snowtrack():
                             request.form["snowtrack_id"],
                             request.form["path_id"],
                             request.form["date"],
-                            request.form["sampling_season"],
+                            sampling_season(request.form["date"]),
                             request.form["comune"],
                             request.form["provincia"],
                             request.form["regione"],
@@ -717,7 +718,7 @@ def new_snowtrack():
                            )
             connection.commit()
 
-            return 'New track inserted<br><a href="/">Home</a>'
+            return redirect("/snowtracks_list")
         else:
             # default values
             default_values = {}
@@ -745,7 +746,7 @@ def edit_snowtrack(snowtrack_id):
         default_values = cursor.fetchone()
 
         form = Track(path_id=default_values["path_id"],)
-        # get id of all transects
+        # get id of all paths
         form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
 
         return render_template("new_track.html",
@@ -786,7 +787,7 @@ def edit_snowtrack(snowtrack_id):
                             request.form["snowtrack_id"],
                             request.form["path_id"],
                             request.form["date"],
-                            request.form["sampling_season"],
+                            sampling_season(request.form["date"]),
                             request.form["comune"],
                             request.form["provincia"],
                             request.form["regione"],
