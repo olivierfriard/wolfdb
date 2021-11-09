@@ -33,15 +33,7 @@ class Track(Form):
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
             return
         except ValueError:
-            try:  # YYYY-MM
-                datetime.datetime.strptime(field.data, '%Y-%m')
-                return
-            except ValueError:
-                try:  # YYYY-MM-DD
-                    datetime.datetime.strptime(field.data, '%Y')
-                    return
-                except ValueError:
-                    raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid (YYYY or YYYY-MM or YYY-MM-DD)</div>'))
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Use the YYY-MM-DD fomat</div>'))
 
 
     snowtrack_id = StringField("Snow-tracking ID", validators=[Required(),])
