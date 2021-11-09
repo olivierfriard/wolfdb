@@ -749,7 +749,7 @@ def edit_snowtrack(snowtrack_id):
         # get id of all paths
         form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
 
-        return render_template("new_track.html",
+        return render_template("new_snowtrack.html",
                             title="Edit track",
                             action=f"/edit_snowtrack/{snowtrack_id}",
                             form=form,
@@ -810,7 +810,7 @@ def edit_snowtrack(snowtrack_id):
                 default_values[k] = request.form[k]
 
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
-            return render_template('new_track.html',
+            return render_template('new_snowtrack.html',
                                     title="Edit track",
                                     action=f"/edit_snowtrack/{snowtrack_id}",
                                     form=form,
