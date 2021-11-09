@@ -133,7 +133,7 @@ def edit_snowtrack(snowtrack_id):
         form = Track(path_id=default_values["path_id"],
                      systematic_sampling=default_values["systematic_sampling"])
         # get id of all paths
-        form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
+        form.path_id.choices = [("-", "-")] + [(x, x) for x in fn.all_path_id()]
 
         return render_template("new_snowtrack.html",
                             title="Edit track",
@@ -146,11 +146,11 @@ def edit_snowtrack(snowtrack_id):
         form = Track(request.form)
 
         # get id of all transects
-        form.path_id.choices = [("-", "-")] + [(x, x) for x in all_path_id()]
+        form.path_id.choices = [("-", "-")] + [(x, x) for x in fn.all_path_id()]
 
         if form.validate():
 
-            connection = get_connection()
+            connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("UPDATE snow_tracks SET "
                         "snowtrack_id = %s,"
@@ -173,7 +173,7 @@ def edit_snowtrack(snowtrack_id):
                             request.form["snowtrack_id"],
                             request.form["path_id"],
                             request.form["date"],
-                            sampling_season(request.form["date"]),
+                            fn.sampling_season(request.form["date"]),
                             request.form["comune"],
                             request.form["provincia"],
                             request.form["regione"],
