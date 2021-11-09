@@ -205,3 +205,13 @@ def edit_path(id):
                                     action=f"/edit_path/{id}",
                                     form=form,
                                     default_values=default_values)
+
+
+@app.route("/del_path/<id>")
+def del_path(id):
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("DELETE FROM paths WHERE id = %s",
+                   [id])
+    connection.commit()
+    return redirect("/paths_list")

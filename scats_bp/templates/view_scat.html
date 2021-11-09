@@ -21,7 +21,7 @@
 <h2>scat ID: {{ results["scat_id"] }}</h2>
 
 <a href="/edit_scat/{{ results["scat_id"] }}" class="btn btn-primary">Edit scat</a>
-<a href="/delete_scat/{{ results["scat_id"] }}" class="btn btn-danger">Delete scat</a>
+<a href="/del_scat/{{ results["scat_id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete scat</a>
 
 <!--
 
@@ -75,7 +75,7 @@
 <tr><td>Matrix</td><td>{{ results["matrix"] }}</td></tr>
 <tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
 <tr><td>Sample genetic</td><td>{% if results["sample_genetic"] %}{{ results["sample_genetic"] }}{% endif %}</td></tr>
-<tr><td>Coordonates (UTM 32N WGS84)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
+<tr><td>Coordonates (UTM 32N WGS84)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }} Zone: {{ results["coord_zone"] }}</td></tr>
 <tr><td>rilevatore_ente</td><td>{{ results["rilevatore_ente"] }}</td></tr>
 <tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
 

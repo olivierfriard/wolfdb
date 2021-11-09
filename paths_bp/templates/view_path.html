@@ -18,7 +18,8 @@
 
 <h2>path ID: {{ results['transect_id'] }} {{ results['date'] }}</h2>
 
-<a href="/edit_path/{{ results['transect_id'] }} {{ results['date'] }}" class="btn btn-danger">Edit</a>
+<a href="/edit_path/{{ results['transect_id'] }} {{ results['date'] }}" class="btn btn-primary">Edit</a>
+<a href="/del_path/{{ results["id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete path</a>
 
 <br><br>
 <table class="table table-striped">

@@ -54,7 +54,9 @@ class Scat(Form):
     matrix = SelectField("Matrix", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
     collected_scat = SelectField("Collected scat", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
     sample_genetic = SelectField("Sample genetic", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
-    coord_east = StringField("Coordinate East (UTM 32N WGS84)", validators=[integer_validator,])
-    coord_north  = StringField("Coordinate North (UTM 32N WGS84)", validators=[integer_validator,])
+    coord_east = StringField("Coordinate East", validators=[integer_validator,])
+    coord_north  = StringField("Coordinate North", validators=[integer_validator,])
+    coord_zone = StringField("Zone", validators=[], default="32N")
+
     rilevatore_ente = StringField("Rilevatore / Ente", [])
     scalp_category = StringField("SCALP category", [])

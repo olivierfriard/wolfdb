@@ -34,7 +34,7 @@
 <th>Matrix</th>
 <th>Collected scat</th>
 <th>Sample genetic</th>
-<th>Coord</th>
+<th>UTM Coordinates</th>
 <th>rilevatore_ente</th>
 <th>scalp_category</th>
 
@@ -85,7 +85,7 @@
         {% if result['sample_genetic'] %}{{ result['sample_genetic'] }}{% endif %}
     </td>
 
-    <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
+    <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}  {{ result['coord_zone'] }}</td>
 
     <td>{{ result['rilevatore_ente'] }}</td>
     <td>{{ result['scalp_category'] }}</td>

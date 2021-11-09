@@ -18,7 +18,8 @@
 
 <h2>Snow-tracking ID: {{ results["snowtrack_id"] }}</h2>
 
-<a href="/edit_snowtrack/{{results["snowtrack_id"] }}" class="btn btn-danger">Edit</a>
+<a href="/edit_snowtrack/{{results["snowtrack_id"] }}" class="btn btn-primary">Edit</a>
+<a href="/del_snowtrack/{{ results["snowtrack_id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete snow track</a>
 
 <table class="table table-striped">
 

@@ -145,3 +145,20 @@ def edit_transect(transect_id):
         else:
             return "Transect form NOT validated<br><a href="/">Home</a>"
 
+
+@app.route("/del_transect/<transect_id>")
+def del_scat(transect_id):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = %s", [transect_id])
+    result = cursor.fetchone()
+    if result["n_paths"] > 0:
+        return "Some paths are based on this transect. Please remove them before"
+
+    cursor.execute("DELETE FROM transect WHERE transect_id = %s",
+                   [transect_id])
+    connection.commit()
+    return redirect("/transects_list")

@@ -201,3 +201,14 @@ def edit_snowtrack(snowtrack_id):
                                     action=f"/edit_snowtrack/{snowtrack_id}",
                                     form=form,
                                     default_values=default_values)
+
+
+
+@app.route("/del_snowtrack/<snowtrack_id>")
+def del_snowtrack(snowtrack_id):
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("DELETE FROM snow_tracks WHERE snowtrack_id = %s",
+                   [snowtrack_id])
+    connection.commit()
+    return redirect("/snowtracks_list")

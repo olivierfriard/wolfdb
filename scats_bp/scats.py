@@ -106,7 +106,7 @@ def new_scat():
                                title="New scat",
                                action=f"/new_scat",
                                form=form,
-                               default_values={})
+                               default_values={"coord_zone": "32N"})
 
     if request.method == "POST":
         form = Scat(request.form)
@@ -254,3 +254,13 @@ def edit_scat(scat_id):
                                    action=f"/edit_scat/{scat_id}",
                                    form=form,
                                    default_values=default_values)
+
+
+@app.route("/del_scat/<scat_id>")
+def del_scat(scat_id):
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("DELETE FROM scat WHERE scat_id = %s",
+                   [scat_id])
+    connection.commit()
+    return redirect("/scats_list")
