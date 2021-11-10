@@ -10,15 +10,15 @@
 <hr>
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
-<!--<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;-->
-<a href="/new_scat" class="btn btn-primary">New scat</a>&nbsp;
+
+<br>
 <br>
 
-
 {% if results %}
-<h2>List of scats</h2>
+<h2>List of WA codes</h2>
 <table class="table table-striped">
 <tr>
+<th></th>
 <th>Scat ID</th>
 <th>Date</th>
 <th>WA code</th>
@@ -29,17 +29,21 @@
 <th>scalp_category</th>
 <th>Sample genetic</th>
 
-
 </tr>
 {% for result in results %}
-<tr>
 
-    <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
+<tr>
+<td>
+    <a href="/add_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Add genetic data</a>&nbsp;
+</td>
+
+<td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
 
     <td>{{ result['date'] }}</td>
 
     <td>
-        {% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}
+        <!--<a href="/view_wa_code/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>-->
+        {{ result['wa_code'] }}
     </td>
 
     <td>
