@@ -7,7 +7,7 @@
 
     <a href="/" class="btn btn-primary">Home</a>&nbsp;
     <a href="/paths_list" class="btn btn-primary">Paths</a>
-    
+
 
     <br><br>
 
@@ -50,16 +50,6 @@
     </div></div>
 </div>
 
-<!--
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_season.label }}
-    </div><div class="col-8">
-    {{ form.sampling_season(size=16, class="form-control", value=default_values["sampling_season"]) }}
-    {% for message in form.sampling_season.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-
-</div></div>
-</div>
--->
 
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.completeness.label }}
@@ -72,10 +62,19 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.operatore.label }}
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.observer.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.operatore(size=16, class="form-control", value=default_values["operatore"]) }}
-    {% for message in form.operatore.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.observer(size=16, class="form-control", value=default_values["observer"]) }}
+    {% for message in form.observer.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.institution.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.institution(size=16, class="form-control", value=default_values["institution"]) }}
+    {% for message in form.institution.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 

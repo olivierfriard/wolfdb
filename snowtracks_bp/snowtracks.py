@@ -57,12 +57,27 @@ def snowtracks_list():
 @app.route("/new_snowtrack", methods=("GET", "POST"))
 def new_snowtrack():
 
+    def not_valid(msg):
+
+        # default values
+        default_values = {}
+        for k in request.form:
+            default_values[k] = request.form[k]
+
+        flash(Markup(f"<b>{msg}</b>"))
+        return render_template('new_snowtrack.html',
+                                title="New snow track",
+                                action="/new_snowtrack",
+
+                                form=form,
+                                default_values=default_values)
+
 
     if request.method == "GET":
         form = Track()
 
         # get id of all transects
-        form.path_id.choices = [("-", "-")] + [(x, x) for x in fn.all_path_id()]
+        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
         return render_template('new_snowtrack.html',
                                 title="New snow track",
                                 action="/new_snowtrack",
@@ -73,55 +88,80 @@ def new_snowtrack():
     if request.method == "POST":
         form = Track(request.form)
 
-        # get id of all path
-        form.path_id.choices = [("-", "-")] + [(x, x) for x in fn.all_path_id()]
+        # get id of all paths
+        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
         if form.validate():
 
+            # date
+            try:
+                year = int(request.form['snowtrack_id'][1:2+1]) + 2000
+                month = int(request.form['snowtrack_id'][3:4+1])
+                day = int(request.form['snowtrack_id'][5:6+1])
+                date = f"{year}-{month}-{day}"
+            except Exception:
+                return not_valid("The snowtrack_id value is not correct")
+
+            # region
+            track_region = fn.get_region(request.form["province"])
+
+
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            sql = ("INSERT INTO snow_tracks (snowtrack_id, path_id, date, sampling_season, comune, "
-                                             "provincia, regione, rilevatore, scalp_category, "
-                                             "systematic_sampling, giorni_dopo_nevicata, n_minimo_individui, track_format) "
-                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+            sql = ("INSERT INTO snow_tracks (snowtrack_id, path_id, date, sampling_season, "
+                                             "place, municipality, province, region,"
+                                             "observer, institution, scalp_category, "
+                                             "sampling_type, nb_days_after_snowing, min_number_subjects,"
+                                             "track_format, note)"
+                   "VALUES (%s, %s, %s, %s, "
+                           "%s, %s, %s, %s, "
+                           "%s, %s, %s, "
+                           "%s, %s, %s, "
+                           "%s, %s)")
             cursor.execute(sql,
                            [
                             request.form["snowtrack_id"],
                             request.form["path_id"],
-                            request.form["date"],
-                            fn.sampling_season(request.form["date"]),
-                            request.form["comune"],
-                            request.form["provincia"].upper(),
-                            request.form["regione"],
-                            request.form["rilevatore"],
+                            date,
+                            fn.sampling_season(date),
+                            request.form["place"].strip(),
+                            request.form["municipality"].strip(),
+                            request.form["province"].strip().upper(),
+                            track_region,
+                            request.form["observer"],
+                            request.form["institution"],
                             request.form["scalp_category"],
-                            request.form["systematic_sampling"],
-                            request.form["giorni_dopo_nevicata"],
-                            request.form["n_minimo_individui"],
+                            request.form["sampling_type"],
+                            int(request.form["nb_days_after_snowing"]) if request.form["nb_days_after_snowing"] else None,
+                            int(request.form["min_number_subjects"]) if request.form["min_number_subjects"] else None,
                             request.form["track_format"],
+                            request.form["note"]
                             ]
                            )
             connection.commit()
 
             return redirect("/snowtracks_list")
         else:
-            # default values
-            default_values = {}
-            for k in request.form:
-                default_values[k] = request.form[k]
-
-            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
-            return render_template('new_snowtrack.html',
-                                   title="New snow track",
-                                   action="/new_snowtrack",
-
-                                    form=form,
-                                    default_values=default_values)
-
+            return not_valid("Some values are not set or are wrong. Please check and submit again")
 
 
 @app.route("/edit_snowtrack/<snowtrack_id>", methods=("GET", "POST"))
 def edit_snowtrack(snowtrack_id):
+
+    def not_valid(msg):
+
+        # default values
+        default_values = {}
+        for k in request.form:
+            default_values[k] = request.form[k]
+
+        flash(Markup(f"<b>{msg}</b>"))
+        return render_template('new_snowtrack.html',
+                                title="Edit track",
+                                action=f"/edit_snowtrack/{snowtrack_id}",
+                                form=form,
+                                default_values=default_values)
+
 
     if request.method == "GET":
         connection = fn.get_connection()
@@ -131,9 +171,10 @@ def edit_snowtrack(snowtrack_id):
         default_values = cursor.fetchone()
 
         form = Track(path_id=default_values["path_id"],
-                     systematic_sampling=default_values["systematic_sampling"])
+                     sampling_type=default_values["sampling_type"],
+                     scalp_category=default_values["scalp_category"])
         # get id of all paths
-        form.path_id.choices = [("-", "-")] + [(x, x) for x in fn.all_path_id()]
+        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
         return render_template("new_snowtrack.html",
                             title="Edit track",
@@ -145,10 +186,23 @@ def edit_snowtrack(snowtrack_id):
     if request.method == "POST":
         form = Track(request.form)
 
-        # get id of all transects
-        form.path_id.choices = [("-", "-")] + [(x, x) for x in fn.all_path_id()]
+        # get id of all paths
+        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
         if form.validate():
+
+            # date
+            try:
+                year = int(request.form['snowtrack_id'][1:2+1]) + 2000
+                month = int(request.form['snowtrack_id'][3:4+1])
+                day = int(request.form['snowtrack_id'][5:6+1])
+                date = f"{year}-{month}-{day}"
+            except Exception:
+                return not_valid("The snowtrack_id value is not correct")
+
+            # region
+            track_region = fn.get_region(request.form["province"])
+
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -157,32 +211,38 @@ def edit_snowtrack(snowtrack_id):
                         "path_id = %s,"
                         "date = %s,"
                         "sampling_season = %s,"
-                        "comune = %s,"
-                        "provincia = %s,"
-                        "regione = %s,"
-                        "rilevatore = %s,"
+                        "place = %s,"
+                        "municipality = %s,"
+                        "province = %s,"
+                        "region = %s,"
+                        "observer = %s,"
+                        "institution = %s,"
                         "scalp_category = %s,"
-                        "systematic_sampling = %s,"
-                        "giorni_dopo_nevicata = %s,"
-                        "n_minimo_individui = %s,"
-                        "track_format = %s"
+                        "sampling_type = %s,"
+                        "nb_days_after_snowing = %s,"
+                        "min_number_subjects = %s,"
+                        "track_format = %s,"
+                        "note = %s"
                    "WHERE snowtrack_id = %s")
 
             cursor.execute(sql,
                            [
                             request.form["snowtrack_id"],
                             request.form["path_id"],
-                            request.form["date"],
-                            fn.sampling_season(request.form["date"]),
-                            request.form["comune"],
-                            request.form["provincia"],
-                            request.form["regione"],
-                            request.form["rilevatore"],
+                            date,
+                            fn.sampling_season(date),
+                            request.form["place"],
+                            request.form["municipality"],
+                            request.form["province"].strip().upper(),
+                            track_region,
+                            request.form["observer"],
+                            request.form["institution"],
                             request.form["scalp_category"],
-                            request.form["systematic_sampling"],
-                            request.form["giorni_dopo_nevicata"],
-                            request.form["n_minimo_individui"],
+                            request.form["sampling_type"],
+                            request.form["nb_days_after_snowing"],
+                            request.form["min_number_subjects"],
                             request.form["track_format"],
+                            request.form["note"],
                             snowtrack_id
                            ]
                            )
@@ -190,18 +250,7 @@ def edit_snowtrack(snowtrack_id):
 
             return redirect(f"/view_snowtrack/{snowtrack_id}")
         else:
-            # default values
-            default_values = {}
-            for k in request.form:
-                default_values[k] = request.form[k]
-
-            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
-            return render_template('new_snowtrack.html',
-                                    title="Edit track",
-                                    action=f"/edit_snowtrack/{snowtrack_id}",
-                                    form=form,
-                                    default_values=default_values)
-
+            return not_valid("Some values are not set or are wrong. Please check and submit again")
 
 
 @app.route("/del_snowtrack/<snowtrack_id>")

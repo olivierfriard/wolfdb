@@ -26,17 +26,20 @@
 <tr><td>Date</td><td>{{ results["date"] }}</td></tr>
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 
-<tr><td>Comune</td><td>{{ results["comune"] }}</td></tr>
-<tr><td>Provincia</td><td>{{ results["provincia"] }}</td></tr>
-<tr><td>Regione</td><td>{{ results["regione"] }}</td></tr>
-<tr><td>Rilevatore</td><td>{{ results["rilevatore"] }}</td></tr>
-<tr><td>Scalp category</td><td>{{ results["scalp_category"] }}</td></tr>
-<tr><td>Systematic sampling</td><td>{{ results["systematic_sampling"] }}</td></tr>
-<tr><td>Transect ID</td><td><a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a></td></tr>
-<tr><td>Giorni dopo nevicata</td><td>{{ results['giorni_dopo_nevicata'] }}</td></tr>
-<tr><td>Numero minimo di individui</td><td>{{ results['n_minimo_individui'] }}</td></tr>
-<tr><td>Track format</td><td>{{ results['track_format'] }}</td></tr>
+<tr><td>place</td><td>{{ results["place"] }}</td></tr>
+<tr><td>municipality</td><td>{{ results["municipality"] }}</td></tr>
+<tr><td>province</td><td>{{ results["province"] }}</td></tr>
 
+<tr><td>Region</td><td>{{ results["region"] }}</td></tr>
+<tr><td>observer</td><td>{{ results["observer"] }}</td></tr>
+<tr><td>institution</td><td>{{ results["institution"] }}</td></tr>
+<tr><td>Scalp category</td><td>{{ results["scalp_category"] }}</td></tr>
+<tr><td>sampling_type</td><td>{{ results["sampling_type"] }}</td></tr>
+<tr><td>Transect ID</td><td><a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a></td></tr>
+<tr><td>nb_days_after_snowing</td><td>{{ results['nb_days_after_snowing'] }}</td></tr>
+<tr><td>min_number_subjects</td><td>{{ results['min_number_subjects'] }}</td></tr>
+<tr><td>Track format</td><td>{{ results['track_format'] }}</td></tr>
+<tr><td>Notes</td><td>{{ results['note'] }}</td></tr>
 
 </table>
 

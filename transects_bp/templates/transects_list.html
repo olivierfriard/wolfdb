@@ -22,9 +22,10 @@
 <tr>
 <th>Transect ID</th>
 <th>Sector</th>
-<th>Località</th>
-<th>Provincia</th>
-<th>Regione</th>
+<th>place</th>
+<th>municipality</th>
+<th>Province</th>
+<th>Region</th>
 
 </tr>
 {% for result in results %}
@@ -32,9 +33,10 @@
 
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['sector'] }}</td>
-    <td>{{ result['localita'] }}</td>
-    <td>{{ result['provincia'] }}</td>
-    <td>{{ result['regione'] }}</td>
+    <td>{{ result['place'] }}</td>
+    <td>{{ result['municipality'] }}</td>
+    <td>{{ result['province'] }}</td>
+    <td>{{ result['region'] }}</td>
 </tr>
 {% endfor %}
 </table>

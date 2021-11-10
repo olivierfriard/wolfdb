@@ -20,23 +20,26 @@
 <table class="table table-striped">
 <tr>
 <th>Scat ID</th>
-<th>Genetic ID</th>
+<th>Date</th>
+<th>WA code</th>
 <th>Genotype ID</th>
 <th>Path ID</th>
 <th>Snowtrack ID</th>
-<th>Date</th>
 <th>Sampling season</th>
 <th>Sampling type</th>
-<th>Localita</th>
-<th>Comune</th>
-<th>Provincia</th>
+
+<th>place</th>
+<th>municipality</th>
+<th>province</th>
+<th>region</th>
 <th>Deposition</th>
 <th>Matrix</th>
 <th>Collected scat</th>
+<th>scalp_category</th>
 <th>Sample genetic</th>
 <th>UTM Coordinates</th>
-<th>rilevatore_ente</th>
-<th>scalp_category</th>
+<th>Observer</th>
+<th>institution</th>
 
 
 </tr>
@@ -45,8 +48,10 @@
 
     <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
 
+    <td>{{ result['date'] }}</td>
+
     <td>
-        {% if result['genetic_id'] %}{{ result['genetic_id'] }}{% endif %}
+        {% if result['genetic_id'] %}{{ result['wa'] }}{% endif %}
     </td>
 
     <td>
@@ -54,7 +59,7 @@
     </td>
 
     <td>
-    {% if result['path_id'] != "-" %}
+    {% if result['path_id'] != "" %}
     <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
     {% else %}
         {{ result['path_id'] }}
@@ -62,33 +67,35 @@
     </td>
 
     <td>
-    {% if result['snowtrack_id'] != "-" %}
+    {% if result['snowtrack_id'] != "" %}
     <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
     {% else %}
     {{ result['snowtrack_id'] }}
     {% endif %}
     </td>
 
-    <td>{{ result['date'] }}</td>
-    <td>{{ result['sampling_season'] }}</td>
+        <td>{{ result['sampling_season'] }}</td>
     <td>{{ result['sampling_type'] }}</td>
 
 
-    <td>{{ result['localita'] }}</td>
-    <td>{{ result['comune'] }}</td>
-    <td>{{ result['provincia'] }}</td>
+    <td>{{ result['place'] }}</td>
+    <td>{{ result['municipality'] }}</td>
+    <td>{{ result['province'] }}</td>
+    <td>{{ result['region'] }}</td>
 
     <td>{{ result['deposition'] }}</td>
     <td>{{ result['matrix'] }}</td>
     <td>{{ result['collected_scat'] }}</td>
+    <td>{{ result['scalp_category'] }}</td>
     <td>
         {% if result['sample_genetic'] %}{{ result['sample_genetic'] }}{% endif %}
     </td>
 
     <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}  {{ result['coord_zone'] }}</td>
 
-    <td>{{ result['rilevatore_ente'] }}</td>
-    <td>{{ result['scalp_category'] }}</td>
+    <td>{{ result['observer'] }}</td>
+    <td>{{ result['institution'] }}</td>
+
 
 
 </tr>

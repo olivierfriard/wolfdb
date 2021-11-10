@@ -23,9 +23,10 @@
 <table class="table table-striped">
 
 <tr><td>Sector</td><td>{{ transect["sector"] }}</td></tr>
-<tr><td>Localita</td><td>{{ transect["localita"] }}</td></tr>
-<tr><td>Provincia</td><td>{{ transect["provincia"] }}</td></tr>
-<tr><td>Regione</td><td>{{ transect["regione"] }}</td></tr>
+<tr><td>place</td><td>{{ transect["place"] }}</td></tr>
+<tr><td>municipality</td><td>{{ transect["municipality"] }}</td></tr>
+<tr><td>Province</td><td>{{ transect["province"] }}</td></tr>
+<tr><td>Region</td><td>{{ transect["region"] }}</td></tr>
 
 </table>
 
@@ -39,22 +40,22 @@
         <th>Date</th>
         <th>Sampling season</th>
         <th>Completeness</th>
-        <th>Numero segni trovati</th>
-        <th>Numero campioni</th>
-        <th>Operatore</th>
+        <th>Number of tracks</th>
+        <th>Number of samples</th>
+        <th>Observer</th>
+        <th>institution</th>
         <th>Note</th>
         </tr>
 
 {% for path in paths %}
 
 <tr>
-<td><a href="/view_path/{{ transect["transect_id"] }} path["date"] }}">{{ transect["transect_id"]}} {{ path["date"] }}</a></td>
+<td><a href="/view_path/{{ path["path_id"] }}">{{ path["path_id"] }}</a></td>
 <td>{{ path['date'] }}</td>
 <td>{{ path['sampling_season'] }}</td>
 <td>{{ path['completeness'] }}</td>
-<td>{{ path['numero_segni_trovati'] }}</td>
-<td>{{ path['numero_campioni'] }}</td>
-<td>{{ path['operatore'] }}</td>
+<td>{{ path['observer'] }}</td>
+<td>{{ path['institution'] }}</td>
 <td>{{ path['note'] }}</td>
 </tr>
 
@@ -73,15 +74,17 @@ No paths found
         <th>snow-tracking ID</th>
         <th>Date</th>
         <th>Sampling season</th>
-        <th>Comune</th>
-        <th>provincia</th>
+        <th>Place</th>
+        <th>municipality</th>
+        <th>province</th>
         <th>regione</th>
         <th>rilevatore</th>
         <th>scalp category</th>
         <th>systematic sampling</th>
         <th>giorni dopo nevicata</th>
         <th>numero minimo di individui</th>
-        <th>track format</th>
+        <th>Track format</th>
+        <th>Notes</th>
         </tr>
 
 {% for snowtrack in snowtracks %}
@@ -91,15 +94,17 @@ No paths found
     <td><a href="/view_snowtrack/{{ snowtrack['snowtrack_id'] }}">{{ snowtrack['snowtrack_id'] }}</a></td>
     <td>{{ snowtrack['date'] }}</td>
     <td>{{ snowtrack['sampling_season'] }}</td>
-    <td>{{ snowtrack['comune'] }}</td>
-    <td>{{ snowtrack['provincia'] }}</td>
-    <td>{{ snowtrack['regione'] }}</td>
-    <td>{{ snowtrack['rilevatore'] }}</td>
+    <td>{{ snowtrack['place'] }}</td>
+    <td>{{ snowtrack['municipality'] }}</td>
+    <td>{{ snowtrack['province'] }}</td>
+    <td>{{ snowtrack['region'] }}</td>
+    <td>{{ snowtrack['observer'] }}</td>
     <td>{{ snowtrack['scalp_category'] }}</td>
-    <td>{{ snowtrack['systematic_sampling'] }}</td>
-    <td>{{ snowtrack['giorni_dopo_nevicata'] }}</td>
-    <td>{{ snowtrack['n_minimo_individui'] }}</td>
+    <td>{{ snowtrack['sampling_type'] }}</td>
+    <td>{{ snowtrack['nb_days_after_snowing'] }}</td>
+    <td>{{ snowtrack['min_number_subjects'] }}</td>
     <td>{{ snowtrack['track_format'] }}</td>
+    <td>{{ snowtrack['note'] }}</td>
 
 
 </tr>

@@ -7,7 +7,7 @@
 
     <a href="/" class="btn btn-primary">Home</a>&nbsp;
     <a href="/transects_list" class="btn btn-primary">Transects</a>
-    
+
 
     <br><br>
 
@@ -29,17 +29,17 @@
 
 
     <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}
     </div><!-- col --><div class="col-8">
     {{ form.transect_id(size=30, class="form-control",  value=default_values["transect_id"]) }}
     {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    
+
     </div></div>
 </div>
-    
+
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sector.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sector.label }}
     </div><!-- col --><div class="col-8">
     {{ form.sector(size=16, class="form-control", value=default_values["sector"]) }}
     {% for message in form.sector.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
@@ -49,31 +49,32 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.localita.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.place.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.localita(size=16, class="form-control", value=default_values["localita"]) }}
-    {% for message in form.localita.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.place(size=16, class="form-control", value=default_values["place"]) }}
+    {% for message in form.place.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
 </div></div>
 </div>
 
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.municipality.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
+    {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.provincia.label }} 
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.province.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.provincia(class="form-control", value=default_values["provincia"]) }}
-    {% for message in form.provincia.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.province(class="form-control", value=default_values["province"]) }}
+    {% for message in form.province.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
 
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.regione.label }} 
-    </div><!-- col --><div class="col-8">
-    {{ form.regione(size=16, class="form-control", value=default_values["regione"]) }}
-    {% for message in form.regione.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
+
 
 
 

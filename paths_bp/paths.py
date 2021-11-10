@@ -28,24 +28,20 @@ def paths():
     return render_template("paths.html")
 
 
-@app.route("/view_path/<id>")
-def view_path(id):
+@app.route("/view_path/<path_id>")
+def view_path(path_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM paths WHERE concat(transect_id, ' ', date) = %s",
-                   [id])
-
+    cursor.execute("SELECT * FROM paths WHERE path_id = %s",
+                   [path_id])
     results = cursor.fetchone()
 
     # n samples
-    path_id = f'{results["transect_id"]} {results["date"]}'
-    cursor.execute("SELECT COUNT(*) AS n_samples FROM scat WHERE path_id = %s ", [path_id])
+    cursor.execute("SELECT COUNT(*) AS n_samples FROM scats WHERE path_id = %s ", [path_id])
     n_samples = cursor.fetchone()["n_samples"]
 
     # n tracks
-    path_id = f'{results["transect_id"]} {results["date"]}'
-    cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE path_id = %s",
-    [f'{results["id"]} {results["date"]}'])
+    cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE path_id = %s",  [path_id])
     n_tracks = cursor.fetchone()["n_tracks"]
 
 
@@ -62,7 +58,7 @@ def paths_list():
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cursor.execute(("SELECT *, "
-                    "(SELECT COUNT(*) FROM scat WHERE path_id = CONCAT(paths.transect_id, ' ', paths.date)) AS n_samples, "
+                    "(SELECT COUNT(*) FROM scats WHERE path_id = CONCAT(paths.transect_id, ' ', paths.date)) AS n_samples, "
                     "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
                    "FROM paths ORDER BY date DESC"
                    ))
@@ -94,25 +90,26 @@ def new_path():
         form = Path(request.form)
 
         # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in fn.all_transect_id()]
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
 
+            # path_id
+            path_id = f'{request.form["transect_id"]}_{request.form["date"][2:].replace("-", "")}'
+
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            sql = ("INSERT INTO paths (transect_id, date, sampling_season, completeness, "
-                   #"numero_segni_trovati, numero_campioni, "
-                   "operatore, note) "
-                   "VALUES (%s, %s, %s, %s, %s, %s)")
+            sql = ("INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
+
+                   "observer, institution, note) "
+                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
-                           [
+                           [path_id,
                             request.form["transect_id"],
                             request.form["date"],
                             fn.sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
-                            #request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
-                            #request.form["numero_campioni"] if request.form["numero_campioni"] else None,
-                            request.form["operatore"], request.form["note"]
+                            request.form["observer"], request.form["institution"], request.form["note"]
                            ]
                            )
             connection.commit()
@@ -135,24 +132,23 @@ def new_path():
 
 
 
-@app.route("/edit_path/<id>", methods=("GET", "POST"))
-def edit_path(id):
+@app.route("/edit_path/<path_id>", methods=("GET", "POST"))
+def edit_path(path_id):
 
     if request.method == "GET":
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM paths WHERE concat(transect_id, ' ', date) = %s",
-                    [id])
+        cursor.execute("SELECT * FROM paths WHERE path_id = %s",
+                    [path_id])
         default_values = cursor.fetchone()
 
         form = Path(transect_id=default_values["transect_id"],)
         # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in fn.all_transect_id()]
-
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         return render_template("new_path.html",
                             title="Edit path",
-                            action=f"/edit_path/{id}",
+                            action=f"/edit_path/{path_id}",
                             form=form,
                             default_values=default_values)
 
@@ -161,38 +157,40 @@ def edit_path(id):
         form = Path(request.form)
 
         # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in fn.all_transect_id()]
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
+
+            # path_id
+            new_path_id = f'{request.form["transect_id"]}_{request.form["date"][2:].replace("-", "")}'
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("UPDATE paths SET "
+                   "path_id = %s,"
                    "transect_id=%s, "
                    "date=%s, "
                    "sampling_season=%s, "
                    "completeness=%s, "
-                   #"numero_segni_trovati=%s, "
-                   #"numero_campioni=%s, "
-                   "operatore=%s, "
+                   "observer=%s, "
+                   "institution=%s, "
                    "note=%s "
-                   "WHERE concat(transect_id, ' ', date) = %s")
+                   "WHERE path_id = %s")
 
             cursor.execute(sql,
-                           [
+                           [new_path_id,
                             request.form["transect_id"],
                             request.form["date"],
                             fn.sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
-                            #request.form["numero_segni_trovati"] if request.form["numero_segni_trovati"] else None,
-                            #request.form["numero_campioni"] if request.form["numero_campioni"] else None,
-                            request.form["operatore"], request.form["note"],
-                            id
+                            request.form["observer"], request.form["institution"],
+                            request.form["note"],
+                            path_id
                            ]
                            )
             connection.commit()
 
-            return redirect(f"/view_path/{id}")
+            return redirect(f"/view_path/{new_path_id}")
         else:
             # default values
             default_values = {}
@@ -202,16 +200,16 @@ def edit_path(id):
             flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
             return render_template("new_path.html",
                                     title="Edit path",
-                                    action=f"/edit_path/{id}",
+                                    action=f"/edit_path/{path_id}",
                                     form=form,
                                     default_values=default_values)
 
 
-@app.route("/del_path/<id>")
-def del_path(id):
+@app.route("/del_path/<path_id>")
+def del_path(path_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("DELETE FROM paths WHERE id = %s",
-                   [id])
+    cursor.execute("DELETE FROM paths WHERE path_id = %s",
+                   [path_id])
     connection.commit()
     return redirect("/paths_list")

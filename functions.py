@@ -12,6 +12,7 @@ import psycopg2
 import psycopg2.extras
 from config import config
 
+from italian_regions import regions
 
 params = config()
 
@@ -27,7 +28,7 @@ def get_connection():
 def all_transect_id():
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT transect_id FROM transect ORDER BY transect_id")
+    cursor.execute("SELECT transect_id FROM transects ORDER BY transect_id")
     return [x[0].strip() for x in cursor.fetchall()]
 
 def all_path_id():
@@ -46,11 +47,36 @@ def all_snow_tracks_id():
 
 def sampling_season(date):
     try:
-        month = int(request.form['date'][5:6+1])
-        year = int(request.form['date'][0:3+1])
+        month = int(date[5:6+1])
+        year = int(date[0:3+1])
         if 5 <= month <= 12:
             return f"{year}-{year + 1}"
         if 1 <= month <= 4:
             return f"{year - 1}-{year}"
     except Exception:
         return "Error"
+
+
+def get_region(province):
+    if province:
+        for region in regions:
+            if province.upper() in region["province"]:
+                scat_region = region["nome"]
+                break
+    else:
+        scat_region = ""
+
+    return scat_region
+
+
+def get_regions(provinces):
+
+    transect_region = []
+    if provinces:
+        for region in regions:
+            for x in provinces.split(" "):
+                if x.upper() in region["province"]:
+                    transect_region.append(region["nome"])
+
+    return " ".join(list(set(transect_region)))
+

@@ -29,12 +29,13 @@
 <th>Completeness</th>
 <th>Numero segni trovati</th>
 <th>numero campioni</th>
-<th>operatore</th>
+<th>Observer</th>
+<th>Institution</th>
 <th>note</th>
 </tr>
 {% for result in results %}
 <tr>
-<td><a href="/view_path/{{ result['transect_id'] }} {{ result['date'] }}">{{ result['transect_id'] }} {{ result['date'] }}</a></td>
+<td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>

@@ -15,6 +15,7 @@ from config import config
 
 from transect import Transect
 import functions as fn
+from italian_regions import regions
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 
@@ -32,7 +33,7 @@ def transects():
 def view_transect(transect_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM transect WHERE transect_id = %s",
+    cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
                    [transect_id])
     transect = cursor.fetchone()
 
@@ -58,7 +59,7 @@ def transects_list():
     # get all transects
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM transect ORDER BY transect_id")
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
 
     results = cursor.fetchall()
 
@@ -66,8 +67,25 @@ def transects_list():
                            results=results)
 
 
+
+
 @app.route("/new_transect", methods=("GET", "POST"))
 def new_transect():
+
+    def not_valid(msg):
+        # default values
+        default_values = {}
+        for k in request.form:
+            default_values[k] = request.form[k]
+
+        flash(Markup(f"<b>{msg}</b>"))
+
+        return render_template("new_transect.html",
+                            title="New transect",
+                            action=f"/new_transect",
+                            form=form,
+                            default_values=default_values)
+
 
     if request.method == "GET":
         form = Transect()
@@ -83,15 +101,21 @@ def new_transect():
 
         if form.validate():
 
+            transect_regions = fn.get_regions(request.form["province"])
+            if request.form["province"] and transect_regions == "":
+                return not_valid("Check the province field!")
+
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("INSERT INTO transect (transect_id, sector, localita, provincia, regione) "
-                   "VALUES (%s, %s, %s, %s, %s)")
+            sql = ("INSERT INTO transects (transect_id, sector, place, municipality, province, region) "
+                   "VALUES (%s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["transect_id"], request.form["sector"],
-                            request.form["localita"], request.form["provincia"], request.form["regione"]
+                            request.form["place"].strip(), request.form["municipality"].strip(),
+                            request.form["province"].strip().upper(),
+                            transect_regions
                            ]
                            )
 
@@ -99,17 +123,32 @@ def new_transect():
 
             return redirect("/transects_list")
         else:
-            return "Transect form NOT validated<br><a href="/">Home</a>"
+            return not_valid("Transect form NOT validated")
 
 
 
 @app.route("/edit_transect/<transect_id>", methods=("GET", "POST"))
 def edit_transect(transect_id):
 
+    def not_valid(msg):
+        # default values
+        default_values = {}
+        for k in request.form:
+            default_values[k] = request.form[k]
+
+        flash(Markup(f"<b>{msg}</b>"))
+
+        return render_template("new_transect.html",
+                            title="Edit transect",
+                            action=f"/edit_transect/{transect_id}",
+                            form=form,
+                            default_values=default_values)
+
+
     if request.method == "GET":
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM transect WHERE transect_id = %s",
+        cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
                     [transect_id])
         default_values = cursor.fetchone()
 
@@ -126,15 +165,21 @@ def edit_transect(transect_id):
         form = Transect(request.form)
         if form.validate():
 
+            transect_regions = fn.get_regions(request.form["province"])
+            if request.form["province"] and transect_regions == "":
+                return not_valid("Check the province field!")
+
+
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("UPDATE transect SET transect_id = %s, sector =%s, localita = %s, provincia = %s, regione = %s "
+            sql = ("UPDATE transects SET transect_id = %s, sector =%s, place = %s, municipality = %s, province = %s, region = %s "
                    "WHERE transect_id = %s")
             cursor.execute(sql,
                            [
-                            request.form["transect_id"], request.form["sector"],
-                            request.form["localita"], request.form["provincia"], request.form["regione"],
+                            request.form["transect_id"].strip(), request.form["sector"],
+                            request.form["place"].strip(), request.form["municipality"].strip(),
+                            request.form["province"].strip().upper(), transect_regions,
                             transect_id
                            ]
                            )
@@ -143,7 +188,7 @@ def edit_transect(transect_id):
 
             return redirect(f"/view_transect/{transect_id}")
         else:
-            return "Transect form NOT validated<br><a href="/">Home</a>"
+            return not_valid("Transect form NOT validated")
 
 
 @app.route("/del_transect/<transect_id>")
@@ -158,7 +203,7 @@ def del_scat(transect_id):
     if result["n_paths"] > 0:
         return "Some paths are based on this transect. Please remove them before"
 
-    cursor.execute("DELETE FROM transect WHERE transect_id = %s",
+    cursor.execute("DELETE FROM transects WHERE transect_id = %s",
                    [transect_id])
     connection.commit()
     return redirect("/transects_list")

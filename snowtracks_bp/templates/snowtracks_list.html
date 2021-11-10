@@ -24,16 +24,18 @@
 <th>Path ID</th>
 <th>Date</th>
 <th>Sampling season</th>
-<th>Comune</th>
-<th>provincia</th>
-<th>regione</th>
-<th>rilevatore</th>
+<th>Place</th>
+<th>municipality</th>
+<th>province</th>
+<th>region</th>
+<th>observer</th>
+<th>institution</th>
 <th>scalp category</th>
-<th>systematic sampling</th>
-<th>giorni dopo nevicata</th>
-<th>numero minimo di individui</th>
+<th>sampling_type</th>
+<th>nb_days_after_snowing</th>
+<th>min_number_subjects</th>
 <th>track format</th>
-
+<th>Notes</th>
 
 </tr>
 {% for result in results %}
@@ -43,17 +45,20 @@
     <td><a href="/view_path/{{ result['transect_id'] }}">{{ result['path_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
-    <td>{{ result['comune'] }}</td>
-    <td>{{ result['provincia'] }}</td>
-    <td>{{ result['regione'] }}</td>
-    <td>{{ result['rilevatore'] }}</td>
+    <td>{{ result['place'] }}</td>
+    <td>{{ result['municipality'] }}</td>
+    <td>{{ result['province'] }}</td>
+    <td>{{ result['region'] }}</td>
+    <td>{{ result['observer'] }}</td>
+    <td>{{ result['institution'] }}</td>
     <td>{{ result['scalp_category'] }}</td>
-    <td>{{ result['systematic_sampling'] }}</td>
+    <td>{{ result['sampling_type'] }}</td>
 
 
-    <td>{{ result['giorni_dopo_nevicata'] }}</td>
-    <td>{{ result['n_minimo_individui'] }}</td>
+    <td>{{ result['nb_days_after_snowing'] }}</td>
+    <td>{{ result['min_number_subjects'] }}</td>
     <td>{{ result['track_format'] }}</td>
+    <td>{{ result['note'] }}</td>
 
 </tr>
 {% endfor %}

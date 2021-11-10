@@ -8,7 +8,7 @@ WolfDB web service
 from flask import Markup
 import datetime
 from wtforms import (Form, StringField,
-                     validators, SelectField)
+                     TextAreaField, SelectField)
 
 from wtforms.validators import Optional, Required, ValidationError
 
@@ -27,7 +27,7 @@ class Track(Form):
 
     def iso_date_validator(form, field):
         """
-        validation for date in ISO8601 format (YYYY, YYYY-MM, YYYY-MM-DD)
+        validation for date in ISO8601 format (YYYY-MM-DD)
         """
         try: # YYYY
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
@@ -38,18 +38,25 @@ class Track(Form):
 
     snowtrack_id = StringField("Snow-tracking ID", validators=[Required(),])
     path_id = SelectField("Path ID")
-    date = StringField("Date", validators=[Required(), iso_date_validator])
-    sampling_season = StringField("Sampling season", [])
+    #date = StringField("Date", validators=[Required(), iso_date_validator])
+    #sampling_season = StringField("Sampling season", [])
 
-    comune = StringField("Comune", [])
-    provincia = StringField("Provincia", [])
-    regione = StringField("Regione", [])
+    place = StringField("Place", [])
+    municipality = StringField("Municipality", [])
+    province = StringField("Province", [])
 
-    rilevatore = StringField("Rilevatore", [])
-    scalp_category = StringField("SCALP category", [])
-    systematic_sampling = SelectField("Systematic sampling", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
+    observer = StringField("Observer", [])
+    institution = StringField("Institution", [])
 
-    giorni_dopo_nevicata = StringField("Numero di giorni dopo nevicata", [])
-    n_minimo_individui = StringField("numero minimo di individui", [])
+    scalp_category = SelectField("SCALP category", choices=[('C1', 'C1'), ('C2', 'C2'), ('C3', 'C3')], default="C2")
+
+    sampling_type = SelectField("Sampling type", choices=[('', ''),
+                                                          ('Opportunistic', 'Opportunistic'),
+                                                          ('Systematic', 'Systematic')],
+                                default="")
+
+    nb_days_after_snowing = StringField("nb of days after snowing", validators=[integer_validator])
+    min_number_subjects = StringField("Minimum number of subjects", validators=[integer_validator])
     track_format = StringField("Track format", [])
 
+    note = TextAreaField("Note", [])

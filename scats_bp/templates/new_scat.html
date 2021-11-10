@@ -1,4 +1,23 @@
 {% include "header.html" %}
+
+
+<script>
+    function sampling_type_changed(selectObject) {
+      if (selectObject.value == "Systematic")
+          {
+          document.getElementById("systematic").style.display = 'block';
+          }
+        else
+        {
+          document.getElementById("systematic").style.display = 'none';
+          }
+
+    }
+    </script>
+
+
+<body onload="sampling_type_changed()">
+
 <main class="flex-shrink-0">
 <div class="container">
 
@@ -13,6 +32,7 @@
 
 <h2>{{ title }}</h2>
 <hr>
+
 
 {% with messages = get_flashed_messages() %}
    {% if messages %}
@@ -37,6 +57,25 @@
 </div>
 
 
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_type.label }}
+    </div><div class="col-8">
+    {{ form.sampling_type(onchange="sampling_type_changed(this)", class="form-control",  value=default_values["sampling_type"]) }}
+    {% for message in form.sampling_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+    </div></div>
+</div>
+
+
+
+
+
+
+
+
+<span id="systematic" style="display: none;">
+
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
     </div><!-- col --><div class="col-8">
@@ -44,7 +83,6 @@
     {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
-
 
 
 <div class="mb-3">
@@ -55,57 +93,30 @@
     </div></div>
 </div>
 
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.date(size=16, class="form-control", value=default_values["date"]) }}
-    {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-
-    <span class="form-text">Format YYYY-MM-DD (<a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a>)</span>
-
-</div></div>
-</div>
-
-
-
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sampling_type.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.sampling_type(class="form-control", value=default_values["sampling_type"]) }}
-    {% for message in form.sampling_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-
-
+</span>
 
 
 <div class="mb-3">
 <div class="row g-3 align-items-top">
 
-    <div class="col-2">{{ form.localita.label }}</div>
+    <div class="col-2">{{ form.place.label }}</div>
     <div class="col-3">
-    {{ form.localita(size=16, class="form-control", value=default_values["localita"]) }}
-    {% for message in form.localita.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.place(size=16, class="form-control", value=default_values["place"]) }}
+    {% for message in form.place.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div>
 
-    <div class="col-1">{{ form.comune.label }}</div>
+    <div class="col-1">{{ form.municipality.label }}</div>
     <div class="col-2">
-        {{ form.comune(size=16, class="form-control", value=default_values["comune"]) }}
-        {% for message in form.comune.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+        {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
+        {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div>
 
 
-    <div class="col-1">{{ form.provincia.label }}</div>
+    <div class="col-1">{{ form.province.label }}</div>
     <div class="col-1">
-        {{ form.provincia(size=16, class="form-control", value=default_values["provincia"]) }}
-        {% for message in form.provincia.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+        {{ form.province(size=16, class="form-control", value=default_values["province"]) }}
+        {% for message in form.province.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div>
-
 </div>
 </div>
 
@@ -134,6 +145,15 @@
     </div><!-- col --><div class="col-8">
     {{ form.collected_scat(class="form-control",  value=default_values["collected_scat"]) }}
     {% for message in form.collected_scat.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scalp_category.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.scalp_category(class="form-control",  value=default_values["scalp_category"]) }}
+    {% for message in form.scalp_category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
@@ -176,21 +196,22 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.rilevatore_ente.label }}
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.observer.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.rilevatore_ente(class="form-control",  value=default_values["rilevatore_ente"]) }}
-    {% for message in form.rilevatore_ente.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.observer(class="form-control",  value=default_values["observer"]) }}
+    {% for message in form.observer.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scalp_category.label }}
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.institution.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.scalp_category(class="form-control",  value=default_values["scalp_category"]) }}
-    {% for message in form.scalp_category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.institution(class="form-control",  value=default_values["institution"]) }}
+    {% for message in form.institution.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
+
 
 
 <button type="submit" class="btn btn-primary" >Submit</button>
@@ -203,3 +224,6 @@
 </div>
 
 </main>
+
+</body>
+</html>
