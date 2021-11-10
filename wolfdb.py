@@ -9,8 +9,6 @@ import psycopg2.extras
 from config import config
 
 
-from track import Track
-
 import functions as fn
 
 # blueprints

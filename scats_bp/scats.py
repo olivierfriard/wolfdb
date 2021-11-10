@@ -304,12 +304,3 @@ def del_scat(scat_id):
     connection.commit()
     return redirect("/scats_list")
 
-
-@app.route("/genetic_samples")
-def genetic_samples():
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM scats WHERE wa_code IS NOT NULL ORDER BY scat_id")
-
-    return render_template("genetic_samples_list.html",
-                           results=cursor.fetchall())
