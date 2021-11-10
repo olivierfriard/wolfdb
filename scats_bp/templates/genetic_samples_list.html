@@ -1,0 +1,81 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<!--<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;-->
+<a href="/new_scat" class="btn btn-primary">New scat</a>&nbsp;
+<br>
+
+
+{% if results %}
+<h2>List of scats</h2>
+<table class="table table-striped">
+<tr>
+<th>Scat ID</th>
+<th>Date</th>
+<th>WA code</th>
+<th>Genotype ID</th>
+<th>Deposition</th>
+<th>Matrix</th>
+<th>Collected scat</th>
+<th>scalp_category</th>
+<th>Sample genetic</th>
+
+
+</tr>
+{% for result in results %}
+<tr>
+
+    <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
+
+    <td>{{ result['date'] }}</td>
+
+    <td>
+        {% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}
+    </td>
+
+    <td>
+        {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
+    </td>
+
+
+    <td>{{ result['deposition'] }}</td>
+    <td>{{ result['matrix'] }}</td>
+    <td>{{ result['collected_scat'] }}</td>
+    <td>{{ result['scalp_category'] }}</td>
+    <td>
+        {% if result['sample_genetic'] %}{{ result['sample_genetic'] }}{% endif %}
+    </td>
+
+
+
+
+</tr>
+{% endfor %}
+</table>
+{% else %}
+
+<h2>No genetic samples found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
+
+
