@@ -142,7 +142,8 @@ def edit_path(path_id):
                     [path_id])
         default_values = cursor.fetchone()
 
-        form = Path(transect_id=default_values["transect_id"],)
+        form = Path(transect_id=default_values["transect_id"],
+                    completeness=default_values["completeness"])
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 

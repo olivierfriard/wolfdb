@@ -29,7 +29,7 @@ class Transect(Form):
 
     transect_id = StringField("Transect ID", validators=[Required(),])
     sector = StringField("Sector", validators=[integer_validator])
-    place = StringField("Place", [])
+    location = StringField("location", [])
     municipality = StringField("Municipality", [])
     province = StringField("Province", [])
     #regione = StringField("Regione", [])

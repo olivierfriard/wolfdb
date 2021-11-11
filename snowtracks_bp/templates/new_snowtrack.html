@@ -82,10 +82,10 @@
 <div class="mb-3">
 <div class="row g-3 align-items-top">
 
-    <div class="col-2">{{ form.place.label }}</div>
+    <div class="col-2">{{ form.location.label }}</div>
     <div class="col-2">
-        {{ form.place(size=16, class="form-control", value=default_values["place"]) }}
-        {% for message in form.place.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+        {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
+        {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div>
 
 
@@ -136,10 +136,10 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.nb_days_after_snowing.label }}
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.days_after_snowfall.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.nb_days_after_snowing(size=16, class="form-control", value=default_values["nb_days_after_snowing"]) }}
-    {% for message in form.nb_days_after_snowing.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.days_after_snowfall(size=16, class="form-control", value=default_values["days_after_snowfall"]) }}
+    {% for message in form.days_after_snowfall.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 
@@ -148,10 +148,10 @@
 <div class="mb-3">
 <div class="row g-3 align-items-top">
 
-    <div class="col-2">{{ form.min_number_subjects.label }}</div>
+    <div class="col-2">{{ form.minimum_number_of_wolves.label }}</div>
     <div class="col-3">
-    {{ form.min_number_subjects(size=16, class="form-control", value=default_values["min_number_subjects"]) }}
-    {% for message in form.min_number_subjects.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.minimum_number_of_wolves(size=16, class="form-control", value=default_values["minimum_number_of_wolves"]) }}
+    {% for message in form.minimum_number_of_wolves.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div>
 
 

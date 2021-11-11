@@ -23,7 +23,7 @@
 <table class="table table-striped">
 
 <tr><td>Sector</td><td>{{ transect["sector"] }}</td></tr>
-<tr><td>place</td><td>{{ transect["place"] }}</td></tr>
+<tr><td>location</td><td>{{ transect["location"] }}</td></tr>
 <tr><td>municipality</td><td>{{ transect["municipality"] }}</td></tr>
 <tr><td>Province</td><td>{{ transect["province"] }}</td></tr>
 <tr><td>Region</td><td>{{ transect["region"] }}</td></tr>
@@ -72,15 +72,15 @@ No paths found
         <th>snow-tracking ID</th>
         <th>Date</th>
         <th>Sampling season</th>
-        <th>Place</th>
+        <th>location</th>
         <th>municipality</th>
         <th>province</th>
         <th>regione</th>
         <th>rilevatore</th>
         <th>scalp category</th>
         <th>Sampling type</th>
-        <th>nb_days_after_snowing</th>
-        <th>min_number_subjects</th>
+        <th>Days after snowfall</th>
+        <th>Minimum number of wolves</th>
         <th>Track format</th>
         <th>Notes</th>
         </tr>
@@ -92,15 +92,15 @@ No paths found
     <td><a href="/view_snowtrack/{{ snowtrack['snowtrack_id'] }}">{{ snowtrack['snowtrack_id'] }}</a></td>
     <td>{{ snowtrack['date'] }}</td>
     <td>{{ snowtrack['sampling_season'] }}</td>
-    <td>{{ snowtrack['place'] }}</td>
+    <td>{{ snowtrack['location'] }}</td>
     <td>{{ snowtrack['municipality'] }}</td>
     <td>{{ snowtrack['province'] }}</td>
     <td>{{ snowtrack['region'] }}</td>
     <td>{{ snowtrack['observer'] }}</td>
     <td>{{ snowtrack['scalp_category'] }}</td>
     <td>{{ snowtrack['sampling_type'] }}</td>
-    <td>{{ snowtrack['nb_days_after_snowing'] }}</td>
-    <td>{{ snowtrack['min_number_subjects'] }}</td>
+    <td>{{ snowtrack['days_after_snowfall'] }}</td>
+    <td>{{ snowtrack['minimum_number_of_wolves'] }}</td>
     <td>{{ snowtrack['track_format'] }}</td>
     <td>{{ snowtrack['note'] }}</td>
 

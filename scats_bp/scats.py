@@ -151,7 +151,7 @@ def new_scat():
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
             sql = ("INSERT INTO scats (scat_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "
-                   "place, municipality, province, region, "
+                   "location, municipality, province, region, "
                    "deposition, matrix, collected_scat, scalp_category, "
                    "coord_east, coord_north, coord_zone, "
                    "observer, institution) "
@@ -164,7 +164,7 @@ def new_scat():
                             request.form["sampling_type"],
                             request.form["path_id"],
                             request.form["snowtrack_id"],
-                            request.form["place"], request.form["municipality"], request.form["province"].upper(), scat_region,
+                            request.form["location"], request.form["municipality"], request.form["province"].upper(), scat_region,
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
                             request.form["observer"], request.form["institution"]
@@ -259,7 +259,7 @@ def edit_scat(scat_id):
                    "                sampling_type = %s,"
                    "                path_id = %s, "
                    "                snowtrack_id = %s, "
-                   "                place = %s, "
+                   "                location = %s, "
                    "                municipality = %s, "
                    "                province = %s, "
                    "                region = %s, "
@@ -281,7 +281,7 @@ def edit_scat(scat_id):
                             request.form["sampling_type"],
                             request.form["path_id"],
                             request.form["snowtrack_id"],
-                            request.form["place"], request.form["municipality"], request.form["province"], scat_region,
+                            request.form["location"], request.form["municipality"], request.form["province"], scat_region,
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],

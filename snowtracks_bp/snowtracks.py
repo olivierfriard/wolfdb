@@ -109,9 +109,9 @@ def new_snowtrack():
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("INSERT INTO snow_tracks (snowtrack_id, path_id, date, sampling_season, "
-                                             "place, municipality, province, region,"
+                                             "location, municipality, province, region,"
                                              "observer, institution, scalp_category, "
-                                             "sampling_type, nb_days_after_snowing, min_number_subjects,"
+                                             "sampling_type, days_after_snowfall, minimum_number_of_wolves,"
                                              "track_format, note)"
                    "VALUES (%s, %s, %s, %s, "
                            "%s, %s, %s, %s, "
@@ -124,7 +124,7 @@ def new_snowtrack():
                             request.form["path_id"],
                             date,
                             fn.sampling_season(date),
-                            request.form["place"].strip(),
+                            request.form["location"].strip(),
                             request.form["municipality"].strip(),
                             request.form["province"].strip().upper(),
                             track_region,
@@ -132,8 +132,8 @@ def new_snowtrack():
                             request.form["institution"],
                             request.form["scalp_category"],
                             request.form["sampling_type"],
-                            int(request.form["nb_days_after_snowing"]) if request.form["nb_days_after_snowing"] else None,
-                            int(request.form["min_number_subjects"]) if request.form["min_number_subjects"] else None,
+                            int(request.form["days_after_snowfall"]) if request.form["days_after_snowfall"] else None,
+                            int(request.form["minimum_number_of_wolves"]) if request.form["minimum_number_of_wolves"] else None,
                             request.form["track_format"],
                             request.form["note"]
                             ]
@@ -211,7 +211,7 @@ def edit_snowtrack(snowtrack_id):
                         "path_id = %s,"
                         "date = %s,"
                         "sampling_season = %s,"
-                        "place = %s,"
+                        "location = %s,"
                         "municipality = %s,"
                         "province = %s,"
                         "region = %s,"
@@ -219,8 +219,8 @@ def edit_snowtrack(snowtrack_id):
                         "institution = %s,"
                         "scalp_category = %s,"
                         "sampling_type = %s,"
-                        "nb_days_after_snowing = %s,"
-                        "min_number_subjects = %s,"
+                        "days_after_snowfall = %s,"
+                        "minimum_number_of_wolves = %s,"
                         "track_format = %s,"
                         "note = %s"
                    "WHERE snowtrack_id = %s")
@@ -231,7 +231,7 @@ def edit_snowtrack(snowtrack_id):
                             request.form["path_id"],
                             date,
                             fn.sampling_season(date),
-                            request.form["place"],
+                            request.form["location"],
                             request.form["municipality"],
                             request.form["province"].strip().upper(),
                             track_region,
@@ -239,8 +239,8 @@ def edit_snowtrack(snowtrack_id):
                             request.form["institution"],
                             request.form["scalp_category"],
                             request.form["sampling_type"],
-                            request.form["nb_days_after_snowing"],
-                            request.form["min_number_subjects"],
+                            request.form["days_after_snowfall"],
+                            request.form["minimum_number_of_wolves"],
                             request.form["track_format"],
                             request.form["note"],
                             snowtrack_id

@@ -46,7 +46,7 @@ class Scat(Form):
     path_id = SelectField("Path ID")
     snowtrack_id = SelectField("Snow-tracking ID")
 
-    place = StringField("Place", [])
+    location = StringField("Location", [])
     municipality = StringField("Municipality", [])
     province = StringField("Province", [])
 
@@ -55,7 +55,7 @@ class Scat(Form):
     matrix = SelectField("Matrix", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
     collected_scat = SelectField("Collected scat", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
     scalp_category = SelectField("SCALP category", choices=[('C1', 'C1'), ('C2', 'C2'), ('C3', 'C3')], default="C2")
-    sample_genetic = SelectField("Sample genetic", choices=[('-', '-'),('Yes', 'Yes'), ('No', 'No')], default="-")
+    sample_genetic = SelectField("Sample genetic", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
     coord_east = StringField("Coordinate East", validators=[Required(), integer_validator])
     coord_north  = StringField("Coordinate North", validators=[Required(), integer_validator])
     coord_zone = SelectField("Zone", choices=[('32N', '32N'), ('33N', '33N')], default="32N")

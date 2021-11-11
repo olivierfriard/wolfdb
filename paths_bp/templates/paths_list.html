@@ -27,11 +27,11 @@
 <th>Date</th>
 <th>Sampling year</th>
 <th>Completeness</th>
-<th>Numero segni trovati</th>
-<th>numero campioni</th>
-<th>Observer</th>
+<th>Number of tracks</th>
+<th>Number of samples</th>
+<th>Operator</th>
 <th>Institution</th>
-<th>note</th>
+<th>Notes</th>
 </tr>
 {% for result in results %}
 <tr>
@@ -46,7 +46,8 @@
 </td>
     <td>{{ result['n_tracks'] }}</td>
     <td>{{ result['n_samples'] }}</td>
-    <td>{{ result['operatore'] }}</td>
+    <td>{{ result['observer'] }}</td>
+    <td>{{ result['institution'] }}</td>
     <td>{{ result['note'] }}</td>
 
 </tr>

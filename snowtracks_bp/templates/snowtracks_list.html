@@ -24,7 +24,7 @@
 <th>Path ID</th>
 <th>Date</th>
 <th>Sampling season</th>
-<th>Place</th>
+<th>location</th>
 <th>municipality</th>
 <th>province</th>
 <th>region</th>
@@ -32,8 +32,8 @@
 <th>institution</th>
 <th>scalp category</th>
 <th>sampling_type</th>
-<th>nb_days_after_snowing</th>
-<th>min_number_subjects</th>
+<th>days after snowfall</th>
+<th>minimum number of wolves</th>
 <th>track format</th>
 <th>Notes</th>
 
@@ -45,7 +45,7 @@
     <td><a href="/view_path/{{ result['transect_id'] }}">{{ result['path_id'] }}</a></td>
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
-    <td>{{ result['place'] }}</td>
+    <td>{{ result['location'] }}</td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>
     <td>{{ result['region'] }}</td>
@@ -55,8 +55,8 @@
     <td>{{ result['sampling_type'] }}</td>
 
 
-    <td>{{ result['nb_days_after_snowing'] }}</td>
-    <td>{{ result['min_number_subjects'] }}</td>
+    <td>{{ result['days_after_snowfall'] }}</td>
+    <td>{{ result['minimum_number_of_wolves'] }}</td>
     <td>{{ result['track_format'] }}</td>
     <td>{{ result['note'] }}</td>
 

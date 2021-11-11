@@ -42,12 +42,14 @@ class Path(Form):
 
 
     transect_id = SelectField("Transect ID", validators=[Required()])
+
     date = StringField("Date", validators=[Required(), iso_date_validator])
-    # sampling_season = StringField("Sampling season", [])
 
     completeness  = StringField("Completeness", validators=[integer_validator,])
+    completeness = SelectField("Completeness", choices=[('', ''),('25', '25'), ('50', '50'), ('100', '100')], default="")
 
     observer = StringField("Observer", [])
     institution = StringField("Institution", [])
+
     note = TextAreaField("Note", [])
 

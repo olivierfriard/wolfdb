@@ -74,7 +74,7 @@
 
 
 
-<span id="systematic" style="display: none;">
+<span id="systematic" style="display: {%  if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
 
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
@@ -99,10 +99,10 @@
 <div class="mb-3">
 <div class="row g-3 align-items-top">
 
-    <div class="col-2">{{ form.place.label }}</div>
+    <div class="col-2">{{ form.location.label }}</div>
     <div class="col-3">
-    {{ form.place(size=16, class="form-control", value=default_values["place"]) }}
-    {% for message in form.place.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
+    {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div>
 
     <div class="col-1">{{ form.municipality.label }}</div>

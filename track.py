@@ -41,7 +41,7 @@ class Track(Form):
     #date = StringField("Date", validators=[Required(), iso_date_validator])
     #sampling_season = StringField("Sampling season", [])
 
-    place = StringField("Place", [])
+    location = StringField("location", [])
     municipality = StringField("Municipality", [])
     province = StringField("Province", [])
 
@@ -55,8 +55,8 @@ class Track(Form):
                                                           ('Systematic', 'Systematic')],
                                 default="")
 
-    nb_days_after_snowing = StringField("nb of days after snowing", validators=[integer_validator])
-    min_number_subjects = StringField("Minimum number of subjects", validators=[integer_validator])
+    days_after_snowfall = StringField("Days after snowfall", validators=[integer_validator])
+    minimum_number_of_wolves = StringField("Minimum number of wolves", validators=[integer_validator])
     track_format = StringField("Track format", [])
 
     note = TextAreaField("Note", [])

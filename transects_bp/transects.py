@@ -108,12 +108,12 @@ def new_transect():
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("INSERT INTO transects (transect_id, sector, place, municipality, province, region) "
+            sql = ("INSERT INTO transects (transect_id, sector, location, municipality, province, region) "
                    "VALUES (%s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["transect_id"], request.form["sector"],
-                            request.form["place"].strip(), request.form["municipality"].strip(),
+                            request.form["location"].strip(), request.form["municipality"].strip(),
                             request.form["province"].strip().upper(),
                             transect_regions
                            ]
@@ -173,12 +173,12 @@ def edit_transect(transect_id):
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("UPDATE transects SET transect_id = %s, sector =%s, place = %s, municipality = %s, province = %s, region = %s "
+            sql = ("UPDATE transects SET transect_id = %s, sector =%s, location = %s, municipality = %s, province = %s, region = %s "
                    "WHERE transect_id = %s")
             cursor.execute(sql,
                            [
                             request.form["transect_id"].strip(), request.form["sector"],
-                            request.form["place"].strip(), request.form["municipality"].strip(),
+                            request.form["location"].strip(), request.form["municipality"].strip(),
                             request.form["province"].strip().upper(), transect_regions,
                             transect_id
                            ]
