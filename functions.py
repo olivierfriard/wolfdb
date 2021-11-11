@@ -54,7 +54,7 @@ def sampling_season(date):
         if 1 <= month <= 4:
             return f"{year - 1}-{year}"
     except Exception:
-        return "Error"
+        return f"Error {date}"
 
 
 def get_region(province):

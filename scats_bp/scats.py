@@ -246,12 +246,15 @@ def edit_scat(scat_id):
                 year = int(request.form['scat_id'][1:2+1]) + 2000
                 month = int(request.form['scat_id'][3:4+1])
                 day = int(request.form['scat_id'][5:6+1])
-                date = f"{year}-{month}-{day}"
+                date = f"{year}-{month:02}-{day:02}"
             except Exception:
                 return not_valid("The scat_id value is not correct")
 
             # region
             scat_region = fn.get_region(request.form["province"])
+
+            # UTM coord conversion
+            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), int(request.form["coord_zone"].replace("N", "")), "N")
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -274,7 +277,8 @@ def edit_scat(scat_id):
                    "                coord_north = %s, "
                    "                coord_zone = %s, "
                    "                observer = %s, "
-                   "                institution = %s "
+                   "                institution = %s, "
+                   "                geo = %s "
                    "WHERE scat_id = %s")
             cursor.execute(sql,
                            [
@@ -288,6 +292,7 @@ def edit_scat(scat_id):
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],
+                            f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
                             scat_id
                            ]
                            )
