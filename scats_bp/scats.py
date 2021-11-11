@@ -228,8 +228,6 @@ def edit_scat(scat_id):
 
         form = Scat(request.form)
 
-        print(f'{request.form["snowtrack_id"]=}')
-
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
