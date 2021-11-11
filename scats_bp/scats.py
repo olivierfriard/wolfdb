@@ -15,7 +15,7 @@ from config import config
 
 from scat import Scat
 import functions as fn
-
+import utm
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -147,6 +147,9 @@ def new_scat():
             # region
             scat_region = fn.get_region(request.form["province"])
 
+            # UTM coord conversion
+            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), int(request.form["coord_zone"].replace("N", "")), "N")
+
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -154,8 +157,9 @@ def new_scat():
                    "location, municipality, province, region, "
                    "deposition, matrix, collected_scat, scalp_category, "
                    "coord_east, coord_north, coord_zone, "
-                   "observer, institution) "
-                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                   "observer, institution,"
+                   "geo) "
+                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["scat_id"],
@@ -167,7 +171,8 @@ def new_scat():
                             request.form["location"], request.form["municipality"], request.form["province"].upper(), scat_region,
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
-                            request.form["observer"], request.form["institution"]
+                            request.form["observer"], request.form["institution"],
+                            f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
                            ]
                            )
 
