@@ -21,12 +21,14 @@
 <tr>
 <th>Scat ID</th>
 <th>Date</th>
-<th>WA code</th>
-<th>Genotype ID</th>
-<th>Path ID</th>
-<th>Snowtrack ID</th>
 <th>Sampling season</th>
 <th>Sampling type</th>
+<th>Path ID</th>
+<th>Snowtrack ID</th>
+
+<th>WA code</th>
+<th>Genotype ID</th>
+
 
 <th>location</th>
 <th>municipality</th>
@@ -50,6 +52,30 @@
 
     <td>{{ result['date'] }}</td>
 
+    <td>{{ result['sampling_season'] }}</td>
+
+    <td>{{ result['sampling_type'] }}</td>
+
+
+    <td>{% if result['sampling_type'] == "Systematic" %}
+        {% if result['path_id'] != "" %}
+        <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
+        {% else %}
+            {{ result['path_id'] }}
+        {% endif %}
+        {% endif %}
+    </td>
+    
+    <td>{% if result['sampling_type'] == "Systematic" %}
+        {% if result['snowtrack_id'] != "" %}
+        <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
+        {% else %}
+        {{ result['snowtrack_id'] }}
+        {% endif %}
+        {% endif %}        
+        </td>
+    
+
     <td>
         {% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}
     </td>
@@ -58,24 +84,9 @@
         {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
     </td>
 
-    <td>
-    {% if result['path_id'] != "" %}
-    <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
-    {% else %}
-        {{ result['path_id'] }}
-    {% endif %}
-    </td>
+    
 
-    <td>
-    {% if result['snowtrack_id'] != "" %}
-    <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
-    {% else %}
-    {{ result['snowtrack_id'] }}
-    {% endif %}
-    </td>
 
-        <td>{{ result['sampling_season'] }}</td>
-    <td>{{ result['sampling_type'] }}</td>
 
 
     <td>{{ result['location'] }}</td>
