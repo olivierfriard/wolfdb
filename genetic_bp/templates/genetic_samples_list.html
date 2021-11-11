@@ -27,7 +27,7 @@
 <th>Matrix</th>
 <th>Collected scat</th>
 <th>scalp_category</th>
-<th>Sample genetic</th>
+<th>Genetic sample</th>
 
 </tr>
 {% for result in results %}
@@ -56,7 +56,7 @@
     <td>{{ result['collected_scat'] }}</td>
     <td>{{ result['scalp_category'] }}</td>
     <td>
-        {% if result['sample_genetic'] %}{{ result['sample_genetic'] }}{% endif %}
+        {% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}
     </td>
 
 
