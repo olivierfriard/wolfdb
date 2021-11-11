@@ -77,13 +77,13 @@
 <tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
 
 <tr><td>Coordonates (UTM 32N WGS84)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }} Zone: {{ results["coord_zone"] }}</td></tr>
-<tr><td>Observer</td><td>{{ results["observer"] }}</td></tr>
+<tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
 <tr><td>Institution</td><td>{{ results["institution"] }}</td></tr>
 
 
 <tr><td>WA code</td><td>{{ results["wa_code"] }}</td></tr>
 <tr><td>Genotype ID</td><td>{{ results["genotype_id"] }}</td></tr>
-<tr><td>Sample genetic</td><td>{% if results["sample_genetic"] %}{{ results["sample_genetic"] }}{% endif %}</td></tr>
+<tr><td>Genetic sample</td><td>{% if results["sample_genetic"] %}{{ results["sample_genetic"] }}{% endif %}</td></tr>
 
 </table>
 

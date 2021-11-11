@@ -36,9 +36,9 @@
 <th>Matrix</th>
 <th>Collected scat</th>
 <th>scalp_category</th>
-<th>Sample genetic</th>
+<th>Genetic sample</th>
 <th>UTM Coordinates</th>
-<th>Observer</th>
+<th>Operator</th>
 <th>institution</th>
 
 
@@ -51,7 +51,7 @@
     <td>{{ result['date'] }}</td>
 
     <td>
-        {% if result['genetic_id'] %}{{ result['wa'] }}{% endif %}
+        {% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}
     </td>
 
     <td>
