@@ -1,0 +1,48 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
+
+<br>
+<br>
+
+<h2>WA code: {{wa_code}}</h2>
+
+
+<form method="POST" action="/add_genetic_data/{{ wa_code }}">
+<table class="table table-striped">
+<tr>
+
+<th>Locus</th>
+<th></th>
+<th></th>
+</tr>
+{% for locus in loci %}
+<tr>
+<td>
+{{ locus[0] }}
+</td>
+
+<td><input type="TEXT" id="{{ locus[0] }}_1" name="{{ locus[0] }}_1"></td>
+<td><input type="TEXT" id="{{ locus[0] }}_2" name="{{ locus[0] }}_2"></td>
+
+
+</tr>
+{% endfor %}
+
+</table>
+
+
+<button type="submit" class="btn btn-primary" >Submit</button>
+
+</form>
