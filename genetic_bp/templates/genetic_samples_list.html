@@ -29,12 +29,11 @@
 
 <tr>
 <td>
-    <a href="/add_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Add genetic data</a>&nbsp;
+    <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>&nbsp;
 </td>
 
 
 <td>
-    <!--<a href="/view_wa_code/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>-->
     {{ result['wa_code'] }}
 </td>
 
@@ -47,7 +46,7 @@
 
 
     <td>
-        {% if result['genetic_sample'] == "Yes" %}<a href="/view_genetic_data/{{ result['wa_code'] }}">View data</a>{% else %}No data{% endif %}
+        {% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% else %}No{% endif %}
     </td>
 
 </tr>

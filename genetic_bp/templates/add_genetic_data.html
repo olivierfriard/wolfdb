@@ -18,6 +18,11 @@
 
 <h2>WA code: {{wa_code}}</h2>
 
+<a href="/add_genetic_data/{{wa_code}}" class="btn btn-primary">Add genetic data</a>&nbsp;
+
+
+
+
 {% if mode != "view" %}
 <form method="POST" action="/add_genetic_data/{{ wa_code }}">
 {% endif %}
@@ -27,33 +32,30 @@
 <th>Locus</th>
 <th></th>
 <th></th>
+
+<th>History</th>
+
 </tr>
 {% for locus in loci %}
 <tr>
 <td>
-{% if mode == "view" %}
-{{ locus['locus'] }}
-{% else %}
+
 {{ locus['name'] }}
 
-{% endif %}
 </td>
 
-{% if mode == "view" %}
-<td>{{ locus['value1'] }}</td>
-<td>{{ locus['value2'] }}</td>
-{% else %}
-<td><input type="TEXT" id="{{ locus['name'] }}_1" name="{{ locus['name'] }}_1" value="{{ locus['value1'] }}"></td>
-<td><input type="TEXT" id="{{ locus['name'] }}_2" name="{{ locus['name'] }}_2" value="{{ locus['value1'] }}"></td>
-{% endif %}
+<td><input type="TEXT" id="{{ locus['name'] }}_1" name="{{ locus['name'] }}_1" value=""></td>
+<td><input type="TEXT" id="{{ locus['name'] }}_2" name="{{ locus['name'] }}_2" value=""></td>
+
+
+<td><a href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
 
 </tr>
 {% endfor %}
 
 </table>
 
-{% if mode != "view" %}
 <button type="submit" class="btn btn-primary" >Submit</button>
 
 </form>
-{% endif %}
+
