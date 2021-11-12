@@ -8,9 +8,6 @@ import psycopg2
 import psycopg2.extras
 from config import config
 
-
-import functions as fn
-
 # blueprints
 from scats_bp import scats
 from paths_bp import paths

@@ -108,7 +108,7 @@ def view_genetic_data_history(wa_code, locus):
 
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp ", [wa_code, locus])
+        cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp DESC", [wa_code, locus])
 
         return render_template("view_genetic_data_history.html",
                                results = cursor.fetchall(),

@@ -1,0 +1,125 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/transects_list" class="btn btn-primary">Transects</a>
+
+<br>
+<br>
+
+
+<h2>transect ID: <b>{{ transect["transect_id"] }}</b></h2>
+
+<a href="/edit_transect/{{ transect['transect_id'] }}" class="btn btn-danger">Edit transect</a>
+
+<table class="table table-striped">
+
+<tr><td>Sector</td><td>{{ transect["sector"] }}</td></tr>
+<tr><td>location</td><td>{{ transect["location"] }}</td></tr>
+<tr><td>municipality</td><td>{{ transect["municipality"] }}</td></tr>
+<tr><td>Province</td><td>{{ transect["province"] }}</td></tr>
+<tr><td>Region</td><td>{{ transect["region"] }}</td></tr>
+
+</table>
+
+<h2>Paths</h2>
+
+
+{% if paths %}
+<table class="table table-striped">
+    <tr>
+        <th>Path ID</th>
+        <th>Date</th>
+        <th>Sampling season</th>
+        <th>Completeness</th>
+        <th>Observer</th>
+        <th>institution</th>
+        <th>Note</th>
+        </tr>
+
+{% for path in paths %}
+
+<tr>
+<td><a href="/view_path/{{ path["path_id"] }}">{{ path["path_id"] }}</a></td>
+<td>{{ path['date'] }}</td>
+<td>{{ path['sampling_season'] }}</td>
+<td>{{ path['completeness'] }}</td>
+<td>{{ path['observer'] }}</td>
+<td>{{ path['institution'] }}</td>
+<td>{{ path['note'] }}</td>
+</tr>
+
+{% endfor %}
+</table>
+{% else %}
+No paths found
+{% endif %}
+
+
+<h2>Snow tracking</h2>
+
+{% if snowtracks %}
+<table class="table table-striped">
+    <tr>
+        <th>snow-tracking ID</th>
+        <th>Date</th>
+        <th>Sampling season</th>
+        <th>location</th>
+        <th>municipality</th>
+        <th>province</th>
+        <th>regione</th>
+        <th>rilevatore</th>
+        <th>scalp category</th>
+        <th>Sampling type</th>
+        <th>Days after snowfall</th>
+        <th>Minimum number of wolves</th>
+        <th>Track format</th>
+        <th>Notes</th>
+        </tr>
+
+{% for snowtrack in snowtracks %}
+
+<tr>
+
+    <td><a href="/view_snowtrack/{{ snowtrack['snowtrack_id'] }}">{{ snowtrack['snowtrack_id'] }}</a></td>
+    <td>{{ snowtrack['date'] }}</td>
+    <td>{{ snowtrack['sampling_season'] }}</td>
+    <td>{{ snowtrack['location'] }}</td>
+    <td>{{ snowtrack['municipality'] }}</td>
+    <td>{{ snowtrack['province'] }}</td>
+    <td>{{ snowtrack['region'] }}</td>
+    <td>{{ snowtrack['observer'] }}</td>
+    <td>{{ snowtrack['scalp_category'] }}</td>
+    <td>{{ snowtrack['sampling_type'] }}</td>
+    <td>{{ snowtrack['days_after_snowfall'] }}</td>
+    <td>{{ snowtrack['minimum_number_of_wolves'] }}</td>
+    <td>{{ snowtrack['track_format'] }}</td>
+    <td>{{ snowtrack['note'] }}</td>
+
+
+</tr>
+
+{% endfor %}
+</table>
+{% else %}
+No snow tracks found
+{% endif %}
+
+
+</div>
+</main>
+
+
+
+
+
+
+

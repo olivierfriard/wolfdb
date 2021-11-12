@@ -16,6 +16,7 @@ from config import config
 from scat import Scat
 import functions as fn
 import utm
+import json
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -73,10 +74,15 @@ def add_wa():
 def view_scat(scat_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, ST_AsText(geo) AS lonlat FROM scats WHERE scat_id = %s",
+    cursor.execute("SELECT *, ST_AsGeoJSON(geo) AS lonlat FROM scats WHERE scat_id = %s",
                    [scat_id])
     results = cursor.fetchone()
-    results["lonlat"] = results["lonlat"].replace("POINT(", "").replace(")", "")
+
+    lon, lat = json.loads(results["lonlat"])['coordinates']
+    results["lonlat"] = f"{lon}, {lat}"
+
+    print(f'{results["lonlat"]=}')
+
     return render_template("view_scat.html",
                            results=results)
 
