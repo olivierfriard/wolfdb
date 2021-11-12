@@ -29,45 +29,33 @@ def transects():
     return render_template("dead_wolves.html")
 
 
-@app.route("/view_transect/<transect_id>")
-def view_transect(transect_id):
+@app.route("/view_dead_wolf/<tissue_id>")
+def view_transect(tissue_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
-                   [transect_id])
-    transect = cursor.fetchone()
+    cursor.execute("SELECT * FROM dead_wolves WHERE tissue_id = %s",
+                   [tissue_id])
+    dead_wolf = cursor.fetchone()
 
-    # path
-    cursor.execute("SELECT * FROM paths WHERE transect_id = %s ORDER BY date DESC",
-                   [transect_id])
-    results_paths = cursor.fetchall()
-
-    # snow tracks
-    cursor.execute("SELECT * FROM snow_tracks WHERE path_id LIKE %s ORDER BY date DESC",
-                   [f"{transect_id} %"])
-    results_snowtracks = cursor.fetchall()
+    return render_template("view_dead_wolf.html",
+                           dead_wolf=dead_wolf,
+                          )
 
 
-    return render_template("view_transect.html",
-                           transect=transect,
-                           paths=results_paths,
-                           snowtracks=results_snowtracks)
-
-
-@app.route("/transects_list")
-def transects_list():
-    # get all transects
+@app.route("/dead_wolves_list")
+def dead_wolves_list():
+    # get all dead_wolves
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    cursor.execute("SELECT * FROM dead_wolves ORDER BY date DESC")
 
     results = cursor.fetchall()
 
-    return render_template("transects_list.html",
+    return render_template("dead_wolves_list.html",
                            results=results)
 
 
-
+'''
 
 @app.route("/new_transect", methods=("GET", "POST"))
 def new_transect():
@@ -207,3 +195,6 @@ def del_scat(transect_id):
                    [transect_id])
     connection.commit()
     return redirect("/transects_list")
+
+
+'''
