@@ -13,20 +13,20 @@ import psycopg2
 import psycopg2.extras
 from config import config
 
-from transect import Transect
+#from dead_wolf import Dead_wolf
 import functions as fn
 from italian_regions import regions
 
-app = flask.Blueprint("transects", __name__, template_folder="templates")
+app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
 
 app.debug = True
 
 
 params = config()
 
-@app.route("/transects")
+@app.route("/dead_wolves")
 def transects():
-    return render_template("transects.html")
+    return render_template("dead_wolves.html")
 
 
 @app.route("/view_transect/<transect_id>")

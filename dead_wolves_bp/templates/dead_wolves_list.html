@@ -11,18 +11,16 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/new_transect" class="btn btn-primary">New transect</a>
+<a href="/new_dead_wolf" class="btn btn-primary">new dead wolf</a>
 
 <br>
 
 
 {% if results %}
-<h2>List of transects</h2>
+<h2>List of dead wolves</h2>
 <table class="table table-striped">
 <tr>
-<th>Transect ID</th>
-<th>Sector</th>
-<th>location</th>
+<th>Tissue ID</th>
 <th>municipality</th>
 <th>Province</th>
 <th>Region</th>
@@ -31,9 +29,7 @@
 {% for result in results %}
 <tr>
 
-    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
-    <td>{{ result['sector'] }}</td>
-    <td>{{ result['location'] }}</td>
+    <td><a href="/view_dead_wolf/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>
     <td>{{ result['region'] }}</td>
@@ -42,7 +38,7 @@
 </table>
 {% else %}
 
-<h2>No transect found</h2>
+<h2>No dead wolf found</h2>
 
 {% endif %}
 

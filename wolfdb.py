@@ -14,6 +14,7 @@ from paths_bp import paths
 from transects_bp import transects
 from snowtracks_bp import snowtracks
 from genetic_bp import genetic
+from dead_wolves_bp import dead_wolves
 
 __version__ = "1"
 
@@ -28,6 +29,7 @@ app.register_blueprint(paths.app)
 app.register_blueprint(transects.app)
 app.register_blueprint(snowtracks.app)
 app.register_blueprint(genetic.app)
+app.register_blueprint(dead_wolves.app)
 
 
 
