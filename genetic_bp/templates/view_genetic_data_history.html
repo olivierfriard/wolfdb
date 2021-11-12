@@ -1,0 +1,42 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
+
+<br>
+<br>
+
+<h2>WA code: {{wa_code}}</h2>
+
+<h3>History of <b>{{ locus }}</b> values</h3>
+
+<table class="table table-striped">
+<tr>
+<th>Date</th>
+<th></th>
+<th></th>
+</tr>
+{% for result in results %}
+
+
+<tr>
+<td>{{ result["timestamp"]}}</td>
+<td>{{ result["value1"]}}</td>
+
+<td>{{ result["value2"]}}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>

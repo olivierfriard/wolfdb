@@ -1,0 +1,60 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
+
+<br>
+<br>
+
+<h2>WA code: {{wa_code}}</h2>
+
+<a href="/add_genetic_data/{{wa_code}}" class="btn btn-primary">Add genetic data</a>&nbsp;
+
+
+
+
+
+
+<table class="table table-striped">
+<tr>
+
+<th>Locus</th>
+<th></th>
+<th></th>
+<th>Date</th>
+
+<th>History</th>
+
+</tr>
+{% for locus in loci %}
+<tr>
+<td>
+
+{{ locus['name'] }}
+
+</td>
+
+<td>{{ data[locus['name']]['value1'] }}</td>
+<td>{{ data[locus['name']]['value2'] }}</td>
+
+<td>{{ data[locus['name']]['timestamp'] }}</td>
+
+<td><a href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
+
+</tr>
+{% endfor %}
+
+</table>
+
+
+
