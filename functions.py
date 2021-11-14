@@ -7,7 +7,7 @@ functions module
 """
 
 
-from flask import Flask, request
+from flask import Flask, request, Markup
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -22,6 +22,14 @@ def get_connection():
                             host=params["host"],
                             #port="5432",
                             database=params["database"])
+
+def alert_danger(text: str):
+    return Markup(f'<div class="alert alert-danger" role="alert">{text}</div>')
+
+
+def alert_success(text: str):
+    return Markup(
+        f'<div class="alert alert-success" role="alert">{text}</div>')
 
 
 

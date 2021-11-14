@@ -8,7 +8,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask import Flask, render_template, redirect, request, Markup, flash, session, current_app
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -17,6 +17,9 @@ from scat import Scat
 import functions as fn
 import utm
 import json
+import pathlib as pl
+import pandas as pd
+import uuid
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -25,7 +28,8 @@ app.debug = True
 
 params = config()
 
-
+ALLOWED_EXTENSIONS = [".TSV"]
+UPLOAD_FOLDER = "/tmp"
 
 @app.route("/scats")
 def scats():
@@ -57,7 +61,6 @@ def wa_form():
 @app.route("/add_wa", methods=("POST",))
 def add_wa():
 
-    print(request.form)
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("UPDATE scats SET wa_code = %s WHERE scat_id = %s",
@@ -310,12 +313,191 @@ def edit_scat(scat_id):
         else:
             return not_valid("Some values are not set or are wrong. Please check and submit again")
 
+
 @app.route("/del_scat/<scat_id>")
 def del_scat(scat_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("DELETE FROM scats WHERE scat_id = %s",
-                   [scat_id])
+    cursor.execute("DELETE FROM scats WHERE scat_id = %(scat_id)s",
+                   {"scat_id": scat_id})
     connection.commit()
     return redirect("/scats_list")
 
+
+@app.route("/load_scats_tsv", methods=("GET", "POST",))
+def load_scats_tsv():
+    
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    # cursor.execute("",                   [scat_id])
+    # connection.commit()
+
+
+    if request.method == "GET":
+        return render_template("load_scats_tsv.html")
+
+    if request.method == "POST":
+
+
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if pl.Path(new_file.filename).suffix.upper() not in ALLOWED_EXTENSIONS:
+            flash("The uploaded file does not have an allowed extension")
+            return redirect(f"/load_scats_tsv")
+
+        try:
+            filename = str(uuid.uuid4())
+            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file"))
+            return redirect(f"/load_scats_tsv")
+
+        df = pd.read_csv(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sep="\t")
+
+        # check columns
+        for column in ['scat_id', 'date', 'wa_code', 'genotype_id', 'sampling_type', 'transect_id', 'snowtrack_id',
+                      'location', 'municipality', 'province', 
+                      'deposition', 'matrix', 'collected_scat', 'scalp_category', 
+                      'genetic_sample', 
+                      'coord_east', 'coord_north', 'coord_zone', 
+                      'operator', 'institution']:
+            if column not in list(df.columns):
+                flash(fn.alert_danger(f"Column {column} is missing"))
+                return redirect(f"/load_scats_tsv")
+
+        count = 0
+        for index, row in df.iterrows():
+            data = {}
+            count += 1
+            for column in list(df.columns):
+                data[column] = row[column]
+
+            # date
+            try:
+                year = int(data['scat_id'][1:2+1]) + 2000
+                month = int(data['scat_id'][3:4+1])
+                day = int(data['scat_id'][5:6+1])
+                date = f"{year}-{month}-{day}"
+            except Exception:
+                flash(fn.alert_danger(f"The scat ID is not valid at row {index + 1}: {data['scat_id']}"))
+                return redirect(f"/load_scats_tsv")
+
+            # check date
+            if date != data["date"].strip():
+                flash(fn.alert_danger(f"Check the scat ID and the date at row {index + 1}: {data['scat_id']}  {data['date']}"))
+                return redirect(f"/load_scats_tsv")
+
+            # path_id
+            path_id = data['transect_id'] + "_" + date[2:].replace("-", "")
+
+            # region
+            scat_region = fn.get_region(data["province"])
+
+            # UTM coord conversion
+            try:
+                coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), int(data["coord_zone"].replace("N", "")), "N")
+            except Exception:
+                flash(fn.alert_danger(f'Check the UTM coordinates at row {index + 1}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'))
+                return redirect(f"/load_scats_tsv")
+
+            # sampling_type
+            if data["sampling_type"].upper().strip() not in ["OPPORTUNISTIC", "SYSTEMATIC"]:
+                flash(fn.alert_danger(f'Sampling type must be <b>Opportunistic</b> or <b>Systematic</b> at row {index + 1}'))
+                return redirect(f"/load_scats_tsv")
+
+            # deposition
+            if data["deposition"].upper().strip() not in ["FRESH", "OLD"]:
+                flash(fn.alert_danger(f'The deposition must be <b>fresh</b> or <b>old</b> at row {index + 1}'))
+                return redirect(f"/load_scats_tsv")
+
+            # collected_scat
+            if data["collected_scat"].upper().strip() not in ["YES", "NO"]:
+                flash(fn.alert_danger(f'The collected_scat must be <b>Yes</b> or <b>No</b> at row {index + 1}'))
+                return redirect(f"/load_scats_tsv")
+
+            # matrix
+            if data["matrix"].upper().strip() not in ["YES", "NO"]:
+                flash(fn.alert_danger(f'The matrix must be <b>Yes</b> or <b>No</b> at row {index + 1}'))
+                return redirect(f"/load_scats_tsv")
+
+
+            connection = fn.get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            sql = ("UPDATE scats SET scat_id = %(scat_id)s, "
+                   "                date = %(date)s,"
+                   "                wa_code = %(wa_code)s,"
+                   "                genotype_id = %(genotype_id)s,"
+                   "                sampling_season = %(sampling_season)s,"
+                   "                sampling_type = %(sampling_type)s,"
+                   "                path_id = %(path_id)s, "
+                   "                snowtrack_id = %(snowtrack_id)s, "
+                   "                location = %(location)s, "
+                   "                municipality = %(municipality)s, "
+                   "                province = %(province)s, "
+                   "                region = %(region)s, "
+                   "                deposition = %(deposition)s, "
+                   "                matrix = %(matrix)s, "
+                   "                collected_scat = %(collected_scat)s, "
+                   "                scalp_category = %(scalp_category)s, "
+                   "                coord_east = %(coord_east)s, "
+                   "                coord_north = %(coord_north)s, "
+                   "                coord_zone = %(coord_zone)s, "
+                   "                observer = %(operator)s, "
+                   "                institution = %(institution)s, "
+                   "                geo = %(geo)s "
+                   "WHERE scat_id = %(scat_id)s;"
+                
+                   "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
+                   "location, municipality, province, region, "
+                   "deposition, matrix, collected_scat, scalp_category, "
+                   "coord_east, coord_north, coord_zone, "
+                   "observer, institution,"
+                   "geo) "
+                   "SELECT %(scat_id)s, %(date)s, %(wa_code)s, %(genotype_id)s, "
+                   " %(sampling_season)s, %(sampling_type)s, %(path_id)s, %(snowtrack_id)s, "
+                   "%(location)s, %(municipality)s, %(province)s, %(region)s, %(deposition)s, %(matrix)s, %(collected_scat)s, %(scalp_category)s, "
+                   " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, %(geo)s "
+                   "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = %(scat_id)s)"
+                   )
+
+            r = cursor.execute(sql,
+                           {"scat_id": data["scat_id"].strip(),
+                            "date": date,
+                            "wa_code": data["wa_code"].strip(),
+                            "genotype_id": data["genotype_id"].strip(),
+                            "sampling_season": fn.sampling_season(date),
+                            "sampling_type": data["sampling_type"].strip(),
+                            "path_id": path_id,
+                            "snowtrack_id": data["snowtrack_id"].strip(),
+                            "location": data["location"].strip(),   "municipality": data["municipality"].strip(), "province": data["province"].strip().upper(), "region": scat_region,
+                            "deposition": data["deposition"], "matrix": data["matrix"].strip(), "collected_scat": data["collected_scat"].strip(), "scalp_category": data["scalp_category"].strip(),
+                            "coord_east": data["coord_east"], "coord_north": data["coord_north"], "coord_zone": data["coord_zone"].strip(),
+                            "operator": data["operator"].strip(),   "institution": data["institution"].strip(),
+                            "geo": f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
+                           }
+                           )
+            connection.commit()
+            
+            '''
+https://stackoverflow.com/questions/1109061/insert-on-duplicate-update-in-postgresql
+
+            INSERT INTO the_table (id, column_1, column_2) 
+VALUES (1, 'A', 'X'), (2, 'B', 'Y'), (3, 'C', 'Z')
+ON CONFLICT (id) DO UPDATE 
+  SET column_1 = excluded.column_1, 
+      column_2 = excluded.column_2;
+
+
+
+      UPDATE table SET field='C', field2='Z' WHERE id=3;
+INSERT INTO table (id, field, field2)
+       SELECT 3, 'C', 'Z'
+       WHERE NOT EXISTS (SELECT 1 FROM table WHERE id=3);
+            
+            '''
+
+        flash(fn.alert_success(f"File successfully loaded: {count} scats added"))
+        return redirect(f'/scats')

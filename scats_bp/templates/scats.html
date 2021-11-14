@@ -13,10 +13,28 @@
 <br>
 <br>
 
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+
+<a href="/scats_list" class="btn btn-primary">List of scats</a>
+<br>
+<br>
+<a href="/load_scats_tsv" class="btn btn-primary">Load a TSV file</a>
+<br>
+<br>
 <a href="/new_scat" class="btn btn-primary">Insert a new scat</a>
 <br>
 <br>
-<a href="/scats_list" class="btn btn-primary">List of scats</a>
 
 
 
