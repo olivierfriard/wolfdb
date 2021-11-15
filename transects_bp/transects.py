@@ -31,6 +31,9 @@ def transects():
 
 @app.route("/view_transect/<transect_id>")
 def view_transect(transect_id):
+    """
+    Display transect data
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
@@ -51,7 +54,8 @@ def view_transect(transect_id):
     return render_template("view_transect.html",
                            transect=transect,
                            paths=results_paths,
-                           snowtracks=results_snowtracks)
+                           snowtracks=results_snowtracks,
+                           transect_id=transect_id)
 
 
 @app.route("/transects_list")

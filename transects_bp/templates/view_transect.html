@@ -15,6 +15,7 @@
 <br>
 <br>
 
+{% if transect['transect_id'] %}
 
 <h2>transect ID: <b>{{ transect["transect_id"] }}</b></h2>
 
@@ -111,6 +112,13 @@ No paths found
 </table>
 {% else %}
 No snow tracks found
+{% endif %}
+
+
+{% else %}
+
+Transect ID <b>{{transect_id}}</b> not found
+
 {% endif %}
 
 

@@ -16,6 +16,8 @@
 <br>
 <br>
 
+{% if results['path_id'] %}
+
 <h2>path ID: {{ results['path_id'] }}</h2>
 
 <a href="/edit_path/{{ results['path_id'] }}" class="btn btn-primary">Edit</a>
@@ -47,7 +49,11 @@
 
 </table>
 
+{% else %}
 
+Path ID <b>{{path_id}}</b> not found
+
+{% endif %}
 
 </div>
 </main>

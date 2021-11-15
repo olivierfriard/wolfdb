@@ -30,6 +30,10 @@ def paths():
 
 @app.route("/view_path/<path_id>")
 def view_path(path_id):
+    """
+    Display path data
+    """
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM paths WHERE path_id = %s",
@@ -48,7 +52,8 @@ def view_path(path_id):
     return render_template("view_path.html",
                            results=results,
                            n_samples=n_samples,
-                           n_tracks=n_tracks)
+                           n_tracks=n_tracks,
+                           path_id=path_id)
 
 
 @app.route("/paths_list")
