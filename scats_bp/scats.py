@@ -353,7 +353,6 @@ def extract_data_from_tsv(filename):
             data[column] = row[column]
             if isinstance(data[column], float) and str(data[column]) == "nan":
                 data[column] = ""
-            
 
         # date
         try:
@@ -388,14 +387,27 @@ def extract_data_from_tsv(filename):
             return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b> or <b>Systematic</b> at row {index + 1}'), {}
 
         # deposition
+        if data["deposition"].upper().strip() == "FRESCA":
+            data["deposition"] = "Fresh"
+        if data["deposition"].upper().strip() == "VECCHIA":
+            data["deposition"] = "Old"
         if data["deposition"].upper().strip() not in ["FRESH", "OLD"]:
             return True, fn.alert_danger(f'The deposition must be <b>fresh</b> or <b>old</b> at row {index + 1}'), {}
 
         # collected_scat
+        if data["collected_scat"].upper().strip() == "SI":
+            data["collected_scat"] = "Yes"
+        if data["collected_scat"].upper().strip() == "NO":
+            data["collected_scat"] = "No"
         if data["collected_scat"].upper().strip() not in ["YES", "NO"]:
             return True, fn.alert_danger(f'The collected_scat must be <b>Yes</b> or <b>No</b> at row {index + 1}'), {}
 
         # matrix
+        if data["matrix"].upper().strip() == "SI":
+            data["matrix"] = "Yes"
+        if data["matrix"].upper().strip() == "NO":
+            data["matrix"] = "No"
+
         if data["matrix"].upper().strip() not in ["YES", "NO"]:
             return True, fn.alert_danger(f'The matrix must be <b>Yes</b> or <b>No</b> at row {index + 1}')
 
