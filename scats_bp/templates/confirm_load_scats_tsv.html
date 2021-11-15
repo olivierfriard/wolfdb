@@ -1,0 +1,81 @@
+{% include "header.html" %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/scats" class="btn btn-primary">Scats</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+{{ n_scats }} scats found in TSV file.<br>
+{{ n_scats_to_update|count }} are already present in the database (displayed with red background).<br>
+<br>
+
+<a href="/confirm_load/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (scat ID already presents will be updated)</a>
+
+<a href="/confirm_load/{{ filename }}/new"  class="btn btn-primary">Insert only new scat ID</a>
+
+<a href="/scats"  class="btn btn-primary">Cancel insertion</a>
+
+<br>
+<br>
+
+
+<table class="table table-striped">
+
+<tr>
+  <th>Scat ID</th>
+  <th>Path ID</th>
+<th>Date</th>
+</tr>
+
+{% for idx in all_data %}
+
+{% if all_data[idx]['scat_id'] in n_scats_to_update %}
+<tr class="table-danger">
+{% else %}
+<tr>
+{% endif %}
+  <td>{{ all_data[idx]['scat_id'] }}</td>
+  <td>{{ all_data[idx]['path_id'] }}</td>
+  <td>{{ all_data[idx]['date'] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+
+</div>
+</main>
+
+</body>
+</html>
+
+
+
+
+
