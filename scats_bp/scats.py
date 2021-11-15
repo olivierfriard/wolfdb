@@ -331,7 +331,10 @@ def extract_data_from_tsv(filename):
     Extract and check data from a TSV file
     """
 
-    df = pd.read_csv(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sep="\t")
+    try:
+        df = pd.read_csv(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sep="\t")
+    except Exception:
+        return True, fn.alert_danger(f"Error reading the file. Check your TSV file"), {}
 
     # check columns
     for column in ['scat_id', 'date', 'wa_code', 'genotype_id', 'sampling_type', 'transect_id', 'snowtrack_id',
