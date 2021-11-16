@@ -338,10 +338,10 @@ def extract_data_from_tsv(filename):
 
     # check columns
     for column in ['scat_id', 'date', 'wa_code', 'genotype_id', 'sampling_type', 'transect_id', 'snowtrack_id',
-                    'location', 'municipality', 'province', 
-                    'deposition', 'matrix', 'collected_scat', 'scalp_category', 
-                    'genetic_sample', 
-                    'coord_east', 'coord_north', 'coord_zone', 
+                    'location', 'municipality', 'province',
+                    'deposition', 'matrix', 'collected_scat', 'scalp_category',
+                    'genetic_sample',
+                    'coord_east', 'coord_north', 'coord_zone',
                     'operator', 'institution']:
         if column not in list(df.columns):
             return True, fn.alert_danger(f"Column {column} is missing"), {}
@@ -373,7 +373,7 @@ def extract_data_from_tsv(filename):
 
         # region
         scat_region = fn.get_region(data["province"])
-        data["region"] = scat_region        
+        data["region"] = scat_region
 
         # UTM coord conversion
         try:
@@ -428,7 +428,7 @@ def load_scats_tsv():
 
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in ALLOWED_EXTENSIONS:
-            flash("The uploaded file does not have an allowed extension")
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.tsv</b>)"))
             return redirect(f"/load_scats_tsv")
 
         try:
@@ -448,10 +448,9 @@ def load_scats_tsv():
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
-            sql = f"select scat_id from scats where scat_id in ('{scats_list}')"   
-            cursor.execute(sql) 
+            sql = f"select scat_id from scats where scat_id in ('{scats_list}')"
+            cursor.execute(sql)
             scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
-
 
             return render_template("confirm_load_scats_tsv.html",
                                    n_scats = len(all_data),
@@ -477,8 +476,8 @@ def confirm_load(filename, mode):
 
     # check if scat_id already in DB
     scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
-    sql = f"select scat_id from scats where scat_id in ('{scats_list}')"   
-    cursor.execute(sql) 
+    sql = f"select scat_id from scats where scat_id in ('{scats_list}')"
+    cursor.execute(sql)
     scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
 
     sql = ("UPDATE scats SET scat_id = %(scat_id)s, "
@@ -504,7 +503,7 @@ def confirm_load(filename, mode):
             "                institution = %(institution)s, "
             "                geo = %(geo)s "
             "WHERE scat_id = %(scat_id)s;"
-        
+
             "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
             "location, municipality, province, region, "
             "deposition, matrix, collected_scat, scalp_category, "
@@ -561,10 +560,10 @@ def confirm_load(filename, mode):
 '''
 https://stackoverflow.com/questions/1109061/insert-on-duplicate-update-in-postgresql
 
-            INSERT INTO the_table (id, column_1, column_2) 
+            INSERT INTO the_table (id, column_1, column_2)
 VALUES (1, 'A', 'X'), (2, 'B', 'Y'), (3, 'C', 'Z')
-ON CONFLICT (id) DO UPDATE 
-  SET column_1 = excluded.column_1, 
+ON CONFLICT (id) DO UPDATE
+  SET column_1 = excluded.column_1,
       column_2 = excluded.column_2;
 
 
@@ -573,6 +572,6 @@ ON CONFLICT (id) DO UPDATE
 INSERT INTO table (id, field, field2)
        SELECT 3, 'C', 'Z'
        WHERE NOT EXISTS (SELECT 1 FROM table WHERE id=3);
-            
+
 '''
 
