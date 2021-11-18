@@ -12,6 +12,8 @@ from flask import Flask, render_template, redirect, request, Markup, flash, sess
 import psycopg2
 import psycopg2.extras
 from config import config
+import json
+import utm
 
 from transect import Transect
 import functions as fn
@@ -29,6 +31,58 @@ def transects():
     return render_template("transects.html")
 
 
+
+def leaflet(points: list) -> str:
+
+    # UTM coord conversion
+    print(points[0:10])
+    points_latlon = [list(utm.to_latlon(x, y, 32, "N")) for x, y in points]
+    print(points_latlon[0:10])
+
+    x1, y1 = points_latlon[0]
+
+    map = f"""
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+
+    <script>
+	var map = L.map('map').setView([{x1}, {y1}], 13);
+
+L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}}).addTo(map);
+
+
+
+var polylinePoints = {points_latlon};   
+
+var firstpolyline = L.polyline(polylinePoints, {{
+    color: 'red',
+    opacity: 0.5,
+    smoothFactor: 1
+
+    }}).addTo(map);
+
+function onMapClick(e) {{
+		popup
+			.setLatLng(e.latlng)
+			.setContent("You clicked the map at " + e.latlng.toString())
+			.openOn(map);
+	}}
+
+	map.on('click', onMapClick);
+var popup = L.popup();
+	</script>
+    """
+
+    return map
+
+
 @app.route("/view_transect/<transect_id>")
 def view_transect(transect_id):
     """
@@ -36,9 +90,12 @@ def view_transect(transect_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
+    cursor.execute("SELECT *, ST_AsGeoJSON(points) AS points FROM transects WHERE transect_id = %s",
                    [transect_id])
     transect = cursor.fetchone()
+
+    points = json.loads(transect["points"])['coordinates']
+
 
     # path
     cursor.execute("SELECT * FROM paths WHERE transect_id = %s ORDER BY date DESC",
@@ -55,7 +112,8 @@ def view_transect(transect_id):
                            transect=transect,
                            paths=results_paths,
                            snowtracks=results_snowtracks,
-                           transect_id=transect_id)
+                           transect_id=transect_id,
+                           map=Markup(leaflet(points)))
 
 
 @app.route("/transects_list")
