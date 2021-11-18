@@ -63,7 +63,7 @@ var polylinePoints = {points_latlon};
 
 var firstpolyline = L.polyline(polylinePoints, {{
     color: 'red',
-    opacity: 0.5,
+    opacity: 0.75,
     smoothFactor: 1
 
     }}).addTo(map);
