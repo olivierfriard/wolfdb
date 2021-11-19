@@ -32,7 +32,7 @@ def transects():
 
 
 
-def leaflet_line(points_latlon: list) -> str:
+def leaflet_line(points_lonlat: list) -> str:
 
     # UTM coord conversion
     '''
@@ -41,7 +41,9 @@ def leaflet_line(points_latlon: list) -> str:
     print(points_latlon[0:10])
     '''
 
-    x1, y1 = points_latlon[0]
+    lon_org, lat_orig = points_lonlat[0]
+
+    points_latlong = [[lat, lon] for lon, lat in points_lonlat]
 
     map = f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
@@ -53,7 +55,7 @@ def leaflet_line(points_latlon: list) -> str:
    crossorigin=""></script>
 
     <script>
-	var map = L.map('map').setView([{x1}, {y1}], 13);
+	var map = L.map('map').setView([{lat_orig}, {lon_org}], 13);
 
 L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -61,7 +63,7 @@ L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
 
 
 
-var polylinePoints = {points_latlon};
+var polylinePoints = {points_latlong};
 
 var firstpolyline = L.polyline(polylinePoints, {{
     color: 'red',
