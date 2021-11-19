@@ -32,12 +32,14 @@ def transects():
 
 
 
-def leaflet(points: list) -> str:
+def leaflet_line(points_latlon: list) -> str:
 
     # UTM coord conversion
+    '''
     print(points[0:10])
     points_latlon = [list(utm.to_latlon(x, y, 32, "N")) for x, y in points]
     print(points_latlon[0:10])
+    '''
 
     x1, y1 = points_latlon[0]
 
@@ -59,7 +61,7 @@ L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
 
 
 
-var polylinePoints = {points_latlon};   
+var polylinePoints = {points_latlon};
 
 var firstpolyline = L.polyline(polylinePoints, {{
     color: 'red',
@@ -113,7 +115,7 @@ def view_transect(transect_id):
                            paths=results_paths,
                            snowtracks=results_snowtracks,
                            transect_id=transect_id,
-                           map=Markup(leaflet(points)))
+                           map=Markup(leaflet_line(points)))
 
 
 @app.route("/transects_list")
