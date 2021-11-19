@@ -89,6 +89,79 @@ def get_regions(provinces):
     return " ".join(list(set(transect_region)))
 
 
+def leaflet_geojson(geojson_features: list) -> str:
+
+    map = f"""
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+
+    <script>
+	var map = L.map('map').setView([45, 7], 10);
+
+L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}}).addTo(map);
+
+
+var blueIcon = L.icon({{ iconUrl: '/static/marker-icon-blue.png', iconAnchor: [7, 20] }});
+
+
+var features = {geojson_features};
+
+
+var geojsonMarkerOptions = {{
+    radius: 8,
+    fillColor: "blue",
+    color: "blue",
+    weight: 1,
+    opacity: 1,
+    fillOpacity: 0.9
+}};
+
+var myStyle = {{
+    "color": "red",
+    "weight": 5,
+    "opacity": 0.8
+}};
+
+
+L.geoJSON(features, {{
+style: function(feature) {{
+    alert(feature.properties.type);
+        switch (feature.type) {{
+            case 'LineString': return {{color: "red"}};
+        }}
+        }},
+pointToLayer: function (feature, latlng) {{
+        return L.circleMarker(latlng, geojsonMarkerOptions);
+    }}
+}}).addTo(map);
+
+
+/*
+function onMapClick(e) {{
+		popup
+			.setLatLng(e.latlng)
+			.setContent("You clicked the map at " + e.latlng.toString())
+			.openOn(map);
+	}}
+
+	map.on('click', onMapClick);
+*/
+var popup = L.popup();
+	</script>
+    """
+
+    return map
+
+
+
+
 def leaflet_point(point_lonlat: list, scat_id: str) -> str:
 
     lon, lat = point_lonlat
