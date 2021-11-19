@@ -92,7 +92,7 @@ def view_transect(transect_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, ST_AsGeoJSON(points) AS points FROM transects WHERE transect_id = %s",
+    cursor.execute("SELECT *, ST_AsGeoJSON(points) AS points, ROUND(ST_Length(points)) AS transect_length FROM transects WHERE transect_id = %s",
                    [transect_id])
     transect = cursor.fetchone()
 
