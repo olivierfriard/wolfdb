@@ -1,0 +1,58 @@
+{% include "header.html" %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/scats_list" class="btn btn-primary">Scats</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}XLSX
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+
+
+
+
+<form id="upload_file" action="/load_scats_xlsx"  method="POST" enctype="multipart/form-data">
+    <br>
+
+
+  <div class="form-group">
+   <label for="new_file">Scats Excel file (XLSX) / OpenDocument (ODS) file</label><br>
+  <input type="file" id="new_file" placeholder="" name="new_file" >
+  </div>
+  <br>
+  <button type="submit" class="btn btn-danger" id="upload-file-btn" type="button">Upload file</button>
+
+  </form>
+
+
+</div>
+</main>
+
+</body>
+</html>
+
+
+
+
+
