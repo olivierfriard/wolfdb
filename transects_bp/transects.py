@@ -45,8 +45,19 @@ def view_transect(transect_id):
     transect = cursor.fetchone()
 
     transect_geojson = json.loads(transect["transect_geojson"])
-    print(transect_geojson)
-    points = transect_geojson['coordinates']
+
+
+    transect_feature = {
+            "type": "Feature",
+            "geometry": dict(transect_geojson),
+            "properties": {
+                "popupContent": "This is a free bus line that will take you across downtown."
+            },
+            "id": 1
+        }
+    transect_features = [transect_feature]
+
+    center = f"{transect_geojson['coordinates'][0][1]}, {transect_geojson['coordinates'][0][0]}"
 
     # path
     cursor.execute("SELECT * FROM paths WHERE transect_id = %s ORDER BY date DESC",
@@ -58,13 +69,12 @@ def view_transect(transect_id):
                    [f"{transect_id} %"])
     results_snowtracks = cursor.fetchall()
 
-
     return render_template("view_transect.html",
                            transect=transect,
                            paths=results_paths,
                            snowtracks=results_snowtracks,
                            transect_id=transect_id,
-                           map=Markup(fn.leaflet_line(points)))
+                           map=Markup(fn.leaflet_geojson(center, [], transect_features)))
 
 
 @app.route("/transects_list")

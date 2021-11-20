@@ -7,6 +7,8 @@ from flask import Flask, render_template, redirect, request, Markup, flash, sess
 import psycopg2
 import psycopg2.extras
 from config import config
+import functions as fn
+import utm
 
 # blueprints
 from scats_bp import scats
@@ -44,9 +46,11 @@ def version():
 
 
 
-@app.route("/test")
-def test():
-    return render_template("test.html")
+@app.route("/rev_geocoding/<east>/<north>/<zone>")
+def rev_geocoding(east, north ,zone):
+    lat_lon = utm.to_latlon(int(east), int(north), int(zone.replace("N", "")), zone[-1])
+    r = fn.reverse_geocoding(lat_lon[::-1])
+    return r
 
 
 @app.route("/test_action", methods=("POST",))
