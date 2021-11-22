@@ -59,6 +59,9 @@ def all_snow_tracks_id():
 
 
 def sampling_season(date):
+    """
+    Extract sampnig season from date in ISO 8601 format
+    """
     try:
         month = int(date[5:6+1])
         year = int(date[0:3+1])
