@@ -23,12 +23,12 @@
     <strong>{{ message }}</strong><br>
   {% endfor %}
   </ul>
-{% endif %}XLSX
+{% endif %}
 {% endwith %}
 {% block body %}{% endblock %}
 
 
-
+<h2>Load scats from file</h2>
 
 
 
@@ -37,7 +37,8 @@
 
 
   <div class="form-group">
-   <label for="new_file">Scats Excel file (XLSX) / OpenDocument (ODS) file</label><br>
+   <label for="new_file">Select the Excel file (XLSX) or the OpenDocument (ODS) file</label><br>
+   <br>
   <input type="file" id="new_file" placeholder="" name="new_file" >
   </div>
   <br>

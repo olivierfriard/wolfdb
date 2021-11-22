@@ -86,7 +86,7 @@ def view_scat(scat_id):
     results = dict(cursor.fetchone())
 
     scat_geojson = json.loads(results["scat_lonlat"])
-    
+
     scat_feature = {"geometry": dict(scat_geojson),
                     "type": "Feature",
                     "properties": {
@@ -110,7 +110,7 @@ def view_scat(scat_id):
     transect = cursor.fetchone()
 
     transect_geojson = json.loads(transect["transect_geojson"])
-    
+
 
     transect_feature = {
             "type": "Feature",
@@ -634,9 +634,15 @@ def extract_data_from_xlsx(filename):
         engine = "odf"
 
     try:
-        df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), engine=engine)
+        df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=None, engine=engine)
     except Exception:
-        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}
+        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
+
+
+    if "Scats" not in df.keys():
+        return True, fn.alert_danger(f"Scats sheet not found in workbook"), {}, {}, {}
+
+    scats_df = df["Scats"]
 
     # check columns
     for column in ['scat_id', 'date', 'wa_code', 'genotype_id', 'sampling_type', 'transect_id', 'snowtrack_id',
@@ -645,13 +651,13 @@ def extract_data_from_xlsx(filename):
                     'genetic_sample',
                     'coord_east', 'coord_north', 'coord_zone',
                     'operator', 'institution']:
-        if column not in list(df.columns):
-            return True, fn.alert_danger(f"Column {column} is missing"), {}
+        if column not in list(scats_df.columns):
+            return True, fn.alert_danger(f"Column {column} is missing"), {}, {}, {}
 
     all_data = {}
-    for index, row in df.iterrows():
+    for index, row in scats_df.iterrows():
         data = {}
-        for column in list(df.columns):
+        for column in list(scats_df.columns):
             data[column] = row[column]
             if isinstance(data[column], float) and str(data[column]) == "nan":
                 data[column] = ""
@@ -663,15 +669,17 @@ def extract_data_from_xlsx(filename):
             day = int(data['scat_id'][5:6+1])
             date = f"{year}-{month}-{day}"
         except Exception:
-            return True, fn.alert_danger(f"The scat ID is not valid at row {index + 1}: {data['scat_id']}"), {}
+            return True, fn.alert_danger(f"The scat ID is not valid at row {index + 1}: {data['scat_id']}"), {}, {}, {}
 
         # check date
+        print(f"{data['date']=}")
+        print(f"{str(data['date'])=}")
         try:
             date_from_file = str(data["date"]).split(" ")[0].strip()
         except Exception:
             date_from_file = ""
         if date != date_from_file:
-            return True, fn.alert_danger(f"Check the scat ID and the date at row {index + 1}: {data['scat_id']}  {date_from_file}"), {}
+            return True, fn.alert_danger(f"Check the scat ID and the date at row {index + 1}: {data['scat_id']}  {date_from_file}"), {}, {}, {}
 
         data["date"] = date_from_file
 
@@ -687,12 +695,12 @@ def extract_data_from_xlsx(filename):
         try:
             coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), int(data["coord_zone"].replace("N", "")), "N")
         except Exception:
-            return True, fn.alert_danger(f'Check the UTM coordinates at row {index + 1}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'), {}
+            return True, fn.alert_danger(f'Check the UTM coordinates at row {index + 1}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'), {}, {}, {}
         data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
 
         # sampling_type
         if data["sampling_type"].upper().strip() not in ["OPPORTUNISTIC", "SYSTEMATIC"]:
-            return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b> or <b>Systematic</b> at row {index + 1}'), {}
+            return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b> or <b>Systematic</b> at row {index + 1}'), {}, {}, {}
 
         # deposition
         if data["deposition"].upper().strip() == "FRESCA":
@@ -700,7 +708,7 @@ def extract_data_from_xlsx(filename):
         if data["deposition"].upper().strip() == "VECCHIA":
             data["deposition"] = "Old"
         if data["deposition"].upper().strip() not in ["FRESH", "OLD"]:
-            return True, fn.alert_danger(f'The deposition must be <b>fresh</b> or <b>old</b> at row {index + 1}'), {}
+            return True, fn.alert_danger(f'The deposition must be <b>fresh</b> or <b>old</b> at row {index + 1}'), {}, {}, {}
 
         # collected_scat
         if data["collected_scat"].upper().strip() == "SI":
@@ -708,7 +716,7 @@ def extract_data_from_xlsx(filename):
         if data["collected_scat"].upper().strip() == "NO":
             data["collected_scat"] = "No"
         if data["collected_scat"].upper().strip() not in ["YES", "NO"]:
-            return True, fn.alert_danger(f'The collected_scat must be <b>Yes</b> or <b>No</b> at row {index + 1}'), {}
+            return True, fn.alert_danger(f'The collected_scat must be <b>Yes</b> or <b>No</b> at row {index + 1}'), {}, {}, {}
 
         # matrix
         if data["matrix"].upper().strip() == "SI":
@@ -717,12 +725,42 @@ def extract_data_from_xlsx(filename):
             data["matrix"] = "No"
 
         if data["matrix"].upper().strip() not in ["YES", "NO"]:
-            return True, fn.alert_danger(f'The matrix must be <b>Yes</b> or <b>No</b> at row {index + 1}')
+            return True, fn.alert_danger(f'The matrix must be <b>Yes</b> or <b>No</b> at row {index + 1}'), {}, {}, {}
 
         all_data[index] = dict(data)
 
-    return False, "", all_data
 
+    # extract paths
+    all_paths = {}
+    if "Paths" in df.keys():
+        paths_df = df["Paths"]
+        for index, row in paths_df.iterrows():
+            data = {}
+            for column in list(scats_df.columns):
+                if isinstance(data[column], float) and str(data[column]) == "nan":
+                    data[column] = ""
+                else:
+                    data[column] = row[column]
+
+            all_paths[index] = dict(data)
+
+
+    # extract tracks
+    all_tracks = {}
+    if "Tracks" in df.keys():
+        tracks_df = df["Tracks"]
+        for index, row in tracks_df.iterrows():
+            data = {}
+            for column in list(scats_df.columns):
+                if isinstance(data[column], float) and str(data[column]) == "nan":
+                    data[column] = ""
+                else:
+                    data[column] = row[column]
+
+            all_tracks[index] = dict(data)
+
+
+    return False, "", all_data, all_paths, all_tracks
 
 
 
@@ -750,7 +788,7 @@ def load_scats_xlsx():
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect(f"/load_scats_xlsx")
 
-        r, msg, all_data = extract_data_from_xlsx(filename)
+        r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
         if r:
             flash(msg)
             return redirect(f"/load_scats_xlsx")
@@ -760,7 +798,7 @@ def load_scats_xlsx():
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
-            sql = f"select scat_id from scats where scat_id in ('{scats_list}')"
+            sql = f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
             cursor.execute(sql)
             scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
 
@@ -778,7 +816,7 @@ def confirm_load_xlsx(filename, mode):
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect(f"/load_scats_xlsx")
 
-    r, msg, all_data = extract_data_from_xlsx(filename)
+    r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
     if r:
         flash(msg)
         return redirect(f"/load_scats_xlsx")
@@ -859,6 +897,41 @@ def confirm_load_xlsx(filename, mode):
                         }
                         )
     connection.commit()
+
+
+    # paths
+    if all_paths:
+        sql = ("UPDATE paths SET path_id = %(path_id)s, "
+            "                 transect_id = %(transect_id)s, "
+                "                date = %(date)s, "
+                "                sampling_season = %(sampling_season)s,"
+                "                completeness = %(completeness)s, "
+                "                observer = %(operator)s, "
+                "                institution = %(institution)s, "
+                "                note = %(note)s "
+                "WHERE path_id = %(path_id)s;"
+
+                "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
+                "observer, institution, note) "
+                "SELECT %(path_id)s, %(transect_id)s, %(date)s, "
+                " %(sampling_season)s, %(completeness)s, "
+                " %(operator)s, %(institution)s, %(note)s "
+                "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
+                )
+        for idx in all_paths:
+            data = dict(all_paths[idx])
+            cursor.execute(sql,
+                            {"path_id": data["path_id"],
+                            "transect_id": data["transect_id"].strip(),
+                            "date": data["date"],
+                            "sampling_season": fn.sampling_season(data["date"]),
+                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                            "note": data["note"],
+                            }
+                            )
+        connection.commit()
+
+
 
     msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
     flash(fn.alert_success(msg))
