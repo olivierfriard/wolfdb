@@ -106,7 +106,7 @@ def get_regions(provinces):
     return " ".join(list(set(transect_region)))
 
 
-def leaflet_geojson(center, scat_features, transect_features) -> str:
+def leaflet_geojson(center, scat_features, transect_features, zoom=13) -> str:
 
     map = """
 
@@ -139,7 +139,7 @@ var scats = {
 
 
 
-var map = L.map('map').setView([###CENTER###], 13);
+var map = L.map('map').setView([###CENTER###], ###ZOOM###);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -170,7 +170,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			return L.circleMarker(latlng, {
 				radius: 8,
 				fillColor: "#ff7800",
-				color: "#000",
+				color: "#red",
 				weight: 1,
 				opacity: 1,
 				fillOpacity: 0.8
@@ -196,7 +196,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 </script>
     
     
-    """.replace("###SCAT_FEATURES###", str(scat_features)).replace("###CENTER###", center).replace("###TRANSECT_FEATURES###", str(transect_features))
+    """.replace("###SCAT_FEATURES###", str(scat_features)).replace("###CENTER###", center).replace("###TRANSECT_FEATURES###", str(transect_features)).replace("###ZOOM###", str(zoom))
 
 
 

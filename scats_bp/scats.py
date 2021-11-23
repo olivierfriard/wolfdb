@@ -160,13 +160,14 @@ def plot_all_scats():
 
         scat_features.append(dict(scat_feature))
 
-    center = f"45 , 7"
+    center = f"45 , 8.5"
+    zoom = 8
 
     transect_features = []
 
 
     return render_template("plot_all_scats.html",
-                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features))
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
                            )
 
 
