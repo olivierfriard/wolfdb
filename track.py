@@ -59,4 +59,4 @@ class Track(Form):
     minimum_number_of_wolves = StringField("Minimum number of wolves", validators=[integer_validator])
     track_format = StringField("Track format", [])
 
-    note = TextAreaField("Note", [])
+    notes = TextAreaField("Notes", [])

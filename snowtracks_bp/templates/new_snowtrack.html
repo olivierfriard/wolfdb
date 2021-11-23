@@ -169,10 +169,10 @@
 
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.note.label }}
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.notes.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.note(class="form-control",  value=default_values["note"]) }}
-    {% for message in form.note.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    {{ form.notes(class="form-control",  value=default_values["notes"]) }}
+    {% for message in form.notes.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
 

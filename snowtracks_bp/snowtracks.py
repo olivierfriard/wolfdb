@@ -112,7 +112,7 @@ def new_snowtrack():
                                              "location, municipality, province, region,"
                                              "observer, institution, scalp_category, "
                                              "sampling_type, days_after_snowfall, minimum_number_of_wolves,"
-                                             "track_format, note)"
+                                             "track_format, notes)"
                    "VALUES (%s, %s, %s, %s, "
                            "%s, %s, %s, %s, "
                            "%s, %s, %s, "
@@ -135,7 +135,7 @@ def new_snowtrack():
                             int(request.form["days_after_snowfall"]) if request.form["days_after_snowfall"] else None,
                             int(request.form["minimum_number_of_wolves"]) if request.form["minimum_number_of_wolves"] else None,
                             request.form["track_format"],
-                            request.form["note"]
+                            request.form["notes"]
                             ]
                            )
             connection.commit()
@@ -222,7 +222,7 @@ def edit_snowtrack(snowtrack_id):
                         "days_after_snowfall = %s,"
                         "minimum_number_of_wolves = %s,"
                         "track_format = %s,"
-                        "note = %s"
+                        "notes = %s"
                    "WHERE snowtrack_id = %s")
 
             cursor.execute(sql,
@@ -242,7 +242,7 @@ def edit_snowtrack(snowtrack_id):
                             request.form["days_after_snowfall"],
                             request.form["minimum_number_of_wolves"],
                             request.form["track_format"],
-                            request.form["note"],
+                            request.form["notes"],
                             snowtrack_id
                            ]
                            )

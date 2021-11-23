@@ -715,8 +715,8 @@ def extract_data_from_xlsx(filename):
 
         # sampling_type
         data["sampling_type"] = data["sampling_type"].capitalize().strip()
-        if data["sampling_type"] not in ["Opportunistic", "Systematic"]:
-            return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b> or <b>Systematic</b> at row {index + 2}'), {}, {}, {}
+        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
+            return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
 
         # no path ID if scat is opportunistc
         if data["sampling_type"] == "Opportunistic":
@@ -768,14 +768,19 @@ def extract_data_from_xlsx(filename):
         paths_df = df["Paths"]
         for index, row in paths_df.iterrows():
             data = {}
-            for column in list(scats_df.columns):
+            for column in list(paths_df.columns):
+                data[column] = row[column]
                 if isinstance(data[column], float) and str(data[column]) == "nan":
                     data[column] = ""
-                else:
-                    data[column] = row[column]
+
+            data["date"] = str(data["date"]).split(" ")[0]
+            if data["completeness"] == "":
+                data["completeness"] = None
 
             all_paths[index] = dict(data)
+
     else:  # no Paths sheet found
+
         index = 0
         for idx in scats_data:
             if not scats_data[idx]["path_id"]:
@@ -975,6 +980,7 @@ def confirm_load_xlsx(filename, mode):
                 )
         for idx in all_paths:
             data = dict(all_paths[idx])
+            print(f"{data=}")
             cursor.execute(sql,
                             {"path_id": data["path_id"],
                             "transect_id": data["transect_id"].strip(),
