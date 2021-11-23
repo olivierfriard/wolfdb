@@ -103,7 +103,7 @@ def view_scat(scat_id):
     results["lonlat_str"] = f"{lon_lat[0]}, {lon_lat[1]}"
 
     # transect
-    if results["path_id"]:
+    if results["path_id"]:  # Systematic sampling
         transect_id = "_".join(results["path_id"].split("_")[:-1])
 
         cursor.execute("SELECT ST_AsGeoJSON(points) AS transect_geojson FROM transects WHERE transect_id = %s",
@@ -124,13 +124,14 @@ def view_scat(scat_id):
         transect_features = [transect_feature]
 
     else:
-        # opportunistic
+        # opportunistic sampling
+        transect_id = ""
         transect_features = []
-
 
 
     return render_template("view_scat.html",
                            results=results,
+                           transect_id=transect_id,
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features))
                            )
 
