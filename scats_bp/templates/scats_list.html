@@ -11,7 +11,7 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 <!--<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;-->
-<a href="/new_scat" class="btn btn-primary">New scat</a>&nbsp;
+<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;
 <br>
 
 
@@ -65,16 +65,16 @@
         {% endif %}
         {% endif %}
     </td>
-    
+
     <td>{% if result['sampling_type'] == "Systematic" %}
         {% if result['snowtrack_id'] != "" %}
         <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
         {% else %}
         {{ result['snowtrack_id'] }}
         {% endif %}
-        {% endif %}        
+        {% endif %}
         </td>
-    
+
 
     <td>
         {% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}
@@ -84,7 +84,7 @@
         {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
     </td>
 
-    
+
 
 
 
