@@ -136,6 +136,41 @@ def view_scat(scat_id):
                            )
 
 
+@app.route("/plot_all_scats")
+def plot_all_scats():
+    """
+    plot all scats
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT *, ST_AsGeoJSON(geo) AS scat_lonlat FROM scats")
+    # results = dict(cursor.fetchall())
+
+    scat_features = []
+    for row in cursor.fetchall():
+        scat_geojson = json.loads(row["scat_lonlat"])
+
+        scat_feature = {"geometry": dict(scat_geojson),
+                        "type": "Feature",
+                        "properties": {
+                                       "popupContent": f"Scat ID: {row['scat_id']}"
+                                      },
+                        "id": row["scat_id"]
+                   }
+
+        scat_features.append(dict(scat_feature))
+
+    center = f"45 , 7"
+
+    transect_features = []
+
+
+    return render_template("plot_all_scats.html",
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features))
+                           )
+
+
+
 
 @app.route("/scats_list")
 def scats_list():
