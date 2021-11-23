@@ -12,10 +12,9 @@ WolfDB web service
 
 from flask import Markup
 import datetime
-from wtforms import (Form, StringField, TextAreaField,
-                     validators, SelectField)
+from wtforms import (Form, StringField, TextAreaField, SelectField)
 
-from wtforms.validators import Optional, Required, ValidationError
+from wtforms.validators import Required, ValidationError
 
 
 
@@ -51,5 +50,5 @@ class Path(Form):
     observer = StringField("Observer", [])
     institution = StringField("Institution", [])
 
-    note = TextAreaField("Note", [])
+    notes = TextAreaField("Notes", [])
 

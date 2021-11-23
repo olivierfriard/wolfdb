@@ -106,7 +106,7 @@ def new_path():
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
 
-                   "observer, institution, note) "
+                   "observer, institution, notes) "
                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [path_id,
@@ -114,7 +114,7 @@ def new_path():
                             request.form["date"],
                             fn.sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
-                            request.form["observer"], request.form["institution"], request.form["note"]
+                            request.form["observer"], request.form["institution"], request.form["notes"]
                            ]
                            )
             connection.commit()
@@ -180,7 +180,7 @@ def edit_path(path_id):
                    "completeness=%s, "
                    "observer=%s, "
                    "institution=%s, "
-                   "note=%s "
+                   "notes=%s "
                    "WHERE path_id = %s")
 
             cursor.execute(sql,
@@ -190,7 +190,7 @@ def edit_path(path_id):
                             fn.sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
                             request.form["observer"], request.form["institution"],
-                            request.form["note"],
+                            request.form["notes"],
                             path_id
                            ]
                            )

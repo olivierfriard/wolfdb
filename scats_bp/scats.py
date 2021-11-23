@@ -388,7 +388,7 @@ def del_scat(scat_id):
     connection.commit()
     return redirect("/scats_list")
 
-
+'''
 
 def extract_data_from_tsv(filename):
     """
@@ -621,7 +621,7 @@ def confirm_load(filename, mode):
 
 
 
-
+'''
 
 
 
@@ -663,7 +663,7 @@ def extract_data_from_xlsx(filename):
         if column not in list(scats_df.columns):
             return True, fn.alert_danger(f"Column {column} is missing"), {}, {}, {}
 
-    all_data = {}
+    scats_data = {}
     for index, row in scats_df.iterrows():
         data = {}
         for column in list(scats_df.columns):
@@ -759,8 +759,7 @@ def extract_data_from_xlsx(filename):
             return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
 
-
-        all_data[index] = dict(data)
+        scats_data[index] = dict(data)
 
 
     # extract paths
@@ -776,6 +775,24 @@ def extract_data_from_xlsx(filename):
                     data[column] = row[column]
 
             all_paths[index] = dict(data)
+    else:  # no Paths sheet found
+        index = 0
+        for idx in scats_data:
+            if not scats_data[idx]["path_id"]:
+                continue
+            data = {}
+            data["path_id"] = scats_data[idx]["path_id"]
+            data["transect_id"] = scats_data[idx]["transect_id"]
+            data["date"] = scats_data[idx]["date"]
+            data["sampling_season"] = fn.sampling_season(scats_data[idx]["date"])
+            data["completeness"] = None
+            data["operator"] = scats_data[idx]["operator"]
+            data["institution"] = scats_data[idx]["institution"]
+            data["notes"] = ""
+
+            all_paths[index] = dict(data)
+            index += 1
+
 
 
     # extract tracks
@@ -793,7 +810,7 @@ def extract_data_from_xlsx(filename):
             all_tracks[index] = dict(data)
 
 
-    return False, "", all_data, all_paths, all_tracks
+    return False, "", scats_data, all_paths, all_tracks
 
 
 
@@ -946,14 +963,14 @@ def confirm_load_xlsx(filename, mode):
                 "                completeness = %(completeness)s, "
                 "                observer = %(operator)s, "
                 "                institution = %(institution)s, "
-                "                note = %(note)s "
+                "                notes = %(notes)s "
                 "WHERE path_id = %(path_id)s;"
 
                 "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
-                "observer, institution, note) "
+                "observer, institution, notes) "
                 "SELECT %(path_id)s, %(transect_id)s, %(date)s, "
                 " %(sampling_season)s, %(completeness)s, "
-                " %(operator)s, %(institution)s, %(note)s "
+                " %(operator)s, %(institution)s, %(notes)s "
                 "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
                 )
         for idx in all_paths:
@@ -963,8 +980,9 @@ def confirm_load_xlsx(filename, mode):
                             "transect_id": data["transect_id"].strip(),
                             "date": data["date"],
                             "sampling_season": fn.sampling_season(data["date"]),
+                            "completeness": data["completeness"],
                             "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                            "note": data["note"],
+                            "notes": data["notes"],
                             }
                             )
         connection.commit()
