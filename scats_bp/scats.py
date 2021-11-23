@@ -699,7 +699,8 @@ def extract_data_from_xlsx(filename):
         data["date"] = date_from_file
 
         # path_id
-        path_id = data['transect_id'] + "_" + date[2:].replace("-", "")
+        print(data)
+        path_id = str(data['transect_id']) + "_" + date[2:].replace("-", "")
         data["path_id"] = path_id
 
         # region
@@ -756,7 +757,7 @@ def extract_data_from_xlsx(filename):
         if data["genetic_sample"] == "No":
             data["genetic_sample"] = "No"
         if data["genetic_sample"] not in ["Yes", "No", ""]:
-            return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
+            return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
 
         scats_data[index] = dict(data)
@@ -797,7 +798,6 @@ def extract_data_from_xlsx(filename):
 
             all_paths[index] = dict(data)
             index += 1
-
 
 
     # extract tracks
@@ -987,6 +987,39 @@ def confirm_load_xlsx(filename, mode):
                             "date": data["date"],
                             "sampling_season": fn.sampling_season(data["date"]),
                             "completeness": data["completeness"],
+                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                            "notes": data["notes"],
+                            }
+                            )
+        connection.commit()
+
+    # snow tracks
+    if all_tracks:
+        sql = ("UPDATE snow_tracks SET snowtrack_id = %(snowtrack_id)s, "
+            "                 path_id = %(path_id)s, "
+                "                date = %(date)s, "
+                "                sampling_season = %(sampling_season)s,"
+                "                observer = %(operator)s, "
+                "                institution = %(institution)s, "
+                "                notes = %(notes)s "
+                "WHERE snow_tracks = %(snow_tracks)s;"
+
+                "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
+                "sampling_season,  "
+                "observer, institution, notes) "
+                "SELECT %(snowtrack_id)s, %(path_id)s, %(date)s, "
+                "       %(sampling_season)s, "
+                "       %(operator)s, %(institution)s, %(notes)s "
+                "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = %(snowtrack_id)s)"
+                )
+        for idx in all_tracks:
+            data = dict(all_paths[idx])
+            print(f"{data=}")
+            cursor.execute(sql,
+                            {"path_id": data["path_id"],
+                            "snowtrack_id": data["snowtrack_id"].strip(),
+                            "date": data["date"],
+                            "sampling_season": fn.sampling_season(data["date"]),
                             "operator": data["operator"].strip(), "institution": data["institution"].strip(),
                             "notes": data["notes"],
                             }
