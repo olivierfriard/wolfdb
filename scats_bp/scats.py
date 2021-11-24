@@ -181,10 +181,16 @@ def scats_list():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT count(*) as n_scats FROM scats")
+    n_scats = cursor.fetchone()["n_scats"]
+
+
     cursor.execute("SELECT * FROM scats ORDER BY scat_id")
 
     return render_template("scats_list.html",
-                           results=cursor.fetchall())
+                            n_scats=n_scats,
+                            results=cursor.fetchall())
 
 
 @app.route("/new_scat", methods=("GET", "POST"))

@@ -10,13 +10,15 @@
 <hr>
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
-<!--<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;-->
 <a href="/scats" class="btn btn-primary">Scats</a>&nbsp;
+<a href="/plot_all_scats" class="btn btn-primary">Plot</a>&nbsp;
+<br>
 <br>
 
-
 {% if results %}
-<h2>List of scats</h2>
+<h2>List of {{ n_scats }} scats</h2>
+
+
 <table class="table table-striped">
 <tr>
 <th>Scat ID</th>
