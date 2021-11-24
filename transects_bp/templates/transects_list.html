@@ -11,13 +11,16 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/new_transect" class="btn btn-primary">New transect</a>
+<a href="/transects" class="btn btn-primary">Transects</a>
 
 <br>
-
+<br>
 
 {% if results %}
-<h2>List of transects</h2>
+<h2>List of {{ n_transects }} transects</h2>
+
+
+
 <table class="table table-striped">
 <tr>
 <th>Transect ID</th>
