@@ -4,8 +4,8 @@ WolfDB web service
 """
 
 from flask import Flask, render_template, redirect, request, Markup, flash, session
-#import psycopg2
-#import psycopg2.extras
+import psycopg2
+import psycopg2.extras
 from config import config
 import functions as fn
 import utm
@@ -38,7 +38,7 @@ app.debug = params["debug"]
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    return render_template("home.html", mode=params["mode"])
 
 @app.route("/version")
 def version():
