@@ -4,8 +4,8 @@ WolfDB web service
 """
 
 from flask import Flask, render_template, redirect, request, Markup, flash, session
-import psycopg2
-import psycopg2.extras
+#import psycopg2
+#import psycopg2.extras
 from config import config
 import functions as fn
 import utm
@@ -17,12 +17,11 @@ from transects_bp import transects
 from snowtracks_bp import snowtracks
 from genetic_bp import genetic
 from dead_wolves_bp import dead_wolves
+#from wa_bp import wa
 
 __version__ = "1"
 
 app = Flask(__name__)
-
-app.debug = True
 
 app.secret_key = "dfhsdlfsdhflsdfhsnqq45"
 
@@ -32,9 +31,10 @@ app.register_blueprint(transects.app)
 app.register_blueprint(snowtracks.app)
 app.register_blueprint(genetic.app)
 app.register_blueprint(dead_wolves.app)
+#app.register_blueprint(wa.app)
 
-
-
+params = config()
+app.debug = params["debug"]
 
 @app.route("/")
 def home():
@@ -45,14 +45,13 @@ def version():
     return __version__
 
 
-
 @app.route("/rev_geocoding/<east>/<north>/<zone>")
 def rev_geocoding(east, north ,zone):
     lat_lon = utm.to_latlon(int(east), int(north), int(zone.replace("N", "")), zone[-1])
     r = fn.reverse_geocoding(lat_lon[::-1])
     return r
 
-
+'''
 @app.route("/test_action", methods=("POST",))
 def test_action():
     print(request.form)
@@ -60,11 +59,7 @@ def test_action():
 <input id="date" type="text" value="{request.form["path_id"].split(" ")[-1]}">
 """
 
-
-
-
-
-
+'''
 
 
 

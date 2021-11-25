@@ -19,7 +19,6 @@ import utm
 import json
 import pathlib as pl
 import pandas as pd
-import numpy as np
 import uuid
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")

@@ -8,7 +8,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask import render_template, redirect, request, Markup, flash, session
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -22,15 +22,28 @@ app.debug = True
 
 params = config()
 
+@app.route("/view_wa/<wa_code>")
+def view_wa(wa_code):
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM scats WHERE wa_code = %s ", [wa_code])
+    return render_template("view_wa.html",
+                           results=cursor.fetchone())
 
 
 @app.route("/genetic_samples")
+@app.route("/wa_list")
 def genetic_samples():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM scats WHERE wa_code IS NOT NULL ORDER BY scat_id")
+
+    cursor.execute("SELECT count(scat_id) AS n_wa FROM scats WHERE wa_code IS NOT NULL AND wa_code != ''")
+    n_wa = cursor.fetchone()["n_wa"]
+
+    cursor.execute("SELECT * FROM scats WHERE wa_code IS NOT NULL AND wa_code != '' ORDER BY wa_code")
 
     return render_template("genetic_samples_list.html",
+                           n_wa=n_wa,
                            results=cursor.fetchall())
 
 
