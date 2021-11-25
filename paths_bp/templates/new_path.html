@@ -82,7 +82,7 @@
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.notes.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.notes(size=20, class="form-control", value=default_values["notes"]) }}
+    {{ form.notes(size=20, class="form-control") }}
     {% for message in form.notes.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>

@@ -184,6 +184,7 @@ def edit_transect(transect_id):
         cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
                     [transect_id])
         default_values = cursor.fetchone()
+        default_values["sector"] = "" if default_values["sector"] is None else default_values["sector"]
 
         form = Transect()
 
@@ -210,7 +211,8 @@ def edit_transect(transect_id):
                    "WHERE transect_id = %s")
             cursor.execute(sql,
                            [
-                            request.form["transect_id"].strip(), request.form["sector"],
+                            request.form["transect_id"].strip(),
+                            request.form["sector"] if request.form["sector"] else None,
                             request.form["location"].strip(), request.form["municipality"].strip(),
                             request.form["province"].strip().upper(), transect_regions,
                             transect_id

@@ -45,7 +45,7 @@ class Track(Form):
     municipality = StringField("Municipality", [])
     province = StringField("Province", [])
 
-    observer = StringField("Observer", [])
+    observer = StringField("Operator", [])
     institution = StringField("Institution", [])
 
     scalp_category = SelectField("SCALP category", choices=[('C1', 'C1'), ('C2', 'C2'), ('C3', 'C3')], default="C2")

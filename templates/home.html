@@ -6,7 +6,7 @@
 <div class="container">
 
 
-<h1>WolfDB</h1>
+<h1>WolfDB {% if mode == 'dev' %} - TEST{%endif%}</h1>
 <hr>
 
 
@@ -41,9 +41,17 @@
 
 {% if mode == 'dev' %}
 
+<br><br>
+
 <h2>DB administration</h2>
 
 <a href="/delete_scats" class="btn btn-primary">Empty scats table</a>
+
+
+<a href="/delete_paths" class="btn btn-primary">Empty paths table</a>
+
+{% endif %}
+
 
 
 </div>

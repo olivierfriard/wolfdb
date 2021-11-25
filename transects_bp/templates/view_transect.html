@@ -23,7 +23,7 @@
 
 <table class="table table-striped">
 
-<tr><td>Sector</td><td>{{ transect["sector"] }}</td></tr>
+<tr><td>Sector</td><td>{% if transect["sector"] %}{{ transect["sector"] }}{%endif%}</td></tr>
 <tr><td>Location</td><td>{{ transect["location"] }}</td></tr>
 <tr><td>Municipality</td><td>{{ transect["municipality"] }}</td></tr>
 <tr><td>Province</td><td>{{ transect["province"] }}</td></tr>

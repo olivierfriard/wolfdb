@@ -20,13 +20,12 @@
 <h2>List of {{ n_transects }} transects</h2>
 
 
-
 <table class="table table-striped">
 <tr>
 <th>Transect ID</th>
 <th>Sector</th>
-<th>location</th>
-<th>municipality</th>
+<th>Location</th>
+<th>Municipality</th>
 <th>Province</th>
 <th>Region</th>
 
@@ -35,7 +34,7 @@
 <tr>
 
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
-    <td>{{ result['sector'] }}</td>
+    <td>{% if result["sector"] %}{{ result["sector"] }}{%endif%}</td>
     <td>{{ result['location'] }}</td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>

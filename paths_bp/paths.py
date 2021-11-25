@@ -151,6 +151,7 @@ def edit_path(path_id):
                     completeness=default_values["completeness"])
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+        form.notes.data = default_values["notes"]
 
         return render_template("new_path.html",
                             title="Edit path",

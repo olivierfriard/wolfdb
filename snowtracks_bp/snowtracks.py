@@ -175,6 +175,10 @@ def edit_snowtrack(snowtrack_id):
                      scalp_category=default_values["scalp_category"])
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+        form.notes.data = default_values["notes"]
+
+
+        print(default_values["notes"])
 
         return render_template("new_snowtrack.html",
                             title="Edit track",

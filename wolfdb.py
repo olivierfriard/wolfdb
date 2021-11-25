@@ -51,6 +51,28 @@ def rev_geocoding(east, north ,zone):
     r = fn.reverse_geocoding(lat_lon[::-1])
     return r
 
+
+
+@app.route("/delete_scats")
+def delete_scats():
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("DELETE FROM scats")
+    connection.commit()
+    return redirect("/")
+
+@app.route("/delete_paths")
+def delete_paths():
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("DELETE FROM paths")
+    connection.commit()
+    return redirect("/")
+
+
+
 '''
 @app.route("/test_action", methods=("POST",))
 def test_action():
