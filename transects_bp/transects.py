@@ -2,7 +2,7 @@
 WolfDB web service
 (c) Olivier Friard
 
-flask blueprint for scats management
+flask blueprint for transects management
 """
 
 
@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 from config import config
 import json
-import utm
+
 
 from transect import Transect
 import functions as fn
@@ -40,21 +40,20 @@ def view_transect(transect_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     cursor.execute("SELECT *, ST_AsGeoJSON(points) AS transect_geojson, ROUND(ST_Length(points)) AS transect_length FROM transects WHERE transect_id = %s",
                    [transect_id])
     transect = cursor.fetchone()
 
     transect_geojson = json.loads(transect["transect_geojson"])
 
-
-    transect_feature = {
-            "type": "Feature",
-            "geometry": dict(transect_geojson),
-            "properties": {
-                "popupContent": "This is a free bus line that will take you across downtown."
-            },
-            "id": 1
-        }
+    transect_feature = {"type": "Feature",
+                        "geometry": dict(transect_geojson),
+                        "properties": {
+                        "popupContent": "This is a free bus line that will take you across downtown."
+                                      },
+                        "id": 1
+                       }
     transect_features = [transect_feature]
 
     center = f"{transect_geojson['coordinates'][0][1]}, {transect_geojson['coordinates'][0][0]}"
@@ -64,17 +63,23 @@ def view_transect(transect_id):
                    [transect_id])
     results_paths = cursor.fetchall()
 
+    # number of scats
+    cursor.execute("SELECT COUNT(*) AS n_scats FROM scats WHERE path_id LIKE %s", [f"{transect_id}\_%"])
+    n_scats = cursor.fetchone()["n_scats"]
+
+
     # snow tracks
     cursor.execute("SELECT * FROM snow_tracks WHERE path_id LIKE %s ORDER BY date DESC",
                    [f"{transect_id} %"])
     results_snowtracks = cursor.fetchall()
 
     return render_template("view_transect.html",
-                           transect=transect,
-                           paths=results_paths,
-                           snowtracks=results_snowtracks,
-                           transect_id=transect_id,
-                           map=Markup(fn.leaflet_geojson(center, [], transect_features)))
+                            transect=transect,
+                            paths=results_paths,
+                            snowtracks=results_snowtracks,
+                            transect_id=transect_id,
+                            n_scats=n_scats,
+                            map=Markup(fn.leaflet_geojson(center, [], transect_features)))
 
 
 @app.route("/transects_list")
@@ -82,11 +87,16 @@ def transects_list():
     # get all transects
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT count(*) as n_transects FROM transects")
+    n_transects = cursor.fetchone()["n_transects"]
+
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
 
     results = cursor.fetchall()
 
     return render_template("transects_list.html",
+                           n_transects=n_transects,
                            results=results)
 
 
