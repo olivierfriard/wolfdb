@@ -787,8 +787,8 @@ def extract_data_from_xlsx(filename):
             if not scats_data[idx]["path_id"]:
                 continue
             data = {}
-            data["path_id"] = scats_data[idx]["path_id"]
-            data["transect_id"] = scats_data[idx]["transect_id"]
+            data["path_id"] = str(scats_data[idx]["path_id"]).strip()
+            data["transect_id"] = str(scats_data[idx]["transect_id"]).strip()
             data["date"] = scats_data[idx]["date"]
             data["sampling_season"] = fn.sampling_season(scats_data[idx]["date"])
             data["completeness"] = None
