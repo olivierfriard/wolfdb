@@ -791,6 +791,12 @@ def extract_data_from_xlsx(filename):
         if data["collected_scat"] not in ["Yes", "No", ""]:
             return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
+        # scalp_category
+        data["scalp_category"] = data["scalp_category"].capitalize().strip()
+        if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
+            return True, fn.alert_danger(f'The scalp_category value must be C1, C2, C3, C4 or empty at row {index + 2}'), {}, {}, {}
+
+
         # genetic_sample
         data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
         if data["genetic_sample"] in ["Si", "Sì"]:
