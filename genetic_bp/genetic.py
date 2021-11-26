@@ -56,11 +56,11 @@ def view_genetic_data(wa_code):
     loci = cursor.fetchall()
     data = {}
     for locus in loci:
-        data[locus["name"]] = {"value1": "", "value2": "", "timestamp": ""}
+        data[locus["name"]] = {"value1": "", "value2": "", "timestamp": "", "notes": ""}
 
     cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s ORDER BY locus, timestamp", [wa_code])
     for row in cursor.fetchall():
-        data[row['locus']] =  {"value1": row['value1'], "value2": row['value2'], "timestamp": str(row['timestamp']).split(".")[0]}
+        data[row['locus']] =  {"value1": row['value1'], "value2": row['value2'], "timestamp": str(row['timestamp']).split(".")[0], "notes": row['notes']}
 
     return render_template("view_genetic_data.html",
                            wa_code=wa_code,
@@ -103,11 +103,12 @@ def add_genetic_data(wa_code):
         loci=cursor.fetchall()
         for locus in loci:
             if request.form[locus['name'] + "_1"] or request.form[locus['name'] + "_2"]:
-                cursor.execute("INSERT INTO wa_locus (wa_code, locus, value1, value2, timestamp) VALUES (%s, %s, %s, %s, NOW()) ",
+                cursor.execute("INSERT INTO wa_locus (wa_code, locus, value1, value2, timestamp, notes) VALUES (%s, %s, %s, %s, NOW(), %s) ",
                            [wa_code, locus['name'],
                            int(request.form[locus['name'] + "_1"]) if request.form[locus['name'] + "_1"] else None,
-                           int(request.form[locus['name'] + "_2"]) if request.form[locus['name'] + "_2"] else None]
-                           )
+                           int(request.form[locus['name'] + "_2"]) if request.form[locus['name'] + "_2"] else None,
+                           request.form[locus['name'] + "_notes"] if request.form[locus['name'] + "_notes"] else None
+                           ])
 
         cursor.execute("UPDATE scats SET genetic_sample = 'Yes' WHERE wa_code = %s", [wa_code])
 
@@ -119,11 +120,11 @@ def add_genetic_data(wa_code):
 @app.route("/view_genetic_data_history/<wa_code>/<locus>")
 def view_genetic_data_history(wa_code, locus):
 
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp DESC", [wa_code, locus])
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp DESC", [wa_code, locus])
 
-        return render_template("view_genetic_data_history.html",
-                               results = cursor.fetchall(),
-                               wa_code=wa_code,
-                               locus=locus)
+    return render_template("view_genetic_data_history.html",
+                            results = cursor.fetchall(),
+                            wa_code=wa_code,
+                            locus=locus)

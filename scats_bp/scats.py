@@ -109,18 +109,22 @@ def view_scat(scat_id):
                     [transect_id])
         transect = cursor.fetchone()
 
-        transect_geojson = json.loads(transect["transect_geojson"])
+        if transect is not None:
+            transect_geojson = json.loads(transect["transect_geojson"])
 
-
-        transect_feature = {
+            transect_feature = {
                 "type": "Feature",
                 "geometry": dict(transect_geojson),
                 "properties": {
                     "popupContent": f"Transect ID: {transect_id}"
                 },
                 "id": 1
-            }
-        transect_features = [transect_feature]
+                }
+            transect_features = [transect_feature]
+        else:
+            transect_id = ""
+            transect_features = []
+
 
     else:
         # opportunistic sampling
@@ -805,7 +809,6 @@ def extract_data_from_xlsx(filename):
             data["genetic_sample"] = "No"
         if data["genetic_sample"] not in ["Yes", "No", ""]:
             return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
-
 
         scats_data[index] = dict(data)
 

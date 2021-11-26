@@ -23,19 +23,18 @@
 
 <table class="table table-striped">
 <tr>
+<th></th>
+<th></th>
 <th>Date</th>
-<th></th>
-<th></th>
+<th>Notes</th>
 </tr>
 {% for result in results %}
 
-
 <tr>
-<td>{{ result["timestamp"]}}</td>
 <td>{{ result["value1"]}}</td>
-
 <td>{{ result["value2"]}}</td>
-
+<td>{{ result["timestamp"]}}</td>
+<td>{{ result["notes"]}}</td>
 </tr>
 
 {% endfor %}
