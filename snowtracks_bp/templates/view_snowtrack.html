@@ -26,15 +26,15 @@
 <tr><td>Date</td><td>{{ results["date"] }}</td></tr>
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 
-<tr><td>location</td><td>{{ results["location"] }}</td></tr>
-<tr><td>municipality</td><td>{{ results["municipality"] }}</td></tr>
-<tr><td>province</td><td>{{ results["province"] }}</td></tr>
+<tr><td>Location</td><td>{% if results["location"] %}{{ results["location"] }}{% endif %}</td></tr>
+<tr><td>Municipality</td><td>{% if results["municipality"] %}{{ results["municipality"] }}{% endif %}</td></tr>
+<tr><td>Province</td><td>{{ results["province"] }}</td></tr>
 
 <tr><td>Region</td><td>{{ results["region"] }}</td></tr>
-<tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
-<tr><td>institution</td><td>{{ results["institution"] }}</td></tr>
+<tr><td>Operator</td><td>{% if results["observer"] %}{{ results["observer"] }}{% endif %}</td></tr>
+<tr><td>Institution</td><td>{% if results["institution"] %}{{ results["institution"] }}{% endif %}</td></tr>
 <tr><td>Scalp category</td><td>{{ results["scalp_category"] }}</td></tr>
-<tr><td>sampling_type</td><td>{{ results["sampling_type"] }}</td></tr>
+<tr><td>sampling_type</td><td>{% if results["sampling_type"] %}{{ results["sampling_type"] }}{% endif %}</td></tr>
 <tr><td>Transect ID</td><td><a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a></td></tr>
 <tr><td>days after snowfall</td><td>{{ results['days_after_snowfall'] }}</td></tr>
 <tr><td>Minimum number of wolves</td><td>{{ results['minimum_number_of_wolves'] }}</td></tr>
