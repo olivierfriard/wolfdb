@@ -46,7 +46,15 @@ def view_transect(transect_id):
     transect = cursor.fetchone()
 
     if transect is None:
-        return "Transect not found"
+
+        return render_template("view_transect.html",
+                            transect={},
+                            paths={},
+                            snowtracks={},
+                            transect_id=transect_id,
+                            n_scats=0,
+                            map=""
+                            )
 
     transect_geojson = json.loads(transect["transect_geojson"])
 

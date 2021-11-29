@@ -159,7 +159,7 @@ def plot_all_scats():
         scat_feature = {"geometry": dict(scat_geojson),
                         "type": "Feature",
                         "properties": {
-                                       "popupContent": f"Scat ID: {row['scat_id']}"
+                                       "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>"""
                                       },
                         "id": row["scat_id"]
                    }
