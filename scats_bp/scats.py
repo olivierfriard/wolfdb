@@ -84,6 +84,8 @@ def view_scat(scat_id):
                    [scat_id])
     results = dict(cursor.fetchone())
 
+    print(results)
+
     scat_geojson = json.loads(results["scat_lonlat"])
 
     scat_feature = {"geometry": dict(scat_geojson),
@@ -109,18 +111,22 @@ def view_scat(scat_id):
                     [transect_id])
         transect = cursor.fetchone()
 
-        transect_geojson = json.loads(transect["transect_geojson"])
+        if transect is not None:
 
+            transect_geojson = json.loads(transect["transect_geojson"])
 
-        transect_feature = {
-                "type": "Feature",
-                "geometry": dict(transect_geojson),
-                "properties": {
-                    "popupContent": f"Transect ID: {transect_id}"
-                },
-                "id": 1
-            }
-        transect_features = [transect_feature]
+            transect_feature = {
+                    "type": "Feature",
+                    "geometry": dict(transect_geojson),
+                    "properties": {
+                        "popupContent": f"Transect ID: {transect_id}"
+                    },
+                    "id": 1
+                }
+            transect_features = [transect_feature]
+        else:
+            transect_id = ""
+            transect_features = []
 
     else:
         # opportunistic sampling

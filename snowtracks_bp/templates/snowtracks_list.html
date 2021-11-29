@@ -47,19 +47,19 @@
     
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
-    <td>{% if results["location"] %}{{ result['location'] }}{% endif %}</td>
+    <td>{% if result["location"] %}{{ result['location'] }}{% endif %}</td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>
     <td>{{ result['region'] }}</td>
-    <td>{% if results["observer"] %}{{ result['observer'] }}{% endif %}</td>
-    <td>{% if results["institution"] %}{{ result['institution'] }}{% endif %}</td>
+    <td>{% if result["observer"] %}{{ result['observer'] }}{% endif %}</td>
+    <td>{% if result["institution"] %}{{ result['institution'] }}{% endif %}</td>
     <td>{{ result['scalp_category'] }}</td>
-    <td>{% if results["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
+    <td>{% if result["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
 
 
     <td>{{ result['days_after_snowfall'] }}</td>
     <td>{{ result['minimum_number_of_wolves'] }}</td>
-    <td>{{ result['track_format'] }}</td>
+    <td>{% if result["track_format"] %}{{ result['track_format'] }}{% endif %}</td>
     <td>{{ result['notes'] }}</td>
 
 </tr>
