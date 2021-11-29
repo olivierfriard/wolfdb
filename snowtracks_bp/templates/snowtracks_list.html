@@ -21,6 +21,7 @@
 <table class="table table-striped">
 <tr>
 <th>snow-tracking ID</th>
+<th>Sampling type</th>
 <th>Transect ID</th>
 <th>Date</th>
 <th>Sampling season</th>
@@ -30,11 +31,10 @@
 <th>Region</th>
 <th>Operator</th>
 <th>Institution</th>
-<th>scalp category</th>
-<th>sampling_type</th>
-<th>days after snowfall</th>
-<th>minimum number of wolves</th>
-<th>track format</th>
+<th>Scalp category</th>
+<th>Days after snowfall</th>
+<th>Minimum number of wolves</th>
+<th>Track format</th>
 <th>Notes</th>
 
 </tr>
@@ -42,7 +42,9 @@
 <tr>
 
     <td><a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
-    
+
+    <td>{% if result["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
+
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     
     <td>{{ result['date'] }}</td>
@@ -54,8 +56,6 @@
     <td>{% if result["observer"] %}{{ result['observer'] }}{% endif %}</td>
     <td>{% if result["institution"] %}{{ result['institution'] }}{% endif %}</td>
     <td>{{ result['scalp_category'] }}</td>
-    <td>{% if result["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
-
 
     <td>{{ result['days_after_snowfall'] }}</td>
     <td>{{ result['minimum_number_of_wolves'] }}</td>

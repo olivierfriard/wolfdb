@@ -169,6 +169,16 @@ def edit_snowtrack(snowtrack_id):
                     [snowtrack_id])
         default_values = cursor.fetchone()
 
+        if default_values["location"] is None:
+            default_values["location"] = ""
+        if default_values["observer"] is None:
+            default_values["observer"] = ""
+
+        if default_values["institution"] is None:
+            default_values["institution"] = ""
+
+
+
         form = Track(transect_id=default_values["transect_id"],
                      sampling_type=default_values["sampling_type"],
                      scalp_category=default_values["scalp_category"])
@@ -198,12 +208,14 @@ def edit_snowtrack(snowtrack_id):
                 year = int(request.form['snowtrack_id'][1:2+1]) + 2000
                 month = int(request.form['snowtrack_id'][3:4+1])
                 day = int(request.form['snowtrack_id'][5:6+1])
-                date = f"{year}-{month}-{day}"
+                date = f"{year}-{month:02}-{day:02}"
             except Exception:
                 return not_valid("The snowtrack_id value is not correct")
 
             # region
             track_region = fn.get_region(request.form["province"])
+
+            print(fn.sampling_season(date))
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
