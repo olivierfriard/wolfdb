@@ -7,10 +7,9 @@ WolfDB web service
 
 from flask import Markup
 import datetime
-from wtforms import (Form, StringField,
-                     validators, SelectField)
+from wtforms import (Form, StringField, SelectField)
 
-from wtforms.validators import Optional, Required, ValidationError
+from wtforms.validators import Required, ValidationError
 
 
 class Scat(Form):
@@ -60,6 +59,6 @@ class Scat(Form):
     coord_north  = StringField("Coordinate North", validators=[Required(), integer_validator])
     coord_zone = SelectField("Zone", choices=[('32N', '32N'), ('33N', '33N')], default="32N")
 
-    observer = StringField("Observer", [])
+    observer = StringField("Operator", [])
     institution = StringField("Institution", [])
 

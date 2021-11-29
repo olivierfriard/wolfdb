@@ -304,7 +304,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
     for kw in ['county']:
         province =  d['address'].get(kw, "")
 
-    for kw in ['hamlet', 'town', 'city', 'village']:
+    for kw in ['hamlet', 'town', 'city', 'village', 'municipality']:
         city = d['address'].get(kw, "")
         if city:
             break
