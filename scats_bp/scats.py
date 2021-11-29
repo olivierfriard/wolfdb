@@ -78,13 +78,14 @@ def add_wa():
 
 @app.route("/view_scat/<scat_id>")
 def view_scat(scat_id):
+    """
+    Display scat info
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT *, ST_AsGeoJSON(geo) AS scat_lonlat FROM scats WHERE scat_id = %s",
                    [scat_id])
     results = dict(cursor.fetchone())
-
-    print(results)
 
     scat_geojson = json.loads(results["scat_lonlat"])
 
@@ -365,7 +366,10 @@ def edit_scat(scat_id):
                 return not_valid("The scat_id value is not correct")
 
             # path id
-            path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
+            if request.form["sampling_type"] == "Systematic":
+                path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
+            else:
+                path_id = ""
 
             # region
             if len(request.form["province"]) == 2:
