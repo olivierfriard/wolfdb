@@ -59,6 +59,6 @@ class Scat(Form):
     coord_north  = StringField("Coordinate North", validators=[Required(), integer_validator])
     coord_zone = SelectField("Zone", choices=[('32N', '32N'), ('33N', '33N')], default="32N")
 
-    observer = StringField("Observer", [])
+    observer = StringField("Operator", [])
     institution = StringField("Institution", [])
 

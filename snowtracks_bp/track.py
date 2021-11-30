@@ -37,7 +37,7 @@ class Track(Form):
 
 
     snowtrack_id = StringField("Snow-tracking ID", validators=[Required(),])
-    path_id = SelectField("Path ID")
+    transect_id = SelectField("Transect ID")
     #date = StringField("Date", validators=[Required(), iso_date_validator])
     #sampling_season = StringField("Sampling season", [])
 
@@ -55,8 +55,9 @@ class Track(Form):
                                                           ('Systematic', 'Systematic')],
                                 default="")
 
-    days_after_snowfall = StringField("Days after snowfall", validators=[integer_validator])
-    minimum_number_of_wolves = StringField("Minimum number of wolves", validators=[integer_validator])
+    days_after_snowfall = StringField("Days after snowfall", validators=[])
+    minimum_number_of_wolves = StringField("Minimum number of wolves", validators=[])
+
     track_format = StringField("Track format", [])
 
     notes = TextAreaField("Notes", [])

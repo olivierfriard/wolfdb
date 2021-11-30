@@ -47,8 +47,18 @@ def version():
 
 @app.route("/rev_geocoding/<east>/<north>/<zone>")
 def rev_geocoding(east, north ,zone):
-    lat_lon = utm.to_latlon(int(east), int(north), int(zone.replace("N", "")), zone[-1])
+    try:
+        lat_lon = utm.to_latlon(int(east), int(north), int(zone.replace("N", "")), zone[-1])
+    except Exception:
+        return {"continent": "",
+                "country": "",
+                "region": "",
+                "province": "",
+                "municipality": "",
+                "location": ""
+              }
     r = fn.reverse_geocoding(lat_lon[::-1])
+
     return r
 
 

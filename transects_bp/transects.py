@@ -45,6 +45,17 @@ def view_transect(transect_id):
                    [transect_id])
     transect = cursor.fetchone()
 
+    if transect is None:
+
+        return render_template("view_transect.html",
+                            transect={},
+                            paths={},
+                            snowtracks={},
+                            transect_id=transect_id,
+                            n_scats=0,
+                            map=""
+                            )
+
     transect_geojson = json.loads(transect["transect_geojson"])
 
     transect_feature = {"type": "Feature",
@@ -69,8 +80,8 @@ def view_transect(transect_id):
 
 
     # snow tracks
-    cursor.execute("SELECT * FROM snow_tracks WHERE path_id LIKE %s ORDER BY date DESC",
-                   [f"{transect_id} %"])
+    cursor.execute("SELECT * FROM snow_tracks WHERE (transect_id = %s OR transect_id LIKE %s) ORDER BY date DESC",
+                   [transect_id, f"%{transect_id};%"])
     results_snowtracks = cursor.fetchall()
 
     return render_template("view_transect.html",

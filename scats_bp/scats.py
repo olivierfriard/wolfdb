@@ -78,6 +78,9 @@ def add_wa():
 
 @app.route("/view_scat/<scat_id>")
 def view_scat(scat_id):
+    """
+    Display scat info
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT *, ST_AsGeoJSON(geo) AS scat_lonlat FROM scats WHERE scat_id = %s",
@@ -110,21 +113,21 @@ def view_scat(scat_id):
         transect = cursor.fetchone()
 
         if transect is not None:
+
             transect_geojson = json.loads(transect["transect_geojson"])
 
             transect_feature = {
-                "type": "Feature",
-                "geometry": dict(transect_geojson),
-                "properties": {
-                    "popupContent": f"Transect ID: {transect_id}"
-                },
-                "id": 1
+                    "type": "Feature",
+                    "geometry": dict(transect_geojson),
+                    "properties": {
+                        "popupContent": f"Transect ID: {transect_id}"
+                    },
+                    "id": 1
                 }
             transect_features = [transect_feature]
         else:
             transect_id = ""
             transect_features = []
-
 
     else:
         # opportunistic sampling
@@ -156,7 +159,7 @@ def plot_all_scats():
         scat_feature = {"geometry": dict(scat_geojson),
                         "type": "Feature",
                         "properties": {
-                                       "popupContent": f"Scat ID: {row['scat_id']}"
+                                       "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>"""
                                       },
                         "id": row["scat_id"]
                    }
@@ -363,7 +366,10 @@ def edit_scat(scat_id):
                 return not_valid("The scat_id value is not correct")
 
             # path id
-            path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
+            if request.form["sampling_type"] == "Systematic":
+                path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
+            else:
+                path_id = ""
 
             # region
             if len(request.form["province"]) == 2:
@@ -744,8 +750,7 @@ def extract_data_from_xlsx(filename):
         data["date"] = date_from_file
 
         # path_id
-        print(data)
-        path_id = str(data['transect_id']) + "_" + date[2:].replace("-", "")
+        path_id = fn.get_path_id(data['transect_id'], date)
         data["path_id"] = path_id
 
         # region
@@ -795,12 +800,6 @@ def extract_data_from_xlsx(filename):
         if data["collected_scat"] not in ["Yes", "No", ""]:
             return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
-        # scalp_category
-        data["scalp_category"] = data["scalp_category"].capitalize().strip()
-        if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
-            return True, fn.alert_danger(f'The scalp_category value must be C1, C2, C3, C4 or empty at row {index + 2}'), {}, {}, {}
-
-
         # genetic_sample
         data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
         if data["genetic_sample"] in ["Si", "Sì"]:
@@ -809,6 +808,7 @@ def extract_data_from_xlsx(filename):
             data["genetic_sample"] = "No"
         if data["genetic_sample"] not in ["Yes", "No", ""]:
             return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
+
 
         scats_data[index] = dict(data)
 
@@ -837,8 +837,8 @@ def extract_data_from_xlsx(filename):
             if not scats_data[idx]["path_id"]:
                 continue
             data = {}
-            data["path_id"] = str(scats_data[idx]["path_id"]).strip()
-            data["transect_id"] = str(scats_data[idx]["transect_id"]).strip()
+            data["path_id"] = scats_data[idx]["path_id"]
+            data["transect_id"] = scats_data[idx]["transect_id"]
             data["date"] = scats_data[idx]["date"]
             data["sampling_season"] = fn.sampling_season(scats_data[idx]["date"])
             data["completeness"] = None

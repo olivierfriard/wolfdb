@@ -34,6 +34,13 @@ def alert_success(text: str):
         f'<div class="alert alert-success" role="alert">{text}</div>')
 
 
+def get_path_id(transect_id: str, date: str) -> str:
+    """
+    returns path_id
+    date must be in ISO8601 format
+    """
+    return str(transect_id) + "_" + date[2:].replace("-", "")
+
 
 def all_transect_id():
     connection = get_connection()
@@ -297,7 +304,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
     for kw in ['county']:
         province =  d['address'].get(kw, "")
 
-    for kw in ['hamlet', 'town', 'city', 'village']:
+    for kw in ['hamlet', 'town', 'city', 'village', 'municipality']:
         city = d['address'].get(kw, "")
         if city:
             break

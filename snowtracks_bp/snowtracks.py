@@ -77,7 +77,7 @@ def new_snowtrack():
         form = Track()
 
         # get id of all transects
-        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
         return render_template('new_snowtrack.html',
                                 title="New snow track",
                                 action="/new_snowtrack",
@@ -89,7 +89,7 @@ def new_snowtrack():
         form = Track(request.form)
 
         # get id of all paths
-        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
 
@@ -105,10 +105,9 @@ def new_snowtrack():
             # region
             track_region = fn.get_region(request.form["province"])
 
-
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            sql = ("INSERT INTO snow_tracks (snowtrack_id, path_id, date, sampling_season, "
+            sql = ("INSERT INTO snow_tracks (snowtrack_id, transect_id, date, sampling_season, "
                                              "location, municipality, province, region,"
                                              "observer, institution, scalp_category, "
                                              "sampling_type, days_after_snowfall, minimum_number_of_wolves,"
@@ -121,7 +120,7 @@ def new_snowtrack():
             cursor.execute(sql,
                            [
                             request.form["snowtrack_id"],
-                            request.form["path_id"],
+                            request.form["transect_id"].upper(),
                             date,
                             fn.sampling_season(date),
                             request.form["location"].strip(),
@@ -132,12 +131,12 @@ def new_snowtrack():
                             request.form["institution"],
                             request.form["scalp_category"],
                             request.form["sampling_type"],
-                            int(request.form["days_after_snowfall"]) if request.form["days_after_snowfall"] else None,
-                            int(request.form["minimum_number_of_wolves"]) if request.form["minimum_number_of_wolves"] else None,
+                            request.form["days_after_snowfall"],
+                            request.form["minimum_number_of_wolves"],
                             request.form["track_format"],
                             request.form["notes"]
-                            ]
-                           )
+                           ]
+                          )
             connection.commit()
 
             return redirect("/snowtracks_list")
@@ -170,15 +169,24 @@ def edit_snowtrack(snowtrack_id):
                     [snowtrack_id])
         default_values = cursor.fetchone()
 
-        form = Track(path_id=default_values["path_id"],
+        if default_values["location"] is None:
+            default_values["location"] = ""
+        if default_values["observer"] is None:
+            default_values["observer"] = ""
+
+        if default_values["institution"] is None:
+            default_values["institution"] = ""
+
+
+
+        form = Track(transect_id=default_values["transect_id"],
                      sampling_type=default_values["sampling_type"],
                      scalp_category=default_values["scalp_category"])
-        # get id of all paths
-        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+
+        # get id of all transects
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
         form.notes.data = default_values["notes"]
 
-
-        print(default_values["notes"])
 
         return render_template("new_snowtrack.html",
                             title="Edit track",
@@ -190,8 +198,8 @@ def edit_snowtrack(snowtrack_id):
     if request.method == "POST":
         form = Track(request.form)
 
-        # get id of all paths
-        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+        # get id of all transects
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
 
@@ -200,19 +208,20 @@ def edit_snowtrack(snowtrack_id):
                 year = int(request.form['snowtrack_id'][1:2+1]) + 2000
                 month = int(request.form['snowtrack_id'][3:4+1])
                 day = int(request.form['snowtrack_id'][5:6+1])
-                date = f"{year}-{month}-{day}"
+                date = f"{year}-{month:02}-{day:02}"
             except Exception:
                 return not_valid("The snowtrack_id value is not correct")
 
             # region
             track_region = fn.get_region(request.form["province"])
 
+            print(fn.sampling_season(date))
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("UPDATE snow_tracks SET "
                         "snowtrack_id = %s,"
-                        "path_id = %s,"
+                        "transect_id = %s,"
                         "date = %s,"
                         "sampling_season = %s,"
                         "location = %s,"
@@ -232,7 +241,7 @@ def edit_snowtrack(snowtrack_id):
             cursor.execute(sql,
                            [
                             request.form["snowtrack_id"],
-                            request.form["path_id"],
+                            request.form["transect_id"],
                             date,
                             fn.sampling_season(date),
                             request.form["location"],
