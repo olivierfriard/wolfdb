@@ -14,7 +14,7 @@ from config import config
 import urllib.request
 import json
 
-from italian_regions import regions, province_codes
+from italian_regions import regions, province_codes, prov_name2prov_code
 
 params = config()
 
@@ -148,7 +148,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 
-	
+
 	function onEachFeature(feature, layer) {
 		var popupContent = "";
 
@@ -192,11 +192,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 		onEachFeature: onEachFeature
 	}).addTo(map);
 
-	
+
 
 </script>
-    
-    
+
+
     """.replace("###SCAT_FEATURES###", str(scat_features)).replace("###CENTER###", center).replace("###TRANSECT_FEATURES###", str(transect_features)).replace("###ZOOM###", str(zoom))
 
 
@@ -292,7 +292,6 @@ def reverse_geocoding(lon_lat: list) -> dict:
 
     if "address" not in d:
         return None
-    print(d)
 
     country = d['address'].get('country', "")
 
@@ -303,6 +302,8 @@ def reverse_geocoding(lon_lat: list) -> dict:
 
     for kw in ['county']:
         province =  d['address'].get(kw, "")
+        province_code = prov_name2prov_code(province)
+
 
     for kw in ['hamlet', 'town', 'city', 'village', 'municipality']:
         city = d['address'].get(kw, "")
@@ -326,6 +327,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
         "country": country,
         "region": region,
         "province": province,
+        "province_code": province_code,
         "municipality": city,
         "location": place
     }

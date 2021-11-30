@@ -54,6 +54,7 @@ def rev_geocoding(east, north ,zone):
                 "country": "",
                 "region": "",
                 "province": "",
+                "province_code": "",
                 "municipality": "",
                 "location": ""
               }

@@ -380,7 +380,7 @@ def edit_scat(scat_id):
                 scat_region = fn.get_region(province)
 
             # UTM coord conversion
-            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), int(request.form["coord_zone"].replace("N", "")), "N")
+            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -401,10 +401,11 @@ def edit_scat(scat_id):
                    "                scalp_category = %s, "
                    "                coord_east = %s, "
                    "                coord_north = %s, "
-                   "                coord_zone = %s, "
+                   #"                coord_zone = %s, "
                    "                observer = %s, "
                    "                institution = %s, "
-                   "                geo = %s "
+                   "                geo = %s, "
+                   "                geometry_utm = %s "
                    "WHERE scat_id = %s")
             cursor.execute(sql,
                            [
@@ -416,9 +417,10 @@ def edit_scat(scat_id):
                             request.form["snowtrack_id"],
                             request.form["location"], request.form["municipality"], province, scat_region,
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
-                            request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
+                            request.form["coord_east"], request.form["coord_north"], #request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],
                             f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
+                            f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
                             scat_id
                            ]
                            )
@@ -438,6 +440,464 @@ def del_scat(scat_id):
                    {"scat_id": scat_id})
     connection.commit()
     return redirect("/scats_list")
+
+
+
+
+
+def extract_data_from_xlsx(filename):
+    """
+    Extract and check data from a XLSX file
+    """
+
+    if pl.Path(filename).suffix == ".XLSX":
+        engine = "openpyxl"
+    if pl.Path(filename).suffix == ".ODS":
+        engine = "odf"
+
+
+    out = ""
+
+    try:
+        df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=None, engine=engine)
+    except Exception:
+        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
+
+
+    if "Scats" not in df.keys():
+        return True, fn.alert_danger(f"Scats sheet not found in workbook"), {}, {}, {}
+
+    scats_df = df["Scats"]
+
+    # check columns
+    for column in ['scat_id', 'date', 'wa_code', 'genotype_id', 'sampling_type', 'transect_id', 'snowtrack_id',
+                    'location', 'municipality', 'province',
+                    'deposition', 'matrix', 'collected_scat', 'scalp_category',
+                    'genetic_sample',
+                    'coord_east', 'coord_north', 'coord_zone',
+                    'operator', 'institution', 'notes']:
+
+        if column not in list(scats_df.columns):
+            return True, fn.alert_danger(f"Column {column} is missing"), {}, {}, {}
+
+    scats_data = {}
+    for index, row in scats_df.iterrows():
+        data = {}
+        for column in list(scats_df.columns):
+            data[column] = row[column]
+            if isinstance(data[column], float) and str(data[column]) == "nan":
+                data[column] = ""
+
+        # date
+        try:
+            year = int(data['scat_id'][1:2+1]) + 2000
+            month = int(data['scat_id'][3:4+1])
+            day = int(data['scat_id'][5:6+1])
+            date = f"{year}-{month:02}-{day:02}"
+        except Exception:
+            out += fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}")
+
+            #return True, fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}"), {}, {}, {}
+
+
+        # check date
+        print(f"date from scat ID: {date}")
+        print(f"{str(data['date'])=}")
+        try:
+            date_from_file = str(data["date"]).split(" ")[0].strip()
+        except Exception:
+            date_from_file = ""
+
+
+        if date != date_from_file:
+            out += fn.alert_danger(f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}")
+            #return True, fn.alert_danger(f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}"), {}, {}, {}
+
+        data["date"] = date_from_file
+
+        # path_id
+        path_id = fn.get_path_id(data['transect_id'], date)
+        data["path_id"] = path_id
+
+        # region
+        scat_region = fn.get_region(data["province"])
+        data["region"] = scat_region
+
+        # UTM coord conversion
+        # check zone
+        if data["coord_zone"].upper() != "32N":
+            out += fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2})")
+            #return True, fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2})"), {}, {}, {}
+
+        try:
+            coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
+        except Exception:
+            out += fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}')
+            #return True, fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'), {}, {}, {}
+
+        data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
+        data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
+
+        # sampling_type
+        data["sampling_type"] = data["sampling_type"].capitalize().strip()
+        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
+            out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}')
+            # return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
+
+        # no path ID if scat is opportunistc
+        if data["sampling_type"] == "Opportunistic":
+            data["path_id"] = ""
+
+        # deposition
+        data["deposition"] = data["deposition"].capitalize().strip()
+        if data["deposition"] == "Fresca":
+            data["deposition"] = "Fresh"
+        if data["deposition"] == "Vecchia":
+            data["deposition"] = "Old"
+        if data["deposition"] not in ["Fresh", "Old", ""]:
+            out += fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}: found {data["deposition"]}')
+            #return True, fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}'), {}, {}, {}
+
+        # matrix
+        data["matrix"] = data["matrix"].capitalize().strip()
+        if data["matrix"] in ["Si", "Sì"]:
+            data["matrix"] = "Yes"
+        if data["matrix"] == "No":
+            data["matrix"] = "No"
+        if data["matrix"] not in ["Yes", "No", ""]:
+            out +=  fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["matrix"]}')
+            #return True, fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
+
+        # collected_scat
+        data["collected_scat"] = data["collected_scat"].capitalize().strip()
+        if data["collected_scat"] in ["Si", "Sì"]:
+            data["collected_scat"] = "Yes"
+        if data["collected_scat"] == "No":
+            data["collected_scat"] = "No"
+        if data["collected_scat"] not in ["Yes", "No", ""]:
+            out += fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["collected_scat"]}')
+            #return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
+
+        # scalp_category
+        data["scalp_category"] = data["scalp_category"].capitalize().strip()
+        if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
+            out += fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}')
+            #return True, fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'), {}, {}, {}
+
+
+
+        # genetic_sample
+        data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
+        if data["genetic_sample"] in ["Si", "Sì"]:
+            data["genetic_sample"] = "Yes"
+        if data["genetic_sample"] == "No":
+            data["genetic_sample"] = "No"
+        if data["genetic_sample"] not in ["Yes", "No", ""]:
+            out += fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data["genetic_sample"]}')
+            #return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
+
+        scats_data[index] = dict(data)
+
+    if out:
+        return True, out, {}, {}, {}
+
+
+    # extract paths
+    all_paths = {}
+    if "Paths" in df.keys():
+        paths_df = df["Paths"]
+        for index, row in paths_df.iterrows():
+            data = {}
+            for column in list(paths_df.columns):
+                data[column] = row[column]
+                if isinstance(data[column], float) and str(data[column]) == "nan":
+                    data[column] = ""
+
+            data["date"] = str(data["date"]).split(" ")[0]
+            if data["completeness"] == "":
+                data["completeness"] = None
+
+            all_paths[index] = dict(data)
+
+    else:  # no Paths sheet found
+
+        index = 0
+        for idx in scats_data:
+            if not scats_data[idx]["path_id"]:
+                continue
+            data = {}
+            data["path_id"] = scats_data[idx]["path_id"]
+            data["transect_id"] = scats_data[idx]["transect_id"]
+            data["date"] = scats_data[idx]["date"]
+            data["sampling_season"] = fn.sampling_season(scats_data[idx]["date"])
+            data["completeness"] = None
+            data["operator"] = scats_data[idx]["operator"]
+            data["institution"] = scats_data[idx]["institution"]
+            data["notes"] = ""
+
+            all_paths[index] = dict(data)
+            index += 1
+
+
+    # extract tracks
+    all_tracks = {}
+    if "Tracks" in df.keys():
+        tracks_df = df["Tracks"]
+        for index, row in tracks_df.iterrows():
+            data = {}
+            for column in list(scats_df.columns):
+                if isinstance(data[column], float) and str(data[column]) == "nan":
+                    data[column] = ""
+                else:
+                    data[column] = row[column]
+
+            all_tracks[index] = dict(data)
+
+
+    return False, "", scats_data, all_paths, all_tracks
+
+
+
+
+
+@app.route("/load_scats_xlsx", methods=("GET", "POST",))
+def load_scats_xlsx():
+
+    if request.method == "GET":
+        return render_template("load_scats_xlsx.html")
+
+    if request.method == "POST":
+
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if pl.Path(new_file.filename).suffix.upper() not in EXCEL_ALLOWED_EXTENSIONS:
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+            return redirect(f"/load_scats_xlsx")
+
+        try:
+            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file"))
+            return redirect(f"/load_scats_xlsx")
+
+        r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
+        if r:
+            flash(msg)
+            return redirect(f"/load_scats_xlsx")
+
+        else:
+            # check if scat_id already in DB
+            connection = fn.get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
+            sql = f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
+            cursor.execute(sql)
+            scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
+
+            return render_template("confirm_load_scats_xlsx.html",
+                                   n_scats = len(all_data),
+                                   n_scats_to_update=scats_to_update,
+                                   all_data=all_data,
+                                   filename=filename)
+
+
+@app.route("/confirm_load_xlsx/<filename>/<mode>")
+def confirm_load_xlsx(filename, mode):
+
+    if mode not in ["new", "all"]:
+        flash(fn.alert_danger("Error: mode not allowed"))
+        return redirect(f"/load_scats_xlsx")
+
+    r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
+    if r:
+        flash(msg)
+        return redirect(f"/load_scats_xlsx")
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if scat_id already in DB
+    scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
+    sql = f"select scat_id from scats where scat_id in ('{scats_list}')"
+    cursor.execute(sql)
+    scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
+
+    sql = ("UPDATE scats SET scat_id = %(scat_id)s, "
+            "                date = %(date)s,"
+            "                wa_code = %(wa_code)s,"
+            "                genotype_id = %(genotype_id)s,"
+            "                sampling_season = %(sampling_season)s,"
+            "                sampling_type = %(sampling_type)s,"
+            "                path_id = %(path_id)s, "
+            "                snowtrack_id = %(snowtrack_id)s, "
+            "                location = %(location)s, "
+            "                municipality = %(municipality)s, "
+            "                province = %(province)s, "
+            "                region = %(region)s, "
+            "                deposition = %(deposition)s, "
+            "                matrix = %(matrix)s, "
+            "                collected_scat = %(collected_scat)s, "
+            "                scalp_category = %(scalp_category)s, "
+            "                genetic_sample = %(genetic_sample)s, "
+            "                coord_east = %(coord_east)s, "
+            "                coord_north = %(coord_north)s, "
+            "                coord_zone = %(coord_zone)s, "
+            "                observer = %(operator)s, "
+            "                institution = %(institution)s, "
+            "                geo = %(geo)s, "
+            "                geometry_utm = %(geometry_utm)s, "
+            "                notes = %(notes)s "
+            "WHERE scat_id = %(scat_id)s;"
+
+            "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
+            "location, municipality, province, region, "
+            "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
+            "coord_east, coord_north, coord_zone, "
+            "observer, institution,"
+            "geo, geometry_utm, notes) "
+            "SELECT %(scat_id)s, %(date)s, %(wa_code)s, %(genotype_id)s, "
+            " %(sampling_season)s, %(sampling_type)s, %(path_id)s, %(snowtrack_id)s, "
+            "%(location)s, %(municipality)s, %(province)s, %(region)s, "
+            "%(deposition)s, %(matrix)s, %(collected_scat)s, %(scalp_category)s, %(genetic_sample)s,"
+            " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, %(geo)s, %(geometry_utm)s, %(notes)s "
+            "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = %(scat_id)s)"
+            )
+    count_added = 0
+    count_updated = 0
+    for idx in all_data:
+        data = dict(all_data[idx])
+
+        if mode == "new" and (data["scat_id"] in scats_to_update):
+            continue
+        if data["scat_id"] in scats_to_update:
+            count_updated += 1
+        else:
+            count_added += 1
+
+        cursor.execute(sql,
+                        {"scat_id": data["scat_id"].strip(),
+                        "date": data["date"],
+                        "wa_code": data["wa_code"].strip(),
+                        "genotype_id": data["genotype_id"].strip(),
+                        "sampling_season": fn.sampling_season(data["date"]),
+                        "sampling_type": data["sampling_type"],
+                        "path_id": data["path_id"],
+                        "snowtrack_id": data["snowtrack_id"].strip(),
+                        "location": data["location"].strip(), "municipality": data["municipality"].strip(),
+                        "province": data["province"].strip().upper(), "region": data["region"],
+                        "deposition": data["deposition"], "matrix": data["matrix"],
+                        "collected_scat": data["collected_scat"], "scalp_category": data["scalp_category"].strip(),
+                        "genetic_sample": data["genetic_sample"],
+                        "coord_east": data["coord_east"], "coord_north": data["coord_north"], "coord_zone": data["coord_zone"].strip(),
+                        "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                        "geo": data["coord_latlon"],
+                        "geometry_utm": data["geometry_utm"],
+                        "notes": data["notes"].strip()
+                        }
+                        )
+    connection.commit()
+
+
+    # paths
+    if all_paths:
+        sql = ("UPDATE paths SET path_id = %(path_id)s, "
+            "                 transect_id = %(transect_id)s, "
+                "                date = %(date)s, "
+                "                sampling_season = %(sampling_season)s,"
+                "                completeness = %(completeness)s, "
+                "                observer = %(operator)s, "
+                "                institution = %(institution)s, "
+                "                notes = %(notes)s "
+                "WHERE path_id = %(path_id)s;"
+
+                "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
+                "observer, institution, notes) "
+                "SELECT %(path_id)s, %(transect_id)s, %(date)s, "
+                " %(sampling_season)s, %(completeness)s, "
+                " %(operator)s, %(institution)s, %(notes)s "
+                "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
+                )
+        for idx in all_paths:
+            data = dict(all_paths[idx])
+            print(f"{data=}")
+            cursor.execute(sql,
+                            {"path_id": data["path_id"],
+                            "transect_id": data["transect_id"].strip(),
+                            "date": data["date"],
+                            "sampling_season": fn.sampling_season(data["date"]),
+                            "completeness": data["completeness"],
+                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                            "notes": data["notes"],
+                            }
+                            )
+        connection.commit()
+
+    # snow tracks
+    if all_tracks:
+        sql = ("UPDATE snow_tracks SET snowtrack_id = %(snowtrack_id)s, "
+            "                 path_id = %(path_id)s, "
+                "                date = %(date)s, "
+                "                sampling_season = %(sampling_season)s,"
+                "                observer = %(operator)s, "
+                "                institution = %(institution)s, "
+                "                notes = %(notes)s "
+                "WHERE snow_tracks = %(snow_tracks)s;"
+
+                "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
+                "sampling_season,  "
+                "observer, institution, notes) "
+                "SELECT %(snowtrack_id)s, %(path_id)s, %(date)s, "
+                "       %(sampling_season)s, "
+                "       %(operator)s, %(institution)s, %(notes)s "
+                "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = %(snowtrack_id)s)"
+                )
+        for idx in all_tracks:
+            data = dict(all_paths[idx])
+            print(f"{data=}")
+            cursor.execute(sql,
+                            {"path_id": data["path_id"],
+                            "snowtrack_id": data["snowtrack_id"].strip(),
+                            "date": data["date"],
+                            "sampling_season": fn.sampling_season(data["date"]),
+                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                            "notes": data["notes"],
+                            }
+                            )
+        connection.commit()
+
+
+
+    msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
+    flash(fn.alert_success(msg))
+
+    return redirect(f'/scats')
+
+
+
+
+'''
+https://stackoverflow.com/questions/1109061/insert-on-duplicate-update-in-postgresql
+
+            INSERT INTO the_table (id, column_1, column_2)
+VALUES (1, 'A', 'X'), (2, 'B', 'Y'), (3, 'C', 'Z')
+ON CONFLICT (id) DO UPDATE
+  SET column_1 = excluded.column_1,
+      column_2 = excluded.column_2;
+
+
+
+      UPDATE table SET field='C', field2='Z' WHERE id=3;
+INSERT INTO table (id, field, field2)
+       SELECT 3, 'C', 'Z'
+       WHERE NOT EXISTS (SELECT 1 FROM table WHERE id=3);
+
+'''
+
+
+
+
 
 '''
 
@@ -673,434 +1133,3 @@ def confirm_load(filename, mode):
 
 
 '''
-
-
-
-
-
-
-
-
-
-def extract_data_from_xlsx(filename):
-    """
-    Extract and check data from a XLSX file
-    """
-
-    if pl.Path(filename).suffix == ".XLSX":
-        engine = "openpyxl"
-    if pl.Path(filename).suffix == ".ODS":
-        engine = "odf"
-
-    try:
-        df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=None, engine=engine)
-    except Exception:
-        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
-
-
-    if "Scats" not in df.keys():
-        return True, fn.alert_danger(f"Scats sheet not found in workbook"), {}, {}, {}
-
-    scats_df = df["Scats"]
-
-    # check columns
-    for column in ['scat_id', 'date', 'wa_code', 'genotype_id', 'sampling_type', 'transect_id', 'snowtrack_id',
-                    'location', 'municipality', 'province',
-                    'deposition', 'matrix', 'collected_scat', 'scalp_category',
-                    'genetic_sample',
-                    'coord_east', 'coord_north', 'coord_zone',
-                    'operator', 'institution', 'notes']:
-
-        if column not in list(scats_df.columns):
-            return True, fn.alert_danger(f"Column {column} is missing"), {}, {}, {}
-
-    scats_data = {}
-    for index, row in scats_df.iterrows():
-        data = {}
-        for column in list(scats_df.columns):
-            data[column] = row[column]
-            if isinstance(data[column], float) and str(data[column]) == "nan":
-                data[column] = ""
-
-        # date
-        try:
-            year = int(data['scat_id'][1:2+1]) + 2000
-            month = int(data['scat_id'][3:4+1])
-            day = int(data['scat_id'][5:6+1])
-            date = f"{year}-{month:02}-{day:02}"
-        except Exception:
-            return True, fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}"), {}, {}, {}
-
-
-        # check date
-        print(f"date from scat ID: {date}")
-        #print(f"{data['date']=}")
-        print(f"{str(data['date'])=}")
-        try:
-            date_from_file = str(data["date"]).split(" ")[0].strip()
-        except Exception:
-            date_from_file = ""
-
-        print(f"date from file: {date_from_file}")
-
-
-        if date != date_from_file:
-            return True, fn.alert_danger(f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}"), {}, {}, {}
-
-        data["date"] = date_from_file
-
-        # path_id
-        path_id = fn.get_path_id(data['transect_id'], date)
-        data["path_id"] = path_id
-
-        # region
-        scat_region = fn.get_region(data["province"])
-        data["region"] = scat_region
-
-        # UTM coord conversion
-        try:
-            coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), int(data["coord_zone"].replace("N", "")), "N")
-        except Exception:
-            return True, fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'), {}, {}, {}
-        data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
-
-        # sampling_type
-        data["sampling_type"] = data["sampling_type"].capitalize().strip()
-        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
-            return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
-
-        # no path ID if scat is opportunistc
-        if data["sampling_type"] == "Opportunistic":
-            data["path_id"] = ""
-
-        # deposition
-        data["deposition"] = data["deposition"].capitalize().strip()
-        if data["deposition"] == "Fresca":
-            data["deposition"] = "Fresh"
-        if data["deposition"] == "Vecchia":
-            data["deposition"] = "Old"
-        if data["deposition"] not in ["Fresh", "Old", ""]:
-            return True, fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}'), {}, {}, {}
-
-        # matrix
-        data["matrix"] = data["matrix"].capitalize().strip()
-        if data["matrix"] in ["Si", "Sì"]:
-            data["matrix"] = "Yes"
-        if data["matrix"] == "No":
-            data["matrix"] = "No"
-        if data["matrix"] not in ["Yes", "No", ""]:
-            return True, fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
-
-        # collected_scat
-        data["collected_scat"] = data["collected_scat"].capitalize().strip()
-        if data["collected_scat"] in ["Si", "Sì"]:
-            data["collected_scat"] = "Yes"
-        if data["collected_scat"] == "No":
-            data["collected_scat"] = "No"
-        if data["collected_scat"] not in ["Yes", "No", ""]:
-            return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
-
-        # genetic_sample
-        data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
-        if data["genetic_sample"] in ["Si", "Sì"]:
-            data["genetic_sample"] = "Yes"
-        if data["genetic_sample"] == "No":
-            data["genetic_sample"] = "No"
-        if data["genetic_sample"] not in ["Yes", "No", ""]:
-            return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
-
-
-        scats_data[index] = dict(data)
-
-
-    # extract paths
-    all_paths = {}
-    if "Paths" in df.keys():
-        paths_df = df["Paths"]
-        for index, row in paths_df.iterrows():
-            data = {}
-            for column in list(paths_df.columns):
-                data[column] = row[column]
-                if isinstance(data[column], float) and str(data[column]) == "nan":
-                    data[column] = ""
-
-            data["date"] = str(data["date"]).split(" ")[0]
-            if data["completeness"] == "":
-                data["completeness"] = None
-
-            all_paths[index] = dict(data)
-
-    else:  # no Paths sheet found
-
-        index = 0
-        for idx in scats_data:
-            if not scats_data[idx]["path_id"]:
-                continue
-            data = {}
-            data["path_id"] = scats_data[idx]["path_id"]
-            data["transect_id"] = scats_data[idx]["transect_id"]
-            data["date"] = scats_data[idx]["date"]
-            data["sampling_season"] = fn.sampling_season(scats_data[idx]["date"])
-            data["completeness"] = None
-            data["operator"] = scats_data[idx]["operator"]
-            data["institution"] = scats_data[idx]["institution"]
-            data["notes"] = ""
-
-            all_paths[index] = dict(data)
-            index += 1
-
-
-    # extract tracks
-    all_tracks = {}
-    if "Tracks" in df.keys():
-        tracks_df = df["Tracks"]
-        for index, row in tracks_df.iterrows():
-            data = {}
-            for column in list(scats_df.columns):
-                if isinstance(data[column], float) and str(data[column]) == "nan":
-                    data[column] = ""
-                else:
-                    data[column] = row[column]
-
-            all_tracks[index] = dict(data)
-
-
-    return False, "", scats_data, all_paths, all_tracks
-
-
-
-
-
-@app.route("/load_scats_xlsx", methods=("GET", "POST",))
-def load_scats_xlsx():
-
-    if request.method == "GET":
-        return render_template("load_scats_xlsx.html")
-
-    if request.method == "POST":
-
-        new_file = request.files["new_file"]
-
-        # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in EXCEL_ALLOWED_EXTENSIONS:
-            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
-            return redirect(f"/load_scats_xlsx")
-
-        try:
-            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
-            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
-        except Exception:
-            flash(fn.alert_danger("Error with the uploaded file"))
-            return redirect(f"/load_scats_xlsx")
-
-        r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
-        if r:
-            flash(msg)
-            return redirect(f"/load_scats_xlsx")
-
-        else:
-            # check if scat_id already in DB
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
-            sql = f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
-            cursor.execute(sql)
-            scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
-
-            return render_template("confirm_load_scats_xlsx.html",
-                                   n_scats = len(all_data),
-                                   n_scats_to_update=scats_to_update,
-                                   all_data=all_data,
-                                   filename=filename)
-
-
-@app.route("/confirm_load_xlsx/<filename>/<mode>")
-def confirm_load_xlsx(filename, mode):
-
-    if mode not in ["new", "all"]:
-        flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect(f"/load_scats_xlsx")
-
-    r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
-    if r:
-        flash(msg)
-        return redirect(f"/load_scats_xlsx")
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    # check if scat_id already in DB
-    scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
-    sql = f"select scat_id from scats where scat_id in ('{scats_list}')"
-    cursor.execute(sql)
-    scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
-
-    sql = ("UPDATE scats SET scat_id = %(scat_id)s, "
-            "                date = %(date)s,"
-            "                wa_code = %(wa_code)s,"
-            "                genotype_id = %(genotype_id)s,"
-            "                sampling_season = %(sampling_season)s,"
-            "                sampling_type = %(sampling_type)s,"
-            "                path_id = %(path_id)s, "
-            "                snowtrack_id = %(snowtrack_id)s, "
-            "                location = %(location)s, "
-            "                municipality = %(municipality)s, "
-            "                province = %(province)s, "
-            "                region = %(region)s, "
-            "                deposition = %(deposition)s, "
-            "                matrix = %(matrix)s, "
-            "                collected_scat = %(collected_scat)s, "
-            "                scalp_category = %(scalp_category)s, "
-            "                genetic_sample = %(genetic_sample)s, "
-            "                coord_east = %(coord_east)s, "
-            "                coord_north = %(coord_north)s, "
-            "                coord_zone = %(coord_zone)s, "
-            "                observer = %(operator)s, "
-            "                institution = %(institution)s, "
-            "                geo = %(geo)s, "
-            "                notes = %(notes)s "
-            "WHERE scat_id = %(scat_id)s;"
-
-            "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
-            "location, municipality, province, region, "
-            "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
-            "coord_east, coord_north, coord_zone, "
-            "observer, institution,"
-            "geo, notes) "
-            "SELECT %(scat_id)s, %(date)s, %(wa_code)s, %(genotype_id)s, "
-            " %(sampling_season)s, %(sampling_type)s, %(path_id)s, %(snowtrack_id)s, "
-            "%(location)s, %(municipality)s, %(province)s, %(region)s, "
-            "%(deposition)s, %(matrix)s, %(collected_scat)s, %(scalp_category)s, %(genetic_sample)s,"
-            " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, %(geo)s, %(notes)s "
-            "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = %(scat_id)s)"
-            )
-    count_added = 0
-    count_updated = 0
-    for idx in all_data:
-        data = dict(all_data[idx])
-
-        if mode == "new" and (data["scat_id"] in scats_to_update):
-            continue
-        if data["scat_id"] in scats_to_update:
-            count_updated += 1
-        else:
-            count_added += 1
-
-        cursor.execute(sql,
-                        {"scat_id": data["scat_id"].strip(),
-                        "date": data["date"],
-                        "wa_code": data["wa_code"].strip(),
-                        "genotype_id": data["genotype_id"].strip(),
-                        "sampling_season": fn.sampling_season(data["date"]),
-                        "sampling_type": data["sampling_type"],
-                        "path_id": data["path_id"],
-                        "snowtrack_id": data["snowtrack_id"].strip(),
-                        "location": data["location"].strip(), "municipality": data["municipality"].strip(),
-                        "province": data["province"].strip().upper(), "region": data["region"],
-                        "deposition": data["deposition"], "matrix": data["matrix"],
-                        "collected_scat": data["collected_scat"], "scalp_category": data["scalp_category"].strip(),
-                        "genetic_sample": data["genetic_sample"],
-                        "coord_east": data["coord_east"], "coord_north": data["coord_north"], "coord_zone": data["coord_zone"].strip(),
-                        "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                        "geo": data["coord_latlon"],
-                        "notes": data["notes"].strip()
-                        }
-                        )
-    connection.commit()
-
-
-    # paths
-    if all_paths:
-        sql = ("UPDATE paths SET path_id = %(path_id)s, "
-            "                 transect_id = %(transect_id)s, "
-                "                date = %(date)s, "
-                "                sampling_season = %(sampling_season)s,"
-                "                completeness = %(completeness)s, "
-                "                observer = %(operator)s, "
-                "                institution = %(institution)s, "
-                "                notes = %(notes)s "
-                "WHERE path_id = %(path_id)s;"
-
-                "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
-                "observer, institution, notes) "
-                "SELECT %(path_id)s, %(transect_id)s, %(date)s, "
-                " %(sampling_season)s, %(completeness)s, "
-                " %(operator)s, %(institution)s, %(notes)s "
-                "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
-                )
-        for idx in all_paths:
-            data = dict(all_paths[idx])
-            print(f"{data=}")
-            cursor.execute(sql,
-                            {"path_id": data["path_id"],
-                            "transect_id": data["transect_id"].strip(),
-                            "date": data["date"],
-                            "sampling_season": fn.sampling_season(data["date"]),
-                            "completeness": data["completeness"],
-                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                            "notes": data["notes"],
-                            }
-                            )
-        connection.commit()
-
-    # snow tracks
-    if all_tracks:
-        sql = ("UPDATE snow_tracks SET snowtrack_id = %(snowtrack_id)s, "
-            "                 path_id = %(path_id)s, "
-                "                date = %(date)s, "
-                "                sampling_season = %(sampling_season)s,"
-                "                observer = %(operator)s, "
-                "                institution = %(institution)s, "
-                "                notes = %(notes)s "
-                "WHERE snow_tracks = %(snow_tracks)s;"
-
-                "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
-                "sampling_season,  "
-                "observer, institution, notes) "
-                "SELECT %(snowtrack_id)s, %(path_id)s, %(date)s, "
-                "       %(sampling_season)s, "
-                "       %(operator)s, %(institution)s, %(notes)s "
-                "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = %(snowtrack_id)s)"
-                )
-        for idx in all_tracks:
-            data = dict(all_paths[idx])
-            print(f"{data=}")
-            cursor.execute(sql,
-                            {"path_id": data["path_id"],
-                            "snowtrack_id": data["snowtrack_id"].strip(),
-                            "date": data["date"],
-                            "sampling_season": fn.sampling_season(data["date"]),
-                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                            "notes": data["notes"],
-                            }
-                            )
-        connection.commit()
-
-
-
-    msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
-    flash(fn.alert_success(msg))
-
-    return redirect(f'/scats')
-
-
-
-
-'''
-https://stackoverflow.com/questions/1109061/insert-on-duplicate-update-in-postgresql
-
-            INSERT INTO the_table (id, column_1, column_2)
-VALUES (1, 'A', 'X'), (2, 'B', 'Y'), (3, 'C', 'Z')
-ON CONFLICT (id) DO UPDATE
-  SET column_1 = excluded.column_1,
-      column_2 = excluded.column_2;
-
-
-
-      UPDATE table SET field='C', field2='Z' WHERE id=3;
-INSERT INTO table (id, field, field2)
-       SELECT 3, 'C', 'Z'
-       WHERE NOT EXISTS (SELECT 1 FROM table WHERE id=3);
-
-'''
-

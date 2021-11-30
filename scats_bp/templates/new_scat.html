@@ -58,7 +58,7 @@
 
 <script>
 function check_geocoding() {
-    if ((document.getElementById("coord_north").value != "") 
+    if ((document.getElementById("coord_north").value != "")
          && (document.getElementById("coord_east").value != "")
          && (document.getElementById("coord_zone").value != ""))
         {
@@ -73,7 +73,7 @@ function check_geocoding() {
                 //document.getElementById("location").value = this.responseText;
                 document.getElementById("location").value = json["location"];
                 document.getElementById("municipality").value = json["municipality"];
-                document.getElementById("province").value = json["province"];
+                document.getElementById("province").value = json["province_code"];
             }
         };
         xhttp.open("GET", "/rev_geocoding/"+east+"/"+north+"/"+zone, true);
@@ -92,26 +92,26 @@ function check_geocoding() {
     <div class="col-2">
     {{ form.coord_east(onchange="check_geocoding(this)",class="form-control", value=default_values["coord_east"]) }}
     {% for message in form.coord_east.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    <span class="form-text">UTM WGS84</span>
+    <span class="form-text">WGS 84 / UTM zone 32N</span>
 </div>
 
 
-    <div class="col-1">{{ form.coord_north.label }} </div>
+    <div class="col-2">{{ form.coord_north.label }} </div>
 
     <div class="col-2">
         {{ form.coord_north(onchange="check_geocoding(this)", class="form-control",  value=default_values["coord_north"]) }}
         {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-        <span class="form-text">UTM WGS84</span>
+        <span class="form-text">WGS 84 / UTM zone 32N</span>
     </div>
 
-
+<!--
         <div class="col-1">{{ form.coord_zone.label }} </div>
 
         <div class="col-2">
             {{ form.coord_zone(class="form-control",  value=default_values["coord_zone"]) }}
             {% for message in form.coord_zone.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-            </div>
-
+        </div>
+    -->
 
     </div>
 </div>
@@ -120,20 +120,20 @@ function check_geocoding() {
 
 <div class="mb-3">
     <div class="row g-3 align-items-top">
-    
+
         <div class="col-2">{{ form.location.label }}</div>
         <div class="col-3">
         {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
         {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
         </div>
-    
+
         <div class="col-1">{{ form.municipality.label }}</div>
         <div class="col-2">
             {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
             {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
         </div>
-    
-    
+
+
         <div class="col-1">{{ form.province.label }}</div>
         <div class="col-1">
             {{ form.province(size=16, class="form-control", value=default_values["province"]) }}
@@ -141,8 +141,8 @@ function check_geocoding() {
         </div>
     </div>
     </div>
-    
-    
+
+
 
 
 
