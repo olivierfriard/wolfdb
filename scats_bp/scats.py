@@ -526,16 +526,16 @@ def extract_data_from_xlsx(filename):
         # UTM coord conversion
         # check zone
         if data["coord_zone"].upper() != "32N":
-            out += fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2})")
+            out += fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2}): found {data['coord_zone']}")
             #return True, fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2})"), {}, {}, {}
 
         try:
             coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
+            data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
         except Exception:
             out += fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}')
             #return True, fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'), {}, {}, {}
 
-        data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
         data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
 
         # sampling_type
