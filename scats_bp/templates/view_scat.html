@@ -87,8 +87,8 @@
 <tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
 <tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
 
-<tr><td>Coordinates (UTM WGS84)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }} Zone: {{ results["coord_zone"] }}</td></tr>
-<tr><td>Longitude, Latitude</td><td>{{ results["lonlat_str"] }}</td></tr>
+<tr><td>Coordinates (WGS 84 / UTM zone 32N EPSG:32632)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
+<tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td><td>{{ results["longitude"] }}, {{ results["latitude"] }}</td></tr>
 <tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
 <tr><td>Institution</td><td>{{ results["institution"] }}</td></tr>
 <tr><td>Notes</td><td>{{ results["notes"] }}</td></tr>

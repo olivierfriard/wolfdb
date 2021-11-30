@@ -81,7 +81,11 @@ def view_scat(scat_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats WHERE scat_id = %s",
+    cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    "FROM scats WHERE scat_id = %s"
+                   ),
                    [scat_id])
 
     results = dict(cursor.fetchone())
@@ -98,16 +102,13 @@ def view_scat(scat_id):
 
     scat_features = [scat_feature]
 
-    lon_lat = scat_geojson['coordinates']
-    center = f"{lon_lat[1]}, {lon_lat[0]}"
-
-    results["lonlat_str"] = f"{lon_lat[0]}, {lon_lat[1]}"
+    center = f"{results['latitude']}, {results['longitude']}"
 
     # transect
     if results["path_id"]:  # Systematic sampling
         transect_id = "_".join(results["path_id"].split("_")[:-1])
 
-        cursor.execute("SELECT ST_AsGeoJSON(points) AS transect_geojson FROM transects WHERE transect_id = %s",
+        cursor.execute("SELECT ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson FROM transects WHERE transect_id = %s",
                     [transect_id])
         transect = cursor.fetchone()
 
@@ -252,7 +253,6 @@ def new_scat():
             # path id
             path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
 
-
             # region
             if len(request.form["province"]) == 2:
                 province = request.form["province"].upper()
@@ -272,8 +272,8 @@ def new_scat():
                    "deposition, matrix, collected_scat, scalp_category, "
                    "coord_east, coord_north, coord_zone, "
                    "observer, institution,"
-                   "geo) "
-                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                   "geo, geometry_utm) "
+                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["scat_id"],
@@ -286,7 +286,8 @@ def new_scat():
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],
-                            f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
+                            f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
+                            f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})"
                            ]
                            )
 
