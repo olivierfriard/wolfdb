@@ -83,8 +83,9 @@ def view_scat(scat_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, ST_AsGeoJSON(geo) AS scat_lonlat FROM scats WHERE scat_id = %s",
+    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats WHERE scat_id = %s",
                    [scat_id])
+
     results = dict(cursor.fetchone())
 
     scat_geojson = json.loads(results["scat_lonlat"])
