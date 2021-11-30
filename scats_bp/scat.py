@@ -7,10 +7,9 @@ WolfDB web service
 
 from flask import Markup
 import datetime
-from wtforms import (Form, StringField,
-                     validators, SelectField)
+from wtforms import (Form, StringField, SelectField)
 
-from wtforms.validators import Optional, Required, ValidationError
+from wtforms.validators import Required, ValidationError
 
 
 class Scat(Form):

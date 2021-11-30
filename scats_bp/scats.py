@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 from config import config
 
-from scat import Scat
+from .scat import Scat
 import functions as fn
 import utm
 import json

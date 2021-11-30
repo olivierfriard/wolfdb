@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 from config import config
 
-from track import Track
+from .track import Track
 import functions as fn
 
 app = flask.Blueprint("snowtracks", __name__, template_folder="templates")
