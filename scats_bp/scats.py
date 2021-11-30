@@ -74,8 +74,6 @@ def add_wa():
 
 
 
-
-
 @app.route("/view_scat/<scat_id>")
 def view_scat(scat_id):
     """
@@ -150,7 +148,7 @@ def plot_all_scats():
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, ST_AsGeoJSON(geo) AS scat_lonlat FROM scats")
+    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
     # results = dict(cursor.fetchall())
 
     scat_features = []
