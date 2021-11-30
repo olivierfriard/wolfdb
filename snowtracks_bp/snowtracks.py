@@ -47,7 +47,10 @@ def snowtracks_list():
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM snow_tracks ORDER BY date DESC")
 
-    results = cursor.fetchall()
+    results = []
+    for row in cursor.fetchall():
+        results.append(dict(row))
+        results[-1]["transect_id"] = results[-1]["transect_id"].split(";")
 
     return render_template("snowtracks_list.html",
                            results=results)
