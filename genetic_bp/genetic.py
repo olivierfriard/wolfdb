@@ -90,10 +90,8 @@ def add_genetic_data(wa_code):
         '''
         return render_template("add_genetic_data.html",
                                 wa_code=wa_code,
-                                #flag_data=True,
                                 mode="modify",
                                 loci=loci,
-                                #data=data
                                 )
 
     if request.method == "POST":
@@ -102,11 +100,13 @@ def add_genetic_data(wa_code):
         cursor.execute("SELECT * FROM loci ")
         loci=cursor.fetchall()
         for locus in loci:
-            if request.form[locus['name'] + "_1"] or request.form[locus['name'] + "_2"]:
+            if request.form[locus['name'] + "_1"] or (locus['name'] != "SRY" and request.form[locus['name'] + "_2"]):
                 cursor.execute("INSERT INTO wa_locus (wa_code, locus, value1, value2, timestamp, notes) VALUES (%s, %s, %s, %s, NOW(), %s) ",
                            [wa_code, locus['name'],
                            int(request.form[locus['name'] + "_1"]) if request.form[locus['name'] + "_1"] else None,
-                           int(request.form[locus['name'] + "_2"]) if request.form[locus['name'] + "_2"] else None,
+
+                           int(request.form[locus['name'] + "_2"]) if (locus['name'] != "SRY" and request.form[locus['name'] + "_2"]) else None,
+
                            request.form[locus['name'] + "_notes"] if request.form[locus['name'] + "_notes"] else None
                            ])
 
@@ -122,9 +122,10 @@ def view_genetic_data_history(wa_code, locus):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp DESC", [wa_code, locus])
+    cursor.execute("SELECT *, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp DESC", [wa_code, locus])
+    results = cursor.fetchall()
 
     return render_template("view_genetic_data_history.html",
-                            results = cursor.fetchall(),
+                            results = results,
                             wa_code=wa_code,
                             locus=locus)

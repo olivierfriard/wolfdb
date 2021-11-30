@@ -32,8 +32,13 @@
 
 <tr>
 <td>{{ result["value1"]}}</td>
-<td>{{ result["value2"]}}</td>
-<td>{{ result["timestamp"]}}</td>
+<td>
+{% if locus != "SRY" %}
+    {{ result["value2"] }}
+{% endif %}
+
+</td>
+<td>{{ result["formated_timestamp"]}}</td>
 <td>{{ result["notes"]}}</td>
 </tr>
 

@@ -45,7 +45,11 @@
 </td>
 
 <td>{{ data[locus['name']]['value1'] }}</td>
-<td>{{ data[locus['name']]['value2'] }}</td>
+<td>
+{% if locus['name'] != "SRY" %}
+    {{ data[locus['name']]['value2'] }}
+{% endif %}
+</td>
 <td>{{ data[locus['name']]['timestamp'] }}</td>
 <td>{{ data[locus['name']]['notes'] }}</td>
 

@@ -47,7 +47,12 @@
 </td>
 
 <td><input type="TEXT" id="{{ locus['name'] }}_1" name="{{ locus['name'] }}_1" value=""></td>
-<td><input type="TEXT" id="{{ locus['name'] }}_2" name="{{ locus['name'] }}_2" value=""></td>
+
+<td>
+    {% if locus['name'] != "SRY" %}
+    <input type="TEXT" id="{{ locus['name'] }}_2" name="{{ locus['name'] }}_2" value="">
+{% endif %}
+</td>
 <td><input type="TEXT" id="{{ locus['name'] }}_notes" name="{{ locus['name'] }}_notes" value=""></td>
 
 <td><a href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
