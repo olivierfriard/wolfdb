@@ -36,9 +36,9 @@ def view_path(path_id):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM paths WHERE path_id = %s",
+    cursor.execute("SELECT *, (select count(*) from scats where scats.path_id=paths.path_id) as n_scats FROM paths WHERE path_id = %s",
                    [path_id])
-    results = cursor.fetchone()
+    path = cursor.fetchone()
 
     # n samples
     cursor.execute("SELECT COUNT(*) AS n_samples FROM scats WHERE path_id = %s ", [path_id])
@@ -50,8 +50,7 @@ def view_path(path_id):
 
 
     return render_template("view_path.html",
-                           results=results,
-                           n_samples=n_samples,
+                           path=path,
                            n_tracks=n_tracks,
                            path_id=path_id)
 
