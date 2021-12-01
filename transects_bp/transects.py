@@ -61,7 +61,7 @@ def view_transect(transect_id):
     transect_feature = {"type": "Feature",
                         "geometry": dict(transect_geojson),
                         "properties": {
-                        "popupContent": "This is a free bus line that will take you across downtown."
+                        "popupContent": transect_id
                                       },
                         "id": 1
                        }
@@ -70,9 +70,10 @@ def view_transect(transect_id):
     center = f"{transect_geojson['coordinates'][0][1]}, {transect_geojson['coordinates'][0][0]}"
 
     # path
-    cursor.execute("SELECT * FROM paths WHERE transect_id = %s ORDER BY date DESC",
+    cursor.execute("SELECT *, (select count(*) from scats where scats.path_id = paths.path_id) AS n_scats FROM paths WHERE transect_id = %s ORDER BY date ASC",
                    [transect_id])
     results_paths = cursor.fetchall()
+
 
     # number of scats
     cursor.execute("SELECT COUNT(*) AS n_scats FROM scats WHERE path_id LIKE %s", [f"{transect_id}\_%"])
@@ -104,11 +105,9 @@ def transects_list():
 
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
 
-    results = cursor.fetchall()
-
     return render_template("transects_list.html",
                            n_transects=n_transects,
-                           results=results)
+                           results=cursor.fetchall())
 
 
 
@@ -256,11 +255,63 @@ def del_scat(transect_id):
 
 
 
-@app.route("/transect_analysis/<transect_id>")
-def transect_analysis(transect_id):
+@app.route("/transects_analysis")
+def transects_analysis():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # check if path based on transect exist
-    cursor.execute("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = %s", [transect_id])
+    cursor.execute("SELECT * FROM transects ORDER BY region, province, transect_id")
+    transects = cursor.fetchall()
+
+    out = """<style>
+    table
+{
+    border-width: 0 0 1px 1px;
+    border-style: solid;
+}
+
+td
+{
+    border-width: 1px 1px 0 0;
+    border-style: solid;
+    margin: 0;
+
+    }
+</style>
+    """
+
+    out += '<table>'
+    out += "<tr><th>Region</th><th>Province</th><th>transect ID</th><th>may</th><th>june</th><th>july</th><th>august</th><th>september</th><th>october</th><th>november</th><th>december</th><th>january</th><th>february</th><th>march</th><th>april</th></tr>"
+    for row in transects:
+        transect_id = row["transect_id"]
+
+
+        print(f"{transect_id=}")
+
+        transect_month = {}
+        cursor.execute("SELECT * FROM paths WHERE transect_id = %s ", [transect_id])
+        paths = cursor.fetchall()
+        for row_path in paths:
+            cursor.execute("SELECT * FROM scats WHERE path_id = %s ", [row_path["path_id"]])
+            scats = cursor.fetchall()
+            for row_scat in scats:
+                month = int(str(row_scat["date"]).split("-")[1])
+                print(f"{month=}")
+                if month not in transect_month:
+                    transect_month[month] = {"samples": 0}
+                transect_month[month]["samples"] += 1
+
+
+        out += f'<tr><td>{row["region"]}</td><td>{row["province"]}</td><td>{transect_id}</td>'
+        season = [5,6,7,8,9,10,11,12,1,2,3,4]
+        for month in season:
+            if month in transect_month:
+                out += f"<td>{transect_month[month]['samples']}</td>"
+            else:
+                out += f"<td>0</td>"
+        out += "</tr>"
+
+    out += "</table>"
+    return out

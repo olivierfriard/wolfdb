@@ -57,8 +57,9 @@
         <th>Date</th>
         <th>Sampling season</th>
         <th>Completeness</th>
-        <th>Observer</th>
-        <th>institution</th>
+        <th>N. samples</th>
+        <th>Operator</th>
+        <th>Institution</th>
         <th>Note</th>
         </tr>
 
@@ -68,19 +69,53 @@
 <td><a href="/view_path/{{ path["path_id"] }}">{{ path["path_id"] }}</a></td>
 <td>{{ path['date'] }}</td>
 <td>{{ path['sampling_season'] }}</td>
-<td>{{ path['completeness'] }}</td>
-<td>{{ path['observer'] }}</td>
-<td>{{ path['institution'] }}</td>
+<td>
+{% if path['completeness'] %}
+{{ path['completeness'] }}
+{%endif%}
+</td>
+
+<td>
+{{ path['n_scats'] }}
+</td>
+
+
+<td>
+{% if path['observer'] %}
+{{ path['observer'] }}
+{%endif%}
+</td>
+<td>
+{% if path['institution'] %}
+{{ path['institution'] }}
+{%endif%}
+</td>
 <td>{{ path['note'] }}</td>
 </tr>
 
 {% endfor %}
+
+<tr>
+    <td>Total</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>{{ n_scats }}</td>
+    <td></td>
+    <td></td>
+    <td></td>
+
+</tr>
+
 </table>
 {% else %}
 No paths found
 {% endif %}
 
-<h4>Number of scats found on this transect: {{ n_scats }}</h4>
+
+
+
+
 
 
 <h2>Snow tracking</h2>
@@ -91,18 +126,19 @@ No paths found
         <th>snow-tracking ID</th>
         <th>Date</th>
         <th>Sampling season</th>
-        <th>location</th>
-        <th>municipality</th>
-        <th>province</th>
-        <th>regione</th>
-        <th>rilevatore</th>
-        <th>scalp category</th>
+        <th>Location</th>
+        <th>Municipality</th>
+        <th>Province</th>
+        <th>Region</th>
+        <th>Operator</th>
+        <th>Scalp category</th>
         <th>Sampling type</th>
         <th>Days after snowfall</th>
         <th>Minimum number of wolves</th>
         <th>Track format</th>
         <th>Notes</th>
         </tr>
+
 
 {% for snowtrack in snowtracks %}
 
