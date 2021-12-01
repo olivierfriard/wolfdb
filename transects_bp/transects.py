@@ -253,3 +253,14 @@ def del_scat(transect_id):
                    [transect_id])
     connection.commit()
     return redirect("/transects_list")
+
+
+
+@app.route("/transect_analysis/<transect_id>")
+def transect_analysis(transect_id):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = %s", [transect_id])

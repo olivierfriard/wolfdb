@@ -45,7 +45,7 @@ def view_path(path_id):
     n_samples = cursor.fetchone()["n_samples"]
 
     # n tracks
-    cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE path_id = %s",  [path_id])
+    cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = %s",  [path_id])
     n_tracks = cursor.fetchone()["n_tracks"]
 
 
