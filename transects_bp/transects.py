@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 from config import config
 import json
-
+import calendar
 
 from .transect_form import Transect
 import functions as fn
@@ -281,9 +281,14 @@ td
     }
 </style>
     """
+    season = [5,6,7,8,9,10,11,12,1,2,3,4]
 
     out += '<table>'
-    out += "<tr><th>Region</th><th>Province</th><th>transect ID</th><th>may</th><th>june</th><th>july</th><th>august</th><th>september</th><th>october</th><th>november</th><th>december</th><th>january</th><th>february</th><th>march</th><th>april</th></tr>"
+    out += "<tr><th>Region</th><th>Province</th><th>transect ID</th>"
+    for month in season:
+        out += f"<th>{calendar.month_abbr[month]}</th>"
+    out += "</tr>"
+
     for row in transects:
         transect_id = row["transect_id"]
 
@@ -305,7 +310,7 @@ td
 
 
         out += f'<tr><td>{row["region"]}</td><td>{row["province"]}</td><td>{transect_id}</td>'
-        season = [5,6,7,8,9,10,11,12,1,2,3,4]
+
         for month in season:
             if month in transect_month:
                 out += f"<td>{transect_month[month]['samples']}</td>"

@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 from config import config
 
-from .path import Path
+from .path_form import Path
 import functions as fn
 
 app = flask.Blueprint("paths", __name__, template_folder="templates")
