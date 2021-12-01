@@ -15,7 +15,7 @@ from config import config
 import json
 
 
-from .transect import Transect
+from .transect_form import Transect
 import functions as fn
 from italian_regions import regions
 
