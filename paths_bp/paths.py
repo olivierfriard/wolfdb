@@ -12,6 +12,7 @@ from flask import Flask, render_template, redirect, request, Markup, flash, sess
 import psycopg2
 import psycopg2.extras
 from config import config
+import json
 
 from .path_form import Path
 import functions as fn
@@ -40,9 +41,58 @@ def view_path(path_id):
                    [path_id])
     path = cursor.fetchone()
 
-    # n samples
-    cursor.execute("SELECT COUNT(*) AS n_samples FROM scats WHERE path_id = %s ", [path_id])
-    n_samples = cursor.fetchone()["n_samples"]
+
+    # relative transect
+    transect_id = path["transect_id"]
+    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, ROUND(ST_Length(points_utm)) AS transect_length FROM transects WHERE transect_id = %s", [transect_id])
+    transect = cursor.fetchone()
+    if transect is not None:
+
+        transect_geojson = json.loads(transect["transect_geojson"])
+
+        transect_feature = {"type": "Feature",
+                            "geometry": dict(transect_geojson),
+                            "properties": {
+                            "popupContent": transect_id
+                                        },
+                            "id": 1
+                        }
+        transect_features = [transect_feature]
+        center = f"{transect_geojson['coordinates'][0][1]}, {transect_geojson['coordinates'][0][0]}"
+
+    else:
+        transect_features = []
+        center = ""
+
+
+    # scats
+    cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    "FROM scats WHERE path_id = %s"
+                   ),
+                   [path_id])
+
+    scats = cursor.fetchall()
+    scat_features = []
+    for scat in scats:
+
+        scat_geojson = json.loads(scat["scat_lonlat"])
+
+        scat_feature = {"geometry": dict(scat_geojson),
+                    "type": "Feature",
+                    "properties": {
+                                   "popupContent": f"Scat ID: {scat['scat_id']}"
+                                  },
+                    "id": scat["scat_id"]
+                   }
+
+        scat_features.append(scat_feature)
+
+        center = f"{scat['latitude']}, {scat['longitude']}"
+
+
+
 
     # n tracks
     cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = %s",  [path_id])
@@ -52,7 +102,8 @@ def view_path(path_id):
     return render_template("view_path.html",
                            path=path,
                            n_tracks=n_tracks,
-                           path_id=path_id)
+                           path_id=path_id,
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features)))
 
 
 @app.route("/paths_list")

@@ -23,7 +23,6 @@ app = flask.Blueprint("transects", __name__, template_folder="templates")
 
 app.debug = True
 
-
 params = config()
 
 @app.route("/transects")
@@ -41,7 +40,7 @@ def view_transect(transect_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, ROUND(ST_Length(points)) AS transect_length FROM transects WHERE transect_id = %s", [transect_id])
+    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, ROUND(ST_Length(points_utm)) AS transect_length FROM transects WHERE transect_id = %s", [transect_id])
 
     transect = cursor.fetchone()
 
