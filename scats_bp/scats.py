@@ -820,14 +820,14 @@ def confirm_load_xlsx(filename, mode):
                             "collected_scat": data["collected_scat"], "scalp_category": data["scalp_category"].strip(),
                             "genetic_sample": data["genetic_sample"],
                             "coord_east": data["coord_east"], "coord_north": data["coord_north"], "coord_zone": data["coord_zone"].strip(),
-                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                            "operator": data["operator"], "institution": data["institution"],
                             "geo": data["coord_latlon"],
                             "geometry_utm": data["geometry_utm"],
                             "notes": data["notes"]
                             }
                             )
         except Exception:
-            return "An error occured during the loading of data. Contact the administrator.<br>" + error_info(sys.exc_info())
+            return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
     connection.commit()
 
@@ -853,17 +853,20 @@ def confirm_load_xlsx(filename, mode):
                 )
         for idx in all_paths:
             data = dict(all_paths[idx])
-            print(f"{data=}")
-            cursor.execute(sql,
-                            {"path_id": data["path_id"],
-                            "transect_id": data["transect_id"].strip(),
-                            "date": data["date"],
-                            "sampling_season": fn.sampling_season(data["date"]),
-                            "completeness": data["completeness"],
-                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                            "notes": data["notes"],
-                            }
-                            )
+            try:
+                cursor.execute(sql,
+                                {"path_id": data["path_id"],
+                                "transect_id": data["transect_id"].strip(),
+                                "date": data["date"],
+                                "sampling_season": fn.sampling_season(data["date"]),
+                                "completeness": data["completeness"],
+                                "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                                "notes": data["notes"],
+                                }
+                                )
+            except Exception:
+                return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
+
         connection.commit()
 
     # snow tracks
@@ -887,16 +890,20 @@ def confirm_load_xlsx(filename, mode):
                 )
         for idx in all_tracks:
             data = dict(all_paths[idx])
-            print(f"{data=}")
-            cursor.execute(sql,
-                            {"path_id": data["path_id"],
-                            "snowtrack_id": data["snowtrack_id"].strip(),
-                            "date": data["date"],
-                            "sampling_season": fn.sampling_season(data["date"]),
-                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                            "notes": data["notes"],
-                            }
-                            )
+
+            try:
+                cursor.execute(sql,
+                                {"path_id": data["path_id"],
+                                "snowtrack_id": data["snowtrack_id"].strip(),
+                                "date": data["date"],
+                                "sampling_season": fn.sampling_season(data["date"]),
+                                "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                                "notes": data["notes"],
+                                }
+                                )
+            except Exception:
+                return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+
         connection.commit()
 
 
