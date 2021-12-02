@@ -20,6 +20,8 @@ import json
 import pathlib as pl
 import pandas as pd
 import uuid
+import os
+import sys
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -31,6 +33,28 @@ params = config()
 ALLOWED_EXTENSIONS = [".TSV"]
 EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
 UPLOAD_FOLDER = "/tmp"
+
+
+def error_info(exc_info: tuple) -> tuple:
+    """
+    return details about error
+    usage: error_info(sys.exc_info())
+
+    Args:
+        sys.exc_info() (tuple):
+
+    Returns:
+        tuple: error type, error file name, error line number
+    """
+
+    exc_type, exc_obj, exc_tb = exc_info
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    
+    
+    error_type, error_file_name, error_lineno = exc_obj, fname, exc_tb.tb_lineno
+
+    return f"Error {error_type} in {error_file_name} at line #{error_lineno}"
+
 
 @app.route("/scats")
 def scats():
@@ -584,8 +608,6 @@ def extract_data_from_xlsx(filename):
             out += fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}')
             #return True, fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'), {}, {}, {}
 
-
-
         # genetic_sample
         data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
         if data["genetic_sample"] in ["Si", "Sì"]:
@@ -595,6 +617,12 @@ def extract_data_from_xlsx(filename):
         if data["genetic_sample"] not in ["Yes", "No", ""]:
             out += fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data["genetic_sample"]}')
             #return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
+
+        # notes
+        data["notes"] = str(data["notes"]).strip()
+        
+        data["operator"] = str(data["operator"]).strip()
+        data["institution"] = str(data["institution"]).strip()
 
         scats_data[index] = dict(data)
 
@@ -776,27 +804,31 @@ def confirm_load_xlsx(filename, mode):
         else:
             count_added += 1
 
-        cursor.execute(sql,
-                        {"scat_id": data["scat_id"].strip(),
-                        "date": data["date"],
-                        "wa_code": data["wa_code"].strip(),
-                        "genotype_id": data["genotype_id"].strip(),
-                        "sampling_season": fn.sampling_season(data["date"]),
-                        "sampling_type": data["sampling_type"],
-                        "path_id": data["path_id"],
-                        "snowtrack_id": data["snowtrack_id"].strip(),
-                        "location": data["location"].strip(), "municipality": data["municipality"].strip(),
-                        "province": data["province"].strip().upper(), "region": data["region"],
-                        "deposition": data["deposition"], "matrix": data["matrix"],
-                        "collected_scat": data["collected_scat"], "scalp_category": data["scalp_category"].strip(),
-                        "genetic_sample": data["genetic_sample"],
-                        "coord_east": data["coord_east"], "coord_north": data["coord_north"], "coord_zone": data["coord_zone"].strip(),
-                        "operator": data["operator"].strip(), "institution": data["institution"].strip(),
-                        "geo": data["coord_latlon"],
-                        "geometry_utm": data["geometry_utm"],
-                        "notes": data["notes"].strip()
-                        }
-                        )
+        try:
+            cursor.execute(sql,
+                            {"scat_id": data["scat_id"].strip(),
+                            "date": data["date"],
+                            "wa_code": data["wa_code"].strip(),
+                            "genotype_id": data["genotype_id"].strip(),
+                            "sampling_season": fn.sampling_season(data["date"]),
+                            "sampling_type": data["sampling_type"],
+                            "path_id": data["path_id"],
+                            "snowtrack_id": data["snowtrack_id"].strip(),
+                            "location": data["location"].strip(), "municipality": data["municipality"].strip(),
+                            "province": data["province"].strip().upper(), "region": data["region"],
+                            "deposition": data["deposition"], "matrix": data["matrix"],
+                            "collected_scat": data["collected_scat"], "scalp_category": data["scalp_category"].strip(),
+                            "genetic_sample": data["genetic_sample"],
+                            "coord_east": data["coord_east"], "coord_north": data["coord_north"], "coord_zone": data["coord_zone"].strip(),
+                            "operator": data["operator"].strip(), "institution": data["institution"].strip(),
+                            "geo": data["coord_latlon"],
+                            "geometry_utm": data["geometry_utm"],
+                            "notes": data["notes"]
+                            }
+                            )
+        except Exception:
+            return "An error occured during the loading of data. Contact the administrator.<br>" + error_info(sys.exc_info())
+
     connection.commit()
 
 

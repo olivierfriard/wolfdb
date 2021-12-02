@@ -82,7 +82,7 @@ def view_path(path_id):
         scat_feature = {"geometry": dict(scat_geojson),
                     "type": "Feature",
                     "properties": {
-                                   "popupContent": f"Scat ID: {scat['scat_id']}"
+  "popupContent": f"""Scat ID: <a href="/view_scat/{scat['scat_id']}" target="_blank">{scat['scat_id']}</a>"""
                                   },
                     "id": scat["scat_id"]
                    }
