@@ -967,7 +967,7 @@ def systematic_scats_transect_location():
 
     process = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])
 
-    return "The analysis will be available soon"
+    return 'The analysis will be available soon. Please wait for 5 minutes. <a href="/scats">Go to Scats page</a>'
 
 
 
