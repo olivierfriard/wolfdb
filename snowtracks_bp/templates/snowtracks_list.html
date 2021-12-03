@@ -11,16 +11,18 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
+<a href="/snow_tracks" class="btn btn-primary">Tracks</a>
+
 <a href="/new_snowtrack" class="btn btn-primary">New track</a>
 <br>
 <br>
 
 
 {% if results %}
-<h2>List of snow tracks</h2>
+<h2>List of {{ n_tracks }} tracks</h2>
 <table class="table table-striped">
 <tr>
-<th>snow-tracking ID</th>
+<th>Track ID</th>
 <th>Sampling type</th>
 <th>Transect ID</th>
 <th>Date</th>

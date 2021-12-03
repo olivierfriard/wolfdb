@@ -45,14 +45,20 @@ def snowtracks_list():
     # get  all tracks
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     cursor.execute("SELECT * FROM snow_tracks ORDER BY date DESC")
 
+    # split transects (more transects can be specified)
     results = []
     for row in cursor.fetchall():
         results.append(dict(row))
         results[-1]["transect_id"] = results[-1]["transect_id"].split(";")
 
+    # count tracks
+    n_tracks = len(results)
+
     return render_template("snowtracks_list.html",
+                           n_tracks=n_tracks,
                            results=results)
 
 

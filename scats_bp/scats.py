@@ -526,8 +526,6 @@ def extract_data_from_xlsx(filename):
 
 
         # check date
-        print(f"date from scat ID: {date}")
-        print(f"{str(data['date'])=}")
         try:
             date_from_file = str(data["date"]).split(" ")[0].strip()
         except Exception:
@@ -564,7 +562,7 @@ def extract_data_from_xlsx(filename):
         data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
 
         # sampling_type
-        data["sampling_type"] = data["sampling_type"].capitalize().strip()
+        data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
         if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
             out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}')
             # return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
@@ -574,7 +572,7 @@ def extract_data_from_xlsx(filename):
             data["path_id"] = ""
 
         # deposition
-        data["deposition"] = data["deposition"].capitalize().strip()
+        data["deposition"] = str(data["deposition"]).capitalize().strip()
         if data["deposition"] == "Fresca":
             data["deposition"] = "Fresh"
         if data["deposition"] == "Vecchia":
@@ -584,7 +582,7 @@ def extract_data_from_xlsx(filename):
             #return True, fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}'), {}, {}, {}
 
         # matrix
-        data["matrix"] = data["matrix"].capitalize().strip()
+        data["matrix"] = str(data["matrix"]).capitalize().strip()
         if data["matrix"] in ["Si", "Sì"]:
             data["matrix"] = "Yes"
         if data["matrix"] == "No":
@@ -594,7 +592,7 @@ def extract_data_from_xlsx(filename):
             #return True, fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # collected_scat
-        data["collected_scat"] = data["collected_scat"].capitalize().strip()
+        data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()
         if data["collected_scat"] in ["Si", "Sì"]:
             data["collected_scat"] = "Yes"
         if data["collected_scat"] == "No":
@@ -604,13 +602,13 @@ def extract_data_from_xlsx(filename):
             #return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # scalp_category
-        data["scalp_category"] = data["scalp_category"].capitalize().strip()
+        data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
         if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
             out += fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}')
             #return True, fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'), {}, {}, {}
 
         # genetic_sample
-        data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
+        data["genetic_sample"] = str(data["genetic_sample"]).capitalize().strip()
         if data["genetic_sample"] in ["Si", "Sì"]:
             data["genetic_sample"] = "Yes"
         if data["genetic_sample"] == "No":

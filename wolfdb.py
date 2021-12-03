@@ -4,6 +4,8 @@ WolfDB web service
 """
 
 from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask_session import Session
+
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -22,6 +24,9 @@ from dead_wolves_bp import dead_wolves
 __version__ = "1"
 
 app = Flask(__name__)
+SESSION_TYPE = "filesystem"
+app.config.from_object(__name__)
+Session(app)
 
 app.secret_key = "dfhsdlfsdhflsdfhsnqq45"
 

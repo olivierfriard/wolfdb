@@ -19,7 +19,7 @@
 
 
 {% if results %}
-<h2>List of paths</h2>
+<h2>List of {{ n_paths }} paths</h2>
 <table class="table table-striped">
 <tr>
 <th>Path ID</th>
@@ -46,9 +46,11 @@
 </td>
     <td>{{ result['n_tracks'] }}</td>
     <td>{{ result['n_samples'] }}</td>
-    <td>{{ result['observer'] }}</td>
-    <td>{{ result['institution'] }}</td>
-    <td>{{ result['notes'] }}</td>
+
+    <td>{% if result['observer'] %}{{ result['observer'] }}{% endif %}</td>
+
+    <td>{% if result['institution'] %}{{ result['institution'] }}{% endif %}</td>
+    <td>{% if result['notes'] %}{{ result['notes'] }}{% endif %}</td>
 
 </tr>
 {% endfor %}
