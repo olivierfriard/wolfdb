@@ -22,6 +22,7 @@ import pandas as pd
 import uuid
 import os
 import sys
+import subprocess
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -49,8 +50,8 @@ def error_info(exc_info: tuple) -> tuple:
 
     exc_type, exc_obj, exc_tb = exc_info
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    
-    
+
+
     error_type, error_file_name, error_lineno = exc_obj, fname, exc_tb.tb_lineno
 
     return f"Error {error_type} in {error_file_name} at line #{error_lineno}"
@@ -620,7 +621,7 @@ def extract_data_from_xlsx(filename):
 
         # notes
         data["notes"] = str(data["notes"]).strip()
-        
+
         data["operator"] = str(data["operator"]).strip()
         data["institution"] = str(data["institution"]).strip()
 
@@ -914,15 +915,17 @@ def confirm_load_xlsx(filename, mode):
     return redirect(f'/scats')
 
 
+def check_systematic_scats_transect_location():
+    """
+    Check location of scats from systematic sampling
+    Create file in
+    """
 
-@app.route("/systematic_scats_location")
-def systematic_scats_location():
-
-    out = "<table>"
+    out = "<table>\n"
 
     sql = """
-    SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance 
-    FROM transects 
+    SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance
+    FROM transects
     WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm) = (select min(st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)) FROM transects);
     """
 
@@ -932,7 +935,7 @@ def systematic_scats_location():
     cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
     scats = cursor.fetchall()
     for row in scats:
-        
+
         sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
 
         cursor.execute(sql2)
@@ -946,11 +949,25 @@ def systematic_scats_location():
             match = "NO"
 
 
-        out += f'<tr><td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>'
+        out += f'<tr><td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
 
-    out += "</table>"
+    out += "</table>\n"
 
-    return out
+    with open("static/systematic_scats_transects_location", "w") as f_out:
+        f_out.write(out)
+
+    return True
+
+
+
+
+
+@app.route("/systematic_scats_transect_location")
+def systematic_scats_transect_location():
+
+    process = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])
+
+    return "The analysis will be available soon"
 
 
 
