@@ -68,8 +68,8 @@ for row in scats:
         match = "NO"
         out += '<tr class="table-danger">'
 
-
-    out += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
+    if match == "NO":
+        out += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
 
 out += "</table>\n"
 

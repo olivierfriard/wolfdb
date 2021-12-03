@@ -293,8 +293,6 @@ def reverse_geocoding(lon_lat: list) -> dict:
     if "address" not in d:
         return None
 
-    print(d)
-
     location, municipality, province, province_code, region = '','','','',''
 
     country = d['address'].get('country', "")
