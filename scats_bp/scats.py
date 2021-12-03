@@ -648,7 +648,7 @@ def extract_data_from_xlsx(filename):
 
             all_paths[index] = dict(data)
 
-    else:  # no Paths sheet found
+    else:  # no Paths sheet found. Construct from scats
 
         index = 0
         for idx in scats_data:
