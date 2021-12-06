@@ -12,6 +12,7 @@ from flask import render_template, redirect, request, Markup, flash, session
 import psycopg2
 import psycopg2.extras
 from config import config
+import json
 
 import functions as fn
 
@@ -31,6 +32,36 @@ def view_wa(wa_code):
                            results=cursor.fetchone())
 
 
+
+
+@app.route("/plot_wa")
+def plot_wa():
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
+
+    scat_features = []
+    for row in cursor.fetchall():
+
+        scat_geojson = json.loads(row["scat_lonlat"])
+
+        scat_feature = {"geometry": dict(scat_geojson),
+                    "type": "Feature",
+                    "properties": {
+                                   "popupContent": f"Scat ID: {row['scat_id']}"
+                                  },
+                    "id": row['scat_id']
+                   }
+
+        scat_features.append(scat_feature)
+
+        center = f"{row['latitude']}, {row['longitude']}"
+
+
+
+
 @app.route("/wa_genetic_samples")
 def genetic_samples():
     connection = fn.get_connection()
@@ -41,7 +72,15 @@ def genetic_samples():
     n_wa = cursor.fetchone()["n_wa"]
     '''
 
-    cursor.execute("SELECT *, (select scat_id from scats WHERE wa_code != '' AND wa_code = wa_results.wa_code limit 1) AS scat_id FROM wa_results ORDER BY wa_code ASC")
+    '''
+    cursor.execute(("SELECT *, "
+                    "(select scat_id from scats WHERE wa_code != '' AND wa_code = wa_results.wa_code limit 1) AS scat_id "
+                    "FROM wa_results WHERE genotype_id is NULL ORDER BY wa_code ASC")
+                   )
+    '''
+
+    cursor.execute("SELECT * from wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
+
 
     return render_template("wa_genetic_samples_list.html",
                            results=cursor.fetchall())
