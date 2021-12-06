@@ -47,7 +47,7 @@
 <form method="POST" action="{{ action }}">
 
 
-    <div class="mb-3">
+<div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
     </div><!-- col --><div class="col-8">
     {{ form.snowtrack_id(size=30, class="form-control",  value=default_values["snowtrack_id"]) }}
@@ -55,6 +55,16 @@
 
     </div></div>
 </div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top">
+<div class="col-2">{{ form.track_type.label }}</div>
+<div class="col-8">
+    {{ form.track_type( class="form-control", value=default_values["track_type"]) }}
+    {% for message in form.track_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div>
+</div></div>
 
 
 
@@ -67,7 +77,7 @@
 </div>
 </div></div>
 
-<span id="systematic" style="display: {%  if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
+<span id="systematic" style="display: {% if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
 
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}

@@ -196,7 +196,6 @@ def plot_all_scats():
 
     transect_features = []
 
-
     return render_template("plot_all_scats.html",
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
                            )

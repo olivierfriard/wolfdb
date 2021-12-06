@@ -60,4 +60,9 @@ class Track(Form):
 
     track_format = StringField("Track format", [])
 
+    track_type = SelectField("Track type", choices=[('', ''),
+                                                          ('Snow', 'Snow'),
+                                                          ('Mud', 'Mud')],
+                                default="")
+
     notes = TextAreaField("Notes", [])

@@ -34,31 +34,45 @@ def view_wa(wa_code):
 
 
 
-@app.route("/plot_wa")
-def plot_wa():
+@app.route("/plot_all_wa")
+def plot_all_wa():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
+    cursor.execute(("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                   "FROM wa_results, scats "
+                   "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL "
+                   "ORDER BY wa_results.wa_code ASC")
+    )
 
     scat_features = []
+    count, sum_lon, sum_lat  = 0, 0, 0
     for row in cursor.fetchall():
 
         scat_geojson = json.loads(row["scat_lonlat"])
+        count += 1
+        lon, lat = scat_geojson["coordinates"]
+        sum_lon += lon
+        sum_lat += lat
 
         scat_feature = {"geometry": dict(scat_geojson),
                     "type": "Feature",
                     "properties": {
-                                   "popupContent": f"Scat ID: {row['scat_id']}"
+                                   "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>"""
                                   },
                     "id": row['scat_id']
                    }
 
         scat_features.append(scat_feature)
 
-        center = f"{row['latitude']}, {row['longitude']}"
+    center = f"{sum_lat / count}, {sum_lon / count}"
 
+    transect_features = []
+
+    return render_template("plot_all_wa.html",
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
+                           )
 
 
 

@@ -15,6 +15,9 @@ from config import config
 
 from .track import Track
 import functions as fn
+import uuid
+import pathlib as pl
+import pandas as pd
 
 app = flask.Blueprint("snowtracks", __name__, template_folder="templates")
 
@@ -22,6 +25,10 @@ app.debug = True
 
 
 params = config()
+
+EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
+UPLOAD_FOLDER = "/tmp"
+
 
 @app.route("/snow_tracks")
 def snow_tracks():
@@ -46,7 +53,7 @@ def snowtracks_list():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM snow_tracks ORDER BY date DESC")
+    cursor.execute("SELECT * FROM snow_tracks ORDER BY region ASC, province ASC, date DESC")
 
     # split transects (more transects can be specified)
     results = []
@@ -74,7 +81,7 @@ def new_snowtrack():
             default_values[k] = request.form[k]
 
         flash(Markup(f"<b>{msg}</b>"))
-        return render_template('new_snowtrack.html',
+        return render_template("new_snowtrack.html",
                                 title="New snow track",
                                 action="/new_snowtrack",
 
@@ -107,7 +114,7 @@ def new_snowtrack():
                 year = int(request.form['snowtrack_id'][1:2+1]) + 2000
                 month = int(request.form['snowtrack_id'][3:4+1])
                 day = int(request.form['snowtrack_id'][5:6+1])
-                date = f"{year}-{month}-{day}"
+                date = f"{year}-{month:02}-{day:02}"
             except Exception:
                 return not_valid("The snowtrack_id value is not correct")
 
@@ -119,12 +126,12 @@ def new_snowtrack():
             sql = ("INSERT INTO snow_tracks (snowtrack_id, transect_id, date, sampling_season, "
                                              "location, municipality, province, region,"
                                              "observer, institution, scalp_category, "
-                                             "sampling_type, days_after_snowfall, minimum_number_of_wolves,"
+                                             "sampling_type, track_type, days_after_snowfall, minimum_number_of_wolves,"
                                              "track_format, notes)"
                    "VALUES (%s, %s, %s, %s, "
                            "%s, %s, %s, %s, "
                            "%s, %s, %s, "
-                           "%s, %s, %s, "
+                           "%s, %s, %s, %s, "
                            "%s, %s)")
             cursor.execute(sql,
                            [
@@ -140,6 +147,7 @@ def new_snowtrack():
                             request.form["institution"],
                             request.form["scalp_category"],
                             request.form["sampling_type"],
+                            request.form["track_type"],
                             request.form["days_after_snowfall"],
                             request.form["minimum_number_of_wolves"],
                             request.form["track_format"],
@@ -187,9 +195,9 @@ def edit_snowtrack(snowtrack_id):
             default_values["institution"] = ""
 
 
-
         form = Track(transect_id=default_values["transect_id"],
                      sampling_type=default_values["sampling_type"],
+                     track_type=default_values["track_type"],
                      scalp_category=default_values["scalp_category"])
 
         # get id of all transects
@@ -224,12 +232,11 @@ def edit_snowtrack(snowtrack_id):
             # region
             track_region = fn.get_region(request.form["province"])
 
-            print(fn.sampling_season(date))
-
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("UPDATE snow_tracks SET "
                         "snowtrack_id = %s,"
+                        "track_type = %s,"
                         "transect_id = %s,"
                         "date = %s,"
                         "sampling_season = %s,"
@@ -250,6 +257,7 @@ def edit_snowtrack(snowtrack_id):
             cursor.execute(sql,
                            [
                             request.form["snowtrack_id"],
+                            request.form["track_type"],
                             request.form["transect_id"],
                             date,
                             fn.sampling_season(date),
@@ -277,9 +285,184 @@ def edit_snowtrack(snowtrack_id):
 
 @app.route("/del_snowtrack/<snowtrack_id>")
 def del_snowtrack(snowtrack_id):
+    """
+    Delete the track from table
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("DELETE FROM snow_tracks WHERE snowtrack_id = %s",
                    [snowtrack_id])
     connection.commit()
     return redirect("/snowtracks_list")
+
+
+
+
+
+
+
+def extract_data_from_tracks_xlsx(filename):
+    """
+    Extract and check data from a XLSX file
+    """
+
+    if pl.Path(filename).suffix == ".XLSX":
+        engine = "openpyxl"
+    if pl.Path(filename).suffix == ".ODS":
+        engine = "odf"
+
+
+    out = ""
+
+    try:
+        df_all = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=None, engine=engine)
+    except Exception:
+        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}
+
+    '''
+    if "Tracks" not in df.keys():
+        return True, fn.alert_danger(f"Tracks sheet not found in workbook"), {}, {}, {}
+    scats_df = df["Tracks"]
+    '''
+
+    first_sheet_name = list(df_all.keys())[0]
+
+    tracks_df = df_all[first_sheet_name]
+
+
+    # check columns
+    for column in ['snowtrack_id', 'transect_id', 'date', 'coord_e', 'coord_n',
+                    'place', 'municipality', 'province', 'operator',
+                    'institution', 'scalp_category', 'sampling_type', 'days_after_snowfall',
+                    'trcks_type', 'minimum_number_of_wolves', 'track_format', 'note']:
+
+        if column not in list(tracks_df.columns):
+            return True, fn.alert_danger(f"Column {column} is missing"), {}
+
+    tracks_data = {}
+    for index, row in tracks_df.iterrows():
+        data = {}
+        for column in list(tracks_df.columns):
+            data[column] = row[column]
+            if isinstance(data[column], float) and str(data[column]) == "nan":
+                data[column] = ""
+
+        # date
+        try:
+            year = int(data['snowtrack_id'][1:2+1]) + 2000
+            month = int(data['snowtrack_id'][3:4+1])
+            day = int(data['snowtrack_id'][5:6+1])
+            date = f"{year}-{month:02}-{day:02}"
+        except Exception:
+            out += fn.alert_danger(f"The track ID is not valid at row {index + 2}: {data['snowtrack_id']}")
+
+
+        # check date
+        try:
+            date_from_file = str(data["date"]).split(" ")[0].strip()
+        except Exception:
+            date_from_file = ""
+
+
+        if date != date_from_file:
+            out += fn.alert_danger(f"Check the track ID and the date at row {index + 2}: {data['snowtrack_id']}  {date_from_file}")
+
+        data["date"] = date_from_file
+
+        # path_id
+        path_id = fn.get_path_id(data['transect_id'], date)
+
+        # region
+        track_region = fn.get_region(data["province"])
+        data["region"] = track_region
+
+
+        # data["geometry_utm"] = f"SRID=32632;POINT({data['coord_e']} {data['coord_n']})"
+
+        # sampling_type
+        data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
+        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
+            out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}')
+
+        # no path ID if scat is opportunistic
+        if data["sampling_type"] == "Opportunistic":
+            data["transect_id"] = ""
+
+
+        # scalp_category
+        data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
+        if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
+            out += fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}')
+
+
+        data["operator"] = str(data["operator"]).strip()
+
+        data["institution"] = str(data["institution"]).strip()
+
+        data['days_after_snowfall'] = str(data["days_after_snowfall"]).strip()
+
+        data['track_type'] = str(data["trcks_type"]).strip()
+
+        data['minimum_number_of_wolves'] = str(data["minimum_number_of_wolves"]).strip()
+
+        # notes
+        data["note"] = str(data["note"]).strip()
+
+        tracks_data[index] = dict(data)
+
+    if out:
+        return True, out, {}
+
+
+    return False, "", tracks_data
+
+
+
+
+
+
+
+
+
+@app.route("/load_tracks_xlsx", methods=("GET", "POST",))
+def load_tracks_xlsx():
+
+    if request.method == "GET":
+        return render_template("load_tracks_xlsx.html")
+
+    if request.method == "POST":
+
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if pl.Path(new_file.filename).suffix.upper() not in EXCEL_ALLOWED_EXTENSIONS:
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+            return redirect(f"/load_tracks_xlsx")
+
+        try:
+            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file"))
+            return redirect(f"/load_tracks_xlsx")
+
+        r, msg, all_data = extract_data_from_tracks_xlsx(filename)
+        if r:
+            flash(msg)
+            return redirect(f"/load_tracks_xlsx")
+
+        else:
+            # check if scat_id already in DB
+            connection = fn.get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
+            sql = f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
+            cursor.execute(sql)
+            scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
+
+            return render_template("confirm_load_scats_xlsx.html",
+                                   n_scats = len(all_data),
+                                   n_scats_to_update=scats_to_update,
+                                   all_data=all_data,
+                                   filename=filename)
+
