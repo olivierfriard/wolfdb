@@ -31,19 +31,19 @@ def view_wa(wa_code):
                            results=cursor.fetchone())
 
 
-@app.route("/genetic_samples")
-@app.route("/wa_list")
+@app.route("/wa_genetic_samples")
 def genetic_samples():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    '''
     cursor.execute("SELECT count(scat_id) AS n_wa FROM scats WHERE wa_code IS NOT NULL AND wa_code != ''")
     n_wa = cursor.fetchone()["n_wa"]
+    '''
 
-    cursor.execute("SELECT * FROM scats WHERE wa_code IS NOT NULL AND wa_code != '' ORDER BY wa_code")
+    cursor.execute("SELECT *, (select scat_id from scats WHERE wa_code != '' AND wa_code = wa_results.wa_code limit 1) AS scat_id FROM wa_results ORDER BY wa_code ASC")
 
-    return render_template("genetic_samples_list.html",
-                           n_wa=n_wa,
+    return render_template("wa_genetic_samples_list.html",
                            results=cursor.fetchall())
 
 
