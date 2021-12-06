@@ -329,14 +329,14 @@ def extract_data_from_tracks_xlsx(filename):
 
     tracks_df = df_all[first_sheet_name]
 
-
-    # check columns
-    for column in ['snowtrack_id', 'transect_id', 'date', 'coord_e', 'coord_n',
+    columns = ['snowtrack_id', 'transect_id', 'date', 'coord_e', 'coord_n',
                     'place', 'municipality', 'province', 'operator',
                     'institution', 'scalp_category', 'sampling_type', 'days_after_snowfall',
-                    'trcks_type', 'minimum_number_of_wolves', 'track_format', 'note']:
+                    'trcks_type', 'minimum_number_of_wolves', 'track_format', 'note']
 
-        if column not in list(tracks_df.columns):
+    # check columns
+    for column in columns:
+        if column not in list(tracks_df.columns) and column != 'trcks_type':
             return True, fn.alert_danger(f"Column {column} is missing"), {}
 
     tracks_data = {}
@@ -401,7 +401,10 @@ def extract_data_from_tracks_xlsx(filename):
 
         data['days_after_snowfall'] = str(data["days_after_snowfall"]).strip()
 
-        data['track_type'] = str(data["trcks_type"]).strip()
+        if "trcks_type" in tracks_df.columns:
+            data['track_type'] = str(data["trcks_type"]).strip()
+        else:
+            data['track_type'] = ""
 
         data['minimum_number_of_wolves'] = str(data["minimum_number_of_wolves"]).strip()
 
@@ -455,14 +458,14 @@ def load_tracks_xlsx():
             # check if scat_id already in DB
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            scats_list = "','".join([all_data[idx]['scat_id'] for idx in all_data])
-            sql = f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
+            tracks_list = "','".join([all_data[idx]['snowtrack_id'] for idx in all_data])
+            sql = f"SELECT snowtrack_id FROM scats WHERE snowtrack_id IN ('{tracks_list}')"
             cursor.execute(sql)
-            scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
+            tracks_to_update = [row["snowtrack_id"] for row in cursor.fetchall()]
 
-            return render_template("confirm_load_scats_xlsx.html",
-                                   n_scats = len(all_data),
-                                   n_scats_to_update=scats_to_update,
+            return render_template("confirm_load_tracks_xlsx.html",
+                                   n_tracks = len(all_data),
+                                   n_tracks_to_update=tracks_to_update,
                                    all_data=all_data,
                                    filename=filename)
 
