@@ -113,13 +113,20 @@ def paths_list():
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cursor.execute(("SELECT *, "
-                    "(SELECT COUNT(*) FROM scats WHERE path_id = CONCAT(paths.transect_id, ' ', paths.date)) AS n_samples, "
+                    "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id) AS province, "
+                    "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id) AS region, "
+                    "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
                     "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
-                   "FROM paths ORDER BY date DESC"
+                   "FROM paths ORDER BY region ASC, province ASC, date DESC"
                    ))
 
     results = cursor.fetchall()
+
+    # count paths
+    n_paths = len(results)
+
     return render_template("paths_list.html",
+                           n_paths=n_paths,
                            results=results,
                             )
 

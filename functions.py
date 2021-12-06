@@ -212,7 +212,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
 
     longitude, latitude = lon_lat
 
-    URL = f"https://nominatim.openstreetmap.org/reverse.php?lat={latitude}&lon={longitude}&zoom=14&format=json&namedetails=1&accept-language=en"
+    URL = f"https://nominatim.openstreetmap.org/reverse.php?lat={latitude}&lon={longitude}&zoom=14&format=json&namedetails=1&accept-language=it"
 
     continents = {
         "Africa": [
@@ -293,9 +293,11 @@ def reverse_geocoding(lon_lat: list) -> dict:
     if "address" not in d:
         return None
 
+    location, municipality, province, province_code, region = '','','','',''
+
     country = d['address'].get('country', "")
 
-    for kw in ['region', 'state', 'state_district', 'county']:
+    for kw in ['state']:
         region = d['address'].get(kw, "")
         if region:
             break
@@ -305,15 +307,17 @@ def reverse_geocoding(lon_lat: list) -> dict:
         province_code = prov_name2prov_code(province)
 
 
-    for kw in ['hamlet', 'town', 'city', 'village', 'municipality']:
-        city = d['address'].get(kw, "")
-        if city:
+    for kw in ['town', 'city', 'village', 'municipality']:
+        municipality = d['address'].get(kw, "")
+        if municipality:
             break
 
-    for kw in [ 'croft', 'isolated_dwelling', 'suburb']:
-        place = d['address'].get(kw, "")
-        if place:
-            break
+    for kw in ['hamlet', 'croft', 'isolated_dwelling', 'suburb']:
+        if d['address'].get(kw, ""):
+            if location:
+                location += "; " + d['address'].get(kw, "")
+            else:
+                location = d['address'].get(kw, "")
 
     geocoded_continent: str = ""
     if country:
@@ -322,14 +326,20 @@ def reverse_geocoding(lon_lat: list) -> dict:
                 geocoded_continent = continent
                 break
 
+    # exception (AO provincia soppressa)
+    if not province:
+        if region == "Valle d'Aosta":
+            province = "Valle d'Aosta"
+            province_code = "AO"
+
     return {
         "continent": geocoded_continent,
         "country": country,
         "region": region,
         "province": province,
         "province_code": province_code,
-        "municipality": city,
-        "location": place
+        "municipality": municipality,
+        "location": location
     }
 
 

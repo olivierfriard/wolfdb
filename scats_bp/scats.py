@@ -22,6 +22,7 @@ import pandas as pd
 import uuid
 import os
 import sys
+import subprocess
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -49,8 +50,8 @@ def error_info(exc_info: tuple) -> tuple:
 
     exc_type, exc_obj, exc_tb = exc_info
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    
-    
+
+
     error_type, error_file_name, error_lineno = exc_obj, fname, exc_tb.tb_lineno
 
     return f"Error {error_type} in {error_file_name} at line #{error_lineno}"
@@ -525,8 +526,6 @@ def extract_data_from_xlsx(filename):
 
 
         # check date
-        print(f"date from scat ID: {date}")
-        print(f"{str(data['date'])=}")
         try:
             date_from_file = str(data["date"]).split(" ")[0].strip()
         except Exception:
@@ -563,7 +562,7 @@ def extract_data_from_xlsx(filename):
         data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
 
         # sampling_type
-        data["sampling_type"] = data["sampling_type"].capitalize().strip()
+        data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
         if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
             out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}')
             # return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
@@ -573,7 +572,7 @@ def extract_data_from_xlsx(filename):
             data["path_id"] = ""
 
         # deposition
-        data["deposition"] = data["deposition"].capitalize().strip()
+        data["deposition"] = str(data["deposition"]).capitalize().strip()
         if data["deposition"] == "Fresca":
             data["deposition"] = "Fresh"
         if data["deposition"] == "Vecchia":
@@ -583,7 +582,7 @@ def extract_data_from_xlsx(filename):
             #return True, fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}'), {}, {}, {}
 
         # matrix
-        data["matrix"] = data["matrix"].capitalize().strip()
+        data["matrix"] = str(data["matrix"]).capitalize().strip()
         if data["matrix"] in ["Si", "Sì"]:
             data["matrix"] = "Yes"
         if data["matrix"] == "No":
@@ -593,7 +592,7 @@ def extract_data_from_xlsx(filename):
             #return True, fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # collected_scat
-        data["collected_scat"] = data["collected_scat"].capitalize().strip()
+        data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()
         if data["collected_scat"] in ["Si", "Sì"]:
             data["collected_scat"] = "Yes"
         if data["collected_scat"] == "No":
@@ -603,13 +602,13 @@ def extract_data_from_xlsx(filename):
             #return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # scalp_category
-        data["scalp_category"] = data["scalp_category"].capitalize().strip()
+        data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
         if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
             out += fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}')
             #return True, fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'), {}, {}, {}
 
         # genetic_sample
-        data["genetic_sample"] = data["genetic_sample"].capitalize().strip()
+        data["genetic_sample"] = str(data["genetic_sample"]).capitalize().strip()
         if data["genetic_sample"] in ["Si", "Sì"]:
             data["genetic_sample"] = "Yes"
         if data["genetic_sample"] == "No":
@@ -620,7 +619,7 @@ def extract_data_from_xlsx(filename):
 
         # notes
         data["notes"] = str(data["notes"]).strip()
-        
+
         data["operator"] = str(data["operator"]).strip()
         data["institution"] = str(data["institution"]).strip()
 
@@ -647,7 +646,7 @@ def extract_data_from_xlsx(filename):
 
             all_paths[index] = dict(data)
 
-    else:  # no Paths sheet found
+    else:  # no Paths sheet found. Construct from scats
 
         index = 0
         for idx in scats_data:
@@ -914,15 +913,17 @@ def confirm_load_xlsx(filename, mode):
     return redirect(f'/scats')
 
 
+def check_systematic_scats_transect_location():
+    """
+    Check location of scats from systematic sampling
+    Create file in
+    """
 
-@app.route("/systematic_scats_location")
-def systematic_scats_location():
-
-    out = "<table>"
+    out = "<table>\n"
 
     sql = """
-    SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance 
-    FROM transects 
+    SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance
+    FROM transects
     WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm) = (select min(st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)) FROM transects);
     """
 
@@ -932,7 +933,7 @@ def systematic_scats_location():
     cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
     scats = cursor.fetchall()
     for row in scats:
-        
+
         sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
 
         cursor.execute(sql2)
@@ -946,11 +947,25 @@ def systematic_scats_location():
             match = "NO"
 
 
-        out += f'<tr><td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>'
+        out += f'<tr><td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
 
-    out += "</table>"
+    out += "</table>\n"
 
-    return out
+    with open("static/systematic_scats_transects_location", "w") as f_out:
+        f_out.write(out)
+
+    return True
+
+
+
+
+
+@app.route("/systematic_scats_transect_location")
+def systematic_scats_transect_location():
+
+    process = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])
+
+    return 'The analysis will be available soon. Please wait for 5 minutes. <a href="/scats">Go to Scats page</a>'
 
 
 
