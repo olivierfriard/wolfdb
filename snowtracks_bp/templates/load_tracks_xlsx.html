@@ -1,0 +1,59 @@
+{% include "header.html" %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/snow_tracks" class="btn btn-primary">Tracks</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+<h2>Load tracks from file</h2>
+
+
+
+<form id="upload_file" action="/load_tracks_xlsx"  method="POST" enctype="multipart/form-data">
+    <br>
+
+
+  <div class="form-group">
+   <label for="new_file">Select the Excel file (XLSX) or the OpenDocument (ODS) file</label><br>
+   <br>
+  <input type="file" id="new_file" placeholder="" name="new_file" >
+  </div>
+  <br>
+  <button type="submit" class="btn btn-danger" id="upload-file-btn" type="button">Upload file</button>
+
+  </form>
+
+
+</div>
+</main>
+
+</body>
+</html>
+
+
+
+
+
