@@ -11,7 +11,7 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/snow_tracks" class="btn btn-primary">Tracks</a>
+<a href="/tracks" class="btn btn-primary">Tracks</a>
 
 <a href="/new_snowtrack" class="btn btn-primary">New track</a>
 <br>
@@ -27,6 +27,7 @@
 <th>Transect ID</th>
 <th>Date</th>
 <th>Sampling season</th>
+<th>Track type</th>
 <th>Location</th>
 <th>Municipality</th>
 <th>Province</th>
@@ -57,6 +58,7 @@
 
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
+    <td>{{ result['track_type'] }}</td>
     <td>{% if result["location"] %}{{ result['location'] }}{% endif %}</td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>
