@@ -710,6 +710,7 @@ def load_scats_xlsx():
 
         r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
         if r:
+            msg = f"File name: {new_file.filename}<br>" + msg 
             flash(msg)
             return redirect(f"/load_scats_xlsx")
 
