@@ -12,6 +12,20 @@
 <a href="/" class="btn btn-primary">Home</a>
 <br>
 <br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+
 <a href="/snowtracks_list" class="btn btn-primary">List of tracks</a>
 
 <br>
