@@ -1,0 +1,79 @@
+{% include "header.html" %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/tracks" class="btn btn-primary">Tracks</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+{{ n_tracks }} tracks found in file.<br>
+{{ n_tracks_to_update|count }} are already present in the database (displayed with red background).<br>
+<br>
+
+<a href="/confirm_load_tracks_xlsx/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (track ID already presents will be updated)</a>
+
+<a href="/confirm_load_tracks_xlsx/{{ filename }}/new"  class="btn btn-primary">Insert only new track ID</a>
+
+<a href="/tracks"  class="btn btn-primary">Cancel insertion</a>
+
+<br>
+<br>
+
+
+<table class="table table-striped">
+
+<tr>
+  <th>Track ID</th>
+  <th>Date</th>
+</tr>
+
+{% for idx in all_data %}
+
+{% if all_data[idx]['snowtrack_id'] in n_tracks_to_update %}
+<tr class="table-danger">
+{% else %}
+<tr>
+{% endif %}
+  <td>{{ all_data[idx]['snowtrack_id'] }}</td>
+  <td>{{ all_data[idx]['date'] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+
+</div>
+</main>
+
+</body>
+</html>
+
+
+
+
+
