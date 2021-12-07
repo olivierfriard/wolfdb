@@ -58,7 +58,7 @@
 
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
-    <td>{{ result['track_type'] }}</td>
+    <td>{% if result["track_type"] %}{{ result['track_type'] }}{% endif %}</td>
     <td>{% if result["location"] %}{{ result['location'] }}{% endif %}</td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>

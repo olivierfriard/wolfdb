@@ -471,7 +471,7 @@ def load_tracks_xlsx():
 
         r, msg, all_data = extract_data_from_tracks_xlsx(filename)
         if r:
-            msg = f"File name: {new_file.filename}<br>" + msg 
+            msg = Markup(f"File name: {new_file.filename}<br>") + msg 
             flash(msg)
             return redirect(f"/load_tracks_xlsx")
 
