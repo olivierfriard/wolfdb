@@ -133,7 +133,6 @@ var transects = {
 };
 
 
-
 var scats = {
     "type": "FeatureCollection",
     "features": ###SCAT_FEATURES###
@@ -149,50 +148,44 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 
-	function onEachFeature(feature, layer) {
-		var popupContent = "";
+function onEachFeature(feature, layer) {
+    var popupContent = "";
 
-		if (feature.properties && feature.properties.popupContent) {
-			popupContent += feature.properties.popupContent;
-		}
+    if (feature.properties && feature.properties.popupContent) {
+        popupContent += feature.properties.popupContent;
+    }
 
-		layer.bindPopup(popupContent);
-	}
+    layer.bindPopup(popupContent);
+}
 
-	L.geoJSON([scats], {
+L.geoJSON([scats], {
 
-		style: function (feature) {
-			return feature.properties && feature.properties.style;
-		},
+    style: function (feature) {
+        return feature.properties && feature.properties.style;
+    },
 
-		onEachFeature: onEachFeature,
+    onEachFeature: onEachFeature,
 
-		pointToLayer: function (feature, latlng) {
-			return L.circleMarker(latlng, {
-				radius: 8,
-				fillColor: "#ff7800",
-				color: "#red",
-				weight: 1,
-				opacity: 1,
-				fillOpacity: 0.8
-			});
-		}
-	}).addTo(map);
-
-	L.geoJSON(transects, {
-
-		filter: function (feature, layer) {
-			if (feature.properties) {
-				// If the property "underConstruction" exists and is true, return false (don't render features under construction)
-				return feature.properties.underConstruction !== undefined ? !feature.properties.underConstruction : true;
-			}
-			return false;
-		},
-
-		onEachFeature: onEachFeature
-	}).addTo(map);
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            radius: 8,
+            fillColor: "#ff7800",
+            color: "#red",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+    }
+}).addTo(map);
 
 
+L.geoJSON(transects, {
+    onEachFeature: onEachFeature
+}).addTo(map);
+
+
+var scale = L.control.scale(); // Creating scale control
+         scale.addTo(map); // Adding scale control to the map
 
 </script>
 

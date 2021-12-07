@@ -11,15 +11,15 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/snowtracks_list" class="btn btn-primary">Snow tracks</a>&nbsp;
+<a href="/snowtracks_list" class="btn btn-primary">Tracks</a>&nbsp;
 <br>
 
 <br>
 
-<h2>Snow-tracking ID: {{ results["snowtrack_id"] }}</h2>
+<h2>Track ID: {{ results["snowtrack_id"] }}</h2>
 
 <a href="/edit_snowtrack/{{results["snowtrack_id"] }}" class="btn btn-primary">Edit</a>
-<a href="/del_snowtrack/{{ results["snowtrack_id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete snow track</a>
+<a href="/del_snowtrack/{{ results["snowtrack_id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete track</a>
 
 <table class="table table-striped">
 
@@ -27,6 +27,8 @@
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 
 <tr><td>Sampling type</td><td>{% if results["sampling_type"] %}{{ results["sampling_type"] }}{% endif %}</td></tr>
+
+<tr><td>Track type</td><td>{% if results["track_type"] %}{{ results["track_type"] }}{% endif %}</td></tr>
 
 <tr><td>Location</td><td>{% if results["location"] %}{{ results["location"] }}{% endif %}</td></tr>
 <tr><td>Municipality</td><td>{% if results["municipality"] %}{{ results["municipality"] }}{% endif %}</td></tr>

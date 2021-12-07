@@ -218,7 +218,7 @@ def scats_list():
 
     cursor.execute("SELECT * FROM scats ORDER BY scat_id")
 
-    return render_template("scats_list.html",
+    return render_template("scats_list_dt.html",
                             n_scats=n_scats,
                             results=cursor.fetchall())
 
@@ -563,7 +563,7 @@ def extract_data_from_xlsx(filename):
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
         if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
-            out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}')
+            out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}: found {data["sampling_type"]}')
             # return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
 
         # no path ID if scat is opportunistc

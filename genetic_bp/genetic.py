@@ -40,10 +40,10 @@ def plot_all_wa():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute(("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                    "FROM wa_results, scats "
                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL "
-                   "ORDER BY wa_results.wa_code ASC")
+                   )
     )
 
     scat_features = []
@@ -57,9 +57,10 @@ def plot_all_wa():
         sum_lat += lat
 
         scat_feature = {"geometry": dict(scat_geojson),
-                    "type": "Feature",
-                    "properties": {
-                                   "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>"""
+                        "type": "Feature",
+                        "properties": {
+                                       "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
+                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a> """)
                                   },
                     "id": row['scat_id']
                    }
@@ -71,8 +72,61 @@ def plot_all_wa():
     transect_features = []
 
     return render_template("plot_all_wa.html",
+                           title="Plot of WA codes",
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
                            )
+
+
+@app.route("/plot_wa_clusters/<distance>")
+def plot_wa_clusters(distance):
+
+    '''
+    select wa_code, scat_id, municipality, ST_ClusterDBSCAN(geometry_utm, eps:=1000, minpoints:=1) over() as cid from wa_scat ORDER BY cid;
+    '''
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(("SELECT wa_code, scat_id, municipality, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
+                    "FROM wa_scat"
+                    #" ORDER BY cid;"
+                    )
+                   )
+
+    scat_features = []
+    count, sum_lon, sum_lat  = 0, 0, 0
+    for row in cursor.fetchall():
+
+        scat_geojson = json.loads(row["scat_lonlat"])
+        count += 1
+        lon, lat = scat_geojson["coordinates"]
+        sum_lon += lon
+        sum_lat += lat
+
+        scat_feature = {"geometry": dict(scat_geojson),
+                    "type": "Feature",
+                    "properties": { "style": {"color": "#ff0000"},
+                                       "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
+                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><b>"""
+                                                        f"""Cluster ID:  {row['cid']}""")
+
+                                  },
+                    "id": row['scat_id']
+                   }
+
+        scat_features.append(scat_feature)
+
+    center = f"{sum_lat / count}, {sum_lon / count}"
+
+    transect_features = []
+
+    return render_template("plot_all_wa.html",
+                           title=f"Plot of WA codes clusters ({distance} m)",
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
+                           )
+
 
 
 
