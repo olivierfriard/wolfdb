@@ -47,7 +47,7 @@ def dead_wolves_list():
     # get all dead_wolves
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dead_wolves ORDER BY date DESC")
+    cursor.execute("SELECT * FROM dead_wolves ORDER BY tissue_id DESC")
 
     results = cursor.fetchall()
 

@@ -21,18 +21,24 @@
 <table class="table table-striped">
 <tr>
 <th>Tissue ID</th>
-<th>municipality</th>
+<th>Genotype ID</th>
+<th>WA code</th>
+<th>Municipality</th>
 <th>Province</th>
-<th>Region</th>
 
 </tr>
 {% for result in results %}
 <tr>
 
     <td><a href="/view_dead_wolf/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
+
+    <td><a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a></td>
+    <td>{{ result['wa_code'] }}</td>
+
+
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>
-    <td>{{ result['region'] }}</td>
+
 </tr>
 {% endfor %}
 </table>

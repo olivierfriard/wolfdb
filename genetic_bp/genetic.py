@@ -13,6 +13,8 @@ import psycopg2
 import psycopg2.extras
 from config import config
 import json
+import matplotlib
+import matplotlib.pyplot as plt
 
 import functions as fn
 
@@ -22,6 +24,45 @@ app.debug = True
 
 
 params = config()
+
+
+
+
+def get_cmap(n, name='viridis'):
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
+    RGB color; the keyword argument name must be a standard mpl colormap name.'''
+    return plt.cm.get_cmap(name, n)
+
+
+@app.route("/view_genotype/<genotype_id>")
+def view_genotype(genotype_id):
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s ", [genotype_id])
+    genotype = cursor.fetchone()
+
+    
+    cursor.execute("select distinct wa_code from genotypes, wa_results where genotypes.genotype_id = wa_results.genotype_id AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code", [genotype_id]) 
+    wa_codes = cursor.fetchall()
+
+    return render_template("view_genotype.html",
+                           result=genotype,
+                           wa_codes=wa_codes)
+
+
+@app.route("/genotypes_list")
+def genotypes_list():
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT distinct * from genotypes ORDER BY genotype_id")
+
+
+    return render_template("genotypes_list.html",
+                           results=cursor.fetchall())
+
+
+
 
 @app.route("/view_wa/<wa_code>")
 def view_wa(wa_code):
@@ -87,17 +128,23 @@ def plot_wa_clusters(distance):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+
     cursor.execute(("SELECT wa_code, scat_id, municipality, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
                     "FROM wa_scat"
-                    #" ORDER BY cid;"
                     )
                    )
+    max_cid = 0
+    results = cursor.fetchall()
+    for row in results:
+        max_cid = max(max_cid, row["cid"])
+
+    cmap = get_cmap(max_cid)
 
     scat_features = []
     count, sum_lon, sum_lat  = 0, 0, 0
-    for row in cursor.fetchall():
+    for row in results:
 
         scat_geojson = json.loads(row["scat_lonlat"])
         count += 1
@@ -105,11 +152,14 @@ def plot_wa_clusters(distance):
         sum_lon += lon
         sum_lat += lat
 
+        
+
+        color = matplotlib.colors.to_hex(cmap(row['cid']), keep_alpha=False)
         scat_feature = {"geometry": dict(scat_geojson),
                     "type": "Feature",
-                    "properties": { "style": {"color": "#ff0000"},
+                    "properties": { "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                                        "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
-                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><b>"""
+                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
                                                         f"""Cluster ID:  {row['cid']}""")
 
                                   },
