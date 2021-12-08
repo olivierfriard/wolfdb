@@ -1,0 +1,56 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/genotypes_list" class="btn btn-primary">Genotypes list</a>
+
+<br><br>
+
+
+<h2>Genotype ID: {{ result["genotype_id"] }}</h2>
+
+
+<br>
+
+
+<table class="table table-striped">
+<tr><td>Sex</td><td>{{ result["sex"] }}</td></tr>
+<tr><td>Pack</td><td>{{ result["pack"] }}</td></tr>
+
+<tr><td>Age at first capture</td><td>{{ result["age_first_capture"] }}</td></tr>
+<tr><td>Status at first capture</td><td>{{ result["status_first_capture"] }}</td></tr>
+<tr><td>Dispersal</td><td>{{ result["dispersal"] }}</td></tr>
+<tr><td>n recaptures</td><td>{{ result["n_recaptures"] }}</td></tr>
+<tr><td>Dead recovery  </td><td>{{ result["dead_recovery  "] }}</td></tr>
+
+</table>
+
+
+<h3>WA codes</h3>
+
+{% for wa_code in wa_codes %}
+
+<a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a><br>
+
+
+{% endfor %}
+
+
+
+</div>
+</main>
+
+
+
+
+
+
+

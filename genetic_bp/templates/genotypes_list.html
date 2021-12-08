@@ -1,0 +1,94 @@
+{% include "header.html" %}
+
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<br>
+<br>
+
+{% if results %}
+<h2>List of {{ n_genotype }} genotypes</h2>
+<table class="table table-striped">
+<tr>
+<th>Genotype ID</th>
+<th>Pack</th>
+<th>Sex</th>
+<th>Age first capture</th>
+<th>status first capture</th>
+<th>dispersal</th>
+<th>n recaptures</th>
+<th>dead recovery</th>
+
+</tr>
+{% for result in results %}
+
+<tr>
+<td>
+    <a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a>&nbsp;
+</td>
+
+
+<td>
+    {% if result['pack'] %}{{ result['pack'] }}{% endif %}
+</td>
+
+<td>
+    {% if result['sex'] %}{{ result['sex'] }}{% endif %}
+</td>
+
+<td>
+    {% if result['age_first_capture'] %}{{ result['age_first_capture'] }}{% endif %}
+</td>
+
+<td>
+
+    {{ result['status_first_capture'] }}, {{ result['status_first_capture'] }}
+
+</td>
+
+
+<td>
+    {% if result['dispersal'] %}{{ result['dispersal'] }}{% endif %}
+
+</td>
+
+    <td>
+        {% if result['n_recaptures'] %}{{ result['n_recaptures'] }}{% endif %}
+    </td>
+
+    <td>
+        {% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}
+    </td>
+
+
+</tr>
+{% endfor %}
+
+
+</table>
+{% else %}
+
+<h2>No WA code found</h2>
+
+{% endif %}
+
+
+
+</div>
+
+</main>
+
+
+
+
+
+
+
