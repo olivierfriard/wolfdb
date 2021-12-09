@@ -29,7 +29,7 @@ params = config()
 
 
 def get_cmap(n, name='viridis'):
-    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
     return plt.cm.get_cmap(name, n)
 
@@ -42,8 +42,8 @@ def view_genotype(genotype_id):
     cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s ", [genotype_id])
     genotype = cursor.fetchone()
 
-    
-    cursor.execute("select distinct wa_code from genotypes, wa_results where genotypes.genotype_id = wa_results.genotype_id AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code", [genotype_id]) 
+
+    cursor.execute("select distinct wa_code from genotypes, wa_results where genotypes.genotype_id = wa_results.genotype_id AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code", [genotype_id])
     wa_codes = cursor.fetchall()
 
     return render_template("view_genotype.html",
@@ -152,7 +152,7 @@ def plot_wa_clusters(distance):
         sum_lon += lon
         sum_lat += lat
 
-        
+
 
         color = matplotlib.colors.to_hex(cmap(row['cid']), keep_alpha=False)
         scat_feature = {"geometry": dict(scat_geojson),
@@ -197,11 +197,41 @@ def genetic_samples():
                    )
     '''
 
+    cursor.execute("select * from loci")
+    loci_list = []
+    for row in cursor.fetchall():
+        loci_list.append(row["name"])
+
     cursor.execute("SELECT * from wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
+    wa_scats = cursor.fetchall()
+    values = {}
+    for row in wa_scats:
+        values[row["wa_code"]] = {}
+        for locus in loci_list:
+            cursor.execute("select * from wa_locus where wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1", [row["wa_code"], locus])
+            row2 = cursor.fetchone()
+            if row2 is None:
+                value1 = "-"
+                value2 = "-"
+            else:
+                if row2["value1"] is not None:
+                    value1 = row2["value1"]
+                else:
+                    value1 = "-"
+                if row2["value2"] is not None:
+                    value2 = row2["value2"]
+                else:
+                    value2 = "-"
+
+            values[row["wa_code"]][locus] = [value1, value2]
+
+
+    print(values["WA2925"])
 
 
     return render_template("wa_genetic_samples_list.html",
-                           results=cursor.fetchall())
+                           results=wa_scats,
+                           values=values)
 
 
 @app.route("/view_genetic_data/<wa_code>")

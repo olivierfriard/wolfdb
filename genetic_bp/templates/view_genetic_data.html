@@ -29,8 +29,8 @@
 <tr>
 
 <th>Locus</th>
-<th></th>
-<th></th>
+<th>Allele 1</th>
+<th>Allele 2</th>
 <th>Date</th>
 <th>Notes</th>
 <th>History</th>
@@ -44,10 +44,10 @@
 
 </td>
 
-<td>{{ data[locus['name']]['value1'] }}</td>
+<td>{% if data[locus['name']]['value1'] %}{{ data[locus['name']]['value1'] }}{% else %}-{% endif %}</td>
 <td>
 {% if locus['name'] != "SRY" %}
-    {{ data[locus['name']]['value2'] }}
+{% if data[locus['name']]['value2'] %}{{ data[locus['name']]['value2'] }}{% else %}-{% endif %}
 {% endif %}
 </td>
 <td>{{ data[locus['name']]['timestamp'] }}</td>
