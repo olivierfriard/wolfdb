@@ -43,8 +43,11 @@ def view_genotype(genotype_id):
     genotype = cursor.fetchone()
 
 
-    cursor.execute("select distinct wa_code from genotypes, wa_results where genotypes.genotype_id = wa_results.genotype_id AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code", [genotype_id])
+    cursor.execute("SELECT distinct wa_code FROM genotypes, wa_results WHERE genotypes.genotype_id = wa_results.genotype_id AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code", [genotype_id])
     wa_codes = cursor.fetchall()
+
+    # genetic data
+    cursor.execute("", [genotype_id])
 
     return render_template("view_genotype.html",
                            result=genotype,
@@ -68,9 +71,33 @@ def genotypes_list():
 def view_wa(wa_code):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM scats WHERE wa_code = %s ", [wa_code])
+
+    cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
+                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    " FROM scats WHERE wa_code = %s "), [wa_code]
+    )
+    results = dict(cursor.fetchone())
+    scat_geojson = json.loads(results["scat_lonlat"])
+    scat_feature = {"geometry": dict(scat_geojson),
+                    "type": "Feature",
+                    "properties": {
+                                   "popupContent": f"WA code: <b>{wa_code}</b>"
+                                  },
+                    "id": wa_code
+                   }
+    scat_features = [scat_feature]
+    center = f"{results['latitude']}, {results['longitude']}"
+
+    # genetic data
+    cursor.execute("SELECT * FROM wa_results WHERE wa_code = %s", [wa_code])
+    wa_result = cursor.fetchone()
+
     return render_template("view_wa.html",
-                           results=cursor.fetchone())
+                           results=results,
+                           wa_result=wa_result,
+                           map=Markup(fn.leaflet_geojson(center, scat_features, []))
+                          )
 
 
 
@@ -197,18 +224,18 @@ def genetic_samples():
                    )
     '''
 
-    cursor.execute("select * from loci")
+    cursor.execute("SELECT * FROM loci")
     loci_list = []
     for row in cursor.fetchall():
         loci_list.append(row["name"])
 
-    cursor.execute("SELECT * from wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
+    cursor.execute("SELECT * FROM wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
     wa_scats = cursor.fetchall()
     values = {}
     for row in wa_scats:
         values[row["wa_code"]] = {}
         for locus in loci_list:
-            cursor.execute("select * from wa_locus where wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1", [row["wa_code"], locus])
+            cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1", [row["wa_code"], locus])
             row2 = cursor.fetchone()
             if row2 is None:
                 value1 = "-"
@@ -224,9 +251,6 @@ def genetic_samples():
                     value2 = "-"
 
             values[row["wa_code"]][locus] = [value1, value2]
-
-
-    print(values["WA2925"])
 
 
     return render_template("wa_genetic_samples_list.html",

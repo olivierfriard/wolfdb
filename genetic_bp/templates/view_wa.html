@@ -11,7 +11,7 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/wa_list" class="btn btn-primary">WA codes</a>
+<a href="/wa_genetic_samples" class="btn btn-primary">WA codes</a>
 
 <br><br>
 
@@ -26,7 +26,7 @@
 
 
 <tr><td>Genotype ID</td><td>{{ results["genotype_id"] }}</td></tr>
-<tr><td>Genetic sample</td><td>{% if results["genetic_sample"] %}{{ results["genetic_sample"] }}{% endif %}</td></tr>
+
 
 </table>
 
@@ -39,15 +39,20 @@
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 <tr><td>Sampling type</td><td>{{ results["sampling_type"] }}</td></tr>
 
+ <!--
 <tr>
+
     <td>Transect ID</td>
     <td>
-        {% if transect_id %}
-        <a href="/view_transect/{{ transect_id }}">{{ transect_id }}</a>
+        {% if results["transect_id"] %}
+        <a href="/view_transect/{{ transect_id }}">{{ results["transect_id"] }}</a>
     {% endif %}
 
     </td>
+
 </tr>
+-->
+
 
 <tr>
     <td>Path ID</td>
@@ -78,16 +83,45 @@
 <tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
 <tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
 
-<tr><td>Coordinates (UTM 32N WGS84)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }} Zone: {{ results["coord_zone"] }}</td></tr>
-<tr><td>Longitude, Latitude</td><td>{{ results["lonlat_str"] }}</td></tr>
+<tr><td>Coordinates (WGS 84 / UTM zone 32N)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
+<!--<tr><td>Longitude, Latitude</td><td>{{ results["lonlat_str"] }}</td></tr>-->
 <tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
 <tr><td>Institution</td><td>{{ results["institution"] }}</td></tr>
 <tr><td>Notes</td><td>{{ results["notes"] }}</td></tr>
 
+</table>
+
+
+<h4>Genetic data</h4>
+
+<table class="table table-striped">
+
+    <tr>
+        <td>Pack</td><td>{{  wa_result["pack"] }}</td>
+        </tr>
+    <tr>
+        <td>mtDNA</td><td>{{  wa_result["mtdna"] }}</td>
+    </tr>
+    <tr>
+        <td>Package sent</td><td>{{  wa_result["package_sent"] }}</td>
+    </tr>
+    <tr>
+        <td>Notes</td><td>{{  wa_result["notes"] }}</td>
+    </tr>
 
 
 </table>
 
+
+
+
+<h2>Map</h2>
+
+
+<div id="map" style="width: 800px; height: 800px;"></div>
+
+
+{{ map }}
 
 
 </div>

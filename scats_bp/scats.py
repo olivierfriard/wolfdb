@@ -106,6 +106,7 @@ def view_scat(scat_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
                     "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
