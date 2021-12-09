@@ -82,7 +82,10 @@ def snowtracks_list():
     results = []
     for row in cursor.fetchall():
         results.append(dict(row))
-        results[-1]["transect_id"] = results[-1]["transect_id"].split(";")
+        if results[-1]["transect_id"] is not None:
+            results[-1]["transect_id"] = results[-1]["transect_id"].split(";")
+        else:
+            results[-1]["transect_id"] = ""
 
     # count tracks
     n_tracks = len(results)
@@ -355,7 +358,7 @@ def extract_data_from_tracks_xlsx(filename: str):
     columns = ['snowtrack_id', 'transect_id', 'date', 'coord_e', 'coord_n',
                'location', 'municipality', 'province', 'operator',
                'institution', 'scalp_category', 'sampling_type', 'days_after_snowfall',
-               'track_type', 'minimum_number_of_wolves', 'track_format', 'note']
+               'track_type', 'minimum_number_of_wolves', 'track_format', 'notes']
 
     # check columns
     for column in columns:
@@ -434,7 +437,7 @@ def extract_data_from_tracks_xlsx(filename: str):
         data['minimum_number_of_wolves'] = str(data["minimum_number_of_wolves"]).strip()
 
         # notes
-        data["note"] = str(data["note"]).strip()
+        data["notes"] = str(data["notes"]).strip()
 
         tracks_data[index] = dict(data)
 
@@ -471,7 +474,7 @@ def load_tracks_xlsx():
 
         r, msg, all_data = extract_data_from_tracks_xlsx(filename)
         if r:
-            msg = Markup(f"File name: {new_file.filename}<br>") + msg 
+            msg = Markup(f"File name: {new_file.filename}<br>") + msg
             flash(msg)
             return redirect(f"/load_tracks_xlsx")
 

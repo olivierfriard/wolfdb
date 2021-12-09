@@ -218,7 +218,7 @@ def scats_list():
 
     cursor.execute("SELECT * FROM scats ORDER BY scat_id")
 
-    return render_template("scats_list_dt.html",
+    return render_template("scats_list.html",
                             n_scats=n_scats,
                             results=cursor.fetchall())
 
@@ -710,7 +710,7 @@ def load_scats_xlsx():
 
         r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
         if r:
-            msg = f"File name: {new_file.filename}<br>" + msg 
+            msg = f"File name: {new_file.filename}<br>" + msg
             flash(msg)
             return redirect(f"/load_scats_xlsx")
 

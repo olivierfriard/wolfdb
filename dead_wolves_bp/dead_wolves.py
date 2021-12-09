@@ -30,7 +30,7 @@ def transects():
 
 
 @app.route("/view_dead_wolf/<tissue_id>")
-def view_transect(tissue_id):
+def view_dead_wolf(tissue_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM dead_wolves WHERE tissue_id = %s",
