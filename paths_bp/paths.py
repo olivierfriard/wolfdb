@@ -125,7 +125,13 @@ def paths_list():
                    ))
     '''
 
-    cursor.execute("SELECT * FROM paths, transects WHERE paths.transect_id = transects.transect_id ORDER by region ASC, province ASC, date DESC")
+    cursor.execute(("SELECT *, "
+                    "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
+                    "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
+
+                    "FROM paths, transects "
+                    "WHERE paths.transect_id = transects.transect_id ORDER by region ASC, province ASC, date DESC")
+    )
 
 
     results = cursor.fetchall()
