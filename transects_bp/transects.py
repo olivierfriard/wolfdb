@@ -33,6 +33,7 @@ def transects():
 
 
 @app.route("/view_transect/<transect_id>")
+@fn.check_login
 def view_transect(transect_id):
     """
     Display transect data
@@ -94,6 +95,7 @@ def view_transect(transect_id):
 
 
 @app.route("/transects_list")
+@fn.check_login
 def transects_list():
     # get all transects
     connection = fn.get_connection()
@@ -112,6 +114,7 @@ def transects_list():
 
 
 @app.route("/new_transect", methods=("GET", "POST"))
+@fn.check_login
 def new_transect():
 
     def not_valid(msg):
@@ -170,6 +173,7 @@ def new_transect():
 
 
 @app.route("/edit_transect/<transect_id>", methods=("GET", "POST"))
+@fn.check_login
 def edit_transect(transect_id):
 
     def not_valid(msg):
@@ -236,6 +240,7 @@ def edit_transect(transect_id):
 
 
 @app.route("/del_transect/<transect_id>")
+@fn.check_login
 def del_scat(transect_id):
 
     connection = fn.get_connection()
@@ -255,6 +260,7 @@ def del_scat(transect_id):
 
 
 @app.route("/transects_analysis")
+@fn.check_login
 def transects_analysis():
 
     connection = fn.get_connection()

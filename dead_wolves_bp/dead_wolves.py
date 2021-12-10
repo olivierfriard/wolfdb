@@ -25,11 +25,13 @@ app.debug = True
 params = config()
 
 @app.route("/dead_wolves")
-def transects():
+@fn.check_login
+def dead_wolves():
     return render_template("dead_wolves.html")
 
 
 @app.route("/view_dead_wolf/<tissue_id>")
+@fn.check_login
 def view_dead_wolf(tissue_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -43,6 +45,7 @@ def view_dead_wolf(tissue_id):
 
 
 @app.route("/dead_wolves_list")
+@fn.check_login
 def dead_wolves_list():
     # get all dead_wolves
     connection = fn.get_connection()

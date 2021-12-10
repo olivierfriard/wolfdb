@@ -34,6 +34,7 @@ def get_cmap(n, name='viridis'):
 
 
 @app.route("/view_genotype/<genotype_id>")
+@fn.check_login
 def view_genotype(genotype_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -54,6 +55,7 @@ def view_genotype(genotype_id):
 
 
 @app.route("/genotypes_list")
+@fn.check_login
 def genotypes_list():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -67,6 +69,7 @@ def genotypes_list():
 
 
 @app.route("/view_wa/<wa_code>")
+@fn.check_login
 def view_wa(wa_code):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -102,6 +105,7 @@ def view_wa(wa_code):
 
 
 @app.route("/plot_all_wa")
+@fn.check_login
 def plot_all_wa():
 
     connection = fn.get_connection()
@@ -145,6 +149,7 @@ def plot_all_wa():
 
 
 @app.route("/plot_wa_clusters/<distance>")
+@fn.check_login
 def plot_wa_clusters(distance):
 
     '''
@@ -207,6 +212,7 @@ def plot_wa_clusters(distance):
 
 
 @app.route("/wa_genetic_samples")
+@fn.check_login
 def genetic_samples():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -258,6 +264,7 @@ def genetic_samples():
 
 
 @app.route("/view_genetic_data/<wa_code>")
+@fn.check_login
 def view_genetic_data(wa_code):
 
     connection = fn.get_connection()
@@ -280,6 +287,7 @@ def view_genetic_data(wa_code):
 
 
 @app.route("/add_genetic_data/<wa_code>", methods=("GET", "POST",))
+@fn.check_login
 def add_genetic_data(wa_code):
 
     if request.method == "GET":
@@ -328,6 +336,7 @@ def add_genetic_data(wa_code):
 
 
 @app.route("/view_genetic_data_history/<wa_code>/<locus>")
+@fn.check_login
 def view_genetic_data_history(wa_code, locus):
 
     connection = fn.get_connection()

@@ -25,11 +25,13 @@ app.debug = True
 params = config()
 
 @app.route("/paths")
+@fn.check_login
 def paths():
     return render_template("paths.html")
 
 
 @app.route("/view_path/<path_id>")
+@fn.check_login
 def view_path(path_id):
     """
     Display path data
@@ -107,6 +109,7 @@ def view_path(path_id):
 
 
 @app.route("/paths_list")
+@fn.check_login
 def paths_list():
     # get  all paths
     connection = fn.get_connection()
@@ -134,6 +137,7 @@ def paths_list():
 
 
 @app.route("/new_path", methods=("GET", "POST"))
+@fn.check_login
 def new_path():
 
     if request.method == "GET":
@@ -195,6 +199,7 @@ def new_path():
 
 
 @app.route("/edit_path/<path_id>", methods=("GET", "POST"))
+@fn.check_login
 def edit_path(path_id):
 
     if request.method == "GET":
@@ -270,6 +275,7 @@ def edit_path(path_id):
 
 
 @app.route("/del_path/<path_id>")
+@fn.check_login
 def del_path(path_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)

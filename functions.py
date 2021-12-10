@@ -6,8 +6,8 @@ functions module
 
 """
 
-
-from flask import Flask, request, Markup
+from functools import wraps
+from flask import Flask, request, Markup, redirect, session
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -17,6 +17,15 @@ import json
 from italian_regions import regions, province_codes, prov_name2prov_code
 
 params = config()
+
+def check_login(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 def get_connection():
     return psycopg2.connect(user=params["user"],

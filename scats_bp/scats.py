@@ -58,6 +58,7 @@ def error_info(exc_info: tuple) -> tuple:
 
 
 @app.route("/scats")
+@fn.check_login
 def scats():
     return render_template("scats.html")
 
@@ -65,6 +66,7 @@ def scats():
 
 
 @app.route("/wa_form", methods=("POST",))
+@fn.check_login
 def wa_form():
 
     data = request.form
@@ -85,6 +87,7 @@ def wa_form():
 
 
 @app.route("/add_wa", methods=("POST",))
+@fn.check_login
 def add_wa():
 
     connection = fn.get_connection()
@@ -100,6 +103,7 @@ def add_wa():
 
 
 @app.route("/view_scat/<scat_id>")
+@fn.check_login
 def view_scat(scat_id):
     """
     Display scat info
@@ -169,6 +173,7 @@ def view_scat(scat_id):
 
 
 @app.route("/plot_all_scats")
+@fn.check_login
 def plot_all_scats():
     """
     plot all scats
@@ -193,7 +198,6 @@ def plot_all_scats():
         scat_features.append(dict(scat_feature))
 
     center = f"45 , 8.5"
-    zoom = 8
 
     transect_features = []
 
@@ -205,6 +209,7 @@ def plot_all_scats():
 
 
 @app.route("/scats_list")
+@fn.check_login
 def scats_list():
     """
     Display all scats
@@ -225,6 +230,7 @@ def scats_list():
 
 
 @app.route("/new_scat", methods=("GET", "POST"))
+@fn.check_login
 def new_scat():
 
     def not_valid(msg):
@@ -325,6 +331,7 @@ def new_scat():
 
 
 @app.route("/edit_scat/<scat_id>", methods=("GET", "POST"))
+@fn.check_login
 def edit_scat(scat_id):
 
     def not_valid(msg):
@@ -458,6 +465,7 @@ def edit_scat(scat_id):
 
 
 @app.route("/del_scat/<scat_id>")
+@fn.check_login
 def del_scat(scat_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -688,6 +696,7 @@ def extract_data_from_xlsx(filename):
 
 
 @app.route("/load_scats_xlsx", methods=("GET", "POST",))
+@fn.check_login
 def load_scats_xlsx():
 
     if request.method == "GET":
@@ -732,6 +741,7 @@ def load_scats_xlsx():
 
 
 @app.route("/confirm_load_xlsx/<filename>/<mode>")
+@fn.check_login
 def confirm_load_xlsx(filename, mode):
 
     if mode not in ["new", "all"]:
@@ -962,6 +972,7 @@ def check_systematic_scats_transect_location():
 
 
 @app.route("/systematic_scats_transect_location")
+@fn.check_login
 def systematic_scats_transect_location():
 
     process = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])

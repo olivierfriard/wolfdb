@@ -44,16 +44,9 @@ params = config()
 app.debug = params["debug"]
 
 
-def check_login(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if'user_id' not in session:
-            return redirect("/login")
-        return f(*args, **kwargs)
-    return decorated_function
 
 @app.route("/")
-@check_login
+@fn.check_login
 def home():
     return render_template("home.html", mode=params["mode"])
 
@@ -61,7 +54,6 @@ def home():
 @app.route("/version")
 def version():
     return __version__
-
 
 
 
@@ -85,6 +77,7 @@ def rev_geocoding(east, north ,zone):
 
 
 @app.route("/delete_scats")
+@fn.check_login
 def delete_scats():
 
     connection = fn.get_connection()
@@ -94,6 +87,7 @@ def delete_scats():
     return redirect("/")
 
 @app.route("/delete_paths")
+@fn.check_login
 def delete_paths():
 
     connection = fn.get_connection()
@@ -101,22 +95,6 @@ def delete_paths():
     cursor.execute("DELETE FROM paths")
     connection.commit()
     return redirect("/")
-
-
-
-'''
-@app.route("/test_action", methods=("POST",))
-def test_action():
-    print(request.form)
-    return f"""
-<input id="date" type="text" value="{request.form["path_id"].split(" ")[-1]}">
-"""
-
-'''
-
-
-
-
 
 
 

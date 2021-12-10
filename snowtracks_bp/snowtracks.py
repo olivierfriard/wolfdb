@@ -54,6 +54,7 @@ def error_info(exc_info: tuple) -> tuple:
 
 @app.route("/snow_tracks")
 @app.route("/tracks")
+@fn.check_login
 def snow_tracks():
     return render_template("snow_tracks.html")
 
@@ -71,6 +72,7 @@ def view_snowtrack(snowtrack_id):
 
 
 @app.route("/snowtracks_list")
+@fn.check_login
 def snowtracks_list():
     # get  all tracks
     connection = fn.get_connection()
@@ -97,6 +99,7 @@ def snowtracks_list():
 
 
 @app.route("/new_snowtrack", methods=("GET", "POST"))
+@fn.check_login
 def new_snowtrack():
 
     def not_valid(msg):
@@ -188,6 +191,7 @@ def new_snowtrack():
 
 
 @app.route("/edit_snowtrack/<snowtrack_id>", methods=("GET", "POST"))
+@fn.check_login
 def edit_snowtrack(snowtrack_id):
 
     def not_valid(msg):
@@ -310,6 +314,7 @@ def edit_snowtrack(snowtrack_id):
 
 
 @app.route("/del_snowtrack/<snowtrack_id>")
+@fn.check_login
 def del_snowtrack(snowtrack_id):
     """
     Delete the track from table
@@ -451,6 +456,7 @@ def extract_data_from_tracks_xlsx(filename: str):
 
 
 @app.route("/load_tracks_xlsx", methods=("GET", "POST",))
+@fn.check_login
 def load_tracks_xlsx():
 
     if request.method == "GET":
@@ -497,6 +503,7 @@ def load_tracks_xlsx():
 
 
 @app.route("/confirm_load_tracks_xlsx/<filename>/<mode>")
+@fn.check_login
 def confirm_load_tracks_xlsx(filename, mode):
 
     if mode not in ["new", "all"]:
