@@ -47,8 +47,10 @@ body {background-color: #ffa31a;}
 <br>
 <br>
 
-{% if results %}
-<h2>List of {{ n_wa }} WA codes</h2>
+{% if wa_scats %}
+
+{{ title }}
+
 
 <br><br>
 
@@ -65,10 +67,21 @@ body {background-color: #ffa31a;}
 <th>Coordinates WGS84 UTM zone 32N</th>
 <th>mtDNA result</th>
 <th>Genotype ID</th>
-<th>cph5</th><th>u250</th><th>fh2088</th><th>fh2096</th><th>fh2137</th><th>fh2054</th><th>fh2140</th><th>fh2161</th><th>Pez17</th><th>MSY34A</th><th>MSY34B</th><th>MSY41A</th><th>MSY41B</th><th>cph2</th><th>CPH4</th><th>CPH8</th><th>CPH12</th><th>U253</th><th>FH2004</th><th>FH2079</th><th>K-Locus</th><th>SRY</th>
+
+{% for locus in loci_list %}
+{% if loci_list[locus] == 2%}
+<th>{{ locus }} a</th>
+<th>{{ locus }} b</th>
+{% else %}
+<th>{{ locus }}</th>
+<th></th>
+{% endif %}
+
+{% endfor %}
+
 
 </tr>
-{% for result in results %}
+{% for result in wa_scats %}
 
 <tr>
 <td>
@@ -109,11 +122,10 @@ body {background-color: #ffa31a;}
     </td>
 
 
-{% for locus in values[result['wa_code']] %}
+{% for locus in loci_values[result['wa_code']] %}
 
-<td>
-    {{ values[result['wa_code']][locus][0] }}  {{ values[result['wa_code']][locus][1] }}
-</td>
+<td>{{ loci_values[result['wa_code']][locus][0] }}</td>
+<td>{{ loci_values[result['wa_code']][locus][1] }}</td>
 
 {% endfor %}
 

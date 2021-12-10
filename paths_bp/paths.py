@@ -115,6 +115,7 @@ def paths_list():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    '''
     cursor.execute(("SELECT *, "
                     "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id) AS province, "
                     "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id) AS region, "
@@ -122,6 +123,10 @@ def paths_list():
                     "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
                    "FROM paths ORDER BY region ASC, province ASC, date DESC"
                    ))
+    '''
+
+    cursor.execute("SELECT * FROM paths, transects WHERE paths.transect_id = transects.transect_id ORDER by region ASC, province ASC, date DESC")
+
 
     results = cursor.fetchall()
 

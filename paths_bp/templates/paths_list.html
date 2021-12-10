@@ -22,6 +22,7 @@
 <h2>List of {{ n_paths }} paths</h2>
 <table class="table table-striped">
 <tr>
+<th>Region</th>
 <th>Path ID</th>
 <th>Transect ID</th>
 <th>Date</th>
@@ -35,6 +36,9 @@
 </tr>
 {% for result in results %}
 <tr>
+
+<td>{{ result['region'] }}</td>
+
 <td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
     <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
     <td>{{ result['date'] }}</td>

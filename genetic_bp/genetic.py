@@ -152,13 +152,8 @@ def plot_all_wa():
 @fn.check_login
 def plot_wa_clusters(distance):
 
-    '''
-    select wa_code, scat_id, municipality, ST_ClusterDBSCAN(geometry_utm, eps:=1000, minpoints:=1) over() as cid from wa_scat ORDER BY cid;
-    '''
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
 
     cursor.execute(("SELECT wa_code, scat_id, municipality, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
@@ -174,16 +169,15 @@ def plot_wa_clusters(distance):
     cmap = get_cmap(max_cid)
 
     scat_features = []
-    count, sum_lon, sum_lat  = 0, 0, 0
+    min_lon, min_lat, max_lon, max_lat  = 180, 180, 0, 0
     for row in results:
 
         scat_geojson = json.loads(row["scat_lonlat"])
-        count += 1
         lon, lat = scat_geojson["coordinates"]
-        sum_lon += lon
-        sum_lat += lat
-
-
+        min_lon = min(min_lon, lon)
+        min_lat = min(min_lat, lat)
+        max_lon = max(max_lon, lon)
+        max_lat = max(max_lat, lat)
 
         color = matplotlib.colors.to_hex(cmap(row['cid']), keep_alpha=False)
         scat_feature = {"geometry": dict(scat_geojson),
@@ -191,21 +185,19 @@ def plot_wa_clusters(distance):
                     "properties": { "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                                        "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                                                         f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                                                        f"""Cluster ID:  {row['cid']}""")
+                                                        f"Cluster ID:  {row['cid']}")
 
                                   },
-                    "id": row['scat_id']
+                    "id": row["scat_id"]
                    }
 
         scat_features.append(scat_feature)
 
-    center = f"{sum_lat / count}, {sum_lon / count}"
-
-    transect_features = []
+    center = f"{(min_lat + max_lat) / 2}, {(min_lon + max_lon) / 2}"
 
     return render_template("plot_all_wa.html",
-                           title=f"Plot of WA codes clusters ({distance} m)",
-                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
+                           title=Markup(f"Plot of WA codes clusters (DBSCAN {distance} m)"),
+                           map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7))
                            )
 
 
@@ -217,30 +209,23 @@ def genetic_samples():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    '''
-    cursor.execute("SELECT count(scat_id) AS n_wa FROM scats WHERE wa_code IS NOT NULL AND wa_code != ''")
-    n_wa = cursor.fetchone()["n_wa"]
-    '''
-
-    '''
-    cursor.execute(("SELECT *, "
-                    "(select scat_id from scats WHERE wa_code != '' AND wa_code = wa_results.wa_code limit 1) AS scat_id "
-                    "FROM wa_results WHERE genotype_id is NULL ORDER BY wa_code ASC")
-                   )
-    '''
-
-    cursor.execute("SELECT * FROM loci")
-    loci_list = []
+    # loci list
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    loci_list = {}
     for row in cursor.fetchall():
-        loci_list.append(row["name"])
+        loci_list[row["name"]] = row["n_alleles"]
 
-    cursor.execute("SELECT * FROM wa_results, scats WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL ORDER BY wa_results.wa_code ASC")
+    cursor.execute(("SELECT * FROM wa_results, scats "
+                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL "
+                    "ORDER BY wa_results.wa_code ASC")
+    )
+
     wa_scats = cursor.fetchall()
-    values = {}
+    loci_values = {}
     for row in wa_scats:
-        values[row["wa_code"]] = {}
+        loci_values[row["wa_code"]] = {}
         for locus in loci_list:
-            cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1", [row["wa_code"], locus])
+            cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
             row2 = cursor.fetchone()
             if row2 is None:
                 value1 = "-"
@@ -255,12 +240,93 @@ def genetic_samples():
                 else:
                     value2 = "-"
 
-            values[row["wa_code"]][locus] = [value1, value2]
+            if loci_list[locus] == 2:
+                loci_values[row["wa_code"]][locus] = [value1, value2]
+            else:
+                loci_values[row["wa_code"]][locus] = [value1, ""]
 
 
     return render_template("wa_genetic_samples_list.html",
-                           results=wa_scats,
-                           values=values)
+                            title=Markup(f"<h2>List of {len(wa_scats)} WA codes</h2>"),
+                           loci_list=loci_list,
+                           wa_scats=wa_scats,
+                           loci_values=loci_values)
+
+
+
+
+
+@app.route("/wa_analysis/<distance>/<cluster_id>")
+@fn.check_login
+def wa_analysis(distance: int, cluster_id: int):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    loci_list = {}
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    # DBScan
+    cursor.execute(("SELECT wa_code, scat_id, municipality, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
+                    "FROM wa_scat"
+                    )
+                   )
+
+    wa_list = []
+    for row in cursor.fetchall():
+        if row["cluster_id"] == int(cluster_id):
+            wa_list.append(row["wa_code"])
+    wa_list_str = "','".join(wa_list)
+
+    print(f"{wa_list_str=}")
+
+    cursor.execute(("SELECT * FROM wa_results, scats "
+                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
+                    f"AND wa_results.wa_code in ('{wa_list_str}')"
+                    "ORDER BY wa_results.wa_code ASC")
+    )
+
+    wa_scats = cursor.fetchall()
+    loci_values = {}
+    for row in wa_scats:
+        loci_values[row["wa_code"]] = {}
+        for locus in loci_list:
+            cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
+            row2 = cursor.fetchone()
+            if row2 is None:
+                value1 = "-"
+                value2 = "-"
+            else:
+                if row2["value1"] is not None:
+                    value1 = row2["value1"]
+                else:
+                    value1 = "-"
+                if row2["value2"] is not None:
+                    value2 = row2["value2"]
+                else:
+                    value2 = "-"
+
+            if loci_list[locus] == 2:
+                loci_values[row["wa_code"]][locus] = [value1, value2]
+            else:
+                loci_values[row["wa_code"]][locus] = [value1, ""]
+
+
+    return render_template("wa_genetic_samples_list.html",
+                            title=Markup(f"<h2>Matches (cluster id: {cluster_id})</h2>"),
+                           loci_list=loci_list,
+                           wa_scats=wa_scats,
+                           loci_values=loci_values)
+
+
+
+
+
 
 
 @app.route("/view_genetic_data/<wa_code>")
