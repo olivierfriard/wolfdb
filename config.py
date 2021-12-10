@@ -5,9 +5,9 @@ from configparser import ConfigParser
 def config():
 
     if os.environ['WOLF_WS_MODE'] == 'prod':
-        filename='database.ini'
+        filename = 'database.ini'
     else:
-        filename='database_dev.ini'
+        filename = 'database_dev.ini'
 
     parser = ConfigParser()
     # read config file

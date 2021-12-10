@@ -13,13 +13,13 @@ import functions as fn
 import utm
 
 # blueprints
+from auth import auth as auth_blueprint
 from scats_bp import scats
 from paths_bp import paths
 from transects_bp import transects
 from snowtracks_bp import snowtracks
 from genetic_bp import genetic
 from dead_wolves_bp import dead_wolves
-#from wa_bp import wa
 
 __version__ = "1"
 
@@ -29,6 +29,8 @@ app.config.from_object(__name__)
 Session(app)
 
 app.secret_key = "dfhsdlfsdhflsdfhsnqq45"
+
+app.register_blueprint(auth_blueprint)
 
 app.register_blueprint(scats.app)
 app.register_blueprint(paths.app)
@@ -41,13 +43,17 @@ app.register_blueprint(dead_wolves.app)
 params = config()
 app.debug = params["debug"]
 
+
 @app.route("/")
 def home():
     return render_template("home.html", mode=params["mode"])
 
+
 @app.route("/version")
 def version():
     return __version__
+
+
 
 
 @app.route("/rev_geocoding/<east>/<north>/<zone>")

@@ -22,7 +22,6 @@ app = flask.Blueprint("genetic", __name__, template_folder="templates")
 
 app.debug = True
 
-
 params = config()
 
 
