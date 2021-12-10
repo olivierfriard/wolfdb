@@ -47,10 +47,11 @@ def view_genotype(genotype_id):
     wa_codes = cursor.fetchall()
 
     # genetic data
-    cursor.execute("", [genotype_id])
+    #cursor.execute("", [genotype_id])
 
     return render_template("view_genotype.html",
                            result=genotype,
+                           n_recap=len(wa_codes),
                            wa_codes=wa_codes)
 
 
@@ -185,7 +186,7 @@ def plot_wa_clusters(distance):
                     "properties": { "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                                        "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                                                         f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                                                        f"Cluster ID:  {row['cid']}")
+                                                        f"""Cluster ID:  <a href="/wa_analysis/2500/{row['cid']}">{row['cid']}</a>""")
 
                                   },
                     "id": row["scat_id"]
@@ -283,8 +284,6 @@ def wa_analysis(distance: int, cluster_id: int):
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
 
-    print(f"{wa_list_str=}")
-
     cursor.execute(("SELECT * FROM wa_results, scats "
                     "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
                     f"AND wa_results.wa_code in ('{wa_list_str}')"
@@ -296,32 +295,36 @@ def wa_analysis(distance: int, cluster_id: int):
     for row in wa_scats:
         loci_values[row["wa_code"]] = {}
         for locus in loci_list:
-            cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
+            cursor.execute("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
             row2 = cursor.fetchone()
             if row2 is None:
                 value1 = "-"
                 value2 = "-"
+                timestamp = "-"
             else:
                 if row2["value1"] is not None:
                     value1 = row2["value1"]
+                    timestamp = row2["timestamp"]
                 else:
                     value1 = "-"
+
                 if row2["value2"] is not None:
                     value2 = row2["value2"]
+                    timestamp = row2["timestamp"]
                 else:
                     value2 = "-"
 
             if loci_list[locus] == 2:
-                loci_values[row["wa_code"]][locus] = [value1, value2]
+                loci_values[row["wa_code"]][locus] = {"values": [value1, value2], "timestamp": timestamp}
             else:
-                loci_values[row["wa_code"]][locus] = [value1, ""]
+                loci_values[row["wa_code"]][locus] = {"values": [value1, ""], "timestamp": timestamp}
 
 
-    return render_template("wa_genetic_samples_list.html",
+    return render_template("wa_analysis.html",
                             title=Markup(f"<h2>Matches (cluster id: {cluster_id})</h2>"),
-                           loci_list=loci_list,
-                           wa_scats=wa_scats,
-                           loci_values=loci_values)
+                            loci_list=loci_list,
+                            wa_scats=wa_scats,
+                            loci_values=loci_values)
 
 
 
