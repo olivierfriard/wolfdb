@@ -5,7 +5,7 @@ https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-yo
 '''
 
 
-from flask import Blueprint, render_template, request, redirect, flash, session
+from flask import Blueprint, render_template, request, redirect, flash, session, Markup
 from werkzeug.security import generate_password_hash, check_password_hash
 import psycopg2
 import psycopg2.extras
@@ -44,12 +44,16 @@ def login_post():
         session['firstname'] = result["firstname"]
         session['lastname'] = result["lastname"]
 
-        return f"Welcome {session['firstname']} {session['lastname']}"
+        flash(Markup(f"<h2>Welcome {session['firstname']} {session['lastname']}</h2>"))
+        return redirect("/")
     else:
-        flash(f"Error {email} ")
+        flash(f"Please retry")
         return redirect("/login")
 
 
 @auth.route('/logout')
 def logout():
-    return 'Logout'
+    session.pop('user_id', None)
+    session.pop('firstname', None)
+    session.pop('lastname', None)
+    return redirect("/")

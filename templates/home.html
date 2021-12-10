@@ -10,8 +10,12 @@
 <hr>
 
 
+{% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {{ messages[0] }}
+        {% endif %}
+        {% endwith %}
 
-{{ session['firstname'] }} {{ session['lastname']}}<br>
 <br>
 
 

@@ -2,7 +2,7 @@
 WolfDB web service
 (c) Olivier Friard
 """
-
+from functools import wraps
 from flask import Flask, render_template, redirect, request, Markup, flash, session
 from flask_session import Session
 
@@ -44,7 +44,16 @@ params = config()
 app.debug = params["debug"]
 
 
+def check_login(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if'user_id' not in session:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/")
+@check_login
 def home():
     return render_template("home.html", mode=params["mode"])
 
