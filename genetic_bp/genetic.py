@@ -114,7 +114,8 @@ def plot_all_wa():
 
     cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                    "FROM wa_results, scats "
-                   "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code"
+                   "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
+                   "AND quality_genotype in ('yes', 'Yes') "
                    )
     )
 
@@ -159,7 +160,8 @@ def plot_wa_clusters(distance):
     cursor.execute(("SELECT wa_code, scat_id, municipality, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
-                    "FROM wa_scat"
+                    "FROM wa_scat "
+                    "WHERE quality_genotype in ('yes', 'Yes') "
                     )
                    )
     max_cid = 0
@@ -186,7 +188,8 @@ def plot_wa_clusters(distance):
                     "properties": { "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                                        "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                                                         f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                                                        f"""Cluster ID:  <a href="/wa_analysis/2500/{row['cid']}">{row['cid']}</a>""")
+                                                        f"""Cluster ID {row['cid']}:  <a href="/wa_analysis/2500/{row['cid']}">samples</a><br>"""
+                                                        f"""<a href="/wa_analysis_group/2500/{row['cid']}">genotypes</a>""")
 
                                   },
                     "id": row["scat_id"]
@@ -197,7 +200,7 @@ def plot_wa_clusters(distance):
     center = f"{(min_lat + max_lat) / 2}, {(min_lon + max_lon) / 2}"
 
     return render_template("plot_all_wa.html",
-                           title=Markup(f"Plot of WA codes clusters (DBSCAN {distance} m)"),
+                           title=Markup(f"<h3>Plot of WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"),
                            map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7))
                            )
 
@@ -217,7 +220,10 @@ def genetic_samples():
         loci_list[row["name"]] = row["n_alleles"]
 
     cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id FROM wa_results, scats "
-                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
+                    "WHERE "
+                    "wa_results.wa_code != '' "
+                    "AND wa_results.wa_code = scats.wa_code "
+                    "AND quality_genotype in ('yes', 'Yes') "
                     "ORDER BY wa_results.wa_code ASC")
     )
 
@@ -274,7 +280,8 @@ def wa_analysis(distance: int, cluster_id: int):
     cursor.execute(("SELECT wa_code, scat_id, municipality, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                    "FROM wa_scat"
+                    "FROM wa_scat "
+                    "WHERE quality_genotype in ('yes', 'Yes') "
                     )
                    )
 
@@ -284,11 +291,12 @@ def wa_analysis(distance: int, cluster_id: int):
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
 
-    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id FROM wa_results, scats "
-                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
-                    f"AND wa_results.wa_code in ('{wa_list_str}')"
-                    "ORDER BY wa_results.wa_code ASC")
-    )
+
+    cursor.execute(("SELECT wa_code, scat_id, date, municipality, coord_east, coord_north, mtdna, genotype_id, sex_id "
+                    "FROM wa_scat "
+                    f"WHERE wa_code in ('{wa_list_str}') "
+                    "ORDER BY wa_code ASC"))
+
 
     wa_scats = cursor.fetchall()
     loci_values = {}
@@ -327,6 +335,104 @@ def wa_analysis(distance: int, cluster_id: int):
                             loci_values=loci_values)
 
 
+
+
+
+@app.route("/wa_analysis_group/<distance>/<cluster_id>")
+@fn.check_login
+def wa_analysis_group(distance: int, cluster_id: int):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    loci_list = {}
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    # DBScan
+    cursor.execute(("SELECT wa_code, scat_id, municipality, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
+                    "FROM wa_scat "
+                    "WHERE quality_genotype in ('yes', 'Yes') "
+                    )
+                   )
+
+    wa_list = []
+    for row in cursor.fetchall():
+        if row["cluster_id"] == int(cluster_id):
+            wa_list.append(row["wa_code"])
+    wa_list_str = "','".join(wa_list)
+
+
+    # sex
+    cursor.execute(("SELECT genotype_id "
+                    "FROM wa_scat "
+                    f"WHERE wa_code in ('{wa_list_str}') "
+                    "GROUP BY genotype_id "
+                    "ORDER BY genotype_id ASC"))
+
+
+    genotype_id = cursor.fetchall()
+
+    loci_values = {}
+    sex_list = {}
+    for row in genotype_id:
+
+        # sex
+        cursor.execute("SELECT sex_id FROM wa_scat WHERE wa_code in (select wa_code from wa_results where genotype_id = %s)",
+                        [row['genotype_id']])
+        sex = cursor.fetchall()
+        sex_list[row['genotype_id']] = []
+        for row3 in sex:
+            sex_list[row['genotype_id']].append(row3["sex_id"])
+
+        loci_values[row["genotype_id"]] = {}
+        for locus in loci_list:
+
+            cursor.execute(("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp "
+                            "FROM wa_locus "
+                            "WHERE wa_code = (select wa_code from wa_results where genotype_id = %s LIMIT 1) "
+                            "AND locus = %s "
+                            "ORDER BY timestamp DESC LIMIT 1 "
+                            ),
+                            [row['genotype_id'], locus]
+            )
+
+            row2 = cursor.fetchone()
+            if row2 is None:
+                value1 = "-"
+                value2 = "-"
+                timestamp = "-"
+            else:
+                if row2["value1"] is not None:
+                    value1 = row2["value1"]
+                    timestamp = row2["timestamp"]
+                else:
+                    value1 = "-"
+
+                if row2["value2"] is not None:
+                    value2 = row2["value2"]
+                    timestamp = row2["timestamp"]
+                else:
+                    value2 = "-"
+
+            if loci_list[locus] == 2:
+                loci_values[row["genotype_id"]][locus] = {"values": [value1, value2], "timestamp": timestamp}
+            else:
+                loci_values[row["genotype_id"]][locus] = {"values": [value1, ""], "timestamp": timestamp}
+
+    print(sex_list)
+
+    return render_template("wa_analysis_group.html",
+                            title=Markup(f"<h2>Matches (cluster id: {cluster_id})</h2>"),
+                            loci_list=loci_list,
+                            genotype_id=genotype_id,
+                            sex_list=sex_list,
+                            #wa_scats=wa_scats,
+                            loci_values=loci_values)
 
 
 
