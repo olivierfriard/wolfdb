@@ -128,7 +128,7 @@ body {background-color: #ffa31a;}
 
 {% for locus in loci_values[result['wa_code']] %}
 
-<td>
+<td style="border-left: 1px solid black;">
 {{ loci_values[result['wa_code']][locus]['values'][0] }}<br>
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}_a/{{ loci_values[result['wa_code']][locus]['timestamp'] }}">note</a>
 </td>

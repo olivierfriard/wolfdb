@@ -78,7 +78,11 @@ body {background-color: #ffa31a;}
 {% for result in genotype_id %}
 
 <tr>
-<td></td>
+<td>
+
+    <a href="" class="btn btn-sm btn-primary">Set status</a>
+    <a href="" class="btn btn-sm btn-primary">Set pack</a><br>
+</td>
 
     <td>
         {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
@@ -92,7 +96,7 @@ body {background-color: #ffa31a;}
 
 {% for locus in loci_values[result['genotype_id']] %}
 
-<td>
+<td  style="border-left: 1px solid black;">
 {{ loci_values[result['genotype_id']][locus]['values'][0] }}<br>
 <a href="/locus_note/{{ result['genotype_id']}}/{{ locus }}_a/{{ loci_values[result['genotype_id']][locus]['timestamp'] }}">note</a>
 </td>
