@@ -216,8 +216,8 @@ def genetic_samples():
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    cursor.execute(("SELECT * FROM wa_results, scats "
-                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL "
+    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id FROM wa_results, scats "
+                    "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
                     "ORDER BY wa_results.wa_code ASC")
     )
 
@@ -248,7 +248,7 @@ def genetic_samples():
 
 
     return render_template("wa_genetic_samples_list.html",
-                            title=Markup(f"<h2>List of {len(wa_scats)} WA codes</h2>"),
+                           title=Markup(f"<h2>List of {len(wa_scats)} WA codes</h2>"),
                            loci_list=loci_list,
                            wa_scats=wa_scats,
                            loci_values=loci_values)
