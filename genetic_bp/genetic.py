@@ -114,7 +114,7 @@ def plot_all_wa():
 
     cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                    "FROM wa_results, scats "
-                   "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code AND wa_results.genotype_id is NULL "
+                   "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code"
                    )
     )
 
@@ -284,7 +284,7 @@ def wa_analysis(distance: int, cluster_id: int):
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
 
-    cursor.execute(("SELECT * FROM wa_results, scats "
+    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id FROM wa_results, scats "
                     "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
                     f"AND wa_results.wa_code in ('{wa_list_str}')"
                     "ORDER BY wa_results.wa_code ASC")
