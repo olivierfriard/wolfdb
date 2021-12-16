@@ -26,16 +26,17 @@ params = config()
 
 
 
-
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
+
     return plt.cm.get_cmap(name, n)
 
 
 @app.route("/view_genotype/<genotype_id>")
 @fn.check_login
 def view_genotype(genotype_id):
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
