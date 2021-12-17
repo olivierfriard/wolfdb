@@ -167,7 +167,7 @@ def plot_wa_clusters(distance):
                    )
     '''
 
-    cursor.execute(("SELECT wa_code, sample_id, municipality, "
+    cursor.execute(("SELECT wa_code, sample_id, municipality, genotype_id, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
                     "FROM wa_scat_tissue "
@@ -200,8 +200,9 @@ def plot_wa_clusters(distance):
                     "properties": { "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                                        "popupContent": (f"""Sample ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
                                                         f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                                                        f"""Cluster ID {row['cid']}:  <a href="/wa_analysis/2500/{row['cid']}">samples</a><br>"""
-                                                        f"""<a href="/wa_analysis_group/2500/{row['cid']}">genotypes</a>""")
+                                                        f"""Genotype ID: {row['genotype_id']}<br>"""
+                                                        f"""Cluster ID {row['cid']}:  <a href="/wa_analysis/{distance}/{row['cid']}">samples</a><br>"""
+                                                        f"""<a href="/wa_analysis_group/{distance}/{row['cid']}">genotypes</a>""")
 
                                   },
                     "id": row["sample_id"]
@@ -213,7 +214,8 @@ def plot_wa_clusters(distance):
 
     return render_template("plot_all_wa.html",
                            title=Markup(f"<h3>Plot of WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"),
-                           map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7))
+                           map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7)),
+                           distance=distance
                            )
 
 
@@ -243,15 +245,10 @@ def genetic_samples():
     )
     '''
 
-    cursor.execute("""
-SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id  FROM wa_results, scats WHERE wa_results.wa_code != ''  AND wa_results.wa_code = scats.wa_code  AND quality_genotype in ('yes', 'Yes')
-
-UNION
-
-SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id  FROM wa_results, dead_wolves WHERE wa_results.wa_code != ''  AND wa_results.wa_code = dead_wolves.wa_code  AND quality_genotype in ('yes', 'Yes')
-
-ORDER BY wa_code
-""")
+    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id  FROM wa_results, scats WHERE wa_results.wa_code != ''  AND wa_results.wa_code = scats.wa_code  AND quality_genotype in ('yes', 'Yes') "
+                    "UNION "
+                    "SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id  FROM wa_results, dead_wolves WHERE wa_results.wa_code != ''  AND wa_results.wa_code = dead_wolves.wa_code  AND quality_genotype in ('yes', 'Yes') "
+                    "ORDER BY wa_code"))
 
     wa_scats = cursor.fetchall()
     loci_values = {}
@@ -355,10 +352,11 @@ def wa_analysis(distance: int, cluster_id: int):
 
 
     return render_template("wa_analysis.html",
-                            title=Markup(f"<h2>Matches (cluster id: {cluster_id})</h2>"),
+                            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             wa_scats=wa_scats,
-                            loci_values=loci_values)
+                            loci_values=loci_values,
+                            distance=distance)
 
 
 
@@ -393,15 +391,15 @@ def wa_analysis_group(distance: int, cluster_id: int):
                     )
     )
 
-
     wa_list = []
     for row in cursor.fetchall():
         if row["cluster_id"] == int(cluster_id):
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
+    print(wa_list_str)
 
     # fetch grouped genotypes
-    cursor.execute(("SELECT genotype_id "
+    cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap "
                     "FROM wa_scat_tissue "
                     f"WHERE wa_code in ('{wa_list_str}') "
                     "GROUP BY genotype_id "
@@ -460,12 +458,13 @@ def wa_analysis_group(distance: int, cluster_id: int):
 
 
     return render_template("wa_analysis_group.html",
-                            title=Markup(f"<h2>Matches (cluster id: {cluster_id})</h2>"),
+                            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             genotype_id=genotype_id,
                             sex_list=sex_list,
                             #wa_scats=wa_scats,
-                            loci_values=loci_values)
+                            loci_values=loci_values,
+                            distance=distance)
 
 
 

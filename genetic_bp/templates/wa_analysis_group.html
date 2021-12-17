@@ -10,7 +10,7 @@
 
 <a href="/plot_all_wa" class="btn btn-primary">Plot WA</a>&nbsp;
 
-<a href="/plot_wa_clusters/2500" class="btn btn-primary">Plot WA clusters</a>&nbsp;
+<a href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
 
 <br>
 <br>
@@ -27,6 +27,7 @@
 
 <th>Genotype ID</th>
 <th>Sex</th>
+<th>n. recapt</th>
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
@@ -58,6 +59,11 @@
     <td>
         {% if sex_list[result['genotype_id']] %}{{ sex_list[result['genotype_id']][0] }}{% endif %}
     </td>
+
+    <td>
+        {{ result['n_recap'] }}
+    </td>
+
 
 
 {% for locus in loci_values[result['genotype_id']] %}
