@@ -270,23 +270,9 @@ def transects_analysis():
     cursor.execute("SELECT * FROM transects ORDER BY region, province, transect_id")
     transects = cursor.fetchall()
 
-    out = """<style>
-    table
-{
-    border-width: 0 0 1px 1px;
-    border-style: solid;
-}
+    out = """<style>    table{    border-width: 0 0 1px 1px;    border-style: solid;} td{    border-width: 1px 1px 0 0;    border-style: solid;    margin: 0;    }</style>    """
 
-td
-{
-    border-width: 1px 1px 0 0;
-    border-style: solid;
-    margin: 0;
-
-    }
-</style>
-    """
-    season = [5,6,7,8,9,10,11,12,1,2,3,4]
+    season = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
 
     out += '<table>'
     out += "<tr><th>Region</th><th>Province</th><th>transect ID</th>"
@@ -297,30 +283,71 @@ td
     for row in transects:
         transect_id = row["transect_id"]
 
-
-        print(f"{transect_id=}")
+        # print(f"{transect_id=}")
 
         transect_month = {}
+        dates_list = {}
+        completeness_list = {}
+
         cursor.execute("SELECT * FROM paths WHERE transect_id = %s ", [transect_id])
         paths = cursor.fetchall()
         for row_path in paths:
+
+            # add date of path
+            path_date = str(row_path["date"])
+            path_month = int(path_date.split("-")[1])
+            if path_month not in dates_list:
+                dates_list[path_month] = []
+            dates_list[path_month].append(path_date)
+
+            # add completeness
+            path_completeness = str(row_path["completeness"])
+            path_month = int(path_date.split("-")[1])
+            if path_month not in completeness_list:
+                completeness_list[path_month] = []
+            completeness_list[path_month].append(path_completeness)
+
+
             cursor.execute("SELECT * FROM scats WHERE path_id = %s ", [row_path["path_id"]])
             scats = cursor.fetchall()
+
             for row_scat in scats:
                 month = int(str(row_scat["date"]).split("-")[1])
-                print(f"{month=}")
+
+                # print(f"{month=}")
+
                 if month not in transect_month:
                     transect_month[month] = {"samples": 0}
-                transect_month[month]["samples"] += 1
 
+                transect_month[month]["samples"] += 1
 
         out += f'<tr><td>{row["region"]}</td><td>{row["province"]}</td><td>{transect_id}</td>'
 
+        # print(dates_list)
+
         for month in season:
-            if month in transect_month:
-                out += f"<td>{transect_month[month]['samples']}</td>"
+            flag_path = False
+            # date
+            if month in dates_list:
+                out += f"<td>{', '.join(dates_list[month])}<br>"
+                flag_path = True
             else:
-                out += f"<td>0</td>"
+                out += "<td>"
+
+            if month in completeness_list:
+                
+                out += f"{', '.join(completeness_list[month])}<br>"
+
+
+            if month in transect_month:
+                out += f"{transect_month[month]['samples']}<br>"
+            else:
+                if flag_path:
+                    out += f"0<br>"
+                else:
+                    out += f"<br>"
+
+            out += "</td>"
         out += "</tr>"
 
     out += "</table>"

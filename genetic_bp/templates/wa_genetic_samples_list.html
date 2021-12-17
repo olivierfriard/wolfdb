@@ -61,7 +61,7 @@
 </td>
 
 <td>
-    {% if result['sample_id'] %}{{ result['sample_id'] }}{% endif %}
+    {% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}
 </td>
 
 <td>

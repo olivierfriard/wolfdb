@@ -74,6 +74,18 @@ def rev_geocoding(east, north ,zone):
 
     return r
 
+@app.route("/view_sample/<sample_id>")
+@fn.check_login
+def view_sample(sample_id):
+    """
+    View sample: scat (E) or tissue (T)
+    """
+    if sample_id.startswith("E"):
+        return redirect(f"/view_scat/{sample_id}")
+    if sample_id.startswith("T"):
+        return redirect(f"/view_tissue/{sample_id}")
+    flash(Markup("Sample not found"))
+    return redirect("/")
 
 
 @app.route("/delete_scats")
