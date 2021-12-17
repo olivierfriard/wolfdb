@@ -13,14 +13,23 @@
 
 <a href="/wa_genetic_samples" class="btn btn-primary">WA genetic samples</a>&nbsp;
 
+
+{% if distance != 0 %}
+
 <a href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
 
 <a href="/plot_wa_clusters/{{ distance - 500 }}" class="btn btn-primary">Plot WA clusters ({{ distance - 500 }} m)</a>&nbsp;
 
 <a href="/plot_wa_clusters/{{ distance + 500 }}" class="btn btn-primary">Plot WA clusters ({{ distance + 500 }} m)</a>&nbsp;
 
+{% else %}
+
+<a href="/plot_wa_clusters/2500" class="btn btn-primary">Plot WA clusters (2500 m)</a>&nbsp;
+
+{% endif %}
 
 <br><br>
+
 
 
 {{ title }}

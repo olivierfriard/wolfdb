@@ -112,10 +112,10 @@ def plot_all_wa():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-                   "FROM wa_results, scats "
-                   "WHERE wa_results.wa_code != '' AND wa_results.wa_code = scats.wa_code "
-                   "AND quality_genotype in ('yes', 'Yes') "
+    cursor.execute(("SELECT wa_code, sample_id, genotype_id, "
+                   "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                   "FROM wa_scat_tissue "
+                   "WHERE mtdna not like '%poor%' "
                    )
     )
 
@@ -129,13 +129,19 @@ def plot_all_wa():
         sum_lon += lon
         sum_lat += lat
 
+        if row['sample_id'].startswith("E"):
+            color = "orange"
+        if row['sample_id'].startswith("T"):
+            color = "purple"
+
         scat_feature = {"geometry": dict(scat_geojson),
                         "type": "Feature",
-                        "properties": {
-                                       "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
-                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a> """)
+                        "properties": {"style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                                       "popupContent": (f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
+                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                                                        f"""Genotype ID: {row['genotype_id']}""")
                                   },
-                    "id": row['scat_id']
+                    "id": row['sample_id']
                    }
 
         scat_features.append(scat_feature)
@@ -145,8 +151,9 @@ def plot_all_wa():
     transect_features = []
 
     return render_template("plot_all_wa.html",
-                           title="Plot of WA codes",
-                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
+                           title=Markup("<h3>WA codes: scats (orange) and tissues (purple)</h3>"),
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8)),
+                           distance=0
                            )
 
 
@@ -171,7 +178,7 @@ def plot_wa_clusters(distance):
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
                     "FROM wa_scat_tissue "
-                    "WHERE quality_genotype in ('yes', 'Yes') "
+                    "WHERE mtdna not like '%poor%'"
                     )
                    )
 
@@ -223,7 +230,7 @@ def plot_wa_clusters(distance):
 
 @app.route("/wa_genetic_samples")
 @fn.check_login
-def genetic_samples():
+def wa_genetic_samples():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -244,10 +251,13 @@ def genetic_samples():
                     "ORDER BY wa_results.wa_code ASC")
     )
     '''
-
-    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id  FROM wa_results, scats WHERE wa_results.wa_code != ''  AND wa_results.wa_code = scats.wa_code  AND quality_genotype in ('yes', 'Yes') "
+    # union of scat and tissue samples
+    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id "
+                    "FROM wa_results, scats "
+                    "WHERE wa_results.wa_code != ''  AND wa_results.wa_code = scats.wa_code  AND mtdna not like '%poor%' "
                     "UNION "
-                    "SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id  FROM wa_results, dead_wolves WHERE wa_results.wa_code != ''  AND wa_results.wa_code = dead_wolves.wa_code  AND quality_genotype in ('yes', 'Yes') "
+                    "SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id "
+                    "FROM wa_results, dead_wolves WHERE wa_results.wa_code != ''  AND wa_results.wa_code = dead_wolves.wa_code  AND mtdna not like '%poor%'  "
                     "ORDER BY wa_code"))
 
     wa_scats = cursor.fetchall()
@@ -387,7 +397,7 @@ def wa_analysis_group(distance: int, cluster_id: int):
     '''
     cursor.execute(("SELECT wa_code, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                    "FROM wa_scat_tissue WHERE quality_genotype in ('yes', 'Yes')"
+                    "FROM wa_scat_tissue WHERE mtdna not like '%poor%'"
                     )
     )
 
