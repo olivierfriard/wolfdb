@@ -215,7 +215,7 @@ def plot_wa_clusters(distance):
     return render_template("plot_all_wa.html",
                            title=Markup(f"<h3>Plot of WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"),
                            map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7)),
-                           distance=distance
+                           distance=int(distance)
                            )
 
 
