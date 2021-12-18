@@ -11,6 +11,7 @@ import flask
 from flask import Flask, render_template, redirect, request, Markup, flash, session
 import psycopg2
 import psycopg2.extras
+import json
 from config import config
 
 #from dead_wolf import Dead_wolf
@@ -31,16 +32,39 @@ def dead_wolves():
 
 
 @app.route("/view_dead_wolf/<tissue_id>")
+@app.route("/view_tissue/<tissue_id>")
 @fn.check_login
 def view_dead_wolf(tissue_id):
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dead_wolves WHERE tissue_id = %s",
+
+    cursor.execute(("SELECT *, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS dw_lonlat, "
+                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    "FROM dead_wolves WHERE tissue_id = %s"),
                    [tissue_id])
     dead_wolf = cursor.fetchone()
 
+    dw_geojson = json.loads(dead_wolf["dw_lonlat"])
+
+    dw_feature = {"geometry": dict(dw_geojson),
+                    "type": "Feature",
+                    "properties": {"style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
+                                   "popupContent": f"Tissue ID: {tissue_id}"
+                                  },
+                    "id": tissue_id
+                   }
+
+    dw_features = [dw_feature]
+
+    center = f"{dead_wolf['latitude']}, {dead_wolf['longitude']}"
+
+
     return render_template("view_dead_wolf.html",
                            dead_wolf=dead_wolf,
+                           map=Markup(fn.leaflet_geojson(center, dw_features, []))
                           )
 
 
@@ -50,12 +74,47 @@ def dead_wolves_list():
     # get all dead_wolves
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dead_wolves ORDER BY tissue_id DESC")
+    cursor.execute(("SELECT * FROM dead_wolves ORDER BY tissue_id DESC"))
 
     results = cursor.fetchall()
 
     return render_template("dead_wolves_list.html",
-                           results=results)
+                           results=results
+                           )
+
+
+@app.route("/plot_dead_wolves")
+@fn.check_login
+def plot_dead_wolves():
+    """
+    plot dead wolves
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT tissue_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS dw_lonlat FROM dead_wolves")
+
+    scat_features = []
+    for row in cursor.fetchall():
+        scat_geojson = json.loads(row["dw_lonlat"])
+
+        scat_feature = {"geometry": dict(scat_geojson),
+                        "type": "Feature",
+                        "properties": {"style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
+                                       "popupContent": f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a>"""
+                                      },
+                        "id": row["tissue_id"]
+                   }
+
+        scat_features.append(dict(scat_feature))
+
+    center = f"45 , 9"
+
+    transect_features = []
+
+    return render_template("plot_all_scats.html",
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=7))
+                           )
+
 
 
 '''

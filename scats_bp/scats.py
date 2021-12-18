@@ -64,26 +64,22 @@ def scats():
 
 
 
-
 @app.route("/wa_form", methods=("POST",))
 @fn.check_login
 def wa_form():
 
     data = request.form
 
-    return f"""
-<form action="/add_wa" method="POST" style="padding-top:30px; padding-bottom:30px">
+    return (f'<form action="/add_wa" method="POST" style="padding-top:30px; padding-bottom:30px">'
+            f'<input type="hidden" id="scat_id" name="scat_id" value="{request.form["scat_id"]}">'
+            '<div class="form-group">'
+            '<label for="usr">WA code</label>'
+            '<input type="text" class="form-control" id="wa" name="wa">'
+            '</div>'
+            '<button type="submit" class="btn btn-primary">Add code</button>'
+            '</form>'
+            )
 
-  <input type="hidden" id="scat_id" name="scat_id" value="{request.form['scat_id']}">
-
-  <div class="form-group">
-  <label for="usr">WA code</label>
-  <input type="text" class="form-control" id="wa" name="wa">
-</div>
-
-<button type="submit" class="btn btn-primary">Add code</button>
-</form>
-"""
 
 
 @app.route("/add_wa", methods=("POST",))
@@ -164,7 +160,6 @@ def view_scat(scat_id):
         transect_id = ""
         transect_features = []
 
-
     return render_template("view_scat.html",
                            results=results,
                            transect_id=transect_id,
@@ -180,8 +175,7 @@ def plot_all_scats():
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
-    # results = dict(cursor.fetchall())
+    cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
 
     scat_features = []
     for row in cursor.fetchall():
@@ -189,7 +183,7 @@ def plot_all_scats():
 
         scat_feature = {"geometry": dict(scat_geojson),
                         "type": "Feature",
-                        "properties": {
+                        "properties": {"style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
                                        "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>"""
                                       },
                         "id": row["scat_id"]
@@ -197,12 +191,12 @@ def plot_all_scats():
 
         scat_features.append(dict(scat_feature))
 
-    center = f"45 , 8.5"
+    center = f"45 , 9"
 
     transect_features = []
 
     return render_template("plot_all_scats.html",
-                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8))
+                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=7))
                            )
 
 
@@ -220,7 +214,6 @@ def scats_list():
 
     cursor.execute("SELECT count(*) as n_scats FROM scats")
     n_scats = cursor.fetchone()["n_scats"]
-
 
     cursor.execute("SELECT * FROM scats ORDER BY scat_id")
 
