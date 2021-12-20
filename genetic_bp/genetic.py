@@ -653,14 +653,14 @@ def locus_note(wa_code, locus, allele, timestamp):
 
     if request.method == "POST":
 
-        print(request.form["return_url"])
-
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-        sql = ("UPDATE wa_locus SET notes = %(notes)s "
-               "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND extract(epoch from timestamp)::integer = %(timestamp)s"
+        sql = ("UPDATE wa_locus2 SET notes = %(notes)s "
+               "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s AND extract(epoch from timestamp)::integer = %(timestamp)s"
         )
+
+
 
         data["notes"] = request.form["notes"]
 
