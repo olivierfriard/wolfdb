@@ -1,9 +1,7 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
 
-<main class="flex-shrink-0">
-
-<div class="container">
+{% block content %}
 
 
 <h1>WolfDB</h1>
@@ -19,7 +17,9 @@
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
 
-<a href="/add_genetic_data/{{wa_code}}" class="btn btn-primary">Add genetic data</a>&nbsp;
+<!--
+    <a href="/add_genetic_data/{{wa_code}}" class="btn btn-primary">Add genetic data</a>&nbsp;
+-->
 
 
 
@@ -66,3 +66,4 @@
 
 </form>
 
+{% endblock %}

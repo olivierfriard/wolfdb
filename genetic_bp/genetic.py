@@ -131,8 +131,10 @@ def plot_all_wa():
 
         if row['sample_id'].startswith("E"):
             color = "orange"
-        if row['sample_id'].startswith("T"):
+        elif row['sample_id'].startswith("T"):
             color = "purple"
+        else:
+            color = "red"
 
         scat_feature = {"geometry": dict(scat_geojson),
                         "type": "Feature",
@@ -151,7 +153,7 @@ def plot_all_wa():
     transect_features = []
 
     return render_template("plot_all_wa.html",
-                           title=Markup("<h3>WA codes: scats (orange) and tissues (purple)</h3>"),
+                           title=Markup("<h3>WA codes. orange: scats, purple: tissues, red: other sample</h3>"),
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8)),
                            distance=0
                            )
@@ -336,16 +338,60 @@ def wa_analysis(distance: int, cluster_id: int):
     for row in wa_scats:
         loci_values[row["wa_code"]] = {}
         for locus in loci_list:
-            cursor.execute("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
-            row2 = cursor.fetchone()
+            loci_values[row["wa_code"]][locus] = {}
+            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
+            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
+        for locus in loci_list:
+            '''
+            cursor.execute(("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp, notes FROM wa_locus "
+                            "WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 "), [row["wa_code"], locus])
+            '''
+
+            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
+                            "UNION "
+                            "SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
+                            "ORDER BY allele, timestamp DESC LIMIT 2"
+                            ),
+                            {"wa_code": row["wa_code"], "locus": locus})
+
+
+            locus_val = cursor.fetchall()
+            for row2 in locus_val:
+                val = row2["val"] if row2["val"] is not None else "-"
+                notes = row2["notes"] if row2["notes"] is not None else ""
+                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+
+                loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+
+            '''
+            print(locus)
+            print(loci_values[row["wa_code"]][locus])
+            print("------------------------------------------")
+            '''
+
+
+    return render_template("wa_analysis.html",
+                            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+                            loci_list=loci_list,
+                            wa_scats=wa_scats,
+                            loci_values=loci_values,
+                            distance=distance)
+
+
+    '''
+
             if row2 is None:
                 value1 = "-"
                 value2 = "-"
                 timestamp = "-"
+                notes = ""
             else:
                 if row2["value1"] is not None:
                     value1 = row2["value1"]
                     timestamp = row2["timestamp"]
+                    notes = row2["notes"]
                 else:
                     value1 = "-"
 
@@ -360,7 +406,11 @@ def wa_analysis(distance: int, cluster_id: int):
             else:
                 loci_values[row["wa_code"]][locus] = {"values": [value1, ""], "timestamp": timestamp}
 
+            print(locus, loci_values[row["wa_code"]])
 
+            loci_values[row["wa_code"]][locus]["notes"] = row2["notes"]
+
+    '''
     return render_template("wa_analysis.html",
                             title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
@@ -565,3 +615,57 @@ def view_genetic_data_history(wa_code, locus):
                             results = results,
                             wa_code=wa_code,
                             locus=locus)
+
+
+
+
+@app.route("/locus_note/<wa_code>/<locus>/<allele>/<timestamp>", methods=("GET", "POST",))
+@fn.check_login
+def locus_note(wa_code, locus, allele, timestamp):
+    """
+    let user add a note on wa_code locus_name allele timestamp
+    """
+
+    data = {"wa_code": wa_code, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
+
+    if request.method == "GET":
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        cursor.execute(("SELECT * FROM wa_locus2 "
+                        "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s AND extract(epoch from timestamp)::integer = %(timestamp)s "
+                        ),
+                       data)
+        wa_locus = cursor.fetchone()
+
+        print(wa_locus)
+
+        if wa_locus is None:
+            return "WA code / Locus / allele / timestamp not found"
+
+        data["value"] = wa_locus["val"]
+        data["notes"] = wa_locus["notes"]
+
+        return render_template("add_wa_locus_note.html",
+                               data=data,
+                               return_url=request.referrer)
+
+
+    if request.method == "POST":
+
+        print(request.form["return_url"])
+
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = ("UPDATE wa_locus SET notes = %(notes)s "
+               "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND extract(epoch from timestamp)::integer = %(timestamp)s"
+        )
+
+        data["notes"] = request.form["notes"]
+
+        cursor.execute(sql, data)
+        connection.commit()
+
+
+        return redirect(request.form["return_url"])

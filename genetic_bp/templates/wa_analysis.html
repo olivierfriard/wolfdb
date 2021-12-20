@@ -21,9 +21,6 @@
 {{ title }}
 
 
-
-
-
 <table class="table table-striped">
 <tr>
 <th></th>
@@ -98,12 +95,18 @@
 {% for locus in loci_values[result['wa_code']] %}
 
 <td style="border-left: 1px solid black;">
-{{ loci_values[result['wa_code']][locus]['values'][0] }}<br>
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}_a/{{ loci_values[result['wa_code']][locus]['timestamp'] }}">note</a>
+{{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
+<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
+
+{{ loci_values[result['wa_code']][locus]['a']['notes'] }}
+
 </td>
 <td>
-{{ loci_values[result['wa_code']][locus]['values'][1] }}<br>
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}_b/{{ loci_values[result['wa_code']][locus]['timestamp'] }}">note</a>
+{{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
+<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
+
+{{ loci_values[result['wa_code']][locus]['b']['notes'] }}
+
 </td>
 
 {% endfor %}
