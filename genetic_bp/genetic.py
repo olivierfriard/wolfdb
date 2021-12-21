@@ -55,16 +55,71 @@ def view_genotype(genotype_id):
                            wa_codes=wa_codes)
 
 
-@app.route("/genotypes_list")
+
+@app.route("/genotypes")
 @fn.check_login
-def genotypes_list():
+def genotypes():
+
+    return render_template("genotypes.html")
+
+
+@app.route("/all_genotypes_list")
+@fn.check_login
+def all_genotypes_list():
+    """
+    list of all genotypes
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT distinct * from genotypes ORDER BY genotype_id")
+    cursor.execute("SELECT * FROM genotypes ORDER BY genotype_id")
 
+    results=cursor.fetchall()
+    title = f"List of all {len(results)} genotypes"
 
     return render_template("genotypes_list.html",
-                           results=cursor.fetchall())
+                           title=title,
+                           results=results)
+
+
+
+@app.route("/definitive_genotypes_list")
+@fn.check_login
+def definitive_genotypes_list():
+    """
+    list of definitive genotypes
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM genotypes WHERE status = 'OK' ORDER BY genotype_id")
+
+    results=cursor.fetchall()
+    title = f"List of {len(results)} definitive genotypes"
+
+    return render_template("genotypes_list.html",
+                           title=title,
+                           results=results)
+
+
+
+
+@app.route("/temp_genotypes_list")
+@fn.check_login
+def temp_genotypes_list():
+    """
+    list of temporary genotypes
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT * FROM genotypes WHERE status != 'OK' ORDER BY genotype_id")
+
+    results=cursor.fetchall()
+    title = f"List of {len(results)} temporary genotypes"
+
+    return render_template("genotypes_list.html",
+                           title=title,
+                           results=results)
+
 
 
 
@@ -166,16 +221,6 @@ def plot_wa_clusters(distance):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    '''
-    cursor.execute(("SELECT wa_code, scat_id, municipality, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
-                    "FROM wa_scat "
-                    "WHERE quality_genotype in ('yes', 'Yes') "
-                    )
-                   )
-    '''
-
     cursor.execute(("SELECT wa_code, sample_id, municipality, genotype_id, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
@@ -267,8 +312,36 @@ def wa_genetic_samples():
     for row in wa_scats:
         loci_values[row["wa_code"]] = {}
         for locus in loci_list:
+            loci_values[row["wa_code"]][locus] = {}
+            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
+            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
+
+
+        for locus in loci_list:
+            
+            '''
             cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
-            row2 = cursor.fetchone()
+            '''
+
+            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
+                            "UNION "
+                            "SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
+                            "ORDER BY allele, timestamp DESC LIMIT 2"
+                            ),
+                            {"wa_code": row["wa_code"], "locus": locus})
+
+            
+            locus_val = cursor.fetchall()
+            for row2 in locus_val:
+                val = row2["val"] if row2["val"] is not None else "-"
+                notes = row2["notes"] if row2["notes"] is not None else ""
+                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+
+                loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+
+            '''
             if row2 is None:
                 value1 = "-"
                 value2 = "-"
@@ -286,6 +359,7 @@ def wa_genetic_samples():
                 loci_values[row["wa_code"]][locus] = [value1, value2]
             else:
                 loci_values[row["wa_code"]][locus] = [value1, ""]
+            '''
 
 
     return render_template("wa_genetic_samples_list.html",
@@ -316,9 +390,10 @@ def wa_analysis(distance: int, cluster_id: int):
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
                     "FROM wa_scat_tissue "
-                    "WHERE quality_genotype in ('yes', 'Yes') "
+                    "WHERE mtdna not like '%poor%'"
                     )
                    )
+
 
     wa_list = []
     for row in cursor.fetchall():
@@ -380,47 +455,6 @@ def wa_analysis(distance: int, cluster_id: int):
                             distance=distance)
 
 
-    '''
-
-            if row2 is None:
-                value1 = "-"
-                value2 = "-"
-                timestamp = "-"
-                notes = ""
-            else:
-                if row2["value1"] is not None:
-                    value1 = row2["value1"]
-                    timestamp = row2["timestamp"]
-                    notes = row2["notes"]
-                else:
-                    value1 = "-"
-
-                if row2["value2"] is not None:
-                    value2 = row2["value2"]
-                    timestamp = row2["timestamp"]
-                else:
-                    value2 = "-"
-
-            if loci_list[locus] == 2:
-                loci_values[row["wa_code"]][locus] = {"values": [value1, value2], "timestamp": timestamp}
-            else:
-                loci_values[row["wa_code"]][locus] = {"values": [value1, ""], "timestamp": timestamp}
-
-            print(locus, loci_values[row["wa_code"]])
-
-            loci_values[row["wa_code"]][locus]["notes"] = row2["notes"]
-
-    '''
-    return render_template("wa_analysis.html",
-                            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
-                            loci_list=loci_list,
-                            wa_scats=wa_scats,
-                            loci_values=loci_values,
-                            distance=distance)
-
-
-
-
 
 @app.route("/wa_analysis_group/<distance>/<cluster_id>")
 @fn.check_login
@@ -436,15 +470,6 @@ def wa_analysis_group(distance: int, cluster_id: int):
         loci_list[row["name"]] = row["n_alleles"]
 
     # DBScan
-    '''
-    cursor.execute(("SELECT wa_code, scat_id, municipality, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                    "FROM wa_scat "
-                    "WHERE quality_genotype in ('yes', 'Yes') "
-                    )
-                   )
-    '''
     cursor.execute(("SELECT wa_code, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
                     "FROM wa_scat_tissue WHERE mtdna not like '%poor%'"
@@ -456,7 +481,6 @@ def wa_analysis_group(distance: int, cluster_id: int):
         if row["cluster_id"] == int(cluster_id):
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
-    print(wa_list_str)
 
     # fetch grouped genotypes
     cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap "
@@ -473,60 +497,47 @@ def wa_analysis_group(distance: int, cluster_id: int):
     for row in genotype_id:
 
         # sex
-        cursor.execute("SELECT sex_id FROM wa_scat_tissue WHERE wa_code in (select wa_code from wa_results where genotype_id = %s)",
+        cursor.execute("SELECT sex_id FROM genotype_results WHERE genotype_id = %s",
                         [row['genotype_id']])
         sex = cursor.fetchall()
         sex_list[row['genotype_id']] = []
         for row3 in sex:
             sex_list[row['genotype_id']].append(row3["sex_id"])
 
+
         loci_values[row["genotype_id"]] = {}
         for locus in loci_list:
+            loci_values[row["genotype_id"]][locus] = {}
+            loci_values[row["genotype_id"]][locus]['a'] = {"value": "-", "notes": "" }
+            loci_values[row["genotype_id"]][locus]['b'] = {"value": "-", "notes": "" }
 
-            cursor.execute(("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp "
-                            "FROM wa_locus "
-                            "WHERE wa_code = (select wa_code from wa_results where genotype_id = %s LIMIT 1) "
-                            "AND locus = %s "
-                            "ORDER BY timestamp DESC LIMIT 1 "
+        for locus in loci_list:
+
+            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
+                            "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
+                            "UNION "
+                            "SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
+                            "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "                            
                             ),
-                            [row['genotype_id'], locus]
-            )
+                            {"genotype_id": row["genotype_id"], "locus": locus})
 
-            row2 = cursor.fetchone()
-            if row2 is None:
-                value1 = "-"
-                value2 = "-"
-                timestamp = "-"
-            else:
-                if row2["value1"] is not None:
-                    value1 = row2["value1"]
-                    timestamp = row2["timestamp"]
-                else:
-                    value1 = "-"
+            locus_val = cursor.fetchall()
 
-                if row2["value2"] is not None:
-                    value2 = row2["value2"]
-                    timestamp = row2["timestamp"]
-                else:
-                    value2 = "-"
+            for row2 in locus_val:
+                val = row2["val"] if row2["val"] is not None else "-"
+                notes = row2["notes"] if row2["notes"] is not None else ""
+                epoch = row2["epoch"] if row2["epoch"] is not None else ""
 
-            if loci_list[locus] == 2:
-                loci_values[row["genotype_id"]][locus] = {"values": [value1, value2], "timestamp": timestamp}
-            else:
-                loci_values[row["genotype_id"]][locus] = {"values": [value1, ""], "timestamp": timestamp}
-
-
+                loci_values[row["genotype_id"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
 
     return render_template("wa_analysis_group.html",
-                            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+                            title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             genotype_id=genotype_id,
                             sex_list=sex_list,
                             #wa_scats=wa_scats,
                             loci_values=loci_values,
                             distance=distance)
-
-
 
 
 
@@ -638,13 +649,11 @@ def locus_note(wa_code, locus, allele, timestamp):
                        data)
         wa_locus = cursor.fetchone()
 
-        print(wa_locus)
-
         if wa_locus is None:
             return "WA code / Locus / allele / timestamp not found"
 
         data["value"] = wa_locus["val"]
-        data["notes"] = wa_locus["notes"]
+        data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
 
         return render_template("add_wa_locus_note.html",
                                data=data,
@@ -660,12 +669,59 @@ def locus_note(wa_code, locus, allele, timestamp):
                "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s AND extract(epoch from timestamp)::integer = %(timestamp)s"
         )
 
-
-
         data["notes"] = request.form["notes"]
 
         cursor.execute(sql, data)
         connection.commit()
 
+        return redirect(request.form["return_url"])
+
+
+
+@app.route("/genotype_locus_note/<genotype_id>/<locus>/<allele>/<timestamp>", methods=("GET", "POST",))
+@fn.check_login
+def genotype_locus_note(genotype_id, locus, allele, timestamp):
+    """
+    let user add a note on genotype_id locus allele timestamp
+    """
+
+    data = {"genotype_id": genotype_id, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
+
+    if request.method == "GET":
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        cursor.execute(("SELECT * FROM genotype_locus "
+                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
+                        "AND extract(epoch from timestamp)::integer = %(timestamp)s "
+                        ),
+                       data)
+        wa_locus = cursor.fetchone()
+
+        if wa_locus is None:
+            return "Genotype ID / Locus / allele / timestamp not found"
+
+        data["value"] = wa_locus["val"]
+        data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
+
+        return render_template("add_genotype_locus_note.html",
+                               data=data,
+                               return_url=request.referrer)
+
+
+    if request.method == "POST":
+
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = ("UPDATE genotype_locus SET notes = %(notes)s "
+               "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
+               "AND extract(epoch from timestamp)::integer = %(timestamp)s"
+        )
+
+        data["notes"] = request.form["notes"]
+
+        cursor.execute(sql, data)
+        connection.commit()
 
         return redirect(request.form["return_url"])

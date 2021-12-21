@@ -1,24 +1,24 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
 
-<main class="flex-shrink-0">
-
-<div class="container">
+{% block content %}
 
 
 <h1>WolfDB</h1>
 <hr>
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/genotypes" class="btn btn-primary">Genotypes</a>&nbsp;
 
 <br>
 <br>
 
 {% if results %}
-<h2>List of {{ n_genotype }} genotypes</h2>
+<h2>{{ title }}</h2>
 <table class="table table-striped">
 <tr>
 <th>Genotype ID</th>
+<th>Date</th>
 <th>Pack</th>
 <th>Sex</th>
 <th>Age first capture</th>
@@ -33,6 +33,10 @@
 <tr>
 <td>
     <a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a>&nbsp;
+</td>
+
+<td>
+    {% if result['date'] %}{{ result['date'] }}{% endif %}
 </td>
 
 
@@ -76,19 +80,12 @@
 </table>
 {% else %}
 
-<h2>No genotypes code found</h2>
+<h2>No genotypes found</h2>
 
 {% endif %}
 
 
-
-</div>
-
-</main>
-
-
-
-
+{% endblock %}
 
 
 

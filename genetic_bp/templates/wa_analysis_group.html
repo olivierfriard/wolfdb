@@ -68,15 +68,50 @@
 
 
 
+
+
+
+
+
 {% for locus in loci_values[result['genotype_id']] %}
 
 <td  style="border-left: 1px solid black;">
-{{ loci_values[result['genotype_id']][locus]['values'][0] }}<br>
-<a href="/locus_note/{{ result['genotype_id']}}/{{ locus }}_a/{{ loci_values[result['genotype_id']][locus]['timestamp'] }}">note</a>
+
+
+{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
+<u>
+{% endif %}
+
+
+{{ loci_values[result['genotype_id']][locus]['a']['value'] }}<br>
+
+
+{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
+</u>
+{% endif %}
+
+
+
+<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a>
+
 </td>
+
+
 <td>
-{{ loci_values[result['genotype_id']][locus]['values'][1] }}<br>
-<a href="/locus_note/{{ result['genotype_id']}}/{{ locus }}_b/{{ loci_values[result['genotype_id']][locus]['timestamp'] }}">note</a>
+
+{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
+<u>
+{% endif %}
+
+{{ loci_values[result['genotype_id']][locus]['b']['value'] }}<br>
+
+{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
+</u>
+{% endif %}
+
+
+<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a>
+
 </td>
 
 {% endfor %}
