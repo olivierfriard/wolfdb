@@ -1,4 +1,4 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 
 {% block content %}
@@ -26,6 +26,17 @@
 <th>dispersal</th>
 <th>n recaptures</th>
 <th>dead recovery</th>
+
+{% for locus in loci_list %}
+{% if loci_list[locus] == 2%}
+<th>{{ locus }} a</th>
+<th>{{ locus }} b</th>
+{% else %}
+<th>{{ locus }}</th>
+<th></th>
+{% endif %}
+
+{% endfor %}
 
 </tr>
 {% for result in results %}
@@ -71,6 +82,52 @@
     <td>
         {% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}
     </td>
+
+
+
+    {% for locus in loci_values[result['genotype_id']] %}
+
+<td  style="border-left: 1px solid black;">
+
+
+{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
+<u>
+{% endif %}
+
+
+{{ loci_values[result['genotype_id']][locus]['a']['value'] }}<br>
+
+
+{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
+</u>
+{% endif %}
+
+<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a>
+
+</td>
+
+<td>
+
+{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
+<u>
+{% endif %}
+
+{{ loci_values[result['genotype_id']][locus]['b']['value'] }}<br>
+
+{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
+</u>
+{% endif %}
+
+
+<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a>
+
+</td>
+
+{% endfor %}
+
+
+
+
 
 
 </tr>

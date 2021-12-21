@@ -63,62 +63,79 @@ def genotypes():
     return render_template("genotypes.html")
 
 
-@app.route("/all_genotypes_list")
-@fn.check_login
-def all_genotypes_list():
-    """
-    list of all genotypes
-    """
+def get_loci_value(genotype_id, loci_list):
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM genotypes ORDER BY genotype_id")
 
-    results=cursor.fetchall()
-    title = f"List of all {len(results)} genotypes"
+    loci_values = {}
+    for locus in loci_list:
+        loci_values[locus] = {}
+        loci_values[locus]['a'] = {"value": "-", "notes": "" }
+        loci_values[locus]['b'] = {"value": "-", "notes": "" }
 
-    return render_template("genotypes_list.html",
-                           title=title,
-                           results=results)
+    for locus in loci_list:
+
+        cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
+                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
+                        "UNION "
+                        "SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
+                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "                            
+                        ),
+                        {"genotype_id": genotype_id, "locus": locus})
+
+        locus_val = cursor.fetchall()
+
+        for row2 in locus_val:
+            val = row2["val"] if row2["val"] is not None else "-"
+            notes = row2["notes"] if row2["notes"] is not None else ""
+            epoch = row2["epoch"] if row2["epoch"] is not None else ""
+
+            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+
+    return loci_values
 
 
 
-@app.route("/definitive_genotypes_list")
+@app.route("/genotypes_list/<type>")
 @fn.check_login
-def definitive_genotypes_list():
+def all_genotypes_list(type):
     """
-    list of definitive genotypes
-    """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM genotypes WHERE status = 'OK' ORDER BY genotype_id")
-
-    results=cursor.fetchall()
-    title = f"List of {len(results)} definitive genotypes"
-
-    return render_template("genotypes_list.html",
-                           title=title,
-                           results=results)
-
-
-
-
-@app.route("/temp_genotypes_list")
-@fn.check_login
-def temp_genotypes_list():
-    """
-    list of temporary genotypes
+    list of genotypes: all, temp, definitive
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM genotypes WHERE status != 'OK' ORDER BY genotype_id")
+    # loci list
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    loci_list = {}
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
 
-    results=cursor.fetchall()
-    title = f"List of {len(results)} temporary genotypes"
+    if type == "all":
+        cursor.execute("SELECT * FROM genotypes ORDER BY genotype_id")
+        results = cursor.fetchall()
+        title = f"List of all {len(results)} genotypes"
+    if type == "definitive":
+        cursor.execute("SELECT * FROM genotypes WHERE status = 'OK' ORDER BY genotype_id")
+        results = cursor.fetchall()
+        title = f"List of {len(results)} definitive genotypes"
+    if type == "temp":
+        cursor.execute("SELECT * FROM genotypes WHERE status != 'OK' ORDER BY genotype_id")
+        results = cursor.fetchall()
+        title = f"List of {len(results)} temporary genotypes"
+
+    loci_values = {}
+    for row in results:
+        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
     return render_template("genotypes_list.html",
                            title=title,
-                           results=results)
+                           results=results,
+                           loci_list=loci_list,
+                           loci_values=loci_values)
+
+
 
 
 
@@ -510,7 +527,9 @@ def wa_analysis_group(distance: int, cluster_id: int):
         for row3 in sex:
             sex_list[row['genotype_id']].append(row3["sex_id"])
 
+        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
+        '''
         loci_values[row["genotype_id"]] = {}
         for locus in loci_list:
             loci_values[row["genotype_id"]][locus] = {}
@@ -535,6 +554,7 @@ def wa_analysis_group(distance: int, cluster_id: int):
                 epoch = row2["epoch"] if row2["epoch"] is not None else ""
 
                 loci_values[row["genotype_id"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+        '''
 
     return render_template("wa_analysis_group.html",
                             title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
