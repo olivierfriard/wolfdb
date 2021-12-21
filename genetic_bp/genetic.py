@@ -135,7 +135,12 @@ def view_wa(wa_code):
                     "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
                     " FROM scats WHERE wa_code = %s "), [wa_code]
     )
-    results = dict(cursor.fetchone())
+    results = cursor.fetchone()
+
+    if results is None:
+        flash(fn.alert_danger(f"WA code not found: {wa_code}"))
+        return redirect(request.referrer)
+
     scat_geojson = json.loads(results["scat_lonlat"])
     scat_feature = {"geometry": dict(scat_geojson),
                     "type": "Feature",
@@ -152,6 +157,7 @@ def view_wa(wa_code):
     wa_result = cursor.fetchone()
 
     return render_template("view_wa.html",
+                           go_back_url=request.referrer,
                            results=results,
                            wa_result=wa_result,
                            map=Markup(fn.leaflet_geojson(center, scat_features, []))
