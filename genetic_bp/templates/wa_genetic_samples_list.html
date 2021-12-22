@@ -52,7 +52,8 @@
 
 <tr>
 <td>
-    <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>&nbsp;
+   <!-- <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>&nbsp;
+   -->
 </td>
 
 
@@ -108,18 +109,18 @@
 </td>
 
 <td>
-    
+
     {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
     <u>
     {% endif %}
-        
-    
+
+
     {{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
-    
+
     {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
     </u>
     {% endif %}
-    
+
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
 
 </td>
