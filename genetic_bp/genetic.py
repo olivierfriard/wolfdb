@@ -523,9 +523,15 @@ def wa_analysis_group(distance: int, cluster_id: int):
     data = {}
     for row in genotype_id:
 
+        if row['genotype_id'] is None:
+            continue
+
         cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s",
                         [row['genotype_id']])
-        data[row['genotype_id']] = dict(cursor.fetchone())
+        result = cursor.fetchone()
+        if result is None:
+            continue
+        data[row['genotype_id']] = dict(result)
         data[row['genotype_id']]["n_recap"] = row["n_recap"]
 
         '''
