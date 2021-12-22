@@ -43,7 +43,10 @@ def view_genotype(genotype_id):
     genotype = cursor.fetchone()
 
 
-    cursor.execute("SELECT distinct wa_code FROM genotypes, wa_results WHERE genotypes.genotype_id = wa_results.genotype_id AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code", [genotype_id])
+    cursor.execute(("SELECT distinct wa_code FROM genotypes, wa_results "
+                    "WHERE genotypes.genotype_id = wa_results.genotype_id "
+                    "AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code"),
+                    [genotype_id])
     wa_codes = cursor.fetchall()
 
     # genetic data
@@ -80,7 +83,7 @@ def get_loci_value(genotype_id, loci_list):
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
                         "UNION "
                         "SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
-                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "                            
+                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
                         ),
                         {"genotype_id": genotype_id, "locus": locus})
 
@@ -341,7 +344,7 @@ def wa_genetic_samples():
 
 
         for locus in loci_list:
-            
+
             '''
             cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
             '''
@@ -355,7 +358,7 @@ def wa_genetic_samples():
                             ),
                             {"wa_code": row["wa_code"], "locus": locus})
 
-            
+
             locus_val = cursor.fetchall()
             for row2 in locus_val:
                 val = row2["val"] if row2["val"] is not None else "-"
@@ -516,9 +519,16 @@ def wa_analysis_group(distance: int, cluster_id: int):
     genotype_id = cursor.fetchall()
 
     loci_values = {}
-    sex_list = {}
+    '''sex_list = {}'''
+    data = {}
     for row in genotype_id:
 
+        cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s",
+                        [row['genotype_id']])
+        data[row['genotype_id']] = dict(cursor.fetchone())
+        data[row['genotype_id']]["n_recap"] = row["n_recap"]
+
+        '''
         # sex
         cursor.execute("SELECT sex_id FROM genotype_results WHERE genotype_id = %s",
                         [row['genotype_id']])
@@ -526,6 +536,7 @@ def wa_analysis_group(distance: int, cluster_id: int):
         sex_list[row['genotype_id']] = []
         for row3 in sex:
             sex_list[row['genotype_id']].append(row3["sex_id"])
+        '''
 
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
@@ -542,7 +553,7 @@ def wa_analysis_group(distance: int, cluster_id: int):
                             "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
                             "UNION "
                             "SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
-                            "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "                            
+                            "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
                             ),
                             {"genotype_id": row["genotype_id"], "locus": locus})
 
@@ -560,7 +571,8 @@ def wa_analysis_group(distance: int, cluster_id: int):
                             title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             genotype_id=genotype_id,
-                            sex_list=sex_list,
+                            data=data,
+                            #sex_list=sex_list,
                             #wa_scats=wa_scats,
                             loci_values=loci_values,
                             distance=distance)
@@ -600,16 +612,6 @@ def add_genetic_data(wa_code):
         cursor.execute("SELECT * FROM loci ")
         loci = cursor.fetchall()
 
-        '''
-        data = {}
-        for locus in loci:
-            data[locus["name"]] = {"value1": "", "value2": "", "timestamp": ""}
-
-        cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s  ORDER BY locus, timestamp", [wa_code])
-        for row in cursor.fetchall():
-            data[row['locus']] =  {"value1": row['value1'], "value2": row['value2'], "timestamp": str(row['timestamp']).split(".")[0]}
-
-        '''
         return render_template("add_genetic_data.html",
                                 wa_code=wa_code,
                                 mode="modify",
@@ -748,6 +750,95 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         data["notes"] = request.form["notes"]
 
         cursor.execute(sql, data)
+        connection.commit()
+
+        return redirect(request.form["return_url"])
+
+
+
+
+
+
+@app.route("/set_status/<genotype_id>", methods=("GET", "POST",))
+def set_status(genotype_id):
+    """
+    let user set the status of the individual
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+
+        # 'status' field used for definitive / temp
+        cursor.execute(("SELECT position FROM genotypes "
+                        "WHERE genotype_id = %s  "),
+                       [genotype_id])
+        result = cursor.fetchone()
+
+        if result is None:
+            flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+            return redirect(request.referrer)
+
+        position = "" if result["position"] is None else result["position"]
+
+        return render_template("set_status.html",
+                               genotype_id=genotype_id,
+                               current_position=position,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE genotypes SET position = %(position)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"position": request.form["position"],
+                        "genotype_id": genotype_id})
+
+        connection.commit()
+
+        return redirect(request.form["return_url"])
+
+
+
+@app.route("/set_pack/<genotype_id>", methods=("GET", "POST",))
+def set_pack(genotype_id):
+    """
+    let user set the pack of the individual
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+
+        # 'status' field used for definitive / temp
+        cursor.execute(("SELECT pack FROM genotypes "
+                        "WHERE genotype_id = %s  "),
+                       [genotype_id])
+        result = cursor.fetchone()
+
+        if result is None:
+            flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+            return redirect(request.referrer)
+
+        pack = "" if result["pack"] is None else result["pack"]
+
+        return render_template("set_pack.html",
+                               genotype_id=genotype_id,
+                               current_pack=pack,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE genotypes SET pack = %(pack)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"pack": request.form["pack"],
+                        "genotype_id": genotype_id})
+
         connection.commit()
 
         return redirect(request.form["return_url"])

@@ -22,17 +22,18 @@
 
 <table class="table table-striped">
 <tr><td>Sex</td><td>{{ result["sex"] }}</td></tr>
-<tr><td>Pack</td><td>{{ result["pack"] }}</td></tr>
+<tr><td>Status</td><td>{{ result["position"] if result["position"] is not none else "" }}</td></tr>
+<tr><td>Pack</td><td>{{ result["pack"] if result["pack"] is not none else "" }}</td></tr>
 
-<tr><td>Age at first capture</td><td>{{ result["age_first_capture"] }}</td></tr>
-<tr><td>Status at first capture</td><td>{{ result["status_first_capture"] }}</td></tr>
-<tr><td>Dispersal</td><td>{{ result["dispersal"] }}</td></tr>
-<tr><td>n recaptures</td><td>{{ n_recap }}</td></tr>
+<tr><td>Age at first capture</td><td>{{ result["age_first_capture"]  if result["age_first_capture"] is not none else ""}}</td></tr>
+<tr><td>Status at first capture</td><td>{{ result["status_first_capture"]  if result["status_first_capture"] is not none else ""}}</td></tr>
+<tr><td>Dispersal</td><td>{{ result["dispersal"]  if result["dispersal"] is not none else ""}}</td></tr>
+<tr><td>number of recaptures</td><td>{{ n_recap }}</td></tr>
 <tr><td>Dead recovery  </td><td>{{ result["dead_recovery  "] }}</td></tr>
 
 </table>
 
-
+<hr>
 <h4>WA codes</h4>
 
 {% for wa_code in wa_codes %}
@@ -43,7 +44,7 @@
 {% endfor %}
 
 
-
+<hr>
 <h4>Genetic data</h4>
 
 

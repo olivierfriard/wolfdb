@@ -17,10 +17,17 @@
 <br>
 <br>
 
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {{ messages[0] }}
+    {% endif %}
+{% endwith %}
+
+
 {% if genotype_id %}
 
 {{ title }}
-
 
 
 <table class="table table-striped">
@@ -29,6 +36,8 @@
 
 <th>Genotype ID</th>
 <th>Sex</th>
+<th>Status</th>
+<th>Pack</th>
 <th>n. recapt</th>
 
 {% for locus in loci_list %}
@@ -44,73 +53,78 @@
 
 
 </tr>
-{% for result in genotype_id %}
+{% for genotype_id in data %}
 
 <tr>
 <td>
 
-    <a href="" class="btn btn-sm btn-primary">Set status</a>
-    <a href="" class="btn btn-sm btn-primary">Set pack</a><br>
+    <a href="/set_status/{{ genotype_id }}" class="btn btn-sm btn-primary">Set status</a>
+
+    <a href="/set_pack/{{ genotype_id }}" class="btn btn-sm btn-primary">Set pack</a><br>
+
 </td>
 
-    <td>
-        {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
-    </td>
+<td>
+    <a href="/view_genotype/{{ genotype_id }}">{{ genotype_id }}</a>
+</td>
+
+<td>
+    {{ data[genotype_id]["sex"] }}
+</td>
+
+<td>
+    {{ data[genotype_id]["position"] if data[genotype_id]["position"] is not none else "" }}
+</td>
+
+<td>
+    {{ data[genotype_id]["pack"] if data[genotype_id]["pack"] is not none else "" }}
+</td>
+
+<td>
+    {{ data[genotype_id]["n_recap"] if data[genotype_id]["n_recap"] is not none else "" }}
+</td>
 
 
-    <td>
-        {% if sex_list[result['genotype_id']] %}{{ sex_list[result['genotype_id']][0] }}{% endif %}
-    </td>
-
-    <td>
-        {{ result['n_recap'] }}
-    </td>
 
 
-
-
-
-
-
-
-{% for locus in loci_values[result['genotype_id']] %}
+{% for locus in loci_values[genotype_id] %}
 
 <td  style="border-left: 1px solid black;">
 
 
-{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
+{% if loci_values[genotype_id][locus]['a']['notes'] %}
 <u>
 {% endif %}
 
 
-{{ loci_values[result['genotype_id']][locus]['a']['value'] }}<br>
+{{ loci_values[genotype_id][locus]['a']['value'] }}<br>
 
 
-{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
+{% if loci_values[genotype_id][locus]['a']['notes'] %}
 </u>
 {% endif %}
 
 
 
-<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a>
+<a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/a/{{ loci_values[genotype_id][locus]['a']['epoch'] }}">note</a>
 
 </td>
 
 
 <td>
 
-{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
+{% if loci_values[genotype_id][locus]['b']['notes'] %}
 <u>
 {% endif %}
 
-{{ loci_values[result['genotype_id']][locus]['b']['value'] }}<br>
+{{ loci_values[genotype_id][locus]['b']['value'] }}<br>
 
-{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
+{% if loci_values[genotype_id][locus]['b']['notes'] %}
 </u>
 {% endif %}
 
 
-<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a>
+<a href="/genotype_locus_note/{{ genotype_id }}/{{ locus }}/b/{{ loci_values[genotype_id][locus]['b']['epoch'] }}">note</a>
 
 </td>
 
