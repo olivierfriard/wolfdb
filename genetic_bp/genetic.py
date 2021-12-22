@@ -297,11 +297,16 @@ def plot_wa_clusters(distance):
                            )
 
 
-
-
-@app.route("/wa_genetic_samples")
+@app.route("/genetic_samples")
 @fn.check_login
-def wa_genetic_samples():
+def genetic_samples():
+
+    return render_template("genetic_samples.html")
+
+
+@app.route("/wa_genetic_samples/<mode>")
+@fn.check_login
+def wa_genetic_samples(mode):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -352,7 +357,7 @@ def wa_genetic_samples():
                 loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
 
 
-    return render_template("wa_genetic_samples_list.html",
+    return render_template("wa_genetic_samples_list.html" if mode == "web" else "wa_genetic_samples_list_export.html",
                            title=Markup(f"<h2>List of {len(wa_scats)} WA codes</h2>"),
                            loci_list=loci_list,
                            wa_scats=wa_scats,
