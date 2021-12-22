@@ -95,39 +95,38 @@
 
 
 {% if loci_values[genotype_id][locus]['a']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
-
-{{ loci_values[genotype_id][locus]['a']['value'] }}<br>
-
+{{ loci_values[genotype_id][locus]['a']['value'] }}
 
 {% if loci_values[genotype_id][locus]['a']['notes'] %}
-</u>
+</span>
 {% endif %}
 
-
-
+<br>
+<small>
 <a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/a/{{ loci_values[genotype_id][locus]['a']['epoch'] }}">note</a>
-
+</small>
 </td>
 
 
 <td>
 
 {% if loci_values[genotype_id][locus]['b']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
-{{ loci_values[genotype_id][locus]['b']['value'] }}<br>
+{{ loci_values[genotype_id][locus]['b']['value'] }}
 
 {% if loci_values[genotype_id][locus]['b']['notes'] %}
-</u>
+</span>
 {% endif %}
 
-
+<br>
+<small>
 <a href="/genotype_locus_note/{{ genotype_id }}/{{ locus }}/b/{{ loci_values[genotype_id][locus]['b']['epoch'] }}">note</a>
-
+</small>
 </td>
 
 {% endfor %}

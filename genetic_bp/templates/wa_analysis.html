@@ -115,32 +115,35 @@
 <td style="border-left: 1px solid black;">
 
 {% if loci_values[result['wa_code']][locus]['a']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
-{{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
+{{ loci_values[result['wa_code']][locus]['a']['value'] }}
 
 {% if loci_values[result['wa_code']][locus]['a']['notes'] %}
-</u>
+</span>
 {% endif %}
 
+<br>
 <small>
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
 </small>
+
 </td>
 
 <td>
 
 {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
-{{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
+{{ loci_values[result['wa_code']][locus]['b']['value'] }}
 
 {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
-</u>
+</span>
 {% endif %}
 
+<br>
 <small>
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
 </small>
