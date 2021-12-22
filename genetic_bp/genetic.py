@@ -255,7 +255,6 @@ def plot_wa_clusters(distance):
                     )
                    )
 
-
     max_cid = 0
     results = cursor.fetchall()
     for row in results:
@@ -282,7 +281,7 @@ def plot_wa_clusters(distance):
                                                         f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
                                                         f"""Genotype ID: {row['genotype_id']}<br>"""
                                                         f"""Cluster ID {row['cid']}:  <a href="/wa_analysis/{distance}/{row['cid']}">samples</a><br>"""
-                                                        f"""<a href="/wa_analysis_group/{distance}/{row['cid']}">genotypes</a>""")
+                                                        f"""<a href="/wa_analysis_group/web/{distance}/{row['cid']}">genotypes</a>""")
 
                                   },
                     "id": row["sample_id"]
@@ -314,16 +313,6 @@ def wa_genetic_samples():
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    '''
-    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id "
-                    "FROM wa_results, scats "
-                    "WHERE "
-                    "wa_results.wa_code != '' "
-                    "AND wa_results.wa_code = scats.wa_code "
-                    "AND quality_genotype in ('yes', 'Yes') "
-                    "ORDER BY wa_results.wa_code ASC")
-    )
-    '''
     # union of scat and tissue samples
     cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id "
                     "FROM wa_results, scats "
@@ -345,10 +334,6 @@ def wa_genetic_samples():
 
         for locus in loci_list:
 
-            '''
-            cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 ", [row["wa_code"], locus])
-            '''
-
             cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
                             "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
                             "UNION "
@@ -366,26 +351,6 @@ def wa_genetic_samples():
                 epoch = row2["epoch"] if row2["epoch"] is not None else ""
 
                 loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
-
-            '''
-            if row2 is None:
-                value1 = "-"
-                value2 = "-"
-            else:
-                if row2["value1"] is not None:
-                    value1 = row2["value1"]
-                else:
-                    value1 = "-"
-                if row2["value2"] is not None:
-                    value2 = row2["value2"]
-                else:
-                    value2 = "-"
-
-            if loci_list[locus] == 2:
-                loci_values[row["wa_code"]][locus] = [value1, value2]
-            else:
-                loci_values[row["wa_code"]][locus] = [value1, ""]
-            '''
 
 
     return render_template("wa_genetic_samples_list.html",
@@ -482,9 +447,9 @@ def wa_analysis(distance: int, cluster_id: int):
 
 
 
-@app.route("/wa_analysis_group/<distance>/<cluster_id>")
+@app.route("/wa_analysis_group/<mode>/<distance>/<cluster_id>")
 @fn.check_login
-def wa_analysis_group(distance: int, cluster_id: int):
+def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -535,7 +500,7 @@ def wa_analysis_group(distance: int, cluster_id: int):
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
 
-    return render_template("wa_analysis_group.html",
+    return render_template("wa_analysis_group.html" if mode == "web" else "wa_analysis_group_export.html",
                             title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             genotype_id=genotype_id,
@@ -543,75 +508,6 @@ def wa_analysis_group(distance: int, cluster_id: int):
                             loci_values=loci_values,
                             distance=distance,
                             cluster_id=cluster_id)
-
-
-
-
-@app.route("/wa_analysis_group_export/<distance>/<cluster_id>")
-@fn.check_login
-def wa_analysis_group_export(distance: int, cluster_id: int):
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    # loci list
-    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
-    loci_list = {}
-    for row in cursor.fetchall():
-        loci_list[row["name"]] = row["n_alleles"]
-
-    # DBScan
-    cursor.execute(("SELECT wa_code, "
-                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                    "FROM wa_scat_tissue WHERE mtdna not like '%poor%'"
-                    )
-    )
-
-    wa_list = []
-    for row in cursor.fetchall():
-        if row["cluster_id"] == int(cluster_id):
-            wa_list.append(row["wa_code"])
-    wa_list_str = "','".join(wa_list)
-
-    # fetch grouped genotypes
-    cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap "
-                    "FROM wa_scat_tissue "
-                    f"WHERE wa_code in ('{wa_list_str}') "
-                    "GROUP BY genotype_id "
-                    "ORDER BY genotype_id ASC"))
-
-    genotype_id = cursor.fetchall()
-
-    loci_values = {}
-    data = {}
-    for row in genotype_id:
-
-        if row['genotype_id'] is None:
-            continue
-
-        cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s",
-                        [row['genotype_id']])
-        result = cursor.fetchone()
-        if result is None:
-            continue
-        data[row['genotype_id']] = dict(result)
-        data[row['genotype_id']]["n_recap"] = row["n_recap"]
-
-        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
-
-
-    return render_template("wa_analysis_group_export.html",
-                            title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
-                            loci_list=loci_list,
-                            genotype_id=genotype_id,
-                            data=data,
-                            loci_values=loci_values,
-                            distance=distance)
-
-
-
-
-
 
 
 

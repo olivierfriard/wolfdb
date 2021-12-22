@@ -13,9 +13,12 @@
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
 <th>{{ locus }} a</th>
+<th>Notes for {{ locus }} a</th>
 <th>{{ locus }} b</th>
+<th>Notes for {{ locus }} b</th>
 {% else %}
 <th>{{ locus }}</th>
+<th>Notes for {{ locus }}</th>
 <th></th>
 {% endif %}
 
@@ -52,28 +55,13 @@
 
 {% for locus in loci_values[genotype_id] %}
 
-<td>
+<td>{{ loci_values[genotype_id][locus]['a']['value'] }}</td>
 
+<td>{{ loci_values[genotype_id][locus]['a']['notes'] }}</td>
 
+<td>{{ loci_values[genotype_id][locus]['b']['value'] }}</td>
 
-{{ loci_values[genotype_id][locus]['a']['value'] }}<br>
-
-
-<!--
-<a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/a/{{ loci_values[genotype_id][locus]['a']['epoch'] }}">note</a>
--->
-</td>
-
-
-<td>
-
-{{ loci_values[genotype_id][locus]['b']['value'] }}<br>
-
-<!--
-
-<a href="/genotype_locus_note/{{ genotype_id }}/{{ locus }}/b/{{ loci_values[genotype_id][locus]['b']['epoch'] }}">note</a>
--->
-</td>
+<td>{{ loci_values[genotype_id][locus]['b']['notes'] }}</td>
 
 {% endfor %}
 
