@@ -100,9 +100,9 @@ def get_loci_value(genotype_id, loci_list):
 
 
 
-@app.route("/genotypes_list/<type>")
+@app.route("/genotypes_list/<mode>/<type>")
 @fn.check_login
-def all_genotypes_list(type):
+def genotypes_list(mode, type):
     """
     list of genotypes: all, temp, definitive
     """
@@ -132,7 +132,7 @@ def all_genotypes_list(type):
     for row in results:
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
-    return render_template("genotypes_list.html",
+    return render_template("genotypes_list.html" if mode == "web" else "genotypes_list_export.html",
                            title=title,
                            results=results,
                            loci_list=loci_list,

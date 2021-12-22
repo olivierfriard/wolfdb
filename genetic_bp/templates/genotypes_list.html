@@ -10,6 +10,12 @@
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 <a href="/genotypes" class="btn btn-primary">Genotypes</a>&nbsp;
 
+<a href="/genotypes_list/web/all" class="btn btn-primary">All genotypes</a>&nbsp;
+
+<a href="/genotypes_list/web/definitive" class="btn btn-primary">Definitive genotypes</a>&nbsp;
+
+<a href="/genotypes_list/web/temp" class="btn btn-primary">Temporary genotypes</a>&nbsp;
+
 <br>
 <br>
 
@@ -65,7 +71,7 @@
 
 <td>
 
-    {{ result['status_first_capture'] }}
+    {{ result['status_first_capture'] if result['status_first_capture'] is not none else ""}}
 
 </td>
 
@@ -91,38 +97,41 @@
 
 
 {% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
 
-{{ loci_values[result['genotype_id']][locus]['a']['value'] }}<br>
+{{ loci_values[result['genotype_id']][locus]['a']['value'] }}
 
 
 {% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
-</u>
+</span>
 {% endif %}
 
-<!--
+<br>
+<small>
 <a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a>
--->
+</small>
 
 </td>
 
 <td>
 
 {% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
-{{ loci_values[result['genotype_id']][locus]['b']['value'] }}<br>
+{{ loci_values[result['genotype_id']][locus]['b']['value'] }}
 
 {% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
-</u>
+</span>
 {% endif %}
 
-<!--
+<br>
+<small>
 <a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a>
--->
+</small>
+
 </td>
 
 {% endfor %}
