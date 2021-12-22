@@ -1,0 +1,33 @@
+{% extends "bootstrap.html" %}
+
+
+{% block content %}
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
+
+
+
+
+<br>
+<br>
+
+<h3>Genotype ID: <b>{{ genotype_id }}</b></h3>
+
+
+<form method="POST" action="/set_pack/{{ genotype_id }}">
+
+Current pack:<br>
+<input type="text"  id="pack" name="pack" value="{{ current_pack }}"><br>
+<br>
+<button type="submit" class="btn btn-primary" >Submit</button>
+
+<input type="hidden" name="return_url" value="{{ return_url }}">
+</form>
+
+{% endblock %}
