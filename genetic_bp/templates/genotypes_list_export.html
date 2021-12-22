@@ -1,0 +1,97 @@
+<table class="table table-striped">
+<tr>
+<th>Genotype ID</th>
+<th>Date</th>
+<th>Pack</th>
+<th>Sex</th>
+<th>Age first capture</th>
+<th>status first capture</th>
+<th>dispersal</th>
+<th>n recaptures</th>
+<th>dead recovery</th>
+
+
+{% for locus in loci_list %}
+{% if loci_list[locus] == 2%}
+<th>{{ locus }} a</th>
+<th>Notes for {{ locus }} a</th>
+<th>{{ locus }} b</th>
+<th>Notes for {{ locus }} b</th>
+{% else %}
+<th>{{ locus }}</th>
+<th>Notes for {{ locus }}</th>
+<th></th>
+{% endif %}
+
+{% endfor %}
+
+</tr>
+{% for result in results %}
+
+<tr>
+<td>{{ result['genotype_id'] }}</td>
+
+<td>
+    {% if result['date'] %}{{ result['date'] }}{% endif %}
+</td>
+
+
+<td>
+    {% if result['pack'] %}{{ result['pack'] }}{% endif %}
+</td>
+
+<td>
+    {% if result['sex'] %}{{ result['sex'] }}{% endif %}
+</td>
+
+<td>
+    {% if result['age_first_capture'] %}{{ result['age_first_capture'] }}{% endif %}
+</td>
+
+<td>
+
+    {{ result['status_first_capture'] if result['status_first_capture'] is not none else ""}}
+
+</td>
+
+
+<td>
+    {% if result['dispersal'] %}{{ result['dispersal'] }}{% endif %}
+
+</td>
+
+    <td>
+        {% if result['n_recaptures'] %}{{ result['n_recaptures'] }}{% endif %}
+    </td>
+
+    <td>
+        {% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}
+    </td>
+
+
+
+{% for locus in loci_values[result['genotype_id']] %}
+
+<td>{{ loci_values[result['genotype_id']][locus]['a']['value'] }}</td>
+
+<td>{{ loci_values[result['genotype_id']][locus]['a']['notes'] }}</td>
+
+<td>{{ loci_values[result['genotype_id']][locus]['b']['value'] }}</td>
+
+<td>{{ loci_values[result['genotype_id']][locus]['b']['notes'] }}</td>
+
+{% endfor %}
+
+
+
+
+
+
+</tr>
+{% endfor %}
+
+
+</table>
+
+
+

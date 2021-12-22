@@ -134,11 +134,10 @@ def genotypes_list(mode, type):
 
     return render_template("genotypes_list.html" if mode == "web" else "genotypes_list_export.html",
                            title=title,
+                           type=type,
                            results=results,
                            loci_list=loci_list,
                            loci_values=loci_values)
-
-
 
 
 

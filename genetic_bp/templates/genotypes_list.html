@@ -10,17 +10,22 @@
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 <a href="/genotypes" class="btn btn-primary">Genotypes</a>&nbsp;
 
-<a href="/genotypes_list/web/all" class="btn btn-primary">All genotypes</a>&nbsp;
+<a href="/genotypes_list/web/all" class="btn btn-primary">All</a>&nbsp;
 
-<a href="/genotypes_list/web/definitive" class="btn btn-primary">Definitive genotypes</a>&nbsp;
+<a href="/genotypes_list/web/definitive" class="btn btn-primary">Definitive</a>&nbsp;
 
-<a href="/genotypes_list/web/temp" class="btn btn-primary">Temporary genotypes</a>&nbsp;
+<a href="/genotypes_list/web/temp" class="btn btn-primary">Temporary</a>&nbsp;
 
 <br>
 <br>
 
 {% if results %}
 <h2>{{ title }}</h2>
+
+
+<br><a href="/genotypes_list/export/{{type }}" class="btn btn-info" target="_blank">Export data</a><br>
+<br>
+
 <table class="table table-striped">
 <tr>
 <th>Genotype ID</th>
