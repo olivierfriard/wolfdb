@@ -30,6 +30,7 @@
 <tr>
 <th></th>
 <th>Genotype ID</th>
+<th>Other ID</th>
 <th>Date</th>
 <th>Pack</th>
 <th>Sex</th>
@@ -66,6 +67,8 @@
 </td>
 
 <td><a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a></td>
+
+<td><a href="/view_genotype/{{ result['tmp_id'] }}" >{{ result['tmp_id'] }}</a></td>
 
 <td>
     {% if result['date'] %}{{ result['date'] }}{% endif %}
