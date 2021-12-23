@@ -28,6 +28,7 @@
 
 <table class="table table-striped">
 <tr>
+<th></th>
 <th>Genotype ID</th>
 <th>Date</th>
 <th>Pack</th>
@@ -53,9 +54,18 @@
 {% for result in results %}
 
 <tr>
+
 <td>
-    <a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a>&nbsp;
+<a href="/set_status/{{ result['genotype_id'] }}" class="btn btn-sm btn-outline-primary text-nowrap">Set status</a>
+<a href="/set_pack/{{ result['genotype_id'] }}" class="btn btn-sm btn-outline-primary text-nowrap ">Set pack</a><br>
+{% if result["working_notes"] %}
+<a class="btn btn-sm btn-outline-danger" href="/genotype_note/{{ result['genotype_id'] }}">notes</a>
+{% else %}
+<a class="btn btn-sm btn-outline-primary" href="/genotype_note/{{ result['genotype_id'] }}">notes</a>
+{% endif %}
 </td>
+
+<td><a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a></td>
 
 <td>
     {% if result['date'] %}{{ result['date'] }}{% endif %}
