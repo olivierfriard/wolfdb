@@ -119,10 +119,12 @@ def genotypes_list(mode, type):
         cursor.execute("SELECT * FROM genotypes ORDER BY genotype_id")
         results = cursor.fetchall()
         title = f"List of all {len(results)} genotypes"
+
     if type == "definitive":
         cursor.execute("SELECT * FROM genotypes WHERE status = 'OK' ORDER BY genotype_id")
         results = cursor.fetchall()
         title = f"List of {len(results)} definitive genotypes"
+
     if type == "temp":
         cursor.execute("SELECT * FROM genotypes WHERE status != 'OK' ORDER BY genotype_id")
         results = cursor.fetchall()
@@ -692,6 +694,43 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
 
 
 
+@app.route("/genotype_note/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
+def genotype_note(genotype_id):
+    """
+    let user add a note on genotype_id (working_notes)
+    """
+
+    data = {"genotype_id": genotype_id, "return_url": request.referrer}
+
+    if request.method == "GET":
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        cursor.execute(("SELECT working_notes FROM genotypes WHERE genotype_id = %s"), [genotype_id])
+                       
+        notes_row = cursor.fetchone()
+        if notes_row is None:
+            return "Genotype ID not found"
+        
+        data["working_notes"] = "" if notes_row["working_notes"] is None else notes_row["working_notes"]
+        return render_template("add_genotype_note.html",
+                               data=data)
+
+    if request.method == "POST":
+
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = ("UPDATE genotypes SET working_notes = %(working_notes)s "
+               "WHERE genotype_id = %(genotype_id)s")
+
+        data["working_notes"] = request.form["working_notes"]
+
+        cursor.execute(sql, data)
+        connection.commit()
+
+        return redirect(request.form["return_url"])
 
 
 

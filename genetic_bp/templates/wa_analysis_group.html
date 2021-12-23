@@ -59,32 +59,28 @@
 
 <tr>
 <td>
+<a href="/set_status/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap">Set status</a>
+<a href="/set_pack/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap ">Set pack</a><br>
 
-    <a href="/set_status/{{ genotype_id }}" class="btn btn-sm btn-primary">Set status</a>
-
-    <a href="/set_pack/{{ genotype_id }}" class="btn btn-sm btn-primary">Set pack</a><br>
+{% if data[genotype_id]["working_notes"] %}
+<a class="btn btn-sm  btn-outline-danger" href="/genotype_note/{{ genotype_id }}">notes</a>
+{% else %}
+<a class="btn btn-sm  btn-outline-primary" href="/genotype_note/{{ genotype_id }}">notes</a>
+{% endif %}
+    
 
 </td>
 
-<td>
-    <a href="/view_genotype/{{ genotype_id }}">{{ genotype_id }}</a>
+<td><a href="/view_genotype/{{ genotype_id }}" target="_blank">{{ genotype_id }}</a>
 </td>
 
-<td>
-    {{ data[genotype_id]["sex"] }}
-</td>
+<td>{{ data[genotype_id]["sex"] }}</td>
 
-<td>
-    {{ data[genotype_id]["position"] if data[genotype_id]["position"] is not none else "" }}
-</td>
+<td>{{ data[genotype_id]["position"] if data[genotype_id]["position"] is not none else "" }}</td>
 
-<td>
-    {{ data[genotype_id]["pack"] if data[genotype_id]["pack"] is not none else "" }}
-</td>
+<td>{{ data[genotype_id]["pack"] if data[genotype_id]["pack"] is not none else "" }}</td>
 
-<td>
-    {{ data[genotype_id]["n_recap"] if data[genotype_id]["n_recap"] is not none else "" }}
-</td>
+<td>{{ data[genotype_id]["n_recap"] if data[genotype_id]["n_recap"] is not none else "" }}</td>
 
 
 
