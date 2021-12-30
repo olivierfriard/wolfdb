@@ -74,6 +74,7 @@ def rev_geocoding(east, north ,zone):
 
     return r
 
+
 @app.route("/view_sample/<sample_id>")
 @fn.check_login
 def view_sample(sample_id):

@@ -36,22 +36,18 @@
 <th>Sample ID</th>
 <th>Date</th>
 <th>Municipality</th>
-<th>Coordinates WGS84 UTM zone 32N</th>
+<th>Coordinates<br><small>WGS84 UTM zone 32N</small></th>
 <th>mtDNA result</th>
 <th>Genotype ID</th>
 <th>Sex</th>
 
 {% for locus in loci_list %}
-{% if loci_list[locus] == 2%}
-<th>{{ locus }} a</th>
-<th>{{ locus }} b</th>
+{% if loci_list[locus] == 2%}<th>{{ locus }} a</th><th>{{ locus }} b</th>
 {% else %}
 <th>{{ locus }}</th>
 <th></th>
 {% endif %}
-
 {% endfor %}
-
 
 </tr>
 {% for result in wa_scats %}
@@ -64,49 +60,21 @@
 </td>
 
 
-<td>
-    <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
-</td>
+<td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
 
-<td>
-    {% if result['sample_id'] %}{{ result['sample_id'] }}{% endif %}
-</td>
+<td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
 
-<td>
-    {% if result['date'] %}{{ result['date'] }}{% endif %}
-</td>
+<td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
 
-<td>
-    {% if result['municipality'] %}{{ result['municipality'] }}{% endif %}
-</td>
+<td>{% if result['municipality'] %}<small>{{ result['municipality'] }}</small>{% endif %}</td>
 
-<td>
+<td><small>East: {{ result['coord_east'] }}, North: {{ result['coord_north'] }}</small></td>
 
-    {{ result['coord_east'] }}, {{ result['coord_north'] }}
+<td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
-</td>
+<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}</td>
 
-
-<td>
-    {% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}
-
-</td>
-
-    <td>
-        {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
-    </td>
-
-
-    <td>
-        {% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}
-    </td>
-
-
-
-
-
-
-
+<td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
 
 
 

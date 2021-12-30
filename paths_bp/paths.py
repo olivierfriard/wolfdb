@@ -42,6 +42,11 @@ def view_path(path_id):
     cursor.execute("SELECT *, (select count(*) from scats where scats.path_id=paths.path_id) as n_scats FROM paths WHERE path_id = %s",
                    [path_id])
     path = cursor.fetchone()
+    if path is None:
+        return render_template("view_path.html",
+                               path={"path_id": ""},
+                               path_id=path_id
+                               )
 
 
     # relative transect
@@ -92,8 +97,6 @@ def view_path(path_id):
         scat_features.append(scat_feature)
 
         center = f"{scat['latitude']}, {scat['longitude']}"
-
-
 
 
     # n tracks
