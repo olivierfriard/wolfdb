@@ -132,7 +132,7 @@ def view_scat(scat_id):
 
     # transect
     if results["path_id"]:  # Systematic sampling
-        transect_id = "_".join(results["path_id"].split("_")[:-1])
+        transect_id = results["path_id"].split("|")[0]
 
         cursor.execute("SELECT ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson FROM transects WHERE transect_id = %s",
                     [transect_id])
@@ -275,7 +275,7 @@ def new_scat():
                 return not_valid("The scat_id value is not correct")
 
             # path id
-            path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
+            path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
 
             # region
             if len(request.form["province"]) == 2:
@@ -392,7 +392,7 @@ def edit_scat(scat_id):
 
             # path id
             if request.form["sampling_type"] == "Systematic":
-                path_id = request.form["path_id"].split(" ")[0] + "_" + date[2:].replace("-", "")
+                path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
             else:
                 path_id = ""
 
@@ -523,9 +523,6 @@ def extract_data_from_xlsx(filename):
         except Exception:
             out += fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}")
 
-            #return True, fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}"), {}, {}, {}
-
-
         # check date
         try:
             date_from_file = str(data["date"]).split(" ")[0].strip()
@@ -535,7 +532,6 @@ def extract_data_from_xlsx(filename):
 
         if date != date_from_file:
             out += fn.alert_danger(f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}")
-            #return True, fn.alert_danger(f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}"), {}, {}, {}
 
         data["date"] = date_from_file
 
@@ -713,7 +709,7 @@ def load_scats_xlsx():
 
         r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
         if r:
-            msg = f"File name: {new_file.filename}<br>" + msg
+            msg = Markup(f"File name: {new_file.filename}<br>" + msg)
             flash(msg)
             return redirect(f"/load_scats_xlsx")
 
@@ -943,9 +939,9 @@ def check_systematic_scats_transect_location():
         cursor.execute(sql2)
         transect = cursor.fetchone()
 
-        path_id = row["path_id"].replace(" ", "_")
+        path_id = row["path_id"].replace(" ", "|")
 
-        if path_id.startswith(transect["transect_id"] + "_"):
+        if path_id.startswith(transect["transect_id"] + "|"):
             match = "OK"
         else:
             match = "NO"

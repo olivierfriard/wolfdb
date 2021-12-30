@@ -48,7 +48,7 @@ def get_path_id(transect_id: str, date: str) -> str:
     returns path_id
     date must be in ISO8601 format
     """
-    return str(transect_id) + "_" + date[2:].replace("-", "")
+    return str(transect_id) + "|" + date[2:].replace("-", "")
 
 
 def all_transect_id():
