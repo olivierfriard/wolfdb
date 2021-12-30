@@ -48,7 +48,9 @@ app.debug = params["debug"]
 @app.route("/")
 @fn.check_login
 def home():
-    return render_template("home.html", mode=params["mode"])
+    return render_template("home.html",
+                           header_title="Home",
+                           mode=params["mode"])
 
 
 @app.route("/version")
@@ -108,7 +110,6 @@ def delete_paths():
     cursor.execute("DELETE FROM paths")
     connection.commit()
     return redirect("/")
-
 
 
 
