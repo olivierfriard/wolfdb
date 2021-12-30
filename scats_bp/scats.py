@@ -60,7 +60,8 @@ def error_info(exc_info: tuple) -> tuple:
 @app.route("/scats")
 @fn.check_login
 def scats():
-    return render_template("scats.html")
+    return render_template("scats.html",
+                           header_title="Scats")
 
 
 
