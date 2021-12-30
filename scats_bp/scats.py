@@ -161,6 +161,7 @@ def view_scat(scat_id):
         transect_features = []
 
     return render_template("view_scat.html",
+                           header_title=f"Scat ID: {scat_id}",
                            results=results,
                            transect_id=transect_id,
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features))
@@ -173,6 +174,7 @@ def plot_all_scats():
     """
     plot all scats
     """
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
@@ -196,8 +198,9 @@ def plot_all_scats():
     transect_features = []
 
     return render_template("plot_all_scats.html",
+                           header_title="Plot of scats",
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=7))
-                           )
+                          )
 
 
 
@@ -218,6 +221,7 @@ def scats_list():
     cursor.execute("SELECT * FROM scats ORDER BY scat_id")
 
     return render_template("scats_list.html",
+                           header_title="List of scats",
                             n_scats=n_scats,
                             results=cursor.fetchall())
 
@@ -235,10 +239,11 @@ def new_scat():
         flash(Markup(f"<b>{msg}</b>"))
 
         return render_template("new_scat.html",
-                            title="New scat",
-                            action=f"/new_scat",
-                            form=form,
-                            default_values=default_values)
+                               header_title="New scat",
+                               title="New scat",
+                               action=f"/new_scat",
+                               form=form,
+                               default_values=default_values)
 
 
     if request.method == "GET":

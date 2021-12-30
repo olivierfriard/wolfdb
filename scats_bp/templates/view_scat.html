@@ -1,10 +1,9 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
+
+{% block content %}
 
 <script src="https://unpkg.com/htmx.org@1.6.0"></script>
 
-<main class="flex-shrink-0">
-
-<div class="container">
 
 
 <h1>WolfDB</h1>
@@ -97,19 +96,13 @@
 
 </table>
 
-
 <h2>Map</h2>
-
 
 <div id="map" style="width: 800px; height: 800px;"></div>
 
-
-
 {{ map }}
 
-</div>
-</main>
-
+{% endblock %}
 
 
 

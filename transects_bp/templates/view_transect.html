@@ -1,10 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
-
-<main class="flex-shrink-0">
-
-<div class="container">
-
+{% block content %}
 
 <h1>WolfDB</h1>
 <hr>
@@ -108,8 +104,6 @@ No paths found
 
 
 
-
-
 <h2>Snow tracking</h2>
 
 {% if snowtracks %}
@@ -179,13 +173,7 @@ Transect ID <b>{{transect_id}}</b> not found
 
 {% endif %}
 
-
-
-</div>
-</main>
-
-
-
+{% endblock %}
 
 
 

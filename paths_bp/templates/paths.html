@@ -1,10 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
-
-<main class="flex-shrink-0">
-
-<div class="container">
-
+{% block content %}
 
 <h1>WolfDB - Paths</h1>
 <hr>
@@ -19,8 +15,5 @@
 <a href="/new_path" class="btn btn-primary">Insert a new path</a>
 
 
-</div>
-
-</main>
-
+{% endblock %}
 

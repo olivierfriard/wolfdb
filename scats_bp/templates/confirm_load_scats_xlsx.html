@@ -1,4 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
+
+{% block content %}
 
 <script src="https://unpkg.com/htmx.org@1.6.0"></script>
 
@@ -67,15 +69,4 @@
 
 </table>
 
-
-
-</div>
-</main>
-
-</body>
-</html>
-
-
-
-
-
+{% endblock %}

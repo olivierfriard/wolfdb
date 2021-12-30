@@ -27,7 +27,8 @@ params = config()
 
 @app.route("/transects")
 def transects():
-    return render_template("transects.html")
+    return render_template("transects.html",
+                           header_title="Transects",)
 
 
 
@@ -86,6 +87,7 @@ def view_transect(transect_id):
     results_snowtracks = cursor.fetchall()
 
     return render_template("view_transect.html",
+                            header_title=f"Transect ID: {transect_id}",
                             transect=transect,
                             paths=results_paths,
                             snowtracks=results_snowtracks,
@@ -107,6 +109,7 @@ def transects_list():
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
 
     return render_template("transects_list.html",
+                            header_title="List of transects",
                            n_transects=n_transects,
                            results=cursor.fetchall())
 
@@ -241,7 +244,7 @@ def edit_transect(transect_id):
 
 @app.route("/del_transect/<transect_id>")
 @fn.check_login
-def del_scat(transect_id):
+def del_transect(transect_id):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -256,6 +259,40 @@ def del_scat(transect_id):
                    [transect_id])
     connection.commit()
     return redirect("/transects_list")
+
+
+@app.route("/plot_transects")
+@fn.check_login
+def plot_transects():
+    """
+    Plot all transects
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_lonlat FROM transects")
+
+    transects_features = []
+    for row in cursor.fetchall():
+        transect_geojson = json.loads(row["transect_lonlat"])
+
+        transect_feature = {"geometry": dict(transect_geojson),
+                        "type": "Feature",
+                        "properties": {
+                            #"style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
+                                       "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
+                                      },
+                        "id": row["transect_id"]
+                   }
+
+        transects_features.append(dict(transect_feature))
+
+    center = f"45 , 9"
+
+    return render_template("plot_transects.html",
+                           header_title="Plot of transects",
+                           map=Markup(fn.leaflet_geojson(center, [], transects_features, zoom=7))
+                          )
 
 
 

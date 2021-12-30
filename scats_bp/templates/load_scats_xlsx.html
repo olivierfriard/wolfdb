@@ -1,10 +1,8 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
+
+{% block content %}
 
 <script src="https://unpkg.com/htmx.org@1.6.0"></script>
-
-<main class="flex-shrink-0">
-
-<div class="container">
 
 
 <h1>WolfDB</h1>
@@ -46,14 +44,5 @@
 
   </form>
 
-
-</div>
-</main>
-
-</body>
-</html>
-
-
-
-
+  {% endblock %}
 

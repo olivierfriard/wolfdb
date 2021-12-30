@@ -1,9 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
-
-<main class="flex-shrink-0">
-
-<div class="container">
+{% block content %}
 
 
 <h1>WolfDB</h1>
@@ -11,7 +8,7 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/paths_list" class="btn btn-primary">Paths</a>
+<a href="/paths" class="btn btn-primary">Paths</a>
 
 <br>
 <br>
@@ -62,9 +59,7 @@
 
 {% endif %}
 
-</div>
-</main>
-
+{% endblock %}
 
 
 

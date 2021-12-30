@@ -27,7 +27,8 @@ params = config()
 @app.route("/paths")
 @fn.check_login
 def paths():
-    return render_template("paths.html")
+    return render_template("paths.html",
+                            header_title="Paths")
 
 
 @app.route("/view_path/<path_id>")
@@ -47,7 +48,6 @@ def view_path(path_id):
                                path={"path_id": ""},
                                path_id=path_id
                                )
-
 
     # relative transect
     transect_id = path["transect_id"]
@@ -70,7 +70,6 @@ def view_path(path_id):
     else:
         transect_features = []
         center = ""
-
 
     # scats
     cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
@@ -105,6 +104,7 @@ def view_path(path_id):
 
 
     return render_template("view_path.html",
+                           header_title=f"path ID: {path_id}",
                            path=path,
                            n_tracks=n_tracks,
                            path_id=path_id,
@@ -146,9 +146,10 @@ def paths_list():
     n_paths = len(results)
 
     return render_template("paths_list.html",
+                           header_title="List of paths",
                            n_paths=n_paths,
                            results=results,
-                            )
+                          )
 
 
 

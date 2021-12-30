@@ -1,9 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
-
-<main class="flex-shrink-0">
-
-<div class="container">
+{% block content %}
 
 
 <h1>WolfDB</h1>
@@ -65,13 +62,4 @@
 
 {% endif %}
 
-
-
-</div>
-
-</main>
-
-
-
-
-
+{% endblock %}
