@@ -49,14 +49,15 @@ out += "<h1>Location on transects for scats from systematic sample</h1>\n"
 
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
 
-# out += f"{len(scats)} systematic scats.<br>\n"
+out += f"{len(scats)} systematic scats.<br>\n"
 
 out += '<table class="table table-striped">\n'
 
 out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
 
 
-
+out2 = ""
+c = 0
 for row in scats:
 
     sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
@@ -68,13 +69,30 @@ for row in scats:
 
     if path_id.startswith(transect["transect_id"] + "|"):
         match = "OK"
-        out += '<tr>'
+        out2 += '<tr>'
     else:
         match = "NO"
-        out += '<tr class="table-danger">'
+        c += 1
+        out2 += '<tr class="table-danger">'
 
     if match == "NO":
-        out += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
+        out2 += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
+
+
+out += "<h1>Location on transects for scats from systematic sample</h1>\n"
+
+out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
+
+out += f"{len(scats)} systematic scats.<br>\n"
+
+out += f"{c} scat positions that does not match the transect ID.<br>\n"
+
+out += '<table class="table table-striped">\n'
+
+out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
+
+out += out2
+
 
 out += "</table>\n"
 
