@@ -32,15 +32,6 @@ main > .container {
 </head>
 """
 
-out += "<h1>Location on transects for scats from systematic sample</h1>\n"
-
-out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
-
-
-out += '<table class="table table-striped">\n'
-
-out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
-
 sql = """
 SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance
 FROM transects
@@ -52,6 +43,20 @@ cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
 scats = cursor.fetchall()
+
+
+out += "<h1>Location on transects for scats from systematic sample</h1>\n"
+
+out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
+
+# out += f"{len(scats)} systematic scats.<br>\n"
+
+out += '<table class="table table-striped">\n'
+
+out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
+
+
+
 for row in scats:
 
     sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
@@ -59,9 +64,9 @@ for row in scats:
     cursor.execute(sql2)
     transect = cursor.fetchone()
 
-    path_id = row["path_id"].replace(" ", "_")
+    path_id = row["path_id"].replace(" ", "|")
 
-    if path_id.startswith(transect["transect_id"] + "_"):
+    if path_id.startswith(transect["transect_id"] + "|"):
         match = "OK"
         out += '<tr>'
     else:
