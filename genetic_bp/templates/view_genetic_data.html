@@ -42,11 +42,11 @@
 </td>
 
 <td>{% if data[locus]['a']['value'] %}{{ data[locus]['a']['value'] }}{% else %}-{% endif %}</td>
-<td><small>{{ data[locus]['a']['date'] }}</small></td>
+<td><small>{% if data[locus]['a']['value'] %}{{ data[locus]['a']['date'] }}{% endif %}</small></td>
 <td><small>{{ data[locus]['a']['notes'] }}</small></td>
 
 <td>{% if data[locus]['b']['value'] %}{{ data[locus]['b']['value'] }}{% else %}-{% endif %}</td>
-<td><small>{{ data[locus]['b']['date'] }}</small></td>
+<td><small>{% if data[locus]['b']['value'] %}{{ data[locus]['b']['date'] }}{% endif %}</small></td>
 <td><small>{{ data[locus]['b']['notes'] }}</small></td>
 
 

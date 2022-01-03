@@ -1,4 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
+
+{% block content %}
 
 <script>
     function sampling_type_changed(selectObject) {
@@ -12,23 +14,18 @@
           }
 
     }
-    </script>
+</script>
 
 
-<body>
+<h1>WolfDB</h1>
+<hr>
 
-<main class="flex-shrink-0">
-<div class="container">
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-    <h1>WolfDB</h1>
-    <hr>
-
-    <a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-    <a href="/tracks" class="btn btn-primary">Tracks</a>
+<a href="/tracks" class="btn btn-primary">Tracks</a>
 
 
-    <br><br>
+<br><br>
 
 
 
@@ -193,12 +190,4 @@
 </form>
 
 
-
-
-
-</div>
-
-</main>
-
-</body>
-</html>
+{% endblock %}
