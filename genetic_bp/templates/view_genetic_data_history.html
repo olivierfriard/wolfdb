@@ -1,9 +1,7 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
+{% block content %}
 
-<main class="flex-shrink-0">
-
-<div class="container">
 
 
 <h1>WolfDB</h1>
@@ -23,25 +21,23 @@
 
 <table class="table table-striped">
 <tr>
-<th></th>
-<th></th>
+<th>Allele</th>
+<th>Value</th>
 <th>Date</th>
 <th>Notes</th>
 </tr>
-{% for result in results %}
+{% for row in locus_values %}
 
 <tr>
-<td>{{ result["value1"]}}</td>
-<td>
-{% if locus != "SRY" %}
-    {{ result["value2"] }}
-{% endif %}
+<td>{{ row["allele"] }}</td>
+<td>{{ row["val"] }}</td>
+<td>{{ row["notes"] }}</td>
+<td>{{ row["formated_timestamp"] }}</td>
 
-</td>
-<td>{{ result["formated_timestamp"]}}</td>
-<td>{{ result["notes"]}}</td>
 </tr>
 
 {% endfor %}
 
 </table>
+
+{% endblock %}

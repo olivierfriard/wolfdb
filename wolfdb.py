@@ -38,7 +38,6 @@ app.register_blueprint(transects.app)
 app.register_blueprint(snowtracks.app)
 app.register_blueprint(genetic.app)
 app.register_blueprint(dead_wolves.app)
-#app.register_blueprint(wa.app)
 
 params = config()
 app.debug = params["debug"]

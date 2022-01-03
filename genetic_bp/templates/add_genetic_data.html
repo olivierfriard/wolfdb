@@ -17,11 +17,6 @@
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
 
-<!--
-    <a href="/add_genetic_data/{{wa_code}}" class="btn btn-primary">Add genetic data</a>&nbsp;
--->
-
-
 
 
 {% if mode != "view" %}
@@ -31,8 +26,9 @@
 <tr>
 
 <th>Locus</th>
-<th></th>
-<th></th>
+<th>Allele a</th>
+<th>Notes</th>
+<th>Allele b</th>
 <th>Notes</th>
 
 <th>History</th>
@@ -46,14 +42,17 @@
 
 </td>
 
-<td><input type="TEXT" id="{{ locus['name'] }}_1" name="{{ locus['name'] }}_1" value=""></td>
+<td><input type="TEXT" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value=""></td>
 
-<td>
-    {% if locus['name'] != "SRY" %}
-    <input type="TEXT" id="{{ locus['name'] }}_2" name="{{ locus['name'] }}_2" value="">
+<td><input type="TEXT" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""></td>
+
+{% if locus['n_alleles'] == 2 %}
+<td><input type="TEXT" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value=""></td>
+<td><input type="TEXT" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""></td>
+{% else %}
+<td></td>
+<td></td>
 {% endif %}
-</td>
-<td><input type="TEXT" id="{{ locus['name'] }}_notes" name="{{ locus['name'] }}_notes" value=""></td>
 
 <td><a href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
 

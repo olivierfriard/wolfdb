@@ -1,9 +1,7 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
+{% block content %}
 
-<main class="flex-shrink-0">
-
-<div class="container">
 
 
 <h1>WolfDB - Dead wolves</h1>
@@ -25,9 +23,6 @@
 <br>
 <a href="/plot_dead_wolves" class="btn btn-primary">Plot dead wolves</a>
 
-
-</div>
-
-</main>
+{% endblock %}
 
 

@@ -331,9 +331,8 @@ def wa_genetic_samples(mode):
                     "ORDER BY wa_code"))
     '''
 
-
-    cursor.execute("select * from wa_scat_tissue where mtdna not like '%poor%' ORDER BY wa_code")
-
+    # TODO: check why 583 and 585
+    cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna not like '%poor%' ORDER BY wa_code")
 
     wa_scats = cursor.fetchall()
     loci_values = {}
@@ -412,8 +411,8 @@ def wa_analysis(distance: int, cluster_id: int):
                     f"WHERE wa_code in ('{wa_list_str}') "
                     "ORDER BY wa_code ASC"))
 
-
     wa_scats = cursor.fetchall()
+
     loci_values = {}
     for row in wa_scats:
         loci_values[row["wa_code"]] = {}
@@ -422,10 +421,6 @@ def wa_analysis(distance: int, cluster_id: int):
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
         for locus in loci_list:
-            '''
-            cursor.execute(("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp, notes FROM wa_locus "
-                            "WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 "), [row["wa_code"], locus])
-            '''
 
             cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
                             "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
@@ -533,32 +528,65 @@ def view_genetic_data(wa_code):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM loci ")
-    loci = cursor.fetchall()
-    data = {}
-    for locus in loci:
-        data[locus["name"]] = {"value1": "", "value2": "", "timestamp": "", "notes": ""}
 
-    cursor.execute("SELECT * FROM wa_locus WHERE wa_code = %s ORDER BY locus, timestamp", [wa_code])
+    # loci list
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    loci_list = {}
     for row in cursor.fetchall():
-        data[row['locus']] =  {"value1": row['value1'], "value2": row['value2'], "timestamp": str(row['timestamp']).split(".")[0], "notes": row['notes']}
+        loci_list[row["name"]] = row["n_alleles"]
+
+    loci_values = {}
+    for locus in loci_list:
+        loci_values[locus] = {}
+        loci_values[locus]['a'] = {"value": "-", "notes": "" }
+        loci_values[locus]['b'] = {"value": "-", "notes": "" }
+
+    for locus in loci_list:
+        '''
+        cursor.execute(("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp, notes FROM wa_locus "
+                        "WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 "), [row["wa_code"], locus])
+        '''
+
+        cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
+                        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
+                        "FROM wa_locus2 "
+                        "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
+                        "UNION "
+                        "SELECT *, extract(epoch from timestamp)::integer AS epoch, "
+                        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
+                        "FROM wa_locus2 "
+                        "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
+                        "ORDER BY timestamp DESC LIMIT 2"
+                        ),
+                        {"wa_code": wa_code, "locus": locus})
+
+        locus_val = cursor.fetchall()
+        for row2 in locus_val:
+            val = row2["val"] if row2["val"] is not None else "-"
+            notes = row2["notes"] if row2["notes"] is not None else ""
+            epoch = row2["epoch"] if row2["epoch"] is not None else ""
+            date = row2["formated_timestamp"] if row2["formated_timestamp"] is not None else ""
+
+            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch, "date": date}
+
 
     return render_template("view_genetic_data.html",
+                           header_title=f"{wa_code} genetic data",
                            wa_code=wa_code,
-                           loci=loci,
-                           data=data)
-
+                           loci_list=loci_list,
+                           data=loci_values)
 
 
 @app.route("/add_genetic_data/<wa_code>", methods=("GET", "POST",))
 @fn.check_login
 def add_genetic_data(wa_code):
 
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM loci ORDER BY position")
+    loci=cursor.fetchall()
+
     if request.method == "GET":
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM loci ")
-        loci = cursor.fetchall()
 
         return render_template("add_genetic_data.html",
                                 wa_code=wa_code,
@@ -567,19 +595,13 @@ def add_genetic_data(wa_code):
                                 )
 
     if request.method == "POST":
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM loci ")
-        loci=cursor.fetchall()
         for locus in loci:
-            if request.form[locus['name'] + "_1"] or (locus['name'] != "SRY" and request.form[locus['name'] + "_2"]):
-                cursor.execute("INSERT INTO wa_locus (wa_code, locus, value1, value2, timestamp, notes) VALUES (%s, %s, %s, %s, NOW(), %s) ",
-                           [wa_code, locus['name'],
-                           int(request.form[locus['name'] + "_1"]) if request.form[locus['name'] + "_1"] else None,
-
-                           int(request.form[locus['name'] + "_2"]) if (locus['name'] != "SRY" and request.form[locus['name'] + "_2"]) else None,
-
-                           request.form[locus['name'] + "_notes"] if request.form[locus['name'] + "_notes"] else None
+            for allele in ["a", "b"]:
+                if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
+                    cursor.execute("INSERT INTO wa_locus2 (wa_code, locus, allele, val, timestamp, notes) VALUES (%s, %s, %s, %s, NOW(), %s) ",
+                           [wa_code, locus['name'], allele,
+                           int(request.form[locus['name'] + f"_{allele}"]) if request.form[locus['name'] +f"_{allele}"] else None,
+                           request.form[locus['name'] + f"_{allele}_notes"] if request.form[locus['name'] + f"_{allele}_notes"] else None
                            ])
 
         cursor.execute("UPDATE scats SET genetic_sample = 'Yes' WHERE wa_code = %s", [wa_code])
@@ -595,14 +617,23 @@ def view_genetic_data_history(wa_code, locus):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp FROM wa_locus WHERE wa_code = %s AND locus = %s ORDER by timestamp DESC", [wa_code, locus])
-    results = cursor.fetchall()
+
+    locus_values = {"a": {"value": "-", "notes": ""}, "b": {"value": "-", "notes": ""}}
+
+    cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
+                    "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
+                    "FROM wa_locus2 "
+                    "WHERE wa_code = %(wa_code)s AND locus = %(locus)s "
+                    "ORDER BY timestamp DESC, allele ASC"
+                    ),
+                    {"wa_code": wa_code, "locus": locus})
+
+    locus_values = cursor.fetchall()
 
     return render_template("view_genetic_data_history.html",
-                            results = results,
-                            wa_code=wa_code,
-                            locus=locus)
-
+                           header_title=f"{wa_code} genetic data",
+                           wa_code=wa_code,
+                           locus_values=locus_values)
 
 
 
