@@ -454,6 +454,7 @@ def wa_analysis(distance: int, cluster_id: int):
 
 
     return render_template("wa_analysis.html",
+                            header_title = f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
                             title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             wa_scats=wa_scats,
@@ -516,6 +517,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 
 
     return render_template("wa_analysis_group.html" if mode == "web" else "wa_analysis_group_export.html",
+                            header_title = f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
                             title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                             loci_list=loci_list,
                             genotype_id=genotype_id,

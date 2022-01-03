@@ -25,7 +25,7 @@
 <table class="table table-striped">
 
 
-<tr><td>Genotype ID</td><td>{{ results["genotype_id"] }}</td></tr>
+
 
 
 </table>
@@ -96,29 +96,25 @@
 
 <table class="table table-striped">
 
+    <tr><td>Genotype ID</td><td>
+        {% if wa_result["genotype_id"] %}
+        <a href="/view_genotype/{{ wa_result["genotype_id"] }}">{{ wa_result["genotype_id"] }}</a>
+        {% endif %}
+    </td></tr>
 
-    <tr>
-        <td>Package sent</td><td>{{  wa_result["package_sent"] }}</td>
-    </tr>
+    <tr><td>Pack</td><td>{% if wa_result["pack"] %}{{ wa_result["pack"] }}{% endif %}</td></tr>
 
-    <tr>
-        <td>Pack</td><td>{{  wa_result["pack"] }}</td>
-        </tr>
-    <tr>
-        <td>mtDNA</td><td>{{  wa_result["mtdna"] }}</td>
-    </tr>
+    <tr><td>mtDNA</td><td>{{  wa_result["mtdna"] }}</td></tr>
 
-    <tr>
-        <td>Genotype</td><td>{{  wa_result["quality_genotype"] }}</td>
-    </tr>
+    <!--<tr><td>Genotype</td><td>{{  wa_result["quality_genotype"] }}</td></tr>-->
 
-    <tr>
-        <td>Sex ID</td><td>{{  wa_result["sex_id"] }}</td>
-    </tr>
+    <tr><td>Sex</td><td>{% if wa_result["sex_id"] %}{{ wa_result["sex_id"] }}{% endif %}</td></tr>
 
 
+    <tr><td>Package sent</td><td>{% if wa_result["package_sent"] %}{{  wa_result["package_sent"] }}{% endif %}</td></tr>
+
     <tr>
-        <td>Notes</td><td>{{  wa_result["notes"] }}</td>
+        <td>Notes</td><td>{% if wa_result["notes"] %}{{ wa_result["notes"] }}{% endif %}</td>
     </tr>
 
 

@@ -11,6 +11,11 @@
 
 <br><br>
 
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {{ messages[0] }}
+    {% endif %}
+{% endwith %}
 
 <h2>Genotype ID: {{ result["genotype_id"] }}</h2>
 
