@@ -39,6 +39,7 @@
 <th>Coordinates<br><small>WGS84 UTM zone 32N</small></th>
 <th>mtDNA result</th>
 <th>Genotype ID</th>
+<th>Temporary ID</th>
 <th>Sex</th>
 
 {% for locus in loci_list %}
@@ -73,6 +74,8 @@
 <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
 <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}</td>
+
+<td>{{ result['tmp_id'] }}</td>
 
 <td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
 

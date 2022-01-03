@@ -15,6 +15,14 @@
 <br>
 <br>
 
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {{ messages[0] }}
+    {% endif %}
+{% endwith %}
+
+
 {% if wa_scats %}
 
 {{ title }}
@@ -35,7 +43,8 @@
 <th>Coordinates WGS84 UTM zone 32N</th>
 <th>mtDNA result</th>
 <th>Genotype ID</th>
-
+<th>Temporary ID</th>
+<th>Sex</th>
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
 <th>{{ locus }} a</th>
@@ -58,51 +67,36 @@
 </td>
 
 
-<td>
-    <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
-</td>
+<td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
 
-<td>
-    {% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}
-</td>
+<td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
 
-<td>
-    {% if result['date'] %}{{ result['date'] }}{% endif %}
-</td>
+<td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
 
-<td>
-    {% if result['municipality'] %}{{ result['municipality'] }}{% endif %}
-</td>
+<td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
 
-<td>
+<td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
 
-    {{ result['coord_east'] }}, {{ result['coord_north'] }}
+<td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
-</td>
+<td>{% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}</td>
 
+<td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
 
-<td>
-    {% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}
-
-</td>
-
-    <td>
-        {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
-    </td>
-
+<td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
 
 {% for locus in loci_values[result['wa_code']] %}
 
-<td  style="border-left: 1px solid black;">
+<td style="border-left: 1px solid black;">
 
 {% if loci_values[result['wa_code']][locus]['a']['notes'] %}
-<u>
+<span style="background: red">
 {% endif %}
 
 {{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
 
 {% if loci_values[result['wa_code']][locus]['a']['notes'] %}
-</u>
+</span>
 {% endif %}
 
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
@@ -111,16 +105,15 @@
 
 <td>
 
-    {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
-    <u>
-    {% endif %}
+{% if loci_values[result['wa_code']][locus]['b']['notes'] %}
+<span style="background: red">
+{% endif %}
 
+{{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
 
-    {{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
-
-    {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
-    </u>
-    {% endif %}
+{% if loci_values[result['wa_code']][locus]['b']['notes'] %}
+</span>
+{% endif %}
 
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
 

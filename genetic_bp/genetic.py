@@ -53,6 +53,7 @@ def view_genotype(genotype_id):
     #cursor.execute("", [genotype_id])
 
     return render_template("view_genotype.html",
+                           header_title=f"Genotype ID: {genotype_id}",
                            result=genotype,
                            n_recap=len(wa_codes),
                            wa_codes=wa_codes)
@@ -293,6 +294,7 @@ def plot_wa_clusters(distance):
     center = f"{(min_lat + max_lat) / 2}, {(min_lon + max_lon) / 2}"
 
     return render_template("plot_all_wa.html",
+                           header_title=f"WA codes clusters ({distance} m)",
                            title=Markup(f"<h3>Plot of WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"),
                            map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7)),
                            distance=int(distance)
@@ -303,7 +305,7 @@ def plot_wa_clusters(distance):
 @fn.check_login
 def genetic_samples():
 
-    return render_template("genetic_samples.html")
+    return render_template("genetic_samples.html", header_title="Genetic samples")
 
 
 @app.route("/wa_genetic_samples/<mode>")
@@ -320,13 +322,19 @@ def wa_genetic_samples(mode):
         loci_list[row["name"]] = row["n_alleles"]
 
     # union of scat and tissue samples
-    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id "
+    '''
+    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id, sex_id "
                     "FROM wa_results, scats "
                     "WHERE wa_results.wa_code != ''  AND wa_results.wa_code = scats.wa_code  AND mtdna not like '%poor%' "
                     "UNION "
-                    "SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id "
+                    "SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id, sex_id "
                     "FROM wa_results, dead_wolves WHERE wa_results.wa_code != ''  AND wa_results.wa_code = dead_wolves.wa_code  AND mtdna not like '%poor%'  "
                     "ORDER BY wa_code"))
+    '''
+
+
+    cursor.execute("select * from wa_scat_tissue where mtdna not like '%poor%' ORDER BY wa_code")
+
 
     wa_scats = cursor.fetchall()
     loci_values = {}
@@ -360,7 +368,8 @@ def wa_genetic_samples(mode):
 
 
     return render_template("wa_genetic_samples_list.html" if mode == "web" else "wa_genetic_samples_list_export.html",
-                           title=Markup(f"<h2>List of {len(wa_scats)} WA codes</h2>"),
+                           header_title="Genetic data of WA codes",
+                           title=Markup(f"<h2>Genetic data of {len(wa_scats)} WA codes</h2>"),
                            loci_list=loci_list,
                            wa_scats=wa_scats,
                            loci_values=loci_values)
@@ -708,11 +717,11 @@ def genotype_note(genotype_id):
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         cursor.execute(("SELECT working_notes FROM genotypes WHERE genotype_id = %s"), [genotype_id])
-                       
+
         notes_row = cursor.fetchone()
         if notes_row is None:
             return "Genotype ID not found"
-        
+
         data["working_notes"] = "" if notes_row["working_notes"] is None else notes_row["working_notes"]
         return render_template("add_genotype_note.html",
                                data=data)

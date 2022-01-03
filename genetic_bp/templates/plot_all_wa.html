@@ -1,9 +1,7 @@
-{% include "header.html" %}
+{% extends "bootstrap.html" %}
 
 
-<main class="flex-shrink-0">
-
-<div class="container">
+{% block content %}
 
 
 <h1>WolfDB</h1>
@@ -31,19 +29,13 @@
 <br><br>
 
 
-
 {{ title }}
-
 
 <div id="map" style="width: 1200px; height: 800px;"></div>
 
-
-
 {{ map }}
 
-</div>
-</main>
-
+{% endblock %}
 
 
 
