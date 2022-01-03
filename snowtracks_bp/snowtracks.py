@@ -61,12 +61,16 @@ def snow_tracks():
 
 @app.route("/view_snowtrack/<snowtrack_id>")
 def view_snowtrack(snowtrack_id):
+    """
+    visualize the snow track
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM snow_tracks WHERE snowtrack_id = %s",
                    [snowtrack_id])
 
     return render_template("view_snowtrack.html",
+                           header_title=f"Track ID: {snowtrack_id}",
                            results=cursor.fetchone())
 
 

@@ -144,8 +144,6 @@ def genotypes_list(mode, type):
 
 
 
-
-
 @app.route("/view_wa/<wa_code>")
 @fn.check_login
 def view_wa(wa_code):
@@ -179,6 +177,7 @@ def view_wa(wa_code):
     wa_result = cursor.fetchone()
 
     return render_template("view_wa.html",
+                           header_title=f"WA code: {wa_code}",
                            go_back_url=request.referrer,
                            results=results,
                            wa_result=wa_result,
