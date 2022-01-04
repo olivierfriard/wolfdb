@@ -37,6 +37,7 @@
 <th></th>
 
 <th>Genotype ID</th>
+<th>Temporary ID</th>
 <th>Sex</th>
 <th>Status</th>
 <th>Pack</th>
@@ -70,8 +71,9 @@
 
 </td>
 
-<td><a href="/view_genotype/{{ genotype_id }}" target="_blank">{{ genotype_id }}</a>
-</td>
+<td><a href="/view_genotype/{{ genotype_id }}" target="_blank">{{ genotype_id }}</a></td>
+
+<td>{{ data[genotype_id]["tmp_id"] }}</td>
 
 <td>{{ data[genotype_id]["sex"] }}</td>
 

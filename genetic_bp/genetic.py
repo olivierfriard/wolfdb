@@ -8,7 +8,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, session
+from flask import render_template, redirect, request, Markup, flash, session, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -17,6 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import functions as fn
+from . import export
 
 app = flask.Blueprint("genetic", __name__, template_folder="templates")
 
@@ -332,7 +333,7 @@ def wa_genetic_samples(mode):
     '''
 
     # TODO: check why 583 and 585
-    cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna not like '%poor%' ORDER BY wa_code")
+    cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna NOT LIKE '%poor%' ORDER BY wa_code")
 
     wa_scats = cursor.fetchall()
     loci_values = {}
@@ -342,7 +343,6 @@ def wa_genetic_samples(mode):
             loci_values[row["wa_code"]][locus] = {}
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
-
 
         for locus in loci_list:
 
@@ -355,7 +355,6 @@ def wa_genetic_samples(mode):
                             ),
                             {"wa_code": row["wa_code"], "locus": locus})
 
-
             locus_val = cursor.fetchall()
             for row2 in locus_val:
                 val = row2["val"] if row2["val"] is not None else "-"
@@ -364,13 +363,23 @@ def wa_genetic_samples(mode):
 
                 loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
 
+    if mode == "export":
+        file_content = export.export_wa_genetic_samples(loci_list, wa_scats, loci_values)
 
-    return render_template("wa_genetic_samples_list.html" if mode == "web" else "wa_genetic_samples_list_export.html",
-                           header_title="Genetic data of WA codes",
-                           title=Markup(f"<h2>Genetic data of {len(wa_scats)} WA codes</h2>"),
-                           loci_list=loci_list,
-                           wa_scats=wa_scats,
-                           loci_values=loci_values)
+        response = make_response(file_content, 200)
+        response.headers['Content-type'] = 'application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-disposition'] = "attachment; filename=wa_genetic_samples.xlsx"
+
+        return response
+
+    else:
+
+        return render_template("wa_genetic_samples_list.html",
+                            header_title="Genetic data of WA codes",
+                            title=Markup(f"<h2>Genetic data of {len(wa_scats)} WA codes</h2>"),
+                            loci_list=loci_list,
+                            wa_scats=wa_scats,
+                            loci_values=loci_values)
 
 
 
@@ -509,16 +518,26 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
+    if mode == "export":
 
-    return render_template("wa_analysis_group.html" if mode == "web" else "wa_analysis_group_export.html",
-                            header_title = f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
-                            title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
-                            loci_list=loci_list,
-                            genotype_id=genotype_id,
-                            data=data,
-                            loci_values=loci_values,
-                            distance=distance,
-                            cluster_id=cluster_id)
+        file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
+
+        response = make_response(file_content, 200)
+        response.headers['Content-type'] = 'application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-disposition'] = "attachment; filename=genotypes_matches.xlsx"
+
+        return response
+
+    else:
+        return render_template("wa_analysis_group.html" if mode == "web" else "wa_analysis_group_export.html",
+                                header_title = f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
+                                title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+                                loci_list=loci_list,
+                                genotype_id=genotype_id,
+                                data=data,
+                                loci_values=loci_values,
+                                distance=distance,
+                                cluster_id=cluster_id)
 
 
 
