@@ -17,7 +17,10 @@
 <br>
 <br>
 
-<h3>WA code: <b>{{ data["wa_code"] }}</b>  Locus: <b>{{ data["locus"] }}</b>  value: <b>{{ data["value"] }}</b></h3>
+<h3>WA code: <b>{{ data["wa_code"] }}</b><br>
+Locus: <b>{{ data["locus"] }}</b><br>
+Allele: <b>{{ data["allele"] }}</b><br>
+value: <b>{{ data["value"] }}</b></h3>
 
 
 <form method="POST" action="/locus_note/{{ data["wa_code"] }}/{{ data["locus"] }}/{{ data["allele"] }}/{{ data["timestamp"] }}">

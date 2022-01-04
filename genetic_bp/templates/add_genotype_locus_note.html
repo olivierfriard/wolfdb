@@ -17,7 +17,10 @@
 <br>
 <br>
 
-<h3>Genotype ID: <b>{{ data["genotype_id"] }}</b>  Locus: <b>{{ data["locus"] }}</b>  value: <b>{{ data["value"] }}</b></h3>
+<h3>Genotype ID: <b>{{ data["genotype_id"] }}</b><br>
+Locus: <b>{{ data["locus"] }}</b><br>
+Allele: <b>{{ data["allele"] }}</b><br>
+value: <b>{{ data["value"] }}</b></h3>
 
 
 <form method="POST" action="/genotype_locus_note/{{ data["genotype_id"] }}/{{ data["locus"] }}/{{ data["allele"] }}/{{ data["timestamp"] }}">

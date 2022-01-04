@@ -148,6 +148,7 @@ def genotypes_list(mode, type):
 @app.route("/view_wa/<wa_code>")
 @fn.check_login
 def view_wa(wa_code):
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -156,34 +157,56 @@ def view_wa(wa_code):
                     "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
                     " FROM scats WHERE wa_code = %s "), [wa_code]
     )
-    results = cursor.fetchone()
+    result = cursor.fetchone()
 
-    if results is None:
-        flash(fn.alert_danger(f"WA code not found: {wa_code}"))
-        return redirect(request.referrer)
+    if result is not None:
 
-    scat_geojson = json.loads(results["scat_lonlat"])
-    scat_feature = {"geometry": dict(scat_geojson),
-                    "type": "Feature",
-                    "properties": {
-                                   "popupContent": f"WA code: <b>{wa_code}</b>"
-                                  },
-                    "id": wa_code
-                   }
-    scat_features = [scat_feature]
-    center = f"{results['latitude']}, {results['longitude']}"
+        return redirect(f"/view_scat/{result['scat_id']}")
 
-    # genetic data
-    cursor.execute("SELECT * FROM wa_results WHERE wa_code = %s", [wa_code])
-    wa_result = cursor.fetchone()
+        '''
+        scat_geojson = json.loads(results["scat_lonlat"])
+        scat_feature = {"geometry": dict(scat_geojson),
+                        "type": "Feature",
+                        "properties": {
+                                    "popupContent": f"WA code: <b>{wa_code}</b>"
+                                    },
+                        "id": wa_code
+                    }
+        scat_features = [scat_feature]
+        center = f"{results['latitude']}, {results['longitude']}"
 
-    return render_template("view_wa.html",
-                           header_title=f"WA code: {wa_code}",
-                           go_back_url=request.referrer,
-                           results=results,
-                           wa_result=wa_result,
-                           map=Markup(fn.leaflet_geojson(center, scat_features, []))
-                          )
+        # genetic data
+        cursor.execute("SELECT * FROM wa_results WHERE wa_code = %s", [wa_code])
+        wa_result = cursor.fetchone()
+
+
+        return render_template("view_wa.html",
+                               header_title=f"WA code: {wa_code}",
+                               go_back_url=request.referrer,
+                               results=results,
+                               wa_result=wa_result,
+                               map=Markup(fn.leaflet_geojson(center, scat_features, []))
+                               )
+        '''
+
+
+    else:
+
+        cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
+                        "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                        "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                        "FROM dead_wolves "
+                        "WHERE wa_code = %s "), [wa_code]
+        )
+        result = cursor.fetchone()
+
+        if result is not None:
+            return redirect(f"/view_tissue/{result['tissue_id']}")
+
+        else:
+
+            flash(fn.alert_danger(f"WA code not found: {wa_code}"))
+            return redirect(request.referrer)
 
 
 
@@ -669,14 +692,18 @@ def locus_note(wa_code, locus, allele, timestamp):
     let user add a note on wa_code locus_name allele timestamp
     """
 
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     data = {"wa_code": wa_code, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
 
     if request.method == "GET":
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         cursor.execute(("SELECT * FROM wa_locus2 "
-                        "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s AND extract(epoch from timestamp)::integer = %(timestamp)s "
+                        "WHERE wa_code = %(wa_code)s "
+                        "AND locus = %(locus)s "
+                        "AND allele = %(allele)s "
+                        "AND extract(epoch from timestamp)::integer = %(timestamp)s "
                         ),
                        data)
         wa_locus = cursor.fetchone()
@@ -685,20 +712,21 @@ def locus_note(wa_code, locus, allele, timestamp):
             return "WA code / Locus / allele / timestamp not found"
 
         data["value"] = wa_locus["val"]
+        data["allele"] = allele
         data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
 
         return render_template("add_wa_locus_note.html",
+                               header_title=f"Add note on {wa_code} {locus} {allele}",
                                data=data,
                                return_url=request.referrer)
 
 
     if request.method == "POST":
 
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
         sql = ("UPDATE wa_locus2 SET notes = %(notes)s "
-               "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s AND extract(epoch from timestamp)::integer = %(timestamp)s"
+               "WHERE wa_code = %(wa_code)s "
+               "AND locus = %(locus)s AND allele = %(allele)s "
+               "AND extract(epoch from timestamp)::integer = %(timestamp)s"
         )
 
         data["notes"] = request.form["notes"]
@@ -717,34 +745,35 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
     let user add a note on genotype_id locus allele timestamp
     """
 
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     data = {"genotype_id": genotype_id, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
 
+
+    cursor.execute(("SELECT * FROM genotype_locus "
+                    "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
+                    "AND extract(epoch from timestamp)::integer = %(timestamp)s "
+                    ),
+                    data)
+    wa_locus = cursor.fetchone()
+
+    if wa_locus is None:
+        return "Genotype ID / Locus / allele / timestamp not found"
+
+    data["allele"] = allele
+    data["value"] = wa_locus["val"]
+    data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
+
     if request.method == "GET":
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-        cursor.execute(("SELECT * FROM genotype_locus "
-                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
-                        "AND extract(epoch from timestamp)::integer = %(timestamp)s "
-                        ),
-                       data)
-        wa_locus = cursor.fetchone()
-
-        if wa_locus is None:
-            return "Genotype ID / Locus / allele / timestamp not found"
-
-        data["value"] = wa_locus["val"]
-        data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
 
         return render_template("add_genotype_locus_note.html",
+                               header_title=f"Add note on {genotype_id} {locus} {allele}",
                                data=data,
                                return_url=request.referrer)
 
 
     if request.method == "POST":
-
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         sql = ("UPDATE genotype_locus SET notes = %(notes)s "
                "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
@@ -754,6 +783,25 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         data["notes"] = request.form["notes"]
 
         cursor.execute(sql, data)
+        connection.commit()
+
+        # update wa_code
+        ''' WORK ON PROGRESS'''
+        sql = ("select id from wa_locus2, wa_results "
+               "WHERE wa_locus2.wa_code = wa_results.wa_code "
+               "AND wa_results.genotype_id = %(genotype_id)s "
+               "AND wa_locus2.locus = %(locus)s "
+               "AND allele = %(allele)s "
+               "AND val = %(value)s ")
+        cursor.execute(sql, {"genotype_id": genotype_id, "locus": locus, "allele": allele, "value": data["value"]})
+        rows = cursor.fetchall()
+        for row in rows:
+
+            cursor.execute(("UPDATE wa_locus2 "
+                            "SET notes = %(notes)s "
+                            "WHERE id = %(id)s "),
+                            {"notes": data["notes"], "id": row["id"]})
+
         connection.commit()
 
         return redirect(request.form["return_url"])
