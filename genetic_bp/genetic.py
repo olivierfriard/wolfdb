@@ -386,8 +386,9 @@ def wa_genetic_samples(mode):
 
 
 @app.route("/wa_analysis/<distance>/<cluster_id>")
+@app.route("/wa_analysis/<distance>/<cluster_id>/<mode>")
 @fn.check_login
-def wa_analysis(distance: int, cluster_id: int):
+def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -407,7 +408,6 @@ def wa_analysis(distance: int, cluster_id: int):
                     )
                    )
 
-
     wa_list = []
     for row in cursor.fetchall():
         if row["cluster_id"] == int(cluster_id):
@@ -415,7 +415,7 @@ def wa_analysis(distance: int, cluster_id: int):
     wa_list_str = "','".join(wa_list)
 
 
-    cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, mtdna, genotype_id, sex_id "
+    cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, mtdna, genotype_id, tmp_id, sex_id "
                     "FROM wa_scat_tissue "
                     f"WHERE wa_code in ('{wa_list_str}') "
                     "ORDER BY wa_code ASC"))
@@ -449,20 +449,26 @@ def wa_analysis(distance: int, cluster_id: int):
 
                 loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
 
-            '''
-            print(locus)
-            print(loci_values[row["wa_code"]][locus])
-            print("------------------------------------------")
-            '''
+    if mode == "export":
 
+        file_content = export.export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id)
 
-    return render_template("wa_analysis.html",
-                            header_title = f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
-                            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
-                            loci_list=loci_list,
-                            wa_scats=wa_scats,
-                            loci_values=loci_values,
-                            distance=distance)
+        response = make_response(file_content, 200)
+        response.headers['Content-type'] = 'application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-disposition'] = "attachment; filename=wa_analysis.xlsx"
+
+        return response
+
+    else:
+
+        return render_template("wa_analysis.html",
+                                header_title = f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
+                                title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+                                loci_list=loci_list,
+                                wa_scats=wa_scats,
+                                loci_values=loci_values,
+                                distance=distance,
+                                cluster_id=cluster_id)
 
 
 
