@@ -30,8 +30,8 @@
 
 <tr>
 <td>{{ row["allele"] }}</td>
-<td>{{ row["val"] }}</td>
-<td>{{ row["formatted_timestamp"] }}</td>
+<td>{{ row["val"]  if row["val"] is not none else "-"}}</td>
+<td>{{ row["formatted_timestamp"]  if row["formatted_timestamp"] is not none else ""}}</td>
 <td>{{ row["notes"] if row["notes"] is not none else ""}}</td>
 
 </tr>

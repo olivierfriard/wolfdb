@@ -259,7 +259,8 @@ def plot_all_wa():
     transect_features = []
 
     return render_template("plot_all_wa.html",
-                           title=Markup("<h3>WA codes. orange: scats, purple: tissues, red: other sample</h3>"),
+                           header_title="Plot of WA codes",
+                           title=Markup(f"<h3>Plot of {len(scat_features)} WA codes. orange: scats, purple: tissues, red: other sample</h3>"),
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8)),
                            distance=0
                            )
@@ -318,7 +319,7 @@ def plot_wa_clusters(distance):
 
     return render_template("plot_all_wa.html",
                            header_title=f"WA codes clusters ({distance} m)",
-                           title=Markup(f"<h3>Plot of WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"),
+                           title=Markup(f"<h3>Plot of {len(scat_features)} WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"),
                            map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7)),
                            distance=int(distance)
                            )
@@ -332,9 +333,10 @@ def genetic_samples():
 
 
 @app.route("/wa_genetic_samples")
-@app.route("/wa_genetic_samples/<mode>")
+@app.route("/wa_genetic_samples/<with_notes>")
+@app.route("/wa_genetic_samples/<with_notes>/<mode>")
 @fn.check_login
-def wa_genetic_samples(mode="web"):
+def wa_genetic_samples(with_notes="", mode="web"):
     """
     wa_genetic_samples_list.html
     """
@@ -363,6 +365,8 @@ def wa_genetic_samples(mode="web"):
     cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna NOT LIKE '%poor%' ORDER BY wa_code")
 
     wa_scats = cursor.fetchall()
+
+    out = []
     loci_values = {}
     for row in wa_scats:
         loci_values[row["wa_code"]] = {}
@@ -371,6 +375,9 @@ def wa_genetic_samples(mode="web"):
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
 
+        sql_notes = "AND notes != '' " if with_notes  else ""
+        has_notes = False
+
         for locus in loci_list:
 
             for allele in  ['a', 'b'][:loci_list[locus]]:
@@ -378,22 +385,32 @@ def wa_genetic_samples(mode="web"):
                 cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
                                 "FROM wa_locus2 "
                                 "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
+                                f"{sql_notes}"
                                 "ORDER BY timestamp DESC LIMIT 1"
                                ),
                                {"wa_code": row["wa_code"], "locus": locus, "allele": allele})
 
                 row2 = cursor.fetchone()
+
+                if row["wa_code"] == 'WA4050':
+                    print(f"{row2=}")
+
+
                 if row2 is not None:
                     val = row2["val"] if row2["val"] is not None else "-"
                     notes = row2["notes"] if row2["notes"] is not None else ""
                     epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                    has_notes = True
                 else:
                     val = "-"
                     notes = ""
                     epoch = ""
 
-
                 loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch}
+
+
+        if (with_notes == "") or (with_notes and has_notes == True):
+            out.append(dict(row))
 
     if mode == "export":
         file_content = export.export_wa_genetic_samples(loci_list, wa_scats, loci_values)
@@ -406,11 +423,19 @@ def wa_genetic_samples(mode="web"):
 
     else:
 
+        if with_notes:
+            title = f"<h2>Genetic data of {len(out)} WA codes with notes</h2>"
+        else:
+            title = f"<h2>Genetic data of {len(out)} WA codes</h2>"
+
+        print(f"{out=}")
+
         return render_template("wa_genetic_samples_list.html",
                             header_title="Genetic data of WA codes",
-                            title=Markup(f"<h2>Genetic data of {len(wa_scats)} WA codes</h2>"),
+                            title=Markup(title),
                             loci_list=loci_list,
-                            wa_scats=wa_scats,
+                            #wa_scats=wa_scats,
+                            wa_scats=out,
                             loci_values=loci_values)
 
 
