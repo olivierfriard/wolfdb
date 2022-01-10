@@ -335,6 +335,9 @@ def genetic_samples():
 @app.route("/wa_genetic_samples/<mode>")
 @fn.check_login
 def wa_genetic_samples(mode="web"):
+    """
+    wa_genetic_samples_list.html
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -370,6 +373,7 @@ def wa_genetic_samples(mode="web"):
 
         for locus in loci_list:
 
+            '''
             cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes "
                             "FROM wa_locus2 "
                             "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
@@ -380,14 +384,30 @@ def wa_genetic_samples(mode="web"):
                             "ORDER BY allele, timestamp DESC LIMIT 2"
                             ),
                             {"wa_code": row["wa_code"], "locus": locus})
+            '''
 
-            locus_val = cursor.fetchall()
-            for row2 in locus_val:
-                val = row2["val"] if row2["val"] is not None else "-"
-                notes = row2["notes"] if row2["notes"] is not None else ""
-                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+            for allele in  ['a', 'b'][:loci_list[locus]]:
 
-                loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+                #print(row["wa_code"], locus, allele)
+                cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
+                                "FROM wa_locus2 "
+                                "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
+                                "ORDER BY timestamp DESC LIMIT 1"
+                               ),
+                               {"wa_code": row["wa_code"], "locus": locus, "allele": allele})
+
+                row2 = cursor.fetchone()
+                if row2 is not None:
+                    val = row2["val"] if row2["val"] is not None else "-"
+                    notes = row2["notes"] if row2["notes"] is not None else ""
+                    epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                else:
+                    val = "-"
+                    notes = ""
+                    epoch = ""
+
+
+                loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch}
 
     if mode == "export":
         file_content = export.export_wa_genetic_samples(loci_list, wa_scats, loci_values)
