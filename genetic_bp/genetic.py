@@ -350,7 +350,7 @@ def genetic_samples():
 @app.route("/wa_genetic_samples/<with_notes>")
 @app.route("/wa_genetic_samples/<with_notes>/<mode>")
 @fn.check_login
-def wa_genetic_samples(with_notes="", mode="web"):
+def wa_genetic_samples(with_notes="all", mode="web"):
     """
     wa_genetic_samples_list.html
     """
@@ -389,7 +389,7 @@ def wa_genetic_samples(with_notes="", mode="web"):
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
 
-        sql_notes = "AND notes != '' " if with_notes  else ""
+        sql_notes = "AND notes != '' " if with_notes == "with_notes" else ""
         has_notes = False
 
         for locus in loci_list:
@@ -406,10 +406,6 @@ def wa_genetic_samples(with_notes="", mode="web"):
 
                 row2 = cursor.fetchone()
 
-                if row["wa_code"] == 'WA4050':
-                    print(f"{row2=}")
-
-
                 if row2 is not None:
                     val = row2["val"] if row2["val"] is not None else "-"
                     notes = row2["notes"] if row2["notes"] is not None else ""
@@ -423,11 +419,11 @@ def wa_genetic_samples(with_notes="", mode="web"):
                 loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch}
 
 
-        if (with_notes == "") or (with_notes and has_notes == True):
+        if (with_notes == "all") or (with_notes == "with_notes" and has_notes == True):
             out.append(dict(row))
 
     if mode == "export":
-        file_content = export.export_wa_genetic_samples(loci_list, wa_scats, loci_values)
+        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, with_notes)
 
         response = make_response(file_content, 200)
         response.headers['Content-type'] = 'application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -437,12 +433,10 @@ def wa_genetic_samples(with_notes="", mode="web"):
 
     else:
 
-        if with_notes:
+        if with_notes == "with_notes" :
             title = f"<h2>Genetic data of {len(out)} WA codes with notes</h2>"
         else:
             title = f"<h2>Genetic data of {len(out)} WA codes</h2>"
-
-        print(f"{out=}")
 
         return render_template("wa_genetic_samples_list.html",
                             header_title="Genetic data of WA codes",
@@ -450,7 +444,8 @@ def wa_genetic_samples(with_notes="", mode="web"):
                             loci_list=loci_list,
                             #wa_scats=wa_scats,
                             wa_scats=out,
-                            loci_values=loci_values)
+                            loci_values=loci_values,
+                            with_notes=with_notes)
 
 
 
