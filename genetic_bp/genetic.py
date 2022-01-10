@@ -65,7 +65,8 @@ def view_genotype(genotype_id):
 @fn.check_login
 def genotypes():
 
-    return render_template("genotypes.html")
+    return render_template("genotypes.html",
+                           header_title="Genotypes")
 
 
 def get_loci_value(genotype_id, loci_list):
@@ -101,10 +102,10 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
-
-@app.route("/genotypes_list/<mode>/<type>")
+@app.route("/genotypes_list/<type>")
+@app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
-def genotypes_list(mode, type):
+def genotypes_list(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
     """
@@ -136,7 +137,20 @@ def genotypes_list(mode, type):
     for row in results:
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
-    return render_template("genotypes_list.html" if mode == "web" else "genotypes_list_export.html",
+    if mode == "export":
+
+        file_content = export.export_genotypes_list(loci_list, results, loci_values)
+
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
+
+        return response
+
+
+    else:
+        return render_template("genotypes_list.html",
+                           header_title="List of genotypes",
                            title=title,
                            type=type,
                            results=results,

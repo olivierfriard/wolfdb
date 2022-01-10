@@ -23,30 +23,32 @@
 <h2>{{ title }}</h2>
 
 
-<br><a href="/genotypes_list/export/{{type }}" class="btn btn-info" target="_blank">Export data</a><br>
+<br><a href="/genotypes_list/{{type }}/export" class="btn btn-info" target="_blank">Export data</a><br>
 <br>
+
+<style>th {top:0;position:sticky;}</style>
 
 <table class="table table-striped">
 <tr>
-<th></th>
-<th>Genotype ID</th>
-<th>Other ID</th>
-<th>Date</th>
-<th>Pack</th>
-<th>Sex</th>
-<th>Age first capture</th>
-<th>status first capture</th>
-<th>dispersal</th>
-<th>n recaptures</th>
-<th>dead recovery</th>
+<th style="background-color: white;"></th>
+<th style="background-color: white;">Genotype ID</th>
+<th style="background-color: white;">Other ID</th>
+<th style="background-color: white;">Date</th>
+<th style="background-color: white;">Pack</th>
+<th style="background-color: white;">Sex</th>
+<th style="background-color: white;">Age first capture</th>
+<th style="background-color: white;">status first capture</th>
+<th style="background-color: white;">dispersal</th>
+<th style="background-color: white;">n recaptures</th>
+<th style="background-color: white;">dead recovery</th>
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
-<th>{{ locus }} a</th>
-<th>{{ locus }} b</th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
+<th style="background-color: white;">{{ locus }} b</th>
 {% else %}
-<th>{{ locus }}</th>
-<th></th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
+<th style="background-color: white;"></th>
 {% endif %}
 
 {% endfor %}
