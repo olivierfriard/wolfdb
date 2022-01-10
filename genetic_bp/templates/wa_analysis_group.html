@@ -32,24 +32,26 @@
 <br><a href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info">Export data</a><br>
 <br>
 
+<style>th {top:0;position:sticky;}</style>
+
 <table class="table table-striped">
 <tr>
-<th></th>
+<th style="background-color: white;"></th>
 
-<th>Genotype ID</th>
-<th>Temporary ID</th>
-<th>Sex</th>
-<th>Status</th>
-<th>Pack</th>
-<th>n. recapt</th>
+<th style="background-color: white;">Genotype ID</th>
+<th style="background-color: white;">Temporary ID</th>
+<th style="background-color: white;">Sex</th>
+<th style="background-color: white;">Status</th>
+<th style="background-color: white;">Pack</th>
+<th style="background-color: white;">n. recapt</th>
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
-<th>{{ locus }} a</th>
-<th>{{ locus }} b</th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
+<th style="background-color: white;">{{ locus }} b</th>
 {% else %}
-<th>{{ locus }}</th>
-<th></th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
+<th style="background-color: white;"></th>
 {% endif %}
 
 {% endfor %}

@@ -32,25 +32,26 @@
 <br><a href="/wa_analysis/{{ distance }}/{{ cluster_id }}/export" class="btn btn-info">Export data</a><br>
 <br>
 
+<style>th {top:0;position:sticky;}</style>
 
 <table class="table table-striped">
 <tr>
-<th></th> <!-- place for buttons-->
-<th>WA code</th>
-<th>Sample ID</th>
-<th>Date</th>
-<th>Municipality</th>
-<th>Coordinates<br><small>WGS84 UTM zone 32N</small></th>
-<th>mtDNA result</th>
-<th>Genotype ID</th>
-<th>Temporary ID</th>
-<th>Sex</th>
+<th style="background-color: white;"></th> <!-- place for buttons-->
+<th style="background-color: white;">WA code</th>
+<th style="background-color: white;">Sample ID</th>
+<th style="background-color: white;">Date</th>
+<th style="background-color: white;">Municipality</th>
+<th style="background-color: white;">Coordinates<br><small>WGS84 UTM zone 32N</small></th>
+<th style="background-color: white;">mtDNA result</th>
+<th style="background-color: white;">Genotype ID</th>
+<th style="background-color: white;">Temporary ID</th>
+<th style="background-color: white;">Sex</th>
 
 {% for locus in loci_list %}
-{% if loci_list[locus] == 2%}<th>{{ locus }} a</th><th>{{ locus }} b</th>
+{% if loci_list[locus] == 2%}<th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th><th style="background-color: white;">{{ locus }} b</th>
 {% else %}
-<th>{{ locus }}</th>
-<th></th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
+<th style="background-color: white;"></th>
 {% endif %}
 {% endfor %}
 
