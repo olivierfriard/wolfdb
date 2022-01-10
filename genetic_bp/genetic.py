@@ -706,6 +706,7 @@ def view_genetic_data_history(wa_code, locus):
     return render_template("view_genetic_data_history.html",
                            header_title=f"{wa_code} genetic data",
                            wa_code=wa_code,
+                           locus=locus,
                            locus_values=locus_values)
 
 
