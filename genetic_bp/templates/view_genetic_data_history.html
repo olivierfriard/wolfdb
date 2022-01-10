@@ -31,8 +31,8 @@
 <tr>
 <td>{{ row["allele"] }}</td>
 <td>{{ row["val"] }}</td>
-<td>{{ row["notes"] }}</td>
-<td>{{ row["formated_timestamp"] }}</td>
+<td>{{ row["formatted_timestamp"] }}</td>
+<td>{{ row["notes"] if row["notes"] is not none else ""}}</td>
 
 </tr>
 

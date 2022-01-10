@@ -373,22 +373,8 @@ def wa_genetic_samples(mode="web"):
 
         for locus in loci_list:
 
-            '''
-            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes "
-                            "FROM wa_locus2 "
-                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
-                            "UNION "
-                            "SELECT *, extract(epoch from timestamp)::integer AS epoch, notes "
-                            "FROM wa_locus2 "
-                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
-                            "ORDER BY allele, timestamp DESC LIMIT 2"
-                            ),
-                            {"wa_code": row["wa_code"], "locus": locus})
-            '''
-
             for allele in  ['a', 'b'][:loci_list[locus]]:
 
-                #print(row["wa_code"], locus, allele)
                 cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
                                 "FROM wa_locus2 "
                                 "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
@@ -477,23 +463,27 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
         for locus in loci_list:
 
-            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
-                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
-                            "UNION "
-                            "SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
-                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
-                            "ORDER BY allele, timestamp DESC LIMIT 2"
-                            ),
-                            {"wa_code": row["wa_code"], "locus": locus})
+            for allele in  ['a', 'b'][:loci_list[locus]]:
 
+                cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
+                                "FROM wa_locus2 "
+                                "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
+                                "ORDER BY timestamp DESC LIMIT 1"
+                               ),
+                               {"wa_code": row["wa_code"], "locus": locus, "allele": allele})
 
-            locus_val = cursor.fetchall()
-            for row2 in locus_val:
-                val = row2["val"] if row2["val"] is not None else "-"
-                notes = row2["notes"] if row2["notes"] is not None else ""
-                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                row2 = cursor.fetchone()
+                if row2 is not None:
+                    val = row2["val"] if row2["val"] is not None else "-"
+                    notes = row2["notes"] if row2["notes"] is not None else ""
+                    epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                else:
+                    val = "-"
+                    notes = ""
+                    epoch = ""
 
-                loci_values[row["wa_code"]][locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+                loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch}
+
 
     if mode == "export":
 
@@ -613,11 +603,8 @@ def view_genetic_data(wa_code):
         loci_values[locus]['b'] = {"value": "-", "notes": "" }
 
     for locus in loci_list:
-        '''
-        cursor.execute(("SELECT value1, value2, extract(epoch from timestamp)::integer AS timestamp, notes FROM wa_locus "
-                        "WHERE wa_code = %s AND locus = %s ORDER BY timestamp DESC LIMIT 1 "), [row["wa_code"], locus])
-        '''
 
+        '''
         cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
                         "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
                         "FROM wa_locus2 "
@@ -630,16 +617,31 @@ def view_genetic_data(wa_code):
                         "ORDER BY timestamp DESC LIMIT 2"
                         ),
                         {"wa_code": wa_code, "locus": locus})
+        '''
 
-        locus_val = cursor.fetchall()
-        for row2 in locus_val:
-            val = row2["val"] if row2["val"] is not None else "-"
-            notes = row2["notes"] if row2["notes"] is not None else ""
-            epoch = row2["epoch"] if row2["epoch"] is not None else ""
-            date = row2["formated_timestamp"] if row2["formated_timestamp"] is not None else ""
+        for allele in  ['a', 'b'][:loci_list[locus]]:
 
-            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch, "date": date}
+            cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
+                            "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
+                            "FROM wa_locus2 "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
+                            "ORDER BY timestamp DESC LIMIT 1"
+                            ),
+                            {"wa_code": wa_code, "locus": locus, "allele": allele})
 
+            row2 = cursor.fetchone()
+            if row2 is not None:
+                val = row2["val"] if row2["val"] is not None else "-"
+                notes = row2["notes"] if row2["notes"] is not None else ""
+                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
+            else:
+                val = "-"
+                notes = ""
+                epoch = ""
+                date = ""
+
+            loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date}
 
     return render_template("view_genetic_data.html",
                            header_title=f"{wa_code} genetic data",
@@ -692,7 +694,7 @@ def view_genetic_data_history(wa_code, locus):
     locus_values = {"a": {"value": "-", "notes": ""}, "b": {"value": "-", "notes": ""}}
 
     cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
-                    "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
+                    "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, notes "
                     "FROM wa_locus2 "
                     "WHERE wa_code = %(wa_code)s AND locus = %(locus)s "
                     "ORDER BY timestamp DESC, allele ASC"
