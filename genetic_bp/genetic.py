@@ -331,9 +331,10 @@ def genetic_samples():
     return render_template("genetic_samples.html", header_title="Genetic samples")
 
 
+@app.route("/wa_genetic_samples")
 @app.route("/wa_genetic_samples/<mode>")
 @fn.check_login
-def wa_genetic_samples(mode):
+def wa_genetic_samples(mode="web"):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -369,10 +370,12 @@ def wa_genetic_samples(mode):
 
         for locus in loci_list:
 
-            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
+            cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, notes "
+                            "FROM wa_locus2 "
                             "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
                             "UNION "
-                            "SELECT *, extract(epoch from timestamp)::integer AS epoch, notes FROM wa_locus2 "
+                            "SELECT *, extract(epoch from timestamp)::integer AS epoch, notes "
+                            "FROM wa_locus2 "
                             "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
                             "ORDER BY allele, timestamp DESC LIMIT 2"
                             ),
@@ -558,7 +561,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         return response
 
     else:
-        return render_template("wa_analysis_group.html" if mode == "web" else "wa_analysis_group_export.html",
+        return render_template("wa_analysis_group.html",
                                 header_title = f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
                                 title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
                                 loci_list=loci_list,

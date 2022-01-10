@@ -8,6 +8,8 @@
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 
+<a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
+
 <a href="/plot_all_wa" class="btn btn-primary">Plot WA</a>&nbsp;
 
 <a href="/plot_wa_clusters/2500" class="btn btn-primary">Plot WA clusters (2500 m)</a>&nbsp;
@@ -32,30 +34,30 @@
 <br>
 
 
+<style>th {top:0;position:sticky;}</style>
 
-<table class="table table-striped">
+<table class="table">
 <tr>
-<th></th>
-<th>WA code</th>
-<th>Sample ID</th>
-<th>Date</th>
-<th>Municipality</th>
-<th>Coordinates WGS84 UTM zone 32N</th>
-<th>mtDNA result</th>
-<th>Genotype ID</th>
-<th>Temporary ID</th>
-<th>Sex</th>
+<th style="background-color: white;"></th>
+<th style="background-color: white;">WA code</th>
+<th style="background-color: white;">Sample ID</th>
+<th style="background-color: white;">Date</th>
+<th style="background-color: white;">Municipality</th>
+<th style="background-color: white;">Coordinates WGS84 UTM zone 32N</th>
+<th style="background-color: white;">mtDNA result</th>
+<th style="background-color: white;">Genotype ID</th>
+<th style="background-color: white;">Temporary ID</th>
+<th style="background-color: white;">Sex</th>
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
-<th>{{ locus }} a</th>
-<th>{{ locus }} b</th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
+<th style="background-color: white;">{{ locus }} b</th>
 {% else %}
-<th>{{ locus }}</th>
-<th></th>
+<th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
+<th style="background-color: white;"></th>
 {% endif %}
 
 {% endfor %}
-
 
 </tr>
 {% for result in wa_scats %}
@@ -125,11 +127,8 @@
 </tr>
 {% endfor %}
 
-
-
-
-
 </table>
+
 {% else %}
 
 <h2>No WA code found</h2>
