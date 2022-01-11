@@ -352,6 +352,8 @@ def genetic_samples():
 @fn.check_login
 def wa_genetic_samples(with_notes="all", mode="web"):
     """
+    display genetic data for WA code
+    with_notes: all / with notes
     wa_genetic_samples_list.html
     """
 
@@ -389,7 +391,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
 
-        sql_notes = "AND notes != '' " if with_notes == "with_notes" else ""
         has_notes = False
 
         for locus in loci_list:
@@ -399,7 +400,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                 cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
                                 "FROM wa_locus2 "
                                 "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
-                                f"{sql_notes}"
                                 "ORDER BY timestamp DESC LIMIT 1"
                                ),
                                {"wa_code": row["wa_code"], "locus": locus, "allele": allele})
@@ -409,8 +409,10 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                 if row2 is not None:
                     val = row2["val"] if row2["val"] is not None else "-"
                     notes = row2["notes"] if row2["notes"] is not None else ""
+                    if notes:
+                        has_notes = True
                     epoch = row2["epoch"] if row2["epoch"] is not None else ""
-                    has_notes = True
+
                 else:
                     val = "-"
                     notes = ""
@@ -433,16 +435,12 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
     else:
 
-        if with_notes == "with_notes" :
-            title = f"<h2>Genetic data of {len(out)} WA codes with notes</h2>"
-        else:
-            title = f"<h2>Genetic data of {len(out)} WA codes</h2>"
+        print(f"{loci_values['WA3246']=}")
 
         return render_template("wa_genetic_samples_list.html",
                             header_title="Genetic data of WA codes",
-                            title=Markup(title),
+                            title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (with_notes == 'with_notes')}</h2>"),
                             loci_list=loci_list,
-                            #wa_scats=wa_scats,
                             wa_scats=out,
                             loci_values=loci_values,
                             with_notes=with_notes)
