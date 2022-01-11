@@ -398,7 +398,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             for allele in  ['a', 'b'][:loci_list[locus]]:
 
                 cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
-                                "FROM wa_locus2 "
+                                "FROM wa_locus "
                                 "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
                                 "ORDER BY timestamp DESC LIMIT 1"
                                ),
@@ -498,7 +498,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
             for allele in  ['a', 'b'][:loci_list[locus]]:
 
                 cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
-                                "FROM wa_locus2 "
+                                "FROM wa_locus "
                                 "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
                                 "ORDER BY timestamp DESC LIMIT 1"
                                ),
@@ -639,12 +639,12 @@ def view_genetic_data(wa_code):
         '''
         cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
                         "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
-                        "FROM wa_locus2 "
+                        "FROM wa_locus "
                         "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
                         "UNION "
                         "SELECT *, extract(epoch from timestamp)::integer AS epoch, "
                         "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
-                        "FROM wa_locus2 "
+                        "FROM wa_locus "
                         "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
                         "ORDER BY timestamp DESC LIMIT 2"
                         ),
@@ -655,7 +655,7 @@ def view_genetic_data(wa_code):
 
             cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
                             "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
-                            "FROM wa_locus2 "
+                            "FROM wa_locus "
                             "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
                             "ORDER BY timestamp DESC LIMIT 1"
                             ),
@@ -703,7 +703,7 @@ def add_genetic_data(wa_code):
         for locus in loci:
             for allele in ["a", "b"]:
                 if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
-                    cursor.execute("INSERT INTO wa_locus2 (wa_code, locus, allele, val, timestamp, notes) VALUES (%s, %s, %s, %s, NOW(), %s) ",
+                    cursor.execute("INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp, notes) VALUES (%s, %s, %s, %s, NOW(), %s) ",
                            [wa_code, locus['name'], allele,
                            int(request.form[locus['name'] + f"_{allele}"]) if request.form[locus['name'] +f"_{allele}"] else None,
                            request.form[locus['name'] + f"_{allele}_notes"] if request.form[locus['name'] + f"_{allele}_notes"] else None
@@ -727,7 +727,7 @@ def view_genetic_data_history(wa_code, locus):
 
     cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
                     "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, notes "
-                    "FROM wa_locus2 "
+                    "FROM wa_locus "
                     "WHERE wa_code = %(wa_code)s AND locus = %(locus)s "
                     "ORDER BY timestamp DESC, allele ASC"
                     ),
@@ -757,7 +757,7 @@ def locus_note(wa_code, locus, allele, timestamp):
 
     if request.method == "GET":
 
-        cursor.execute(("SELECT * FROM wa_locus2 "
+        cursor.execute(("SELECT * FROM wa_locus "
                         "WHERE wa_code = %(wa_code)s "
                         "AND locus = %(locus)s "
                         "AND allele = %(allele)s "
@@ -781,7 +781,7 @@ def locus_note(wa_code, locus, allele, timestamp):
 
     if request.method == "POST":
 
-        sql = ("UPDATE wa_locus2 SET notes = %(notes)s "
+        sql = ("UPDATE wa_locus SET notes = %(notes)s "
                "WHERE wa_code = %(wa_code)s "
                "AND locus = %(locus)s AND allele = %(allele)s "
                "AND extract(epoch from timestamp)::integer = %(timestamp)s"
@@ -844,18 +844,18 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         connection.commit()
 
         # update wa_code
-        ''' WORK ON PROGRESS'''
-        sql = ("select id from wa_locus2, wa_results "
-               "WHERE wa_locus2.wa_code = wa_results.wa_code "
+
+        sql = ("select id from wa_locus, wa_results "
+               "WHERE wa_locus.wa_code = wa_results.wa_code "
                "AND wa_results.genotype_id = %(genotype_id)s "
-               "AND wa_locus2.locus = %(locus)s "
+               "AND wa_locus.locus = %(locus)s "
                "AND allele = %(allele)s "
                "AND val = %(value)s ")
         cursor.execute(sql, {"genotype_id": genotype_id, "locus": locus, "allele": allele, "value": data["value"]})
         rows = cursor.fetchall()
         for row in rows:
 
-            cursor.execute(("UPDATE wa_locus2 "
+            cursor.execute(("UPDATE wa_locus "
                             "SET notes = %(notes)s "
                             "WHERE id = %(id)s "),
                             {"notes": data["notes"], "id": row["id"]})
