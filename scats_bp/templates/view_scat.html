@@ -38,9 +38,9 @@
 <table class="table table-striped">
 
 
-<tr><td>WA code</td><td>{{ results["wa_code"] }}</td></tr>
-<tr><td>Genotype ID</td><td>{{ results["genotype_id"] }}</td></tr>
-    
+<tr><td>WA code</td><td>{{ results["wa_code"] if results["wa_code"] is not none else ""}}</td></tr>
+<tr><td>Genotype ID</td><td>{{ results["genotype_id"] if results["genotype_id"] is not none else "" }}</td></tr>
+
 
 <tr><td>Date</td><td>{{ results["date"] }}</td></tr>
 
@@ -90,7 +90,7 @@
 <tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td><td>{{ results["longitude"] }}, {{ results["latitude"] }}</td></tr>
 <tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
 <tr><td>Institution</td><td>{{ results["institution"] }}</td></tr>
-<tr><td>Notes</td><td>{{ results["notes"] }}</td></tr>
+<tr><td>Notes</td><td>{{ results["notes"]  if results["notes"] is not none else ""}}</td></tr>
 
 <tr><td>Genetic sample</td><td>{% if results["genetic_sample"] %}{{ results["genetic_sample"] }}{% endif %}</td></tr>
 

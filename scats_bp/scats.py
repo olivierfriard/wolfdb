@@ -237,7 +237,9 @@ def new_scat():
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f"<b>{msg}</b>"))
+        #flash(Markup(f"<b>{msg}</b>"))
+
+        flash(fn.alert_danger(f"<b>{msg}</b>"))
 
         return render_template("new_scat.html",
                                header_title="New scat",
@@ -278,7 +280,7 @@ def new_scat():
                 day = int(request.form["scat_id"][5:6+1])
                 date = f"{year}-{month}-{day}"
             except Exception:
-                return not_valid("The scat_id value is not correct")
+                return not_valid("The scat ID value is not correct")
 
             # path id
             path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
@@ -291,8 +293,11 @@ def new_scat():
                 province = fn.province_name2code(request.form["province"])
                 scat_region = fn.get_region(province)
 
-            # UTM coord conversion
-            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), int(request.form["coord_zone"].replace("N", "")), "N")
+            # test the UTM to lat long conversion to validate the UTM coordiantes
+            try:
+                _ = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+            except Exception:
+                return not_valid("Error in UTM coordinates")
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -302,8 +307,9 @@ def new_scat():
                    "deposition, matrix, collected_scat, scalp_category, "
                    "coord_east, coord_north, coord_zone, "
                    "observer, institution,"
-                   "geo, geometry_utm) "
-                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                   #"geo, "
+                   "geometry_utm) "
+                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
                            [
                             request.form["scat_id"],
@@ -314,9 +320,9 @@ def new_scat():
                             request.form["snowtrack_id"],
                             request.form["location"], request.form["municipality"], province, scat_region,
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
-                            request.form["coord_east"], request.form["coord_north"], request.form["coord_zone"],
+                            request.form["coord_east"], request.form["coord_north"], "32N",
                             request.form["observer"], request.form["institution"],
-                            f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
+                            #f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
                             f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})"
                            ]
                            )
@@ -811,7 +817,7 @@ def confirm_load_xlsx(filename, mode):
 
         try:
             cursor.execute(sql,
-                            {"scat_id": data["scat_id"].strip(),
+                           {"scat_id": data["scat_id"].strip(),
                             "date": data["date"],
                             "wa_code": data["wa_code"].strip(),
                             "genotype_id": data["genotype_id"].strip(),
@@ -829,8 +835,8 @@ def confirm_load_xlsx(filename, mode):
                             "geo": data["coord_latlon"],
                             "geometry_utm": data["geometry_utm"],
                             "notes": data["notes"]
-                            }
-                            )
+                           }
+                           )
         except Exception:
             return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
