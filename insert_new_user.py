@@ -1,8 +1,10 @@
+"""
+generate sql code for inserting new user for accession the wolf DB
+"""
 
 import sys
 from werkzeug.security import generate_password_hash, check_password_hash
-#import psycopg2
-#import psycopg2.extras
+
 
 email = sys.argv[1]
 fn = sys.argv[2].replace("'", "''")

@@ -63,7 +63,14 @@ def view_transect(transect_id):
                             )
 
     transect_geojson = json.loads(transect["transect_geojson"])
-    fit = [[lat, lon] for lon, lat in transect_geojson['coordinates']]
+
+    latitudes = [lat for _, lat in transect_geojson['coordinates']]
+    longitudes = [lon for lon, _ in transect_geojson['coordinates']]
+    min_lat, max_lat = min(latitudes), max(latitudes)
+    min_lon, max_lon = min(longitudes), max(longitudes)
+    fit = [[min_lat, min_lon], [max_lat, max_lon]]
+    
+    #fit = [[lat, lon] for lon, lat in transect_geojson['coordinates']]
 
     transect_feature = {"type": "Feature",
                         "geometry": dict(transect_geojson),
@@ -281,12 +288,22 @@ def plot_transects():
     cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_lonlat FROM transects")
 
     transects_features = []
+    tot_min_lat, tot_min_lon = 90, 90
+    tot_max_lat, tot_max_lon = -90, -90
     for row in cursor.fetchall():
         transect_geojson = json.loads(row["transect_lonlat"])
 
+        # bounding box
+        latitudes = [lat for _, lat in transect_geojson['coordinates']]
+        longitudes = [lon for lon, _ in transect_geojson['coordinates']]
+        tot_min_lat = min([tot_min_lat, min(latitudes)])
+        tot_max_lat = max([tot_max_lat, max(latitudes)])
+        tot_min_lon = min([tot_min_lon, min(longitudes)])
+        tot_max_lon = max([tot_max_lon, max(longitudes)])
+
         transect_feature = {"geometry": dict(transect_geojson),
-                        "type": "Feature",
-                        "properties": {
+                            "type": "Feature",
+                            "properties": {
                             #"style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
                                        "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
                                       },
@@ -299,7 +316,9 @@ def plot_transects():
 
     return render_template("plot_transects.html",
                            header_title="Plot of transects",
-                           map=Markup(fn.leaflet_geojson(center, [], transects_features, zoom=7))
+                           map=Markup(fn.leaflet_geojson(center, [], transects_features,
+                                                         fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])
+                                                        ))
                           )
 
 
