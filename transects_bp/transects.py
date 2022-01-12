@@ -63,6 +63,7 @@ def view_transect(transect_id):
                             )
 
     transect_geojson = json.loads(transect["transect_geojson"])
+    fit = [[lat, lon] for lon, lat in transect_geojson['coordinates']]
 
     transect_feature = {"type": "Feature",
                         "geometry": dict(transect_geojson),
@@ -98,7 +99,9 @@ def view_transect(transect_id):
                             snowtracks=results_snowtracks,
                             transect_id=transect_id,
                             n_scats=n_scats,
-                            map=Markup(fn.leaflet_geojson(center, [], transect_features)))
+                            map=Markup(fn.leaflet_geojson(center, [], transect_features,
+                                                          fit=str(fit)
+                                                         )))
 
 
 @app.route("/transects_list")

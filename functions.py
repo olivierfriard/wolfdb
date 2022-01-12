@@ -122,7 +122,7 @@ def get_regions(provinces):
     return " ".join(list(set(transect_region)))
 
 
-def leaflet_geojson(center, scat_features, transect_features, zoom=13) -> str:
+def leaflet_geojson(center, scat_features, transect_features, fit="", zoom=13) -> str:
 
     map = """
 
@@ -160,8 +160,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
 	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
 }).addTo(map);
-
-
 
 
 function onEachFeature(feature, layer) {
@@ -203,12 +201,13 @@ L.geoJSON(transects, {
 var scale = L.control.scale(); // Creating scale control
          scale.addTo(map); // Adding scale control to the map
 
+
+var markerBounds = L.latLngBounds([###FIT###]);
+map.fitBounds(markerBounds);
+
 </script>
 
-
-    """.replace("###SCAT_FEATURES###", str(scat_features)).replace("###CENTER###", center).replace("###TRANSECT_FEATURES###", str(transect_features)).replace("###ZOOM###", str(zoom))
-
-
+    """.replace("###SCAT_FEATURES###", str(scat_features)).replace("###CENTER###", center).replace("###TRANSECT_FEATURES###", str(transect_features)).replace("###ZOOM###", str(zoom)).replace("###FIT###", fit)
 
 
     return map
