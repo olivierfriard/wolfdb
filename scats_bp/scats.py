@@ -441,7 +441,7 @@ def edit_scat(scat_id):
                    #"                coord_zone = %s, "
                    "                observer = %s, "
                    "                institution = %s, "
-                   "                geo = %s, "
+                   #"                geo = %s, "
                    "                geometry_utm = %s "
                    "WHERE scat_id = %s")
             cursor.execute(sql,
@@ -456,7 +456,7 @@ def edit_scat(scat_id):
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], #request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],
-                            f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
+                            #f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
                             f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
                             scat_id
                            ]
@@ -785,7 +785,7 @@ def confirm_load_xlsx(filename, mode):
             "                coord_zone = %(coord_zone)s, "
             "                observer = %(operator)s, "
             "                institution = %(institution)s, "
-            "                geo = %(geo)s, "
+            #"                geo = %(geo)s, "
             "                geometry_utm = %(geometry_utm)s, "
             "                notes = %(notes)s "
             "WHERE scat_id = %(scat_id)s;"
@@ -795,12 +795,15 @@ def confirm_load_xlsx(filename, mode):
             "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
             "coord_east, coord_north, coord_zone, "
             "observer, institution,"
-            "geo, geometry_utm, notes) "
+            #"geo, "
+            "geometry_utm, notes) "
             "SELECT %(scat_id)s, %(date)s, %(wa_code)s, %(genotype_id)s, "
             " %(sampling_season)s, %(sampling_type)s, %(path_id)s, %(snowtrack_id)s, "
             "%(location)s, %(municipality)s, %(province)s, %(region)s, "
             "%(deposition)s, %(matrix)s, %(collected_scat)s, %(scalp_category)s, %(genetic_sample)s,"
-            " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, %(geo)s, %(geometry_utm)s, %(notes)s "
+            " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, "
+            #"%(geo)s, "
+            "%(geometry_utm)s, %(notes)s "
             "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = %(scat_id)s)"
             )
     count_added = 0

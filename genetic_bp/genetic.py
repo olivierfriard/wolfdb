@@ -488,8 +488,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
     else:
 
-        print(f"{loci_values['WA3246']=}")
-
         return render_template("wa_genetic_samples_list.html",
                             header_title="Genetic data of WA codes",
                             title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (with_notes == 'with_notes')}</h2>"),
