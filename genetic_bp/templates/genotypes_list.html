@@ -10,11 +10,11 @@
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
 <a href="/genotypes" class="btn btn-primary">Genotypes</a>&nbsp;
 
-<a href="/genotypes_list/all" class="btn btn-primary">All</a>&nbsp;
+<a href="/genotypes_list/all{{ short }}" class="btn btn-primary">All</a>&nbsp;
 
-<a href="/genotypes_list/definitive" class="btn btn-primary">Definitive</a>&nbsp;
+<a href="/genotypes_list/definitive{{ short }}" class="btn btn-primary">Definitive</a>&nbsp;
 
-<a href="/genotypes_list/temp" class="btn btn-primary">Temporary</a>&nbsp;
+<a href="/genotypes_list/temp{{ short }}" class="btn btn-primary">Temporary</a>&nbsp;
 
 <br>
 <br>
@@ -42,6 +42,9 @@
 <th style="background-color: white;">n recaptures</th>
 <th style="background-color: white;">dead recovery</th>
 
+
+{% if loci_list %}
+
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
 <th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
@@ -52,6 +55,8 @@
 {% endif %}
 
 {% endfor %}
+
+{% endif %}
 
 </tr>
 {% for result in results %}
@@ -109,9 +114,9 @@
         {% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}
     </td>
 
+{% if loci_list %}
 
-
-    {% for locus in loci_values[result['genotype_id']] %}
+{% for locus in loci_values[result['genotype_id']] %}
 
 <td  style="border-left: 1px solid black;">
 
@@ -157,7 +162,7 @@
 {% endfor %}
 
 
-
+{% endif %}
 
 
 

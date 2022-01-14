@@ -160,32 +160,34 @@ def genotypes_list(type, mode="web"):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # loci list
-    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
     loci_list = {}
-    for row in cursor.fetchall():
-        loci_list[row["name"]] = row["n_alleles"]
+    if "short" not in type:
+        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+        for row in cursor.fetchall():
+            loci_list[row["name"]] = row["n_alleles"]
 
-    if type == "all":
-        cursor.execute("SELECT * FROM genotypes ORDER BY genotype_id")
-        results = cursor.fetchall()
-        title = f"List of all {len(results)} genotypes"
-        header_title = "List of all genotypes"
+    if "all" in type:
+        filter = ""
+        header_title = f"List of all genotypes"
 
-    if type == "definitive":
-        cursor.execute("SELECT * FROM genotypes WHERE status = 'OK' ORDER BY genotype_id")
-        results = cursor.fetchall()
-        title = f"List of {len(results)} definitive genotypes"
-        header_title = "List of definitive genotypes"
+    if "definitive" in type :
+        filter = "WHERE status = 'OK'"
+        header_title = f"List of definitive genotypes"
 
-    if type == "temp":
-        cursor.execute("SELECT * FROM genotypes WHERE status != 'OK' ORDER BY genotype_id")
-        results = cursor.fetchall()
-        title = f"List of {len(results)} temporary genotypes"
-        header_title = "List of temporary genotypes"
+    if "temp" in type:
+        filter = "WHERE status != 'OK'"
+        header_title = f"List of temporary genotypes"
+
+    cursor.execute(("SELECT *, "
+                    "(select count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures "
+                    f"FROM genotypes {filter} "
+                    "ORDER BY genotype_id"))
+    results = cursor.fetchall()
 
     loci_values = {}
-    for row in results:
-        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+    if "short" not in type:
+        for row in results:
+            loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
     if mode == "export":
 
@@ -200,12 +202,13 @@ def genotypes_list(type, mode="web"):
     else:
 
         return render_template("genotypes_list.html",
-                           header_title=header_title,
-                           title=title,
-                           type=type,
-                           results=results,
-                           loci_list=loci_list,
-                           loci_values=loci_values)
+                               header_title=header_title,
+                               title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
+                               type=type,
+                               results=results,
+                               loci_list=loci_list,
+                               loci_values=loci_values,
+                               short="_short" if "short" in type else "")
 
 
 
