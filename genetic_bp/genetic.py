@@ -44,11 +44,57 @@ def view_genotype(genotype_id):
     genotype = cursor.fetchone()
 
 
-    cursor.execute(("SELECT distinct wa_code FROM genotypes, wa_results "
+    '''
+    cursor.execute(("SELECT wa_code FROM genotypes, wa_results "
                     "WHERE genotypes.genotype_id = wa_results.genotype_id "
                     "AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code"),
                     [genotype_id])
+    '''
+
+
+    cursor.execute(("SELECT wa_code, sample_id, "
+                   "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
+                   "FROM wa_scat_tissue "
+                   "WHERE genotype_id = %s "),
+                   [genotype_id])
+
+    
     wa_codes = cursor.fetchall()
+    samples_features = []
+    count, sum_lon, sum_lat  = 0, 0, 0
+    for row in wa_codes:
+
+        sample_geojson = json.loads(row["sample_lonlat"])
+        count += 1
+        lon, lat = sample_geojson["coordinates"]
+        sum_lon += lon
+        sum_lat += lat
+
+        if row['sample_id'].startswith("E"):
+            color = "orange"
+        elif row['sample_id'].startswith("T"):
+            color = "purple"
+        else:
+            color = "red"
+
+        sample_feature = {"geometry": dict(sample_geojson),
+                        "type": "Feature",
+                        "properties": {"style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                                       "popupContent": (f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
+                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                                                        #f"""Genotype ID: {row['genotype_id']}"""
+                                                        )
+                                  },
+                    "id": row['sample_id']
+                   }
+
+        samples_features.append(sample_feature)
+
+    if count:
+        center = f"{sum_lat / count}, {sum_lon / count}"
+        map = Markup(fn.leaflet_geojson(center, samples_features, transect_features = [], zoom=8))
+    else:
+        map = ""
 
     # genetic data
     #cursor.execute("", [genotype_id])
@@ -57,7 +103,8 @@ def view_genotype(genotype_id):
                            header_title=f"Genotype ID: {genotype_id}",
                            result=genotype,
                            n_recap=len(wa_codes),
-                           wa_codes=wa_codes)
+                           wa_codes=wa_codes,
+                           map=map)
 
 
 
@@ -122,16 +169,19 @@ def genotypes_list(type, mode="web"):
         cursor.execute("SELECT * FROM genotypes ORDER BY genotype_id")
         results = cursor.fetchall()
         title = f"List of all {len(results)} genotypes"
+        header_title = "List of all genotypes"
 
     if type == "definitive":
         cursor.execute("SELECT * FROM genotypes WHERE status = 'OK' ORDER BY genotype_id")
         results = cursor.fetchall()
         title = f"List of {len(results)} definitive genotypes"
+        header_title = "List of definitive genotypes"
 
     if type == "temp":
         cursor.execute("SELECT * FROM genotypes WHERE status != 'OK' ORDER BY genotype_id")
         results = cursor.fetchall()
         title = f"List of {len(results)} temporary genotypes"
+        header_title = "List of temporary genotypes"
 
     loci_values = {}
     for row in results:
@@ -147,10 +197,10 @@ def genotypes_list(type, mode="web"):
 
         return response
 
-
     else:
+
         return render_template("genotypes_list.html",
-                           header_title="List of genotypes",
+                           header_title=header_title,
                            title=title,
                            type=type,
                            results=results,
