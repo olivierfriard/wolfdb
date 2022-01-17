@@ -1,0 +1,50 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/dead_wolves_list" class="btn btn-primary">Dead wolves</a>
+
+<br>
+<br>
+
+
+<h2>Dead wolf <b>#{{ dead_wolf["ID"] }}</b></h2>
+
+
+<table class="table table-striped">
+
+<tr><td>WA code</td><td><a href="/view_wa/{{ dead_wolf["WA"] }}">{{ dead_wolf["WA"] }}</a></td></tr>
+<tr><td>Genotype ID</td><td><a href="/view_genotype/{{ dead_wolf["Genotype ID"] }}">{{ dead_wolf["Genotype ID"] }}</a></td></tr>
+<tr><td>Tissue ID</td><td><a href="/view_tissue/{{ dead_wolf["Tissue ID"] }}">{{ dead_wolf["Tissue ID"] }}</a></td></tr>
+
+{% for field in fields_list %} 
+
+<tr><td>{{ field["name"] }}</td><td>{{ dead_wolf[field["name"]] }}</td></tr>
+
+{% endfor %}
+
+</table>
+
+
+<h2>Map</h2>
+
+
+<div id="map" style="width: 800px; height: 800px;"></div>
+
+
+
+{{ map }}
+
+
+
+{% endblock %}
+
+
+
+
+
+
