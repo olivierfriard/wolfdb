@@ -181,8 +181,20 @@ def plot_all_scats():
     cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
 
     scat_features = []
+
+    tot_min_lat, tot_min_lon = 90, 90
+    tot_max_lat, tot_max_lon = -90, -90
+
     for row in cursor.fetchall():
         scat_geojson = json.loads(row["scat_lonlat"])
+
+        # bounding box
+        lon, lat = scat_geojson['coordinates']
+
+        tot_min_lat = min([tot_min_lat, lat])
+        tot_max_lat = max([tot_max_lat, lat])
+        tot_min_lon = min([tot_min_lon, lon])
+        tot_max_lon = max([tot_max_lon, lon])
 
         scat_feature = {"geometry": dict(scat_geojson),
                         "type": "Feature",
@@ -196,11 +208,11 @@ def plot_all_scats():
 
     center = f"45 , 9"
 
-    transect_features = []
-
     return render_template("plot_all_scats.html",
                            header_title="Plot of scats",
-                           map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=7))
+                           map=Markup(fn.leaflet_geojson(center, scat_features, [],
+                                      fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])
+                           ))
                           )
 
 

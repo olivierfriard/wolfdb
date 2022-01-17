@@ -36,8 +36,6 @@ class Scat(Form):
 
 
     scat_id = StringField("Scat ID", validators=[Required(),])
-    #date = StringField("Date", validators=[Required(), iso_date_validator])
-    #sampling_season = StringField("Sampling season", [])
     sampling_type = SelectField("Sampling type", choices=[('', ''),
                                                           ('Opportunistic', 'Opportunistic'),
                                                           ('Systematic', 'Systematic')],
