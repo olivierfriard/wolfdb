@@ -12,6 +12,7 @@ from flask import Flask, render_template, redirect, request, Markup, flash, sess
 import psycopg2
 import psycopg2.extras
 import json
+import utm
 from config import config
 
 #from dead_wolf import Dead_wolf
@@ -32,7 +33,6 @@ def dead_wolves():
 
 
 @app.route("/view_dead_wolf/<tissue_id>")
-@app.route("/view_tissue/<tissue_id>")
 @fn.check_login
 def view_dead_wolf(tissue_id):
 
@@ -68,6 +68,81 @@ def view_dead_wolf(tissue_id):
                           )
 
 
+@app.route("/view_tissue/<tissue_id>")
+def view_tissue(tissue_id):
+    """
+    show dead wolf corresponding to tissue ID
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT id from dw_short2 WHERE tissue_id = %s", [tissue_id])
+    row = cursor.fetchone()
+
+    if row is not None:
+        return redirect(f"/view_dead_wolf_id/{row['id']}")
+    else:
+        "Tissue ID not found"
+
+
+
+@app.route("/view_dead_wolf_id/<id>")
+@fn.check_login
+def view_dead_wolf_id(id):
+    """
+    visualize dead wolf data (by id)
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # fields list
+    cursor.execute("select * from dead_wolves_fields_definition order by position")
+    fields_list = cursor.fetchall()
+
+    cursor.execute("select id,name,val from dead_wolves_values, dead_wolves_fields_definition where dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s",
+                   [id])
+
+    rows = cursor.fetchall()
+
+    dead_wolf = {}
+    for row in rows:
+        dead_wolf[row["name"]] = row["val"]
+
+    try:
+        dead_wolf["UTM Coordinates X"] = int(float(dead_wolf["UTM Coordinates X"]))
+        dead_wolf["UTM Coordinates Y"] = int(float(dead_wolf["UTM Coordinates Y"]))
+
+        lat_lon = utm.to_latlon(dead_wolf["UTM Coordinates X"],
+                                dead_wolf["UTM Coordinates Y"],
+                                int(dead_wolf["UTM zone"].replace("N", "")),
+                                dead_wolf["UTM zone"][-1])
+    except Exception:
+        lat_lon = []
+
+    if lat_lon:
+
+        dw_feature = {"geometry": {'type': 'Point', 'coordinates': [lat_lon[1], lat_lon[0]]},
+                     "type": "Feature",
+                     "properties": {"style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
+                                   "popupContent": f"Dead wolf ID: {id}"
+                                  },
+                    "id": id
+                   }
+
+        dw_features = [dw_feature]
+        center = f"{lat_lon[0]}, {lat_lon[1]}"
+    else:
+        dw_features = []
+        center = ""
+
+    return render_template("view_dead_wolf2.html",
+                           header_title=f"Dead wolf #{dead_wolf['ID']}",
+                           fields_list=fields_list,
+                           dead_wolf=dead_wolf,
+                           map=Markup(fn.leaflet_geojson(center, dw_features, []))
+                          )
+
+
+
 @app.route("/dead_wolves_list")
 @fn.check_login
 def dead_wolves_list():
@@ -81,6 +156,25 @@ def dead_wolves_list():
     return render_template("dead_wolves_list.html",
                            results=results
                            )
+
+@app.route("/dead_wolves_list2")
+@fn.check_login
+def dead_wolves_list2():
+    """
+    get list all dead_wolves from dw_short2
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute(("SELECT * FROM dw_short2 ORDER BY id"))
+
+    results = cursor.fetchall()
+
+    return render_template("dead_wolves_list2.html",
+                           header_title="List of dead wolves",
+                           length=len(results),
+                           results=results
+                           )
+
 
 
 @app.route("/plot_dead_wolves")
@@ -113,6 +207,57 @@ def plot_dead_wolves():
 
     return render_template("plot_all_scats.html",
                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=7))
+                           )
+
+
+@app.route("/plot_dead_wolves2")
+@fn.check_login
+def plot_dead_wolves2():
+    """
+    plot dead wolves
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM dw_short2")
+
+    tot_min_lat, tot_min_lon = 90, 90
+    tot_max_lat, tot_max_lon = -90, -90
+
+    dw_features = []
+    for row in cursor.fetchall():
+
+        try:
+            lat, lon = utm.to_latlon(int(float(row["utm_east"])),
+                                    int(float(row["utm_north"])),
+                                    32, "N")
+
+            tot_min_lat = min([tot_min_lat, lat])
+            tot_max_lat = max([tot_max_lat, lat])
+            tot_min_lon = min([tot_min_lon, lon])
+            tot_max_lon = max([tot_max_lon, lon])
+
+            scat_geojson =  {'type': 'Point', 'coordinates': [lon, lat]}
+
+            scat_feature = {"geometry": dict(scat_geojson),
+                            "type": "Feature",
+                            "properties": {"style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
+                                        "popupContent": (f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>""") +
+                                                         (f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>""" if row['genotype_id'] else ""
+                                                         f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>"""
+                                                         )
+                                        },
+                            "id": row["id"]
+                    }
+            dw_features.append(dict(scat_feature))
+
+        except Exception:
+            pass
+
+
+    return render_template("plot_dead_wolves.html",
+                           header_title="Plot of dead wolves",
+                           map=Markup(fn.leaflet_geojson(f"45 , 9", dw_features, [], zoom=7,
+                           fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])))
                            )
 
 

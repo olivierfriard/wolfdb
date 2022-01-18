@@ -17,13 +17,19 @@
 
 <table class="table table-striped">
 
+<tr><td>ID</td><td><a href="/view_wa/{{ dead_wolf["ID"] }}">{{ dead_wolf["ID"] }}</a></td></tr>
 <tr><td>WA code</td><td><a href="/view_wa/{{ dead_wolf["WA"] }}">{{ dead_wolf["WA"] }}</a></td></tr>
 <tr><td>Genotype ID</td><td><a href="/view_genotype/{{ dead_wolf["Genotype ID"] }}">{{ dead_wolf["Genotype ID"] }}</a></td></tr>
 <tr><td>Tissue ID</td><td><a href="/view_tissue/{{ dead_wolf["Tissue ID"] }}">{{ dead_wolf["Tissue ID"] }}</a></td></tr>
 
-{% for field in fields_list %} 
+
+{% for field in fields_list %}
+
+{% if field["name"] != 'ID' and field["name"] != 'Tissue ID' and field["name"] != 'Genotype ID' and field["name"] != 'WA'%}
 
 <tr><td>{{ field["name"] }}</td><td>{{ dead_wolf[field["name"]] }}</td></tr>
+
+{%endif%}
 
 {% endfor %}
 

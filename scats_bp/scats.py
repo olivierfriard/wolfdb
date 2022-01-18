@@ -189,7 +189,7 @@ def plot_all_scats():
         scat_geojson = json.loads(row["scat_lonlat"])
 
         # bounding box
-        lon, lat = scat_geojson['coordinates']
+        lon, lat = scat_geojson["coordinates"]
 
         tot_min_lat = min([tot_min_lat, lat])
         tot_max_lat = max([tot_max_lat, lat])
