@@ -15,7 +15,8 @@ import json
 import utm
 from config import config
 
-#from dead_wolf import Dead_wolf
+from .dw_form import Dead_wolf
+
 import functions as fn
 from italian_regions import regions
 
@@ -95,10 +96,11 @@ def view_dead_wolf_id(id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # fields list
-    cursor.execute("select * from dead_wolves_fields_definition order by position")
+    cursor.execute("SELECT * FROM dead_wolves_fields_definition ORDER BY position")
     fields_list = cursor.fetchall()
 
-    cursor.execute("select id,name,val from dead_wolves_values, dead_wolves_fields_definition where dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s",
+    cursor.execute(("SELECT id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
+                    "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s"),
                    [id])
 
     rows = cursor.fetchall()
@@ -161,11 +163,11 @@ def dead_wolves_list():
 @fn.check_login
 def dead_wolves_list2():
     """
-    get list all dead_wolves from dw_short2
+    get list all dead_wolves from dw_short
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT * FROM dw_short2 ORDER BY id"))
+    cursor.execute(("SELECT * FROM dw_short WHERE deleted is NULL ORDER BY id"))
 
     results = cursor.fetchall()
 
@@ -214,11 +216,11 @@ def plot_dead_wolves():
 @fn.check_login
 def plot_dead_wolves2():
     """
-    plot dead wolves
+    plot dead wolves from dw_short
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dw_short2")
+    cursor.execute("SELECT * FROM dw_short WHERE deleted is NULL ")
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
@@ -262,10 +264,9 @@ def plot_dead_wolves2():
 
 
 
-'''
-
-@app.route("/new_transect", methods=("GET", "POST"))
-def new_transect():
+@app.route("/new_dead_wolf", methods=("GET", "POST"))
+@fn.check_login
+def new_dead_wolf():
 
     def not_valid(msg):
         # default values
@@ -283,47 +284,53 @@ def new_transect():
 
 
     if request.method == "GET":
-        form = Transect()
-        return render_template('new_transect.html',
-                               title="New transect",
-                               action=f"/new_transect",
+        form = Dead_wolf()
+        return render_template('new_dead_wolf.html',
+                               title="New dead wolf",
+                               action=f"/new_dead_wolf",
                             form=form,
                             default_values={})
 
 
     if request.method == "POST":
-        form = Transect(request.form)
+        form = Dead_wolf(request.form)
 
         if form.validate():
-
-            transect_regions = fn.get_regions(request.form["province"])
-            if request.form["province"] and transect_regions == "":
-                return not_valid("Check the province field!")
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("INSERT INTO transects (transect_id, sector, location, municipality, province, region) "
-                   "VALUES (%s, %s, %s, %s, %s, %s)")
-            cursor.execute(sql,
-                           [
-                            request.form["transect_id"], request.form["sector"],
-                            request.form["location"].strip(), request.form["municipality"].strip(),
-                            request.form["province"].strip().upper(),
-                            transect_regions
-                           ]
-                           )
+            cursor.execute("SELECT MAX(id) AS max_id FROM dead_wolves_values")
+            row = cursor.fetchone()
+            new_id = row["max_id"] + 1
+
+            # fields list
+            cursor.execute("SELECT * FROM dead_wolves_fields_definition order by position")
+            fields_list = cursor.fetchall()
+
+            cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
+                                    [new_id, 1, new_id])
+            connection.commit()
+
+            for field in fields_list:
+                if f"field{field['field_id']}" in request.form:
+
+                    cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
+                                    [new_id, field['field_id'], request.form[f"field{field['field_id']}"]])
 
             connection.commit()
 
-            return redirect("/transects_list")
+            return redirect("/dead_wolves_list")
         else:
-            return not_valid("Transect form NOT validated")
+            return not_valid("Dead wolf form NOT validated")
 
 
 
-@app.route("/edit_transect/<transect_id>", methods=("GET", "POST"))
-def edit_transect(transect_id):
+
+
+@app.route("/edit_dead_wolf/<id>", methods=("GET", "POST"))
+@fn.check_login
+def edit_dead_wolf(id):
 
     def not_valid(msg):
         # default values
@@ -333,37 +340,61 @@ def edit_transect(transect_id):
 
         flash(Markup(f"<b>{msg}</b>"))
 
-        return render_template("new_transect.html",
-                            title="Edit transect",
-                            action=f"/edit_transect/{transect_id}",
+        return render_template("new_dead_wolf.html",
+                            title="Edit dead wolf",
+                            action=f"/edit_dead_wolf/{id}",
                             form=form,
                             default_values=default_values)
 
 
     if request.method == "GET":
+
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
-                    [transect_id])
-        default_values = cursor.fetchone()
 
-        form = Transect()
+        # fields list
+        '''
+        cursor.execute("select * from dead_wolves_fields_definition order by position")
+        fields_list = cursor.fetchall()
+        '''
 
-        return render_template("new_transect.html",
-                            title="Edit transect",
-                            action=f"/edit_transect/{transect_id}",
+        cursor.execute(("SELECT id, dead_wolves_values.field_id AS field_id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
+                        "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s"),
+                    [id])
+
+        rows = cursor.fetchall()
+
+        default_values = {}
+        for row in rows:
+            default_values[f"field{row['field_id']}"] = row["val"]
+
+        print(default_values)
+
+        form = Dead_wolf(field2=default_values["field2"],
+                         field3=default_values["field3"],
+                         field12=default_values["field12"],
+
+                         field13=default_values["field13"],
+                         field26=default_values["field26"],
+
+                         field35=default_values["field35"],
+                         field43=default_values["field43"],
+                         field82=default_values["field82"],
+                         field83=default_values["field83"],
+                        )
+
+
+        return render_template("new_dead_wolf.html",
+                            title="Edit dead wolf",
+                            action=f"/edit_dead_wolf/{id}",
                             form=form,
                             default_values=default_values)
 
     if request.method == "POST":
 
-        form = Transect(request.form)
+        form = Dead_wolf(request.form)
+
         if form.validate():
-
-            transect_regions = fn.get_regions(request.form["province"])
-            if request.form["province"] and transect_regions == "":
-                return not_valid("Check the province field!")
-
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -386,22 +417,19 @@ def edit_transect(transect_id):
             return not_valid("Transect form NOT validated")
 
 
-@app.route("/del_transect/<transect_id>")
-def del_scat(transect_id):
+@app.route("/del_dead_wolf/<id>")
+def del_dead_wolf(id):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    # check if path based on transect exist
-    cursor.execute("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = %s", [transect_id])
-    result = cursor.fetchone()
-    if result["n_paths"] > 0:
-        return "Some paths are based on this transect. Please remove them before"
-
-    cursor.execute("DELETE FROM transects WHERE transect_id = %s",
-                   [transect_id])
+    cursor.execute("UPDATE dead_wolves_values VALUES (%s, 107, NOW())", [id])
+    cursor.execute(("INSERT INTO dead_wolves_values "
+                    "SELECT 1, 107, NULL WHERE NOT EXISTS "
+                    "(SELECT 1 FROM dead_wolves_values WHERE id = %s and field_id = 107);"),
+                   [id])
     connection.commit()
-    return redirect("/transects_list")
+    
+    return redirect("/dead_wolves_list2")
 
 
-'''

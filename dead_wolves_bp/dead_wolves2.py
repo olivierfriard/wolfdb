@@ -47,7 +47,8 @@ def view_dead_wolf(id):
     cursor.execute("select * from dead_wolves_fields_definition order by position")
     fields_list = cursor.fetchall()
 
-    cursor.execute("select id,name,val from dead_wolves_values, dead_wolves_fields_definition where dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s",
+    cursor.execute(("SELECT id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
+                    "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s"),
                    [id])
 
     rows = cursor.fetchall()
@@ -108,8 +109,6 @@ def view_tissue(tissue_id):
     dead_wolf = cursor.fetchone()
 
     dw_geojson = json.loads(dead_wolf["dw_lonlat"])
-
-    print(dict(dw_geojson))
 
     dw_feature = {"geometry": dict(dw_geojson),
                     "type": "Feature",
@@ -196,6 +195,7 @@ def plot_dead_wolves():
 @app.route("/new_dead_wolf", methods=("GET", "POST"))
 def new_dead_wolf():
 
+    '''
     def not_valid(msg):
         # default values
         default_values = {}
@@ -204,20 +204,21 @@ def new_dead_wolf():
 
         flash(Markup(f"<b>{msg}</b>"))
 
-        return render_template("new_transect.html",
-                            title="New transect",
-                            action=f"/new_transect",
+        return render_template("new_dead_wolf.html",
+                            title="New dead wolf",
+                            action=f"/new_dead_wolf",
                             form=form,
                             default_values=default_values)
+    '''
 
 
     if request.method == "GET":
         form = Dead_wolf()
-        return render_template('new_dead_wolf.html',
+        return render_template("new_dead_wolf.html",
                                title="New dead wolf",
                                action=f"/new_dead_wolf",
-                            form=form,
-                            default_values={})
+                               form=form,
+                               default_values={})
 
 
     if request.method == "POST":
@@ -254,9 +255,6 @@ def new_dead_wolf():
 
 
 
-
-
-
 @app.route("/edit_dead_wolf/<id>", methods=("GET", "POST"))
 def edit_dead_wolf(id):
 
@@ -268,25 +266,37 @@ def edit_dead_wolf(id):
 
         flash(Markup(f"<b>{msg}</b>"))
 
-        return render_template("new_transect.html",
-                            title="Edit transect",
-                            action=f"/edit_transect/{transect_id}",
+        return render_template("new_dead_wolf.html",
+                            title="Edit dead wolf",
+                            action=f"/edit_dead_wolf/{id}",
                             form=form,
                             default_values=default_values)
 
 
     if request.method == "GET":
+
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
-                    [transect_id])
-        default_values = cursor.fetchone()
 
-        form = Transect()
+        # fields list
+        cursor.execute("select * from dead_wolves_fields_definition order by position")
+        fields_list = cursor.fetchall()
 
-        return render_template("new_transect.html",
-                            title="Edit transect",
-                            action=f"/edit_transect/{transect_id}",
+        cursor.execute(("SELECT id, field_id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
+                        "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s"),
+                    [id])
+
+        rows = cursor.fetchall()
+
+        default_values = {}
+        for row in rows:
+            default_values[row["field_id"]] = row["val"]
+
+        form = Dead_wolf(request.form)
+
+        return render_template("new_dead_wolf.html",
+                            title="Edit dead wolf",
+                            action=f"/edit_dead_wolf/{id}",
                             form=form,
                             default_values=default_values)
 

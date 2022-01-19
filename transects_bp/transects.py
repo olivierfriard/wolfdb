@@ -210,8 +210,10 @@ def edit_transect(transect_id):
 
 
     if request.method == "GET":
+
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
         cursor.execute("SELECT * FROM transects WHERE transect_id = %s",
                     [transect_id])
         default_values = cursor.fetchone()
@@ -233,7 +235,6 @@ def edit_transect(transect_id):
             transect_regions = fn.get_regions(request.form["province"])
             if request.form["province"] and transect_regions == "":
                 return not_valid("Check the province field!")
-
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)

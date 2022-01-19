@@ -34,9 +34,14 @@ class Dead_wolf(Form):
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'))
 
 
+    # SelectField("Matrix", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
+
     field1 = StringField("ID", [], default="")
-    field2 = StringField("Necroscopy done", [], default="")
-    field3 = StringField("Definitive data", [], default="")
+    field2 = SelectField("Necroscopy done",
+                         choices=[('N.D.', 'N.D.'), ('SI', 'SI'), ('NO', 'NO'), ('In attesa', 'In attesa')],
+                         default="N.D."
+                         )
+    field3 = SelectField("Definitive data", choices=[('NO', 'NO'), ('SI', 'SI')], default="NO")
     field4 = StringField("Genetic sample to recover", [], default="")
     field5 = StringField("Reminder on genetic sample collecting and documentation", [], default="")
     field6 = StringField("Tissue ID", [], default="")
@@ -45,8 +50,36 @@ class Dead_wolf(Form):
     field9 = StringField("Discovery Date", [], default="")
     field10 = StringField("Sampling season", [], default="")
     field11 = StringField("Necroscopy date", [], default="")
-    field12 = StringField("Main cause of mortality", [], default="")
-    field13 = StringField("Specific cause of mortality", [], default="")
+
+    field12 = SelectField("Main cause of mortality", choices=[("", ""),
+                                                      ("Indeterminata", "Indeterminata"),
+                                                      ("Impatto con veicolo", "Impatto con veicolo"),
+                                                      ("Naturale", "Naturale"),
+                                                      ("Bracconaggio", "Bracconaggio"),
+                                                      ("Probabile bracconaggio", "Probabile bracconaggio"),
+                                                      ],
+                                                      default="")
+
+    field13 = SelectField("Specific cause of mortality", 
+                          choices=[("", ""),
+                           ("Indeterminata", "Indeterminata"),
+                           ("Inanizione", "Inanizione"),
+                           ("Aggressione intra/interspecifica", "Aggressione intra/interspecifica"),
+                           ("Possibile avvelenamento", "Possibile avvelenamento"),
+                           ("Avvelenamento", "Avvelenamento"),
+                           ("Deperimento e pleuroperitonite", "Deperimento e pleuroperitonite"),
+                           ("Probabile avvelenamento", "Probabile avvelenamento"),
+                           ("Malattia", "Malattia"),
+                           ("Laccio", "Laccio"),
+                           ("Aggressione interspecifica", "Aggressione interspecifica"),
+                           ("Impatto con treno", "Impatto con treno"),
+                           ("Aggressione intraspecifica", "Aggressione intraspecifica"),
+                           ("Impatto con auto", "Impatto con auto"),
+                           ("Valanga", "Valanga"),
+                           ("Arma da fuoco", "Arma da fuoco")
+                          ],
+                        default="")
+
     field14 = StringField("Note on cause of mortality", [], default="")
     field15 = StringField("Additional events on mortality", [], default="")
     field16 = StringField("Toxic category", [], default="")
@@ -59,7 +92,12 @@ class Dead_wolf(Form):
     field23 = StringField("UTM Coordinates X", [], default="")
     field24 = StringField("UTM Coordinates Y", [], default="")
     field25 = StringField("UTM zone", [], default="")
-    field26 = StringField("Georeference", [], default="")
+    field26 = SelectField("Georeference",
+                            choices=[("Accurata", "Accurata"),
+                            ("N.D.", "N.D."),
+                            ("Dedotta, non accurata", "Dedotta, non accurata")
+                            ],
+                            default="N.D.")
     field27 = StringField("Whole weight", [], default="")
     field28 = StringField("Sex", [], default="")
     field29 = StringField("Gutted weight", [], default="")
@@ -68,7 +106,13 @@ class Dead_wolf(Form):
     field32 = StringField("Minimum Age estimated by genetic recapture", [], default="")
     field33 = StringField("Estimated age with Cementum Anuli", [], default="")
     field34 = StringField("Canine collected", [], default="")
-    field35 = StringField("Age class", [], default="")
+    field35 = SelectField("Age class",
+                            choices=[("", ""),
+                             ("<1", "<1"),
+                             ("Indeterminata", "Indeterminata"),
+                             ("1-2", "1-2"),
+                             ("Adult (>2)", "Adult (>2)")],
+                             default="")
     field36 = StringField("Genotype ID", [], default="")
     field37 = StringField("Wolf Pack", [], default="")
     field38 = StringField("Status", [], default="")
@@ -76,7 +120,19 @@ class Dead_wolf(Form):
     field40 = StringField("Aplotipe Result", [], default="")
     field41 = StringField("Genetic Result Note", [], default="")
     field42 = StringField("Genetic Lab", [], default="")
-    field43 = StringField("Type of recovery", [], default="")
+    field43 = SelectField("Type of recovery",
+                            choices=[("", ""),
+                            ("Carcassa", "Carcassa"),
+                            ("Cranio ", "Cranio "),
+                            ("Cranio", "Cranio"),
+                            ("Carcassa ", "Carcassa "),
+                            ("Pelo", "Pelo"),
+                            ("Sangue", "Sangue"),
+                            ("N.D.", "N.D."),
+                            ("Resti parziali", "Resti parziali"),
+                            ("Pelle", "Pelle")
+                            ],
+                            default="")
     field44 = StringField("Note on recovery", [], default="")
     field45 = StringField("Box send to USA Genetic Lab", [], default="")
     field46 = StringField("WA", [], default="")
@@ -115,8 +171,14 @@ class Dead_wolf(Form):
     field79 = StringField("Carcass Disposed", [], default="")
     field80 = StringField("Carcass Embalbed", [], default="")
     field81 = StringField("skeleton assembled", [], default="")
-    field82 = StringField("Skull cleaned", [], default="")
-    field83 = StringField("Recoverable for embalming", [], default="")
+    field82 = SelectField("Skull cleaned",
+                          choices=[('', ''), ('N.D.', 'N.D.'), ('SI', 'SI'), ('NO', 'NO')],
+                          default=""
+                         )
+    field83 = SelectField("Recoverable for embalming",
+                         choices=[('', ''), ('N.D.', 'N.D.'), ('SI', 'SI'), ('NO', 'NO')],
+                         default=""
+                         )
     field84 = StringField("Placed in", [], default="")
     field85 = StringField("CITES Code", [], default="")
     field86 = StringField("Marking type", [], default="")
