@@ -96,11 +96,12 @@ def view_dead_wolf_id(id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # fields list
-    cursor.execute("SELECT * FROM dead_wolves_fields_definition ORDER BY position")
+    cursor.execute("SELECT * FROM dead_wolves_fields_definition WHERE visible = 'Y' ORDER BY position")
     fields_list = cursor.fetchall()
 
     cursor.execute(("SELECT id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
-                    "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s"),
+                    "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id "
+                    "AND id = %s"),
                    [id])
 
     rows = cursor.fetchall()
@@ -117,6 +118,10 @@ def view_dead_wolf_id(id):
                                 dead_wolf["UTM Coordinates Y"],
                                 int(dead_wolf["UTM zone"].replace("N", "")),
                                 dead_wolf["UTM zone"][-1])
+
+        dead_wolf["Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"] = f"East: {dead_wolf['UTM Coordinates X']} North: {dead_wolf['UTM Coordinates Y']}"
+        fields_list.append({"name": "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"})
+
     except Exception:
         lat_lon = []
 
@@ -220,7 +225,7 @@ def plot_dead_wolves2():
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dw_short WHERE deleted is NULL ")
+    cursor.execute("SELECT * FROM dw_short WHERE deleted is NULL AND utm_east != '0' AND utm_north != '0'")
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
@@ -308,6 +313,7 @@ def new_dead_wolf():
             cursor.execute("SELECT * FROM dead_wolves_fields_definition order by position")
             fields_list = cursor.fetchall()
 
+            # insert ID
             cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
                                     [new_id, 1, new_id])
             connection.commit()
@@ -315,8 +321,13 @@ def new_dead_wolf():
             for field in fields_list:
                 if f"field{field['field_id']}" in request.form:
 
-                    cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
-                                    [new_id, field['field_id'], request.form[f"field{field['field_id']}"]])
+                    # check UTM coordinates
+                    if field['field_id'] in (23, 24) and request.form[f"field{field['field_id']}"] == "":
+                        cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
+                                       [new_id, field['field_id'], "0"])
+                    else:
+                        cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
+                                       [new_id, field['field_id'], request.form[f"field{field['field_id']}"]])
 
             connection.commit()
 

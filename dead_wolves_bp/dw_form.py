@@ -27,14 +27,13 @@ class Dead_wolf(Form):
         """
         validation for date in ISO 8601 format (YYYY-MM-DD)
         """
-        try: # YYYY
+        try:
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
             return
         except ValueError:
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'))
 
 
-    # SelectField("Matrix", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
 
     field1 = StringField("ID", [], default="")
     field2 = SelectField("Necroscopy done",
@@ -89,9 +88,9 @@ class Dead_wolf(Form):
     field20 = StringField("Province", [], default="")
     field21 = StringField("Area", [], default="")
     field22 = StringField("Country", [], default="")
-    field23 = StringField("UTM Coordinates X", [], default="")
-    field24 = StringField("UTM Coordinates Y", [], default="")
-    field25 = StringField("UTM zone", [], default="")
+    field23 = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
+    field24 = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
+    field25 = StringField("UTM zone", [], default="32N")
     field26 = SelectField("Georeference",
                             choices=[("Accurata", "Accurata"),
                             ("N.D.", "N.D."),
@@ -99,20 +98,24 @@ class Dead_wolf(Form):
                             ],
                             default="N.D.")
     field27 = StringField("Whole weight", [], default="")
-    field28 = StringField("Sex", [], default="")
-    field29 = StringField("Gutted weight", [], default="")
-    field30 = StringField("Note on weight measurement", [], default="")
-    field31 = StringField("Estimated age", [], default="")
-    field32 = StringField("Minimum Age estimated by genetic recapture", [], default="")
-    field33 = StringField("Estimated age with Cementum Anuli", [], default="")
-    field34 = StringField("Canine collected", [], default="")
-    field35 = SelectField("Age class",
+    field28 = StringField("Gutted weight", [], default="")
+
+
+    field29 = StringField("Note on weight measurement", [], default="")
+    field30 = StringField("Estimated age", [], default="")
+    field31 = StringField("Minimum Age estimated by genetic recapture", [], default="")
+
+    field32 = StringField("Estimated age with Cementum Anuli", [], default="")
+    field33 = StringField("Canine collected", [], default="")
+    field34 = SelectField("Age class",
                             choices=[("", ""),
                              ("<1", "<1"),
                              ("Indeterminata", "Indeterminata"),
                              ("1-2", "1-2"),
                              ("Adult (>2)", "Adult (>2)")],
                              default="")
+    field35 = StringField("Sex", [], default="")
+
     field36 = StringField("Genotype ID", [], default="")
     field37 = StringField("Wolf Pack", [], default="")
     field38 = StringField("Status", [], default="")

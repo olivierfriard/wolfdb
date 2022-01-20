@@ -28,7 +28,6 @@ app = flask.Blueprint("scats", __name__, template_folder="templates")
 
 app.debug = True
 
-
 params = config()
 
 ALLOWED_EXTENSIONS = [".TSV"]
@@ -48,9 +47,8 @@ def error_info(exc_info: tuple) -> tuple:
         tuple: error type, error file name, error line number
     """
 
-    exc_type, exc_obj, exc_tb = exc_info
+    _, exc_obj, exc_tb = exc_info
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-
 
     error_type, error_file_name, error_lineno = exc_obj, fname, exc_tb.tb_lineno
 
@@ -62,7 +60,6 @@ def error_info(exc_info: tuple) -> tuple:
 def scats():
     return render_template("scats.html",
                            header_title="Scats")
-
 
 
 @app.route("/wa_form", methods=("POST",))
@@ -82,21 +79,18 @@ def wa_form():
             )
 
 
-
 @app.route("/add_wa", methods=("POST",))
 @fn.check_login
 def add_wa():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     cursor.execute("UPDATE scats SET wa_code = %s WHERE scat_id = %s",
                    [request.form['wa'].upper(), request.form['scat_id']])
 
     connection.commit()
     return redirect(f"/view_scat/{request.form['scat_id']}")
-
-
-
 
 
 @app.route("/view_scat/<scat_id>")
@@ -553,7 +547,6 @@ def extract_data_from_xlsx(filename):
         except Exception:
             date_from_file = ""
 
-
         if date != date_from_file:
             out += fn.alert_danger(f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}")
 
@@ -571,14 +564,12 @@ def extract_data_from_xlsx(filename):
         # check zone
         if data["coord_zone"].upper() != "32N":
             out += fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2}): found {data['coord_zone']}")
-            #return True, fn.alert_danger(f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2})"), {}, {}, {}
 
         try:
             coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
             data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
         except Exception:
             out += fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}')
-            #return True, fn.alert_danger(f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'), {}, {}, {}
 
         data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
 
@@ -586,7 +577,6 @@ def extract_data_from_xlsx(filename):
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
         if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
             out += fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}: found {data["sampling_type"]}')
-            # return True, fn.alert_danger(f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}'), {}, {}, {}
 
         # no path ID if scat is opportunistc
         if data["sampling_type"] == "Opportunistic":
@@ -600,7 +590,6 @@ def extract_data_from_xlsx(filename):
             data["deposition"] = "Old"
         if data["deposition"] not in ["Fresh", "Old", ""]:
             out += fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}: found {data["deposition"]}')
-            #return True, fn.alert_danger(f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}'), {}, {}, {}
 
         # matrix
         data["matrix"] = str(data["matrix"]).capitalize().strip()
@@ -610,7 +599,6 @@ def extract_data_from_xlsx(filename):
             data["matrix"] = "No"
         if data["matrix"] not in ["Yes", "No", ""]:
             out +=  fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["matrix"]}')
-            #return True, fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # collected_scat
         data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()
@@ -620,13 +608,11 @@ def extract_data_from_xlsx(filename):
             data["collected_scat"] = "No"
         if data["collected_scat"] not in ["Yes", "No", ""]:
             out += fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["collected_scat"]}')
-            #return True, fn.alert_danger(f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # scalp_category
         data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
         if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
             out += fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}')
-            #return True, fn.alert_danger(f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'), {}, {}, {}
 
         # genetic_sample
         data["genetic_sample"] = str(data["genetic_sample"]).capitalize().strip()
@@ -636,7 +622,6 @@ def extract_data_from_xlsx(filename):
             data["genetic_sample"] = "No"
         if data["genetic_sample"] not in ["Yes", "No", ""]:
             out += fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data["genetic_sample"]}')
-            #return True, fn.alert_danger(f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}'), {}, {}, {}
 
         # notes
         data["notes"] = str(data["notes"]).strip()
@@ -648,7 +633,6 @@ def extract_data_from_xlsx(filename):
 
     if out:
         return True, out, {}, {}, {}
-
 
     # extract paths
     all_paths = {}
@@ -686,7 +670,6 @@ def extract_data_from_xlsx(filename):
             all_paths[index] = dict(data)
             index += 1
 
-
     # extract tracks
     all_tracks = {}
     if "Tracks" in df.keys():
@@ -701,11 +684,7 @@ def extract_data_from_xlsx(filename):
 
             all_tracks[index] = dict(data)
 
-
     return False, "", scats_data, all_paths, all_tracks
-
-
-
 
 
 @app.route("/load_scats_xlsx", methods=("GET", "POST",))

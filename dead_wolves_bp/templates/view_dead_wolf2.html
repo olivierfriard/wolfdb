@@ -15,6 +15,9 @@
 <h2>Dead wolf <b>#{{ dead_wolf["ID"] }}</b></h2>
 
 
+<a href="/del_dead_wolf/{{ dead_wolf["ID"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete dead wolf</a><br>
+<br>
+
 <table class="table table-striped">
 
 <tr><td>ID</td><td><a href="/view_wa/{{ dead_wolf["ID"] }}">{{ dead_wolf["ID"] }}</a></td></tr>
