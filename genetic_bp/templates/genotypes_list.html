@@ -1,7 +1,14 @@
 {% extends "bootstrap_simple.html" %}
 
-
 {% block content %}
+
+
+
+
+
+
+
+
 
 
 <h1>WolfDB</h1>
@@ -19,6 +26,7 @@
 <br>
 <br>
 
+
 {% if results %}
 <h2>{{ title }}</h2>
 
@@ -32,15 +40,17 @@
 <tr>
 <th style="background-color: white;"></th>
 <th style="background-color: white;">Genotype ID</th>
+<th style="background-color: white;">Notes</th>
 <th style="background-color: white;">Other ID</th>
 <th style="background-color: white;">Date</th>
 <th style="background-color: white;">Pack</th>
 <th style="background-color: white;">Sex</th>
+<th style="background-color: white;">Status</th>
 <th style="background-color: white;">Age first capture</th>
-<th style="background-color: white;">status first capture</th>
-<th style="background-color: white;">dispersal</th>
-<th style="background-color: white;">n recaptures</th>
-<th style="background-color: white;">dead recovery</th>
+<th style="background-color: white;">Status first capture</th>
+<th style="background-color: white;">Dispersal</th>
+<th style="background-color: white;">N recap.</th>
+<th style="background-color: white;">Dead recovery</th>
 
 
 {% if loci_list %}
@@ -64,55 +74,50 @@
 <tr>
 
 <td>
-<a href="/set_status/{{ result['genotype_id'] }}" class="btn btn-sm btn-outline-primary text-nowrap">Set status</a>
-<a href="/set_pack/{{ result['genotype_id'] }}" class="btn btn-sm btn-outline-primary text-nowrap ">Set pack</a><br>
-{% if result["working_notes"] %}
-<a class="btn btn-sm btn-outline-danger" href="/genotype_note/{{ result['genotype_id'] }}">notes</a>
-{% else %}
-<a class="btn btn-sm btn-outline-primary" href="/genotype_note/{{ result['genotype_id'] }}">notes</a>
-{% endif %}
+
+  <div class="dropdown">
+    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+      set ...
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+
+  <li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
+  <li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
+  <li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
+  <li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
+  <li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
+  <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
+
+  </ul>
+  </div>
+
+
 </td>
 
 <td><a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a></td>
 
+<td>{% if result['working_notes'] %}{{ result['working_notes'] }}{% endif %}</td>
+
 <td><a href="/view_genotype/{{ result['tmp_id'] }}" >{{ result['tmp_id'] }}</a></td>
 
-<td>
-    {% if result['date'] %}{{ result['date'] }}{% endif %}
-</td>
+<td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
+
+<td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+
+<td>{% if result['sex'] %}{{ result['sex'] }}{% endif %}</td>
+
+<td>{% if result['position'] %}{{ result['position'] }}{% endif %}</td>
+
+<td>{% if result['age_first_capture'] %}{{ result['age_first_capture'] }}{% endif %}</td>
+
+<td>{{ result['status_first_capture'] if result['status_first_capture'] is not none else ""}}</td>
 
 
-<td>
-    {% if result['pack'] %}{{ result['pack'] }}{% endif %}
-</td>
+<td>{% if result['dispersal'] %}{{ result['dispersal'] }}{% endif %}</td>
 
-<td>
-    {% if result['sex'] %}{{ result['sex'] }}{% endif %}
-</td>
+<td>{% if result['n_recaptures'] %}{{ result['n_recaptures'] }}{% endif %}</td>
 
-<td>
-    {% if result['age_first_capture'] %}{{ result['age_first_capture'] }}{% endif %}
-</td>
-
-<td>
-
-    {{ result['status_first_capture'] if result['status_first_capture'] is not none else ""}}
-
-</td>
-
-
-<td>
-    {% if result['dispersal'] %}{{ result['dispersal'] }}{% endif %}
-
-</td>
-
-    <td>
-        {% if result['n_recaptures'] %}{{ result['n_recaptures'] }}{% endif %}
-    </td>
-
-    <td>
-        {% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}
-    </td>
+<td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
 {% if loci_list %}
 
@@ -178,7 +183,5 @@
 {% endif %}
 
 
+
 {% endblock %}
-
-
-

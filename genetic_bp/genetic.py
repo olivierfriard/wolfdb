@@ -179,7 +179,8 @@ def genotypes_list(type, mode="web"):
         header_title = f"List of temporary genotypes"
 
     cursor.execute(("SELECT *, "
-                    "(select count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures "
+                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
+                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
                     f"FROM genotypes {filter} "
                     "ORDER BY genotype_id"))
     results = cursor.fetchall()
@@ -419,19 +420,16 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    # union of scat and tissue samples
-    '''
-    cursor.execute(("SELECT wa_results.wa_code AS wa_code, scat_id AS sample_id, date, municipality, coord_east, coord_north, mtdna, wa_results.genotype_id AS genotype_id, sex_id "
-                    "FROM wa_results, scats "
-                    "WHERE wa_results.wa_code != ''  AND wa_results.wa_code = scats.wa_code  AND mtdna not like '%poor%' "
-                    "UNION "
-                    "SELECT wa_results.wa_code AS wa_code, tissue_id AS sample_id, data_ritrovamento AS date, municipality, coord_x AS coord_east, coord_y AS coord_north, mtdna, wa_results.genotype_id AS genotype_id, sex_id "
-                    "FROM wa_results, dead_wolves WHERE wa_results.wa_code != ''  AND wa_results.wa_code = dead_wolves.wa_code  AND mtdna not like '%poor%'  "
-                    "ORDER BY wa_code"))
-    '''
-
     # TODO: check why 583 and 585
-    cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna NOT LIKE '%poor%' ORDER BY wa_code")
+
+    #cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna NOT LIKE '%poor%' ORDER BY wa_code")
+
+
+    cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
+                     "(select working_notes from genotypes where genotype_id=wa_scat_tissue.genotype_id) AS notes "
+                     "FROM wa_scat_tissue "
+                     "WHERE mtdna NOT LIKE '%poor%' "
+                     "ORDER BY wa_code"))
 
     wa_scats = cursor.fetchall()
 
@@ -963,7 +961,9 @@ def genotype_note(genotype_id):
             return "Genotype ID not found"
 
         data["working_notes"] = "" if notes_row["working_notes"] is None else notes_row["working_notes"]
+
         return render_template("add_genotype_note.html",
+                               header_title=f"Add note to genotype {genotype_id}",
                                data=data)
 
     if request.method == "POST":
@@ -984,6 +984,7 @@ def genotype_note(genotype_id):
 
 
 @app.route("/set_status/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
 def set_status(genotype_id):
     """
     let user set the status of the individual
@@ -1027,6 +1028,7 @@ def set_status(genotype_id):
 
 
 @app.route("/set_pack/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
 def set_pack(genotype_id):
     """
     let user set the pack of the individual
@@ -1061,6 +1063,133 @@ def set_pack(genotype_id):
 
         cursor.execute(sql,
                        {"pack": request.form["pack"],
+                        "genotype_id": genotype_id})
+
+        connection.commit()
+
+        return redirect(request.form["return_url"])
+
+
+
+@app.route("/set_sex/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
+def set_sex(genotype_id):
+    """
+    let user set the sex of the individual
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+
+        cursor.execute(("SELECT sex FROM genotypes "
+                        "WHERE genotype_id = %s  "),
+                       [genotype_id])
+        result = cursor.fetchone()
+
+        if result is None:
+            flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+            return redirect(request.referrer)
+
+        sex = "" if result["sex"] is None else result["sex"]
+
+        return render_template("set_sex.html",
+                               genotype_id=genotype_id,
+                               current_sex=sex,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE genotypes SET sex = %(sex)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"sex": request.form["sex"],
+                        "genotype_id": genotype_id})
+
+        connection.commit()
+
+        return redirect(request.form["return_url"])
+
+
+@app.route("/set_status_1st_recap/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
+def set_status_1st_recap(genotype_id):
+    """
+    let user set the status_1st_recap of the individual
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+
+        cursor.execute(("SELECT status_first_capture FROM genotypes "
+                        "WHERE genotype_id = %s  "),
+                       [genotype_id])
+        result = cursor.fetchone()
+
+        if result is None:
+            flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+            return redirect(request.referrer)
+
+        status_first_capture = "" if result["status_first_capture"] is None else result["status_first_capture"]
+
+        return render_template("set_status_1st_recap.html",
+                               genotype_id=genotype_id,
+                               current_status_first_capture=status_first_capture,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE genotypes SET status_first_capture = %(status_first_capture)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"status_first_capture": request.form["status_first_capture"],
+                        "genotype_id": genotype_id})
+
+        connection.commit()
+
+        return redirect(request.form["return_url"])
+
+
+@app.route("/set_dispersal/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
+def set_dispersal(genotype_id):
+    """
+    let user set the dispersal of the individual
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+
+        cursor.execute(("SELECT dispersal FROM genotypes "
+                        "WHERE genotype_id = %s  "),
+                       [genotype_id])
+        result = cursor.fetchone()
+
+        if result is None:
+            flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+            return redirect(request.referrer)
+
+        dispersal = "" if result["dispersal"] is None else result["dispersal"]
+
+        return render_template("set_dispersal.html",
+                               genotype_id=genotype_id,
+                               current_dispersal=dispersal,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE genotypes SET dispersal = %(dispersal)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"dispersal": request.form["dispersal"],
                         "genotype_id": genotype_id})
 
         connection.commit()
