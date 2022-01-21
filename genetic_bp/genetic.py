@@ -129,10 +129,12 @@ def get_loci_value(genotype_id, loci_list):
 
     for locus in loci_list:
 
-        cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
+        cursor.execute(("SELECT val, allele, notes, extract(epoch from timestamp)::integer AS epoch "
+                        "FROM genotype_locus "
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
                         "UNION "
-                        "SELECT *, extract(epoch from timestamp)::integer AS epoch FROM genotype_locus "
+                        "SELECT val, allele, notes, extract(epoch from timestamp)::integer AS epoch "
+                        "FROM genotype_locus "
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
                         ),
                         {"genotype_id": genotype_id, "locus": locus})
@@ -198,6 +200,86 @@ def genotypes_list(type, mode="web"):
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
 
+        return response
+
+    else:
+
+        return render_template("genotypes_list.html",
+                               header_title=header_title,
+                               title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
+                               type=type,
+                               results=results,
+                               loci_list=loci_list,
+                               loci_values=loci_values,
+                               short="_short" if "short" in type else "")
+
+
+
+
+@app.route("/genotypes_list2/<type>")
+@app.route("/genotypes_list2/<type>/<mode>")
+@fn.check_login
+def genotypes_list2(type, mode="web"):
+    """
+    list of genotypes: all, temp, definitive
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    loci_list = {}
+    if "short" not in type:
+        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+        for row in cursor.fetchall():
+            loci_list[row["name"]] = row["n_alleles"]
+
+    if "all" in type:
+        filter = ""
+        header_title = f"List of all genotypes"
+
+    if "definitive" in type :
+        filter = "WHERE status = 'OK'"
+        header_title = f"List of definitive genotypes"
+
+    if "temp" in type:
+        filter = "WHERE status != 'OK'"
+        header_title = f"List of temporary genotypes"
+
+    '''
+    cursor.execute(("SELECT *, "
+                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
+                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
+                    f"FROM genotypes {filter} "
+                    "ORDER BY genotype_id"))
+    '''
+
+    cursor.execute("select *,(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, (SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery from genotypes, genotype_locus where genotypes.genotype_id=genotype_locus.genotype_id")
+
+    results = cursor.fetchall()
+
+    loci_values = {}
+    for row in results:
+        if row["genotype_id"] not in loci_values:
+            loci_values[row["genotype_id"]] = {}
+        if row["locus"] not in loci_values[row["genotype_id"]]:
+
+            loci_values[row["genotype_id"]][row["locus"]] = {'a': {"value": "-", "notes": ""},
+                                                             'b': {"value": "-", "notes": ""}
+                                                            }
+
+        loci_values[row["genotype_id"]][row["locus"]][row["allele"]] = {
+                                            "value": row["val"] if row["val"] is not None else "-",
+                                            "notes": row["notes"] if row["notes"] is not None else "",
+                                            #"epoch": row["epoch"] if row["epoch"] is not None else ""
+                                            }
+        #dict(get_loci_value(row['genotype_id'], loci_list))
+
+    if mode == "export":
+
+        file_content = export.export_genotypes_list(loci_list, results, loci_values)
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
         return response
 
     else:
@@ -421,9 +503,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         loci_list[row["name"]] = row["n_alleles"]
 
     # TODO: check why 583 and 585
-
-    #cursor.execute("SELECT * FROM wa_scat_tissue WHERE mtdna NOT LIKE '%poor%' ORDER BY wa_code")
-
 
     cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
                      "(select working_notes from genotypes where genotype_id=wa_scat_tissue.genotype_id) AS notes "
