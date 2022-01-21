@@ -42,13 +42,33 @@
 
 </td>
 
-<td><input type="TEXT" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value=""></td>
+<td><input type="TEXT" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value=""><br>
+<small>Current value: <b>{{ loci_values[locus['name']]['a']['value'] }}</b></small>
+{% if loci_values[locus['name']]['a']['notes'] %}
+<br><small>Notes: <b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small>
+{% endif %}
 
-<td><input type="TEXT" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""></td>
+</td>
+
+<td><input type="TEXT" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""><br>
+</td>
 
 {% if locus['n_alleles'] == 2 %}
-<td><input type="TEXT" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value=""></td>
-<td><input type="TEXT" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""></td>
+<td><input type="TEXT" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value=""><br>
+
+<small>Current value: <b>{{ loci_values[locus['name']]['b']['value'] }}</b></small>
+
+{% if loci_values[locus['name']]['b']['notes'] %}
+<br><small>Notes: <b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small>
+{% endif %}
+
+
+
+</td>
+
+<td><input type="TEXT" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""><br>
+
+</td>
 {% else %}
 <td></td>
 <td></td>

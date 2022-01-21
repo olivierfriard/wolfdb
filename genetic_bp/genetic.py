@@ -58,7 +58,7 @@ def view_genotype(genotype_id):
                    "WHERE genotype_id = %s "),
                    [genotype_id])
 
-    
+
     wa_codes = cursor.fetchall()
     samples_features = []
     count, sum_lon, sum_lat  = 0, 0, 0
@@ -687,21 +687,6 @@ def view_genetic_data(wa_code):
 
     for locus in loci_list:
 
-        '''
-        cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
-                        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
-                        "FROM wa_locus "
-                        "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'a' "
-                        "UNION "
-                        "SELECT *, extract(epoch from timestamp)::integer AS epoch, "
-                        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formated_timestamp, notes "
-                        "FROM wa_locus "
-                        "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = 'b' "
-                        "ORDER BY timestamp DESC LIMIT 2"
-                        ),
-                        {"wa_code": wa_code, "locus": locus})
-        '''
-
         for allele in  ['a', 'b'][:loci_list[locus]]:
 
             cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
@@ -739,15 +724,56 @@ def add_genetic_data(wa_code):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM loci ORDER BY position")
-    loci=cursor.fetchall()
+    cursor.execute("SELECT * FROM loci ORDER BY position ASC")
+    loci = cursor.fetchall()
+
+
+    # loci list
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    loci_list = {}
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    loci_values = {}
+    for locus in loci_list:
+        loci_values[locus] = {}
+        loci_values[locus]['a'] = {"value": "-", "notes": "" }
+        loci_values[locus]['b'] = {"value": "-", "notes": "" }
+
+    for locus in loci_list:
+
+        for allele in  ['a', 'b'][:loci_list[locus]]:
+
+            cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
+                            "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
+                            "FROM wa_locus "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
+                            "ORDER BY timestamp DESC LIMIT 1"
+                            ),
+                            {"wa_code": wa_code, "locus": locus, "allele": allele})
+
+            row2 = cursor.fetchone()
+            if row2 is not None:
+                val = row2["val"] if row2["val"] is not None else "-"
+                notes = row2["notes"] if row2["notes"] is not None else ""
+                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
+            else:
+                val = "-"
+                notes = ""
+                epoch = ""
+                date = ""
+
+            loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date}
 
     if request.method == "GET":
 
         return render_template("add_genetic_data.html",
+                                header_title=f"Add genetic data for {wa_code}",
                                 wa_code=wa_code,
                                 mode="modify",
                                 loci=loci,
+                                loci_values=loci_values
                                 )
 
     if request.method == "POST":
