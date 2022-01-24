@@ -188,9 +188,12 @@ def genotypes_list(type, mode="web"):
     results = cursor.fetchall()
 
     loci_values = {}
-    if "short" not in type:
-        for row in results:
-            loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+    for row in results:
+        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+
+    cursor.execute("INSERT INTO cache (val) VALUES (%s)", [json.dumps(loci_values)])
+
+    connection.commit()
 
     if mode == "export":
 
