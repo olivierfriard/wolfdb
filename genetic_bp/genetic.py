@@ -117,6 +117,9 @@ def genotypes():
 
 
 def get_loci_value(genotype_id, loci_list):
+    """
+    get genotype loci values
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -191,8 +194,7 @@ def genotypes_list(type, mode="web"):
     for row in results:
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
-    cursor.execute("INSERT INTO cache (val) VALUES (%s)", [json.dumps(loci_values)])
-
+    cursor.execute(f"UPDATE cache SET val = %s WHERE key = 'genotypes_{type}' ", [json.dumps(loci_values)])
     connection.commit()
 
     if mode == "export":
@@ -218,11 +220,51 @@ def genotypes_list(type, mode="web"):
 
 
 
+@app.route("/update_cache_genotypes")
+def update_cache_genotypes():
 
-@app.route("/genotypes_list2/<type>")
-@app.route("/genotypes_list2/<type>/<mode>")
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    loci_list = {}
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    for type in ["definitive", "all", "temp"]:
+
+        if "all" in type:
+            filter = ""
+
+        if "definitive" in type :
+            filter = "WHERE status = 'OK'"
+
+        if "temp" in type:
+            filter = "WHERE status != 'OK'"
+
+        cursor.execute(("SELECT *, "
+                        "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
+                        "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
+                        f"FROM genotypes {filter} "
+                        "ORDER BY genotype_id"))
+        results = cursor.fetchall()
+
+        loci_values = {}
+        for row in results:
+            loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+
+        cursor.execute(f"UPDATE cache SET val = %s WHERE key = 'genotypes_{type}' ", [json.dumps(loci_values)])
+        connection.commit()
+
+    return "Genotypes cache updated"
+
+
+
+@app.route("/genotypes_list_new/<type>")
+@app.route("/genotypes_list_new/<type>/<mode>")
 @fn.check_login
-def genotypes_list2(type, mode="web"):
+def genotypes_list_new(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
     """
@@ -231,10 +273,9 @@ def genotypes_list2(type, mode="web"):
 
     # loci list
     loci_list = {}
-    if "short" not in type:
-        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
-        for row in cursor.fetchall():
-            loci_list[row["name"]] = row["n_alleles"]
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
 
     if "all" in type:
         filter = ""
@@ -248,41 +289,32 @@ def genotypes_list2(type, mode="web"):
         filter = "WHERE status != 'OK'"
         header_title = f"List of temporary genotypes"
 
-    '''
     cursor.execute(("SELECT *, "
                     "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
                     "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
                     f"FROM genotypes {filter} "
                     "ORDER BY genotype_id"))
-    '''
-
-    cursor.execute("select *,(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, (SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery from genotypes, genotype_locus where genotypes.genotype_id=genotype_locus.genotype_id")
-
     results = cursor.fetchall()
 
+    '''
     loci_values = {}
     for row in results:
-        if row["genotype_id"] not in loci_values:
-            loci_values[row["genotype_id"]] = {}
-        if row["locus"] not in loci_values[row["genotype_id"]]:
+        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+    '''
 
-            loci_values[row["genotype_id"]][row["locus"]] = {'a': {"value": "-", "notes": ""},
-                                                             'b': {"value": "-", "notes": ""}
-                                                            }
-
-        loci_values[row["genotype_id"]][row["locus"]][row["allele"]] = {
-                                            "value": row["val"] if row["val"] is not None else "-",
-                                            "notes": row["notes"] if row["notes"] is not None else "",
-                                            #"epoch": row["epoch"] if row["epoch"] is not None else ""
-                                            }
-        #dict(get_loci_value(row['genotype_id'], loci_list))
+    cursor.execute(f"SELECT val FROM cache WHERE key = 'genotypes_{type}'")
+    
+    row = cursor.fetchone()
+    loci_values = json.loads(row["val"])
 
     if mode == "export":
 
         file_content = export.export_genotypes_list(loci_list, results, loci_values)
+
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
+
         return response
 
     else:
@@ -295,6 +327,7 @@ def genotypes_list2(type, mode="web"):
                                loci_list=loci_list,
                                loci_values=loci_values,
                                short="_short" if "short" in type else "")
+
 
 
 
@@ -806,7 +839,6 @@ def add_genetic_data(wa_code):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM loci ORDER BY position ASC")
     loci = cursor.fetchall()
-
 
     # loci list
     cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
