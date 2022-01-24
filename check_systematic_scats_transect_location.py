@@ -52,7 +52,7 @@ cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
 scats = cursor.fetchall()
 
-
+'''
 out += "<h1>Location on transects for scats from systematic sample</h1>\n"
 
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
@@ -62,7 +62,7 @@ out += f"{len(scats)} systematic scats.<br>\n"
 out += '<table class="table table-striped">\n'
 
 out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
-
+'''
 
 out2 = ""
 c = 0
@@ -84,7 +84,13 @@ for row in scats:
         out2 += '<tr class="table-danger">'
 
     if match == "NO":
-        out2 += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
+        out2 += (f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
+                 f"""<td>{row['sampling_type']}</td>"""
+                 f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
+                 f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
+                 f"""<td>{transect['distance']}</td>"""
+                 f"""<td>{match}</td></tr>\n"""
+                )
 
 
 out += "<h1>Location on transects for scats from systematic sample</h1>\n"

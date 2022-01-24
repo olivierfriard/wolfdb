@@ -916,7 +916,7 @@ def confirm_load_xlsx(filename, mode):
 
     return redirect(f'/scats')
 
-
+'''
 def check_systematic_scats_transect_location():
     """
     Check location of scats from systematic sampling
@@ -959,7 +959,7 @@ def check_systematic_scats_transect_location():
         f_out.write(out)
 
     return True
-
+'''
 
 
 
