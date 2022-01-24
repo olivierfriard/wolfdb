@@ -487,8 +487,6 @@ def del_scat(scat_id):
 
 
 
-
-
 def extract_data_from_xlsx(filename):
     """
     Extract and check data from a XLSX file
@@ -969,6 +967,11 @@ def check_systematic_scats_transect_location():
 @app.route("/systematic_scats_transect_location")
 @fn.check_login
 def systematic_scats_transect_location():
+    """
+    Create file with locations for systematic scats
+    
+    !require the check_systematic_scats_transect_location.py script
+    """
 
     process = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])
 

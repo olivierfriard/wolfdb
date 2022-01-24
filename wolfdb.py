@@ -90,6 +90,8 @@ def view_sample(sample_id):
     return redirect("/")
 
 
+
+'''
 @app.route("/delete_scats")
 @fn.check_login
 def delete_scats():
@@ -100,6 +102,7 @@ def delete_scats():
     connection.commit()
     return redirect("/")
 
+
 @app.route("/delete_paths")
 @fn.check_login
 def delete_paths():
@@ -109,7 +112,7 @@ def delete_paths():
     cursor.execute("DELETE FROM paths")
     connection.commit()
     return redirect("/")
-
+'''
 
 
 if __name__ == "__main__":

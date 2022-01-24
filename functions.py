@@ -63,7 +63,7 @@ def all_path_id():
     """
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT CONCAT(transect_id, ' ',  date) FROM paths ORDER BY date DESC")
+    cursor.execute("SELECT CONCAT(transect_id, ' ',  date) FROM paths ORDER BY transect_id, date DESC")
     return [x[0].strip() for x in cursor.fetchall()]
 
 
@@ -76,7 +76,7 @@ def all_snow_tracks_id():
 
 def sampling_season(date):
     """
-    Extract sampnig season from date in ISO 8601 format
+    Extract sampling season from date in ISO 8601 format
     """
     try:
         month = int(date[5:6+1])

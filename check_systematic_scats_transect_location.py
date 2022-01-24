@@ -1,3 +1,11 @@
+"""
+create file static/systematic_scats_transects_location.html
+
+The output file contains the closest transect for every systematic scat
+
+This script is required by wolfdb.py
+
+"""
 
 import psycopg2
 import psycopg2.extras
