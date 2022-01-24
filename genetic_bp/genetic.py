@@ -1131,6 +1131,7 @@ def set_pack(genotype_id):
         pack = "" if result["pack"] is None else result["pack"]
 
         return render_template("set_pack.html",
+                                header_title=f"Set pack for {genotype_id}",
                                genotype_id=genotype_id,
                                current_pack=pack,
                                return_url=request.referrer)
@@ -1174,6 +1175,7 @@ def set_sex(genotype_id):
         sex = "" if result["sex"] is None else result["sex"]
 
         return render_template("set_sex.html",
+                                header_title=f"Set sex for {genotype_id}",
                                genotype_id=genotype_id,
                                current_sex=sex,
                                return_url=request.referrer)
@@ -1216,6 +1218,7 @@ def set_status_1st_recap(genotype_id):
         status_first_capture = "" if result["status_first_capture"] is None else result["status_first_capture"]
 
         return render_template("set_status_1st_recap.html",
+                                header_title=f"Set status at 1st capture for {genotype_id}",
                                genotype_id=genotype_id,
                                current_status_first_capture=status_first_capture,
                                return_url=request.referrer)
@@ -1258,6 +1261,7 @@ def set_dispersal(genotype_id):
         dispersal = "" if result["dispersal"] is None else result["dispersal"]
 
         return render_template("set_dispersal.html",
+                               header_title=f"Set dispersal for {genotype_id}",
                                genotype_id=genotype_id,
                                current_dispersal=dispersal,
                                return_url=request.referrer)
@@ -1269,6 +1273,49 @@ def set_dispersal(genotype_id):
 
         cursor.execute(sql,
                        {"dispersal": request.form["dispersal"],
+                        "genotype_id": genotype_id})
+
+        connection.commit()
+
+        return redirect(request.form["return_url"])
+
+
+@app.route("/set_hybrid/<genotype_id>", methods=("GET", "POST",))
+@fn.check_login
+def set_hybrid(genotype_id):
+    """
+    let user set the hybrid state of the individual
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+
+        cursor.execute(("SELECT hybrid FROM genotypes "
+                        "WHERE genotype_id = %s  "),
+                       [genotype_id])
+        result = cursor.fetchone()
+
+        if result is None:
+            flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+            return redirect(request.referrer)
+
+        hybrid = "" if result["hybrid"] is None else result["hybrid"]
+
+        return render_template("set_hybrid.html",
+                               header_title=f"Set hybrid state for {genotype_id}",
+                               genotype_id=genotype_id,
+                               current_hybrid=hybrid,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE genotypes SET hybrid = %(hybrid)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"hybrid": request.form["hybrid"],
                         "genotype_id": genotype_id})
 
         connection.commit()
