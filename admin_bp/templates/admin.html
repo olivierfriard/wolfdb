@@ -6,10 +6,30 @@
 <hr>
 
 <a href="/" class="btn btn-primary">Home</a>
+
+<br><br>
+
+
+Mode: <b>{{mode}}</b><br>
+
 <br>
 <br>
 <a href="/update_cache_genotypes" class="btn btn-primary">Update genotype cache with loci values</a>
 
+<br>
+<br>
+
+
+{% if mode == 'dev' %}
+
+
+
+<a href="/delete_scats" class="btn btn-primary">Empty scats table</a>
+<br>
+
+<a href="/delete_paths" class="btn btn-primary">Empty paths table</a>
+
+{% endif %}
 
 
 {% endblock %}

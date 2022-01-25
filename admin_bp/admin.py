@@ -28,5 +28,6 @@ def admin():
     if "email" in session:
         current_app.db_log.info(f"{session['email']} accessed to admin page")
 
-    return render_template("admin.html")
+    return render_template("admin.html",
+                           mode=params["mode"])
 

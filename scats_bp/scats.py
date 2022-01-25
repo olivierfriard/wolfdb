@@ -211,7 +211,6 @@ def plot_all_scats():
 
 
 
-
 @app.route("/scats_list")
 @fn.check_login
 def scats_list():
@@ -225,12 +224,16 @@ def scats_list():
     cursor.execute("SELECT count(*) as n_scats FROM scats")
     n_scats = cursor.fetchone()["n_scats"]
 
-    cursor.execute("SELECT * FROM scats ORDER BY scat_id")
+    cursor.execute(("SELECT *,"
+                    "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2 "
+                    "FROM scats "
+                    "ORDER BY scat_id"
+                   ))
 
     return render_template("scats_list.html",
                            header_title="List of scats",
-                            n_scats=n_scats,
-                            results=cursor.fetchall())
+                           n_scats=n_scats,
+                           results=cursor.fetchall())
 
 
 @app.route("/new_scat", methods=("GET", "POST"))

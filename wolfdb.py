@@ -66,8 +66,8 @@ app.db_log.setLevel(logging.INFO)
 @fn.check_login
 def home():
     return render_template("home.html",
-                           header_title="Home",
-                           mode=params["mode"])
+                           header_title="Home"
+                           )
 
 
 @app.route("/version")
