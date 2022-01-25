@@ -46,7 +46,7 @@ app.debug = params["debug"]
 app.db_log = logging.getLogger('db_activity')
 
 # Create handlers
-log_handler = logging.FileHandler('wolfdb_activity.log')
+log_handler = logging.FileHandler('/tmp/wolfdb_activity.log')
 log_handler.setLevel(logging.DEBUG)
 
 # Create formatters and add it to handlers
