@@ -225,7 +225,8 @@ def scats_list():
     n_scats = cursor.fetchone()["n_scats"]
 
     cursor.execute(("SELECT *,"
-                    "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2 "
+                    "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "(SELECT mtdna FROM wa_scat_tissue WHERE wa_code=scats.wa_code limit 1) AS mtdna "
                     "FROM scats "
                     "ORDER BY scat_id"
                    ))
