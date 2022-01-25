@@ -155,7 +155,7 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
-@app.route("/genotypes_liste/<type>")
+@app.route("/genotypes_list/<type>")
 @app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
 def genotypes_list(type, mode="web"):
