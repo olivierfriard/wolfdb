@@ -155,10 +155,10 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
-@app.route("/genotypes_list/<type>")
-@app.route("/genotypes_list/<type>/<mode>")
+@app.route("/genotypes_list_nocache/<type>")
+@app.route("/genotypes_list_nocache/<type>/<mode>")
 @fn.check_login
-def genotypes_list(type, mode="web"):
+def genotypes_list_nocache(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
@@ -309,10 +309,10 @@ def genotypes_list_cache(type, mode="web"):
 
 
 
-@app.route("/genotypes_list_cache2/<type>")
-@app.route("/genotypes_lis_cache2/<type>/<mode>")
+@app.route("/genotypes_list/<type>")
+@app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
-def genotypes_list_cache2(type, mode="web"):
+def genotypes_list(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
@@ -585,7 +585,9 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     # TODO: check why 583 and 585
 
     cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
-                     "(select working_notes from genotypes where genotype_id=wa_scat_tissue.genotype_id) AS notes "
+                     "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
+                     "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
+                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack "
                      "FROM wa_scat_tissue "
                      "WHERE mtdna NOT LIKE '%poor%' "
                      "ORDER BY wa_code"))
@@ -1078,9 +1080,21 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         cursor.execute(sql, data)
         connection.commit()
 
-        # update wa_code
+        # update cache
+        loci_list = {}
+        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+        for row in cursor.fetchall():
+            loci_list[row["name"]] = row["n_alleles"]
 
-        sql = ("select id FROM wa_locus, wa_results "
+        cursor.execute("DELETE FROM cache WHERE key = %s ", [genotype_id])
+        connection.commit()
+        cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
+                       [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
+        connection.commit()
+
+
+        # update wa_code
+        sql = ("SELECT id FROM wa_locus, wa_results "
                "WHERE wa_locus.wa_code = wa_results.wa_code "
                "AND wa_results.genotype_id = %(genotype_id)s "
                "AND wa_locus.locus = %(locus)s "
@@ -1097,8 +1111,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
 
         connection.commit()
 
-        # launch cache updating and wait
-        _ = subprocess.run(["python3", "update_cache_with_genotypes_loci_values.py"])
 
         return redirect(request.form["return_url"])
 

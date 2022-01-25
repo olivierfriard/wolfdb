@@ -52,7 +52,10 @@ def get_loci_value(genotype_id, loci_list):
 
 
 cursor.execute("CREATE TABLE  IF NOT EXISTS cache (key varchar(50), val text, updated timestamp)")
-cursor.execute("CREATE UNIQUE index ON cache (key)")
+connection.commit()
+cursor.execute("DROP INDEX  IF EXISTS cache_key ")
+connection.commit()
+cursor.execute("CREATE UNIQUE index cache_key ON cache (key)")
 connection.commit()
 
 
@@ -62,22 +65,16 @@ cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
 for row in cursor.fetchall():
     loci_list[row["name"]] = row["n_alleles"]
 
-    cursor.execute(("SELECT *, "
-                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
-                    "FROM genotypes "
-                    "ORDER BY genotype_id"))
-    results = cursor.fetchall()
+cursor.execute(("SELECT genotype_id FROM genotypes"))
+results = cursor.fetchall()
 
-    loci_values = {}
-    for row in results:
-        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+for row in results:
 
-        cursor.execute("DELETE FROM cache WHERE key = %s ", [row["genotype_id"]])
-        connection.commit()
-        cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
-                    [row["genotype_id"], json.dumps(loci_values[row["genotype_id"]])])
-        connection.commit()
+    cursor.execute("DELETE FROM cache WHERE key = %s ", [row["genotype_id"]])
+    connection.commit()
+    cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
+                [row["genotype_id"], json.dumps(get_loci_value(row['genotype_id'], loci_list))])
+    connection.commit()
 
 
 
