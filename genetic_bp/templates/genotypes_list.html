@@ -73,27 +73,21 @@
 {% for result in results %}
 
 <tr>
-
 <td>
-
-  <div class="dropdown">
-    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-      set ...
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-
-  <li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
-  <li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
-  <li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
-  <li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
-  <li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
-  <li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
-  <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
-
-  </ul>
-  </div>
-
-
+<div class="dropdown">
+<button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+set ...
+</button>
+<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+<li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
+<li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
+<li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
+<li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
+<li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
+<li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
+</ul>
+</div>
 </td>
 
 <td><a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a></td>
@@ -116,7 +110,6 @@
 
 <td>{{ result['status_first_capture'] if result['status_first_capture'] is not none else ""}}</td>
 
-
 <td>{% if result['dispersal'] %}{{ result['dispersal'] }}{% endif %}</td>
 
 <td>{% if result['n_recaptures'] %}{{ result['n_recaptures'] }}{% endif %}</td>
@@ -124,60 +117,26 @@
 <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
 {% if loci_list %}
-
 {% for locus in loci_values[result['genotype_id']] %}
-
-<td  style="border-left: 1px solid black;">
-
-
-{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
-<span style="background: red">
-{% endif %}
-
-
+<td style="border-left: 1px solid black;">
+{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}<span style="background: red">{% endif %}
 {{ loci_values[result['genotype_id']][locus]['a']['value'] }}
-
-
-{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}
-</span>
-{% endif %}
-
+{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}</span>{% endif %}
 <br>
-<small>
-<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a>
-</small>
-
+<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a></small>
 </td>
 
 <td>
-
-{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
-<span style="background: red">
-{% endif %}
-
+{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}<span style="background: red">{% endif %}
 {{ loci_values[result['genotype_id']][locus]['b']['value'] }}
-
-{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}
-</span>
-{% endif %}
-
+{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}</span>{% endif %}
 <br>
-<small>
-<a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a>
-</small>
-
+<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a></small>
 </td>
-
 {% endfor %}
-
-
 {% endif %}
-
-
-
 </tr>
 {% endfor %}
-
 
 </table>
 {% else %}
@@ -185,7 +144,6 @@
 <h2>No genotypes found</h2>
 
 {% endif %}
-
 
 
 {% endblock %}
