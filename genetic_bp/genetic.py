@@ -451,7 +451,7 @@ def plot_all_wa():
     cursor.execute(("SELECT wa_code, sample_id, genotype_id, "
                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                    "FROM wa_scat_tissue "
-                   "WHERE mtdna not like '%poor%' "
+                   "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                    )
     )
 
@@ -507,7 +507,7 @@ def plot_wa_clusters(distance):
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
                     "FROM wa_scat_tissue "
-                    "WHERE mtdna not like '%poor%'"
+                    "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                     )
                    )
 
@@ -589,7 +589,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                      "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
                      "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack "
                      "FROM wa_scat_tissue "
-                     "WHERE mtdna NOT LIKE '%poor%' "
+                     "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                      "ORDER BY wa_code"))
 
     wa_scats = cursor.fetchall()
@@ -678,7 +678,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
                     "FROM wa_scat_tissue "
-                    "WHERE mtdna not like '%poor%'"
+                    "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                     )
                    )
 
@@ -766,7 +766,8 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     # DBScan
     cursor.execute(("SELECT wa_code, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                    "FROM wa_scat_tissue WHERE mtdna not like '%poor%'"
+                    "FROM wa_scat_tissue "
+                    "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                     )
     )
 

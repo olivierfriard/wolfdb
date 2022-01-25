@@ -55,15 +55,11 @@ log_handler.setLevel(logging.DEBUG)
 log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 log_handler.setFormatter(log_format)
 
-
-print(log_handler)
-
 # Add handlers to the logger
 app.db_log.addHandler(log_handler)
 
+# set INFO otherwise WARNING (?)
 app.db_log.setLevel(logging.INFO)
-
-print(app.db_log)
 
 
 @app.route("/")
