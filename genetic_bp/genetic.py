@@ -155,10 +155,10 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
-@app.route("/genotypes_list_nocache/<type>")
-@app.route("/genotypes_list_nocache/<type>/<mode>")
+@app.route("/genotypes_liste/<type>")
+@app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
-def genotypes_list_nocache(type, mode="web"):
+def genotypes_list(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
@@ -236,10 +236,10 @@ def update_cache_genotypes():
 
 
 
-@app.route("/genotypes_list/<type>")
-@app.route("/genotypes_list/<type>/<mode>")
+@app.route("/genotypes_list_cache/<type>")
+@app.route("/genotypes_lis_cachet/<type>/<mode>")
 @fn.check_login
-def genotypes_list(type, mode="web"):
+def genotypes_list_cache(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
