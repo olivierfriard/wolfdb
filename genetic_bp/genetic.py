@@ -155,12 +155,14 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
-@app.route("/genotypes_list/<type>")
-@app.route("/genotypes_list/<type>/<mode>")
+@app.route("/genotypes_list_nocache/<type>")
+@app.route("/genotypes_list_nocache/<type>/<mode>")
 @fn.check_login
-def genotypes_list(type, mode="web"):
+def genotypes_list_nocache(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
+
+    no cache
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -234,10 +236,10 @@ def update_cache_genotypes():
 
 
 
-@app.route("/genotypes_list_new/<type>")
-@app.route("/genotypes_list_new/<type>/<mode>")
+@app.route("/genotypes_list/<type>")
+@app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
-def genotypes_list_new(type, mode="web"):
+def genotypes_list(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
