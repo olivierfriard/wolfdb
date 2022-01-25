@@ -284,7 +284,7 @@ def new_scat():
                 year = int(request.form["scat_id"][1:2+1]) + 2000
                 month = int(request.form["scat_id"][3:4+1])
                 day = int(request.form["scat_id"][5:6+1])
-                date = f"{year}-{month}-{day}"
+                date = f"{year:04}-{month:02}-{day:02}"
             except Exception:
                 return not_valid("The scat ID value is not correct")
 
@@ -307,6 +307,7 @@ def new_scat():
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            print(fn.sampling_season(date))
 
             sql = ("INSERT INTO scats (scat_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "
                    "location, municipality, province, region, "
@@ -969,7 +970,7 @@ def check_systematic_scats_transect_location():
 def systematic_scats_transect_location():
     """
     Create file with locations for systematic scats
-    
+
     !require the check_systematic_scats_transect_location.py script
     """
 

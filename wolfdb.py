@@ -11,6 +11,7 @@ import psycopg2.extras
 from config import config
 import functions as fn
 import utm
+import logging
 
 # blueprints
 from auth import auth as auth_blueprint
@@ -42,6 +43,25 @@ app.register_blueprint(dead_wolves.app)
 params = config()
 app.debug = params["debug"]
 
+app.db_log = logging.getLogger('db_activity')
+
+# Create handlers
+log_handler = logging.FileHandler('wolfdb_activity.log')
+log_handler.setLevel(logging.DEBUG)
+
+# Create formatters and add it to handlers
+log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_handler.setFormatter(log_format)
+
+
+print(log_handler)
+
+# Add handlers to the logger
+app.db_log.addHandler(log_handler)
+
+app.db_log.setLevel(logging.INFO)
+
+print(app.db_log)
 
 
 @app.route("/")
