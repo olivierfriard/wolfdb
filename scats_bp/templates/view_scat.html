@@ -39,8 +39,9 @@
 
 
 <tr><td>WA code</td><td>{{ results["wa_code"] if results["wa_code"] is not none else ""}}</td></tr>
-<tr><td>Genotype ID</td><td>{{ results["genotype_id"] if results["genotype_id"] is not none else "" }}</td></tr>
-
+<tr><td>Genotype ID</td><td>{{ results["genotype_id"] if results["genotype_id"] is not none else "" }}
+{% if results['genotype_id2'] %}{{ results['genotype_id2'] }}{% endif %}
+</td></tr>
 
 <tr><td>Date</td><td>{{ results["date"] }}</td></tr>
 
@@ -65,7 +66,6 @@
         {% else %}
     {{ results['path_id'] }}
     {% endif %}
-
     </td>
 </tr>
 <tr><td>Track ID</td><td>
@@ -84,7 +84,10 @@
 <tr><td>Deposition</td><td>{{ results["deposition"] }}</td></tr>
 <tr><td>Matrix</td><td>{{ results["matrix"] }}</td></tr>
 <tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
-<tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
+<tr><td>SCALP category</td>
+<td>{{ results["scalp_category"] }}
+{% if results['mtdna'] is not none and 'Wolf' in results['mtdna'] %}<br>C1 (from mtDNA) {%endif%}
+</td></tr>
 
 <tr><td>Coordinates (WGS 84 / UTM zone 32N EPSG:32632)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
 <tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td><td>{{ results["longitude"] }}, {{ results["latitude"] }}</td></tr>

@@ -45,7 +45,8 @@ def view_transect(transect_id):
     cursor.execute(("SELECT *, "
                      "ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, "
                      "ROUND(ST_Length(points_utm)) AS transect_length "
-                     "FROM transects WHERE transect_id = %s"
+                     "FROM transects "
+                     "WHERE transect_id = %s"
                     ),
                     [transect_id])
 
@@ -69,7 +70,7 @@ def view_transect(transect_id):
     min_lat, max_lat = min(latitudes), max(latitudes)
     min_lon, max_lon = min(longitudes), max(longitudes)
     fit = [[min_lat, min_lon], [max_lat, max_lon]]
-    
+
     #fit = [[lat, lon] for lon, lat in transect_geojson['coordinates']]
 
     transect_feature = {"type": "Feature",
@@ -84,13 +85,15 @@ def view_transect(transect_id):
     center = f"{transect_geojson['coordinates'][0][1]}, {transect_geojson['coordinates'][0][0]}"
 
     # path
-    cursor.execute("SELECT *, (select count(*) from scats where scats.path_id = paths.path_id) AS n_scats FROM paths WHERE transect_id = %s ORDER BY date ASC",
+    cursor.execute(("SELECT *,"
+                    "(SELECT count(*) FROM scats WHERE scats.path_id = paths.path_id) AS n_scats "
+                    "FROM paths "
+                    "WHERE transect_id = %s ORDER BY date ASC"),
                    [transect_id])
     results_paths = cursor.fetchall()
 
-
     # number of scats
-    cursor.execute("SELECT COUNT(*) AS n_scats FROM scats WHERE path_id LIKE %s", [f"{transect_id}\_%"])
+    cursor.execute("SELECT COUNT(*) AS n_scats FROM scats WHERE path_id LIKE %s", [f"{transect_id}|%"])
     n_scats = cursor.fetchone()["n_scats"]
 
 

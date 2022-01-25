@@ -102,10 +102,14 @@ def view_scat(scat_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+    cursor.execute(("SELECT *, "
+                    "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "(SELECT mtdna FROM wa_scat_tissue WHERE wa_code=scats.wa_code limit 1) AS mtdna, "
+                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
                     "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                    "FROM scats WHERE scat_id = %s"
+                    "FROM scats "
+                    "WHERE scat_id = %s"
                    ),
                    [scat_id])
 
@@ -129,7 +133,8 @@ def view_scat(scat_id):
     if results["path_id"]:  # Systematic sampling
         transect_id = results["path_id"].split("|")[0]
 
-        cursor.execute("SELECT ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson FROM transects WHERE transect_id = %s",
+        cursor.execute(("SELECT ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson "
+                        "FROM transects WHERE transect_id = %s"),
                     [transect_id])
         transect = cursor.fetchone()
 
@@ -141,7 +146,7 @@ def view_scat(scat_id):
                     "type": "Feature",
                     "geometry": dict(transect_geojson),
                     "properties": {
-                        "popupContent": f"Transect ID: {transect_id}"
+                        "popupContent": f"""Transect ID: <a href="/view_transect/{transect_id}">{transect_id}</a>"""
                     },
                     "id": 1
                 }
