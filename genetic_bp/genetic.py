@@ -15,6 +15,7 @@ from config import config
 import json
 import matplotlib
 import matplotlib.pyplot as plt
+import subprocess
 
 import functions as fn
 from . import export
@@ -222,42 +223,14 @@ def genotypes_list(type, mode="web"):
 
 @app.route("/update_cache_genotypes")
 def update_cache_genotypes():
+    """
+    update the cache with the genotypes loci values
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    !require the check_systematic_scats_transect_location.py script
+    """
+    _ = subprocess.Popen(["python3", "update_cache_with_genotypes_loci_values.py"])
 
-    # loci list
-    loci_list = {}
-    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
-    for row in cursor.fetchall():
-        loci_list[row["name"]] = row["n_alleles"]
-
-    for type in ["definitive", "all", "temp"]:
-
-        if "all" in type:
-            filter = ""
-
-        if "definitive" in type :
-            filter = "WHERE status = 'OK'"
-
-        if "temp" in type:
-            filter = "WHERE status != 'OK'"
-
-        cursor.execute(("SELECT *, "
-                        "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                        "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
-                        f"FROM genotypes {filter} "
-                        "ORDER BY genotype_id"))
-        results = cursor.fetchall()
-
-        loci_values = {}
-        for row in results:
-            loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
-
-        cursor.execute(f"UPDATE cache SET val = %s WHERE key = 'genotypes_{type}' ", [json.dumps(loci_values)])
-        connection.commit()
-
-    return "Genotypes cache updated"
+    return 'Genotypes cache updating in progress. <a href="/admin">Go to Admin page</a>'
 
 
 
@@ -267,6 +240,8 @@ def update_cache_genotypes():
 def genotypes_list_new(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
+
+    read loci values from cache
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -303,7 +278,7 @@ def genotypes_list_new(type, mode="web"):
     '''
 
     cursor.execute(f"SELECT val FROM cache WHERE key = 'genotypes_{type}'")
-    
+
     row = cursor.fetchone()
     loci_values = json.loads(row["val"])
 

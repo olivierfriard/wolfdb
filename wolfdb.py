@@ -21,6 +21,7 @@ from transects_bp import transects
 from snowtracks_bp import snowtracks
 from genetic_bp import genetic
 from dead_wolves_bp import dead_wolves
+from admin_bp import admin
 
 __version__ = "1"
 
@@ -39,6 +40,7 @@ app.register_blueprint(transects.app)
 app.register_blueprint(snowtracks.app)
 app.register_blueprint(genetic.app)
 app.register_blueprint(dead_wolves.app)
+app.register_blueprint(admin.app)
 
 params = config()
 app.debug = params["debug"]
