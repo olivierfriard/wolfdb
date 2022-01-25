@@ -25,8 +25,10 @@ params = config()
 @app.route("/admin")
 @fn.check_login
 def admin():
-
-    current_app.db_log.info(f"{session['email']} accessed to admin page")
+    try:
+        current_app.db_log.info(f"{session['email']} accessed to admin page")
+    except:
+        pass
 
     return render_template("admin.html")
 
