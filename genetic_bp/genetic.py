@@ -237,7 +237,7 @@ def update_cache_genotypes():
 
 
 @app.route("/genotypes_list_cache/<type>")
-@app.route("/genotypes_lis_cachet/<type>/<mode>")
+@app.route("/genotypes_lis_cache/<type>/<mode>")
 @fn.check_login
 def genotypes_list_cache(type, mode="web"):
     """
@@ -304,6 +304,73 @@ def genotypes_list_cache(type, mode="web"):
                                loci_list=loci_list,
                                loci_values=loci_values,
                                short="_short" if "short" in type else "")
+
+
+
+
+
+@app.route("/genotypes_list_cache2/<type>")
+@app.route("/genotypes_lis_cache2/<type>/<mode>")
+@fn.check_login
+def genotypes_list_cache2(type, mode="web"):
+    """
+    list of genotypes: all, temp, definitive
+
+    read loci values from cache
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    loci_list = {}
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    if "all" in type:
+        filter = ""
+        header_title = f"List of all genotypes"
+
+    if "definitive" in type :
+        filter = "WHERE status = 'OK'"
+        header_title = f"List of definitive genotypes"
+
+    if "temp" in type:
+        filter = "WHERE status != 'OK'"
+        header_title = f"List of temporary genotypes"
+
+    cursor.execute(("SELECT *, "
+                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
+                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
+                    f"FROM genotypes {filter} "
+                    "ORDER BY genotype_id"))
+    results = cursor.fetchall()
+
+    loci_values = {}
+    for row in results:
+        cursor.execute(f"SELECT val FROM cache WHERE key = %s", [row["genotype_id"]])
+        loci_values[row["genotype_id"]] = json.loads(cursor.fetchone()["val"])
+
+    if mode == "export":
+
+        file_content = export.export_genotypes_list(loci_list, results, loci_values)
+
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
+
+        return response
+
+    else:
+
+        return render_template("genotypes_list.html",
+                               header_title=header_title,
+                               title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
+                               type=type,
+                               results=results,
+                               loci_list=loci_list,
+                               loci_values=loci_values,
+                               short="")
 
 
 
@@ -875,9 +942,12 @@ def add_genetic_data(wa_code):
                            request.form[locus['name'] + f"_{allele}_notes"] if request.form[locus['name'] + f"_{allele}_notes"] else None
                            ])
 
+        '''
         cursor.execute("UPDATE scats SET genetic_sample = 'Yes' WHERE wa_code = %s", [wa_code])
+        '''
 
         connection.commit()
+
         return redirect(f"/view_genetic_data/{wa_code}")
 
 
@@ -974,7 +1044,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
 
     data = {"genotype_id": genotype_id, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
 
-
     cursor.execute(("SELECT * FROM genotype_locus "
                     "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
                     "AND extract(epoch from timestamp)::integer = %(timestamp)s "
@@ -1011,7 +1080,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
 
         # update wa_code
 
-        sql = ("select id from wa_locus, wa_results "
+        sql = ("select id FROM wa_locus, wa_results "
                "WHERE wa_locus.wa_code = wa_results.wa_code "
                "AND wa_results.genotype_id = %(genotype_id)s "
                "AND wa_locus.locus = %(locus)s "
@@ -1027,6 +1096,9 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
                             {"notes": data["notes"], "id": row["id"]})
 
         connection.commit()
+
+        # launch cache updating and wait
+        _ = subprocess.run(["python3", "update_cache_with_genotypes_loci_values.py"])
 
         return redirect(request.form["return_url"])
 

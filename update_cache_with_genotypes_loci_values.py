@@ -10,6 +10,7 @@ import psycopg2.extras
 import functions as fn
 
 import json
+#import sys
 
 
 connection = fn.get_connection()
@@ -51,6 +52,7 @@ def get_loci_value(genotype_id, loci_list):
 
 
 cursor.execute("CREATE TABLE  IF NOT EXISTS cache (key varchar(50), val text, updated timestamp)")
+cursor.execute("CREATE UNIQUE index ON cache (key)")
 connection.commit()
 
 
@@ -60,21 +62,10 @@ cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
 for row in cursor.fetchall():
     loci_list[row["name"]] = row["n_alleles"]
 
-for type in ["definitive", "all", "temp"]:
-
-    if "all" in type:
-        filter = ""
-
-    if "definitive" in type :
-        filter = "WHERE status = 'OK'"
-
-    if "temp" in type:
-        filter = "WHERE status != 'OK'"
-
     cursor.execute(("SELECT *, "
                     "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
                     "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
-                    f"FROM genotypes {filter} "
+                    "FROM genotypes "
                     "ORDER BY genotype_id"))
     results = cursor.fetchall()
 
@@ -82,11 +73,12 @@ for type in ["definitive", "all", "temp"]:
     for row in results:
         loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
-    cursor.execute("DELETE FROM cache WHERE key = 'genotypes_{type}' ")
+        cursor.execute("DELETE FROM cache WHERE key = %s ", [row["genotype_id"]])
+        connection.commit()
+        cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
+                    [row["genotype_id"], json.dumps(loci_values[row["genotype_id"]])])
+        connection.commit()
 
-    cursor.execute(f"INSERT INTO cache (key, val, updated) VALUES ('genotypes_{type}', %s, NOW())",
-                   [json.dumps(loci_values)])
-    connection.commit()
 
 
 
