@@ -69,9 +69,6 @@ def view_transect(transect_id):
     longitudes = [lon for lon, _ in transect_geojson['coordinates']]
     min_lat, max_lat = min(latitudes), max(latitudes)
     min_lon, max_lon = min(longitudes), max(longitudes)
-    fit = [[min_lat, min_lon], [max_lat, max_lon]]
-
-    #fit = [[lat, lon] for lon, lat in transect_geojson['coordinates']]
 
     transect_feature = {"type": "Feature",
                         "geometry": dict(transect_geojson),
@@ -93,14 +90,43 @@ def view_transect(transect_id):
     results_paths = cursor.fetchall()
 
     # number of scats
-    cursor.execute("SELECT COUNT(*) AS n_scats FROM scats WHERE path_id LIKE %s", [f"{transect_id}|%"])
-    n_scats = cursor.fetchone()["n_scats"]
+    cursor.execute(("SELECT *,"
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "FROM scats WHERE path_id LIKE %s"), [f"{transect_id}|%"])
 
+    scats = cursor.fetchall()
+    n_scats = len(scats)
+    scat_features = []
+    color = "orange"
+    for row in scats:
+        scat_geojson = json.loads(row["scat_lonlat"])
+
+        lon, lat = scat_geojson['coordinates']
+
+        min_lat = min(min_lat, lat)
+        max_lat = max(max_lat, lat)
+        min_lon = min(min_lon, lon)
+        max_lon = max(max_lon, lon)
+
+
+        scat_feature = {"geometry": dict(scat_geojson),
+                        "type": "Feature",
+                        "properties": {"style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                                       "popupContent": (f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
+                                                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                                                        f"""Genotype ID: {row['genotype_id']}"""
+                                                        )
+                                  },
+                    "id": row['scat_id']
+                   }
+        scat_features.append(scat_feature)
 
     # snow tracks
     cursor.execute("SELECT * FROM snow_tracks WHERE (transect_id = %s OR transect_id LIKE %s) ORDER BY date DESC",
                    [transect_id, f"%{transect_id};%"])
     results_snowtracks = cursor.fetchall()
+
+    fit = [[min_lat, min_lon], [max_lat, max_lon]]
 
     return render_template("view_transect.html",
                             header_title=f"Transect ID: {transect_id}",
@@ -109,7 +135,7 @@ def view_transect(transect_id):
                             snowtracks=results_snowtracks,
                             transect_id=transect_id,
                             n_scats=n_scats,
-                            map=Markup(fn.leaflet_geojson(center, [], transect_features,
+                            map=Markup(fn.leaflet_geojson(center, scat_features, transect_features,
                                                           fit=str(fit)
                                                          )))
 
