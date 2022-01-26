@@ -26,7 +26,6 @@ out += """
     <title>WolfDB</title>
 
 
-
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 
 
@@ -40,11 +39,6 @@ main > .container {
 </head>
 """
 
-sql = """
-SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance
-FROM transects
-WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm) = (select min(st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)) FROM transects);
-"""
 
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -52,25 +46,31 @@ cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
 scats = cursor.fetchall()
 
-'''
-out += "<h1>Location on transects for scats from systematic sample</h1>\n"
-
-out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
-
-out += f"{len(scats)} systematic scats.<br>\n"
-
-out += '<table class="table table-striped">\n'
-
-out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
-'''
 
 out2 = ""
 c = 0
 for row in scats:
 
-    sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
+    # check if transect_id exists
+    if "|" in row["path_id"]:
+        transect_id_to_search = row["path_id"].split("|")[0]
+        cursor.execute("SELECT transect_id FROM transects WHERE transect_id = %s", [transect_id_to_search])
+        row2 = cursor.fetchone()
+        if row2 is not None:
+            transect_id_found = row2["transect_id"]
+        else:
+            transect_id_found = ""
+    else:
+        transect_id_found = ""
 
-    cursor.execute(sql2)
+
+    sql = f"""
+    SELECT transect_id, st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), points_utm)::integer AS distance
+    FROM transects
+    WHERE st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), points_utm) = (SELECT min(st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), points_utm)) FROM transects);
+    """
+
+    cursor.execute(sql)
     transect = cursor.fetchone()
 
     path_id = row["path_id"].replace(" ", "|")
@@ -87,6 +87,7 @@ for row in scats:
         out2 += (f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
                  f"""<td>{row['sampling_type']}</td>"""
                  f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
+                 f"""<td>{'<b>NOT FOUND</b>' if transect_id_found == '' else transect_id_found}</td>"""
                  f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
                  f"""<td>{transect['distance']}</td>"""
                  f"""<td>{match}</td></tr>\n"""
@@ -103,7 +104,7 @@ out += f"{c} scat positions that does not match the transect ID.<br>\n"
 
 out += '<table class="table table-striped">\n'
 
-out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
+out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
 
 out += out2
 

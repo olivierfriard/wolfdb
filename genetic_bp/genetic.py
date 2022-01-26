@@ -341,7 +341,7 @@ def genotypes_list(type, mode="web"):
 
     cursor.execute(("SELECT *, "
                     "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
+                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id LIMIT 1) AS dead_recovery "
                     f"FROM genotypes {filter} "
                     "ORDER BY genotype_id"))
     results = cursor.fetchall()
@@ -587,7 +587,8 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
                      "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
                      "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
-                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack "
+                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack, "
+                     "(SELECT 'Yes' FROM dead_wolves WHERE wa_scat_tissue.genotype_id != '' AND genotype_id = wa_scat_tissue.genotype_id LIMIT 1) as dead_recovery "
                      "FROM wa_scat_tissue "
                      "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                      "ORDER BY wa_code"))

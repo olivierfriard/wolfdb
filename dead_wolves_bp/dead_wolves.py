@@ -156,7 +156,7 @@ def dead_wolves_list():
     # get all dead_wolves
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT * FROM dead_wolves ORDER BY tissue_id DESC"))
+    cursor.execute(("SELECT * FROM dead_wolves ORDER BY genotype_id ASC"))
 
     results = cursor.fetchall()
 
@@ -440,7 +440,7 @@ def del_dead_wolf(id):
                     "(SELECT 1 FROM dead_wolves_values WHERE id = %s and field_id = 107);"),
                    [id])
     connection.commit()
-    
+
     return redirect("/dead_wolves_list2")
 
 

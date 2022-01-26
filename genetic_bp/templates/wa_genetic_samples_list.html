@@ -51,6 +51,7 @@
 <th style="background-color: white;">Sex</th>
 <th style="background-color: white;">Status</th>
 <th style="background-color: white;">Pack</th>
+<th style="background-color: white;">Dead recovery</th>
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
 <th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
@@ -94,6 +95,8 @@
 <td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
 
 <td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+
+<td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
 {% for locus in loci_values[result['wa_code']] %}
 
