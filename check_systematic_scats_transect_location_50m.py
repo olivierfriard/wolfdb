@@ -42,9 +42,9 @@ out += '<table class="table table-striped">\n'
 out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
 
 sql = """
-SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance
+SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), multilines)::integer AS distance
 FROM transects
-WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm) < 50;
+WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), multilines) < 50;
 """
 
 connection = fn.get_connection()

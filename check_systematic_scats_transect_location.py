@@ -65,9 +65,9 @@ for row in scats:
 
 
     sql = f"""
-    SELECT transect_id, st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), points_utm)::integer AS distance
+    SELECT transect_id, st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), multilines)::integer AS distance
     FROM transects
-    WHERE st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), points_utm) = (SELECT min(st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), points_utm)) FROM transects);
+    WHERE st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), multilines) = (SELECT min(st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), multilines)) FROM transects);
     """
 
     cursor.execute(sql)

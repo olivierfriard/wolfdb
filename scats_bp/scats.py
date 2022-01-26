@@ -133,7 +133,7 @@ def view_scat(scat_id):
     if results["path_id"]:  # Systematic sampling
         transect_id = results["path_id"].split("|")[0]
 
-        cursor.execute(("SELECT ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson "
+        cursor.execute(("SELECT ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson "
                         "FROM transects WHERE transect_id = %s"),
                     [transect_id])
         transect = cursor.fetchone()
@@ -925,51 +925,6 @@ def confirm_load_xlsx(filename, mode):
     flash(fn.alert_success(msg))
 
     return redirect(f'/scats')
-
-'''
-def check_systematic_scats_transect_location():
-    """
-    Check location of scats from systematic sampling
-    Create file in
-    """
-
-    out = "<table>\n"
-
-    sql = """
-    SELECT transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer AS distance
-    FROM transects
-    WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm) = (select min(st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)) FROM transects);
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
-    scats = cursor.fetchall()
-    for row in scats:
-
-        sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
-
-        cursor.execute(sql2)
-        transect = cursor.fetchone()
-
-        path_id = row["path_id"].replace(" ", "|")
-
-        if path_id.startswith(transect["transect_id"] + "|"):
-            match = "OK"
-        else:
-            match = "NO"
-
-
-        out += f'<tr><td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{transect["transect_id"]}</td><td>{transect["distance"]}</td><td>{match}</td></tr>\n'
-
-    out += "</table>\n"
-
-    with open("static/systematic_scats_transects_location", "w") as f_out:
-        f_out.write(out)
-
-    return True
-'''
 
 
 

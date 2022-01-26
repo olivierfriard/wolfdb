@@ -13,9 +13,9 @@ def scats_location():
     out = ""
 
     sql = """
-    select transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)::integer as distance 
-    from transects 
-    where st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm) = (select min(st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), points_utm)) from transects);
+    select transect_id, st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), multilines)::integer as distance
+    from transects
+    where st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), multilines) = (select min(st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), multilines)) from transects);
     """
 
     connection = fn.get_connection()
@@ -24,7 +24,7 @@ def scats_location():
     cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
     scats = cursor.fetchall()
     for row in scats:
-        
+
         sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
 
         cursor.execute(sql2)

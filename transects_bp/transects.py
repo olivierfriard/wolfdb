@@ -42,16 +42,6 @@ def view_transect(transect_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    '''
-    cursor.execute(("SELECT *, "
-                     "ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, "
-                     "ROUND(ST_Length(points_utm)) AS transect_length "
-                     "FROM transects "
-                     "WHERE transect_id = %s"
-                    ),
-                    [transect_id])
-
-    '''
     cursor.execute(("SELECT *, "
                      "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
                      "ROUND(ST_Length(multilines)) AS transect_length "
@@ -332,7 +322,6 @@ def plot_transects():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    #cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_lonlat FROM transects")
     cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects")
 
     transects_features = []
@@ -343,11 +332,6 @@ def plot_transects():
         transect_geojson = json.loads(row["transect_lonlat"])
 
         for line in transect_geojson['coordinates']:
-            '''
-            latitudes = [lat for _, lat in line]
-            longitudes = [lon for lon, _ in line]
-            min_lat, max_lat = min(latitudes), max(latitudes)
-            min_lon, max_lon = min(longitudes), max(longitudes)'''
 
             # bounding box
             latitudes = [lat for _, lat in line]
@@ -376,7 +360,6 @@ def plot_transects():
                                                          fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])
                                                         ))
                           )
-
 
 
 @app.route("/transects_analysis")

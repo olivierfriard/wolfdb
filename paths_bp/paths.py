@@ -51,7 +51,11 @@ def view_path(path_id):
 
     # relative transect
     transect_id = path["transect_id"]
-    cursor.execute("SELECT *, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, ROUND(ST_Length(points_utm)) AS transect_length FROM transects WHERE transect_id = %s", [transect_id])
+    cursor.execute(("SELECT *, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
+                    "ROUND(ST_Length(multilines)) AS transect_length "
+                    "FROM transects "
+                    "WHERE transect_id = %s"),
+                    [transect_id])
     transect = cursor.fetchone()
     if transect is not None:
 
