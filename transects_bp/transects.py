@@ -42,6 +42,7 @@ def view_transect(transect_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    '''
     cursor.execute(("SELECT *, "
                      "ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_geojson, "
                      "ROUND(ST_Length(points_utm)) AS transect_length "
@@ -49,6 +50,16 @@ def view_transect(transect_id):
                      "WHERE transect_id = %s"
                     ),
                     [transect_id])
+
+    '''
+    cursor.execute(("SELECT *, "
+                     "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
+                     "ROUND(ST_Length(multilines)) AS transect_length "
+                     "FROM transects "
+                     "WHERE transect_id = %s"
+                    ),
+                    [transect_id])
+
 
     transect = cursor.fetchone()
 
@@ -65,10 +76,15 @@ def view_transect(transect_id):
 
     transect_geojson = json.loads(transect["transect_geojson"])
 
-    latitudes = [lat for _, lat in transect_geojson['coordinates']]
-    longitudes = [lon for lon, _ in transect_geojson['coordinates']]
-    min_lat, max_lat = min(latitudes), max(latitudes)
-    min_lon, max_lon = min(longitudes), max(longitudes)
+    min_lat, max_lat = 90, -90
+    min_lon, max_lon = 90, -90
+
+    for line in transect_geojson['coordinates']:
+        latitudes = [lat for _, lat in line]
+        longitudes = [lon for lon, _ in line]
+        min_lat, max_lat = min(latitudes), max(latitudes)
+        min_lon, max_lon = min(longitudes), max(longitudes)
+
 
     transect_feature = {"type": "Feature",
                         "geometry": dict(transect_geojson),
@@ -79,7 +95,7 @@ def view_transect(transect_id):
                        }
     transect_features = [transect_feature]
 
-    center = f"{transect_geojson['coordinates'][0][1]}, {transect_geojson['coordinates'][0][0]}"
+    center = f"45, 7"
 
     # path
     cursor.execute(("SELECT *,"
