@@ -331,21 +331,31 @@ def plot_transects():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_lonlat FROM transects")
+
+    #cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(points_utm, 4326)) AS transect_lonlat FROM transects")
+    cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects")
 
     transects_features = []
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
+
     for row in cursor.fetchall():
         transect_geojson = json.loads(row["transect_lonlat"])
 
-        # bounding box
-        latitudes = [lat for _, lat in transect_geojson['coordinates']]
-        longitudes = [lon for lon, _ in transect_geojson['coordinates']]
-        tot_min_lat = min([tot_min_lat, min(latitudes)])
-        tot_max_lat = max([tot_max_lat, max(latitudes)])
-        tot_min_lon = min([tot_min_lon, min(longitudes)])
-        tot_max_lon = max([tot_max_lon, max(longitudes)])
+        for line in transect_geojson['coordinates']:
+            '''
+            latitudes = [lat for _, lat in line]
+            longitudes = [lon for lon, _ in line]
+            min_lat, max_lat = min(latitudes), max(latitudes)
+            min_lon, max_lon = min(longitudes), max(longitudes)'''
+
+            # bounding box
+            latitudes = [lat for _, lat in line]
+            longitudes = [lon for lon, _ in line]
+            tot_min_lat = min([tot_min_lat, min(latitudes)])
+            tot_max_lat = max([tot_max_lat, max(latitudes)])
+            tot_min_lon = min([tot_min_lon, min(longitudes)])
+            tot_max_lon = max([tot_max_lon, max(longitudes)])
 
         transect_feature = {"geometry": dict(transect_geojson),
                             "type": "Feature",
@@ -358,7 +368,7 @@ def plot_transects():
 
         transects_features.append(dict(transect_feature))
 
-    center = f"45 , 9"
+    center = f"45 , 7"
 
     return render_template("plot_transects.html",
                            header_title="Plot of transects",
