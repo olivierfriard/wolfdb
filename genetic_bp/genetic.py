@@ -788,11 +788,11 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     wa_list_str = "','".join(wa_list)
 
     # fetch grouped genotypes
-    cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap, "
+    cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap "
 
-                     "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
-                     "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
-                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack "
+                     #"(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
+                     #"(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
+                     #"(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack "
                      #"(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
 
 

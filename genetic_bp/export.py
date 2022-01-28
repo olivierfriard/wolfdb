@@ -65,7 +65,7 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
     print(ws1.title)
 
     header = ["WA code", "Sample ID", "Date", "Municipality", "Coordinates WGS84 UTM zone 32N", "mtDNA result",
-              "Genotype ID", "Temporary ID", "Sex", "Status", "Pack", "Dead recovery"]
+              "Genotype ID", "Notes on genotype",  "Temporary ID", "Sex", "Status", "Pack", "Dead recovery"]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -82,6 +82,9 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
         out.append(f'{row["coord_east"]}, {row["coord_north"]}')
         out.append(row["mtdna"] if row["mtdna"] is not None else "")
         out.append(row["genotype_id"] if row["genotype_id"] is not None else "")
+
+        out.append(row["notes"] if row["notes"] is not None else "")
+
         out.append(row["tmp_id"] if row["tmp_id"] is not None else "")
         out.append(row["sex_id"] if row["sex_id"] is not None else "")
 
@@ -117,7 +120,7 @@ def export_wa_analysis_group(loci_list, data, loci_values):
     ws1 = wb.active
     ws1.title = f"Genotype matches"
 
-    header = ["Genotype ID", "Temporary ID", "Sex", "Status", "Pack", "Number of recaptures"]
+    header = ["Genotype ID", "Notes on genotype", "Temporary ID", "Sex", "Status", "Pack", "Number of recaptures"]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -129,6 +132,7 @@ def export_wa_analysis_group(loci_list, data, loci_values):
         out = []
         
         out.append(genotype_id)
+        out.append(data[genotype_id]["working_notes"])
         out.append(data[genotype_id]["tmp_id"])
         out.append(data[genotype_id]["sex"])
         out.append(data[genotype_id]["position"])

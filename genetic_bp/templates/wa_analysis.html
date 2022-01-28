@@ -80,7 +80,10 @@
 
 <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
-<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}</td>
+<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
+
+{% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}" class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
+</td>
 
 <td>{{ result['tmp_id'] }}</td>
 
