@@ -39,10 +39,13 @@
 <th style="background-color: white;"></th>
 
 <th style="background-color: white;">Genotype ID</th>
-<th style="background-color: white;">Temporary ID</th>
+<th style="background-color: white;">Notes</th>
+<th style="background-color: white;">Temp ID</th>
 <th style="background-color: white;">Sex</th>
 <th style="background-color: white;">Status</th>
 <th style="background-color: white;">Pack</th>
+<th style="background-color: white;">Hybrid</th>
+<th style="background-color: white;">Dispersal</th>
 <th style="background-color: white;">n. recapt</th>
 
 {% for locus in loci_list %}
@@ -78,7 +81,7 @@ set ...
 </ul>
 </div>
 
-
+<!--
 <a href="/set_status/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap">Set status</a>
 <a href="/set_pack/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap ">Set pack</a><br>
 
@@ -87,10 +90,12 @@ set ...
 {% else %}
 <a class="btn btn-sm  btn-outline-primary" href="/genotype_note/{{ genotype_id }}">notes</a>
 {% endif %}
-
+-->
 </td>
 
 <td><a href="/view_genotype/{{ genotype_id }}" target="_blank">{{ genotype_id }}</a></td>
+
+<td>{{ data[genotype_id]["working_notes"] if data[genotype_id]["working_notes"] is not none else "" }}</td>
 
 <td>{{ data[genotype_id]["tmp_id"] }}</td>
 
@@ -99,6 +104,11 @@ set ...
 <td>{{ data[genotype_id]["position"] if data[genotype_id]["position"] is not none else "" }}</td>
 
 <td>{{ data[genotype_id]["pack"] if data[genotype_id]["pack"] is not none else "" }}</td>
+
+
+<td>{{ data[genotype_id]["hybrid"] if data[genotype_id]["hybrid"] is not none else "" }}</td>
+
+<td>{{ data[genotype_id]["dispersal"] if data[genotype_id]["dispersal"] is not none else "" }}</td>
 
 <td>{{ data[genotype_id]["n_recap"] if data[genotype_id]["n_recap"] is not none else "" }}</td>
 
