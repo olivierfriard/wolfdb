@@ -61,7 +61,24 @@
 {% for genotype_id in data %}
 
 <tr>
+
 <td>
+<div class="dropdown">
+<button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+set ...
+</button>
+<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+<li><a href="/set_status/{{ genotype_id }}" class="dropdown-item">status</a></li>
+<li><a href="/set_pack/{{ genotype_id }}" class="dropdown-item">pack</a></li>
+<li><a href="/set_sex/{{ genotype_id }}" class="dropdown-item">sex</a></li>
+<li><a href="/set_hybrid/{{ genotype_id }}" class="dropdown-item">hybrid</a></li>
+<li><a href="/set_status_1st_recap/{{ genotype_id }}" class="dropdown-item">status at 1st recap</a></li>
+<li><a href="/set_dispersal/{{ genotype_id }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/genotype_note/{{ genotype_id }}" class="dropdown-item">notes</a></li>
+</ul>
+</div>
+
+
 <a href="/set_status/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap">Set status</a>
 <a href="/set_pack/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap ">Set pack</a><br>
 
