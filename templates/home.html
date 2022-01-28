@@ -1,8 +1,6 @@
 {% extends "bootstrap.html" %}
 
-
 {% block content %}
-
 
 <h1>WolfDB {% if mode == 'dev' %} - TEST{%endif%}</h1>
 <hr>
@@ -18,14 +16,11 @@ Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
 {%endif%}
 
 {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {{ messages[0] }}
-        {% endif %}
-        {% endwith %}
-
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
 <br>
-
-
 
 <a href="/scats" class="btn btn-primary">Scats</a>
 <br>

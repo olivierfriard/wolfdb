@@ -44,8 +44,12 @@
 
 <td><input type="TEXT" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value=""><br>
 <small>Current value: <b>{{ loci_values[locus['name']]['a']['value'] }}</b></small>
+
 {% if loci_values[locus['name']]['a']['notes'] %}<br><small>Notes:</small>{% endif %}
-<span style="background: #f35151"><small><b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small></span>
+
+<span {% if loci_values[locus['name']]['a']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+<small><b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small>
+</span>
 
 
 </td>
@@ -59,7 +63,11 @@
 <small>Current value: <b>{{ loci_values[locus['name']]['b']['value'] }}</b></small>
 
 {% if loci_values[locus['name']]['b']['notes'] %}<br><small>Notes:</small>{% endif %}
-<span style="background: #f35151"><small><b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small></span>
+
+
+<span {% if loci_values[locus['name']]['b']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+<small><b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small>
+</span>
 
 
 

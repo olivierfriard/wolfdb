@@ -41,21 +41,31 @@
 
 </td>
 
-<td>{{ data[locus]['a']['value'] }}</td>
+<td>
+<span {% if data[locus]['a']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if data[locus]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+{{ data[locus]['a']['value'] }}
+</span>
+</td>
+
 <td><small>{{ data[locus]['a']['date'] }}</small></td>
 
-
 <td>
-<span style="background: #f35151">
+<span {% if data[locus]['a']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if data[locus]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 <small>{{ data[locus]['a']['notes'] }}</small>
 </span>
 </td>
 
-<td>{{ data[locus]['b']['value'] }}</td>
+
+<td>
+<span {% if data[locus]['b']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if data[locus]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+{{ data[locus]['b']['value'] }}
+</span>
+</td>
+
 <td><small>{{ data[locus]['b']['date'] }}</small></td>
 
 <td>
-<span style="background: #f35151">
+<span {% if data[locus]['b']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if data[locus]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 <small>{{ data[locus]['b']['notes'] }}</small>
 </span>
 </td>

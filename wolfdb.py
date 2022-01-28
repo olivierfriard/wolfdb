@@ -12,6 +12,7 @@ from config import config
 import functions as fn
 import utm
 import logging
+import secrets
 
 # blueprints
 from auth import auth as auth_blueprint
@@ -30,7 +31,7 @@ SESSION_TYPE = "filesystem"
 app.config.from_object(__name__)
 Session(app)
 
-app.secret_key = "dfhsdlfsdhflsdfhsnqq45"
+app.secret_key = secrets.token_hex(16)
 
 app.register_blueprint(auth_blueprint)
 

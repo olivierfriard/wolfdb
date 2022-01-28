@@ -96,16 +96,16 @@
 <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
 
-
 {% for locus in loci_values[result['wa_code']] %}
 
 <td style="border-left: 1px solid black;">
 
-{% if loci_values[result['wa_code']][locus]['a']['notes'] %}<span style="background: #f35151">{% endif %}
 
+<span {% if loci_values[result['wa_code']][locus]['a']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if loci_values[result['wa_code']][locus]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 {{ loci_values[result['wa_code']][locus]['a']['value'] }}
+</span>
 
-{% if loci_values[result['wa_code']][locus]['a']['notes'] %}</span>{% endif %}
+
 
 <br>
 <small>
@@ -116,15 +116,9 @@
 
 <td>
 
-{% if loci_values[result['wa_code']][locus]['b']['notes'] %}
-<span style="background: #f35151">
-{% endif %}
-
+<span {% if loci_values[result['wa_code']][locus]['b']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if loci_values[result['wa_code']][locus]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 {{ loci_values[result['wa_code']][locus]['b']['value'] }}
-
-{% if loci_values[result['wa_code']][locus]['b']['notes'] %}
 </span>
-{% endif %}
 
 <br>
 <small>
