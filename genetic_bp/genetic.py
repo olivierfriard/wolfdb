@@ -691,7 +691,15 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
     wa_list_str = "','".join(wa_list)
 
 
-    cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, mtdna, genotype_id, tmp_id, sex_id "
+    cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, "
+                    "mtdna, genotype_id, tmp_id, sex_id, "
+
+                     "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
+                     "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
+                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack, "
+                    "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+
+
                     "FROM wa_scat_tissue "
                     f"WHERE wa_code in ('{wa_list_str}') "
                     "ORDER BY wa_code ASC"))
@@ -780,7 +788,14 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     wa_list_str = "','".join(wa_list)
 
     # fetch grouped genotypes
-    cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap "
+    cursor.execute(("SELECT genotype_id, count(wa_code) AS n_recap, "
+
+                     "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
+                     "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
+                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack "
+                     #"(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+
+
                     "FROM wa_scat_tissue "
                     f"WHERE wa_code in ('{wa_list_str}') "
                     "GROUP BY genotype_id "

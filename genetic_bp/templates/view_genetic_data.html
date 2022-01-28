@@ -43,11 +43,22 @@
 
 <td>{{ data[locus]['a']['value'] }}</td>
 <td><small>{{ data[locus]['a']['date'] }}</small></td>
-<td><small>{{ data[locus]['a']['notes'] }}</small></td>
+
+
+<td>
+<span style="background: #f35151">
+<small>{{ data[locus]['a']['notes'] }}</small>
+</span>
+</td>
 
 <td>{{ data[locus]['b']['value'] }}</td>
 <td><small>{{ data[locus]['b']['date'] }}</small></td>
-<td><small>{{ data[locus]['b']['notes'] }}</small></td>
+
+<td>
+<span style="background: #f35151">
+<small>{{ data[locus]['b']['notes'] }}</small>
+</span>
+</td>
 
 
 <td><a class="btn btn-sm btn-primary" href="/view_genetic_data_history/{{ wa_code }}/{{ locus }}">view</a></td>

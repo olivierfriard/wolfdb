@@ -44,8 +44,12 @@
 <th style="background-color: white;">Coordinates<br><small>WGS84 UTM zone 32N</small></th>
 <th style="background-color: white;">mtDNA result</th>
 <th style="background-color: white;">Genotype ID</th>
-<th style="background-color: white;">Temporary ID</th>
+<th style="background-color: white;">Temp ID</th>
 <th style="background-color: white;">Sex</th>
+<th style="background-color: white;">Status</th>
+<th style="background-color: white;">Pack</th>
+<th style="background-color: white;">Dead recovery</th>
+
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}<th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th><th style="background-color: white;">{{ locus }} b</th>
@@ -82,13 +86,19 @@
 
 <td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
 
+<td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
+
+<td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+
+<td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
+
 
 
 {% for locus in loci_values[result['wa_code']] %}
 
 <td style="border-left: 1px solid black;">
 
-{% if loci_values[result['wa_code']][locus]['a']['notes'] %}<span style="background: red">{% endif %}
+{% if loci_values[result['wa_code']][locus]['a']['notes'] %}<span style="background: #f35151">{% endif %}
 
 {{ loci_values[result['wa_code']][locus]['a']['value'] }}
 
@@ -104,7 +114,7 @@
 <td>
 
 {% if loci_values[result['wa_code']][locus]['b']['notes'] %}
-<span style="background: red">
+<span style="background: #f35151">
 {% endif %}
 
 {{ loci_values[result['wa_code']][locus]['b']['value'] }}
