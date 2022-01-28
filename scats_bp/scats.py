@@ -323,7 +323,6 @@ def new_scat():
                    "deposition, matrix, collected_scat, scalp_category, "
                    "coord_east, coord_north, coord_zone, "
                    "observer, institution,"
-                   #"geo, "
                    "geometry_utm) "
                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
             cursor.execute(sql,
@@ -338,7 +337,6 @@ def new_scat():
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], "32N",
                             request.form["observer"], request.form["institution"],
-                            #f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
                             f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})"
                            ]
                            )

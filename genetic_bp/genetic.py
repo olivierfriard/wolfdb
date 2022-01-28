@@ -588,12 +588,13 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                      "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
                      "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
                      "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack, "
-                     "(SELECT 'Yes' FROM dead_wolves WHERE wa_scat_tissue.genotype_id != '' AND genotype_id = wa_scat_tissue.genotype_id LIMIT 1) as dead_recovery "
+                     "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
                      "FROM wa_scat_tissue "
                      "WHERE UPPER(mtdna) not like '%POOR DNA%' "
                      "ORDER BY wa_code"))
 
     wa_scats = cursor.fetchall()
+    #print(wa_scats)
 
     out = []
     loci_values = {}
@@ -1094,7 +1095,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
                        [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
         connection.commit()
 
-
         # update wa_code
         sql = ("SELECT id FROM wa_locus, wa_results "
                "WHERE wa_locus.wa_code = wa_results.wa_code "
@@ -1112,7 +1112,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
                             {"notes": data["notes"], "id": row["id"]})
 
         connection.commit()
-
 
         return redirect(request.form["return_url"])
 
@@ -1157,7 +1156,6 @@ def genotype_note(genotype_id):
         connection.commit()
 
         return redirect(request.form["return_url"])
-
 
 
 @app.route("/set_status/<genotype_id>", methods=("GET", "POST",))
