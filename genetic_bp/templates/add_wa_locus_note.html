@@ -27,6 +27,9 @@ value: <b>{{ data["value"] }}</b></h3>
 
 Note:<br>
 <textarea  id="notes" name="notes" value="" rows="4" cols="50">{{ data["notes"] }}</textarea><br>
+
+{% if data["user_id"] %}Note inserted by {{data["user_id"]}}<br>{% endif %}
+
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>
 

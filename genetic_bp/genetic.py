@@ -27,8 +27,8 @@ params = config()
 
 # genetic data super users
 # turn value in green
-#data_super_users = ['olivier.friard@unito.it']
-data_super_users = []
+data_super_users = ['olivier.friard@unito.it']
+#data_super_users = []
 
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
@@ -957,6 +957,7 @@ def add_genetic_data(wa_code):
                                 )
 
     if request.method == "POST":
+        # email of current user is inserted in the user_id field
         for locus in loci:
             for allele in ["a", "b"]:
                 if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
@@ -1034,6 +1035,7 @@ def locus_note(wa_code, locus, allele, timestamp):
         data["value"] = wa_locus["val"]
         data["allele"] = allele
         data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
+        data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
 
         return render_template("add_wa_locus_note.html",
                                header_title=f"Add note on {wa_code} {locus} {allele}",
@@ -1043,13 +1045,15 @@ def locus_note(wa_code, locus, allele, timestamp):
 
     if request.method == "POST":
 
-        sql = ("UPDATE wa_locus SET notes = %(notes)s "
+        sql = ("UPDATE wa_locus SET notes = %(notes)s, "
+               "user_id = %(user_id)s "
                "WHERE wa_code = %(wa_code)s "
                "AND locus = %(locus)s AND allele = %(allele)s "
                "AND extract(epoch from timestamp)::integer = %(timestamp)s"
         )
 
         data["notes"] = request.form["notes"]
+        data["user_id"] = session["firstname"] + " " + session["lastname"]
 
         cursor.execute(sql, data)
         connection.commit()
@@ -1102,7 +1106,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         )
 
         data["notes"] = request.form["notes"]
-        data["user_id"] = session["email"]
+        data["user_id"] = session["firstname"] + " " + session["lastname"]
 
         cursor.execute(sql, data)
         connection.commit()
