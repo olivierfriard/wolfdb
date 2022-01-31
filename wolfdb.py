@@ -111,29 +111,6 @@ def view_sample(sample_id):
 
 
 
-'''
-@app.route("/delete_scats")
-@fn.check_login
-def delete_scats():
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("DELETE FROM scats")
-    connection.commit()
-    return redirect("/")
-
-
-@app.route("/delete_paths")
-@fn.check_login
-def delete_paths():
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("DELETE FROM paths")
-    connection.commit()
-    return redirect("/")
-'''
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

@@ -6,7 +6,6 @@ flask blueprint for scats management
 """
 
 
-
 import flask
 from flask import render_template, redirect, request, Markup, flash, session, make_response
 import psycopg2
@@ -28,7 +27,8 @@ params = config()
 
 # genetic data super users
 # turn value in green
-data_super_users = ['olivier.friard@unito.it']
+#data_super_users = ['olivier.friard@unito.it']
+data_super_users = []
 
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
@@ -911,12 +911,12 @@ def add_genetic_data(wa_code):
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
-        loci_values[locus]['a'] = {"value": "-", "notes": "" }
-        loci_values[locus]['b'] = {"value": "-", "notes": "" }
+        loci_values[locus]["a"] = {"value": "-", "notes": "" }
+        loci_values[locus]["b"] = {"value": "-", "notes": "" }
 
     for locus in loci_list:
 
-        for allele in  ['a', 'b'][:loci_list[locus]]:
+        for allele in  ["a", "b"][:loci_list[locus]]:
 
             cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
                             "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "

@@ -132,7 +132,7 @@ def export_wa_analysis_group(loci_list, data, loci_values):
 
     for genotype_id in data:
         out = []
-        
+
         out.append(genotype_id)
         out.append(data[genotype_id]["working_notes"])
         out.append(data[genotype_id]["tmp_id"])
@@ -168,7 +168,8 @@ def export_genotypes_list(loci_list, results, loci_values):
     ws1 = wb.active
     ws1.title = f"Genotype matches"
 
-    header = ["Genotype ID", "Other ID", "Date", "Pack", "Sex", "Age at first capture", "status at first capture",
+    header = ["Genotype ID", "Other ID", "Date", "Pack", "Sex", "Hybrid", "Status",
+              "Age at first capture", "status at first capture",
               "Dispersal", "Number of recaptures", "Dead recovery"]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
@@ -184,12 +185,14 @@ def export_genotypes_list(loci_list, results, loci_values):
         out.append(row["date"] if row["date"] is not None else "")
         out.append(row["pack"] if row["pack"] is not None else "")
         out.append(row["sex"] if row["sex"] is not None else "")
+        out.append(row["hybrid"] if row["hybrid"] is not None else "")
+        out.append(row["position"] if row["position"] is not None else "")
         out.append(row["age_first_capture"] if row["age_first_capture"] is not None else "")
         out.append(row["status_first_capture"] if row["status_first_capture"] is not None else "")
 
         out.append(row["dispersal"] if row["dispersal"] is not None else "")
         out.append(row["n_recaptures"] if row["n_recaptures"] is not None else "")
-        out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")        
+        out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
 
         for locus in loci_list:
             out.extend([loci_values[row['genotype_id']][locus]['a']['value'],
