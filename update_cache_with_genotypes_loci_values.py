@@ -10,8 +10,6 @@ import psycopg2.extras
 import functions as fn
 
 import json
-#import sys
-
 
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -68,8 +66,9 @@ for row in cursor.fetchall():
 cursor.execute(("SELECT genotype_id FROM genotypes"))
 results = cursor.fetchall()
 
-for row in results:
+for idx, row in enumerate(results):
 
+    print(f"{idx=}")
     cursor.execute("DELETE FROM cache WHERE key = %s ", [row["genotype_id"]])
     connection.commit()
     cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
