@@ -44,17 +44,12 @@ def view_genotype(genotype_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s ", [genotype_id])
+    cursor.execute(("SELECT *, "
+                    "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                    "FROM genotypes WHERE genotype_id = %s "
+                    ),
+                   [genotype_id])
     genotype = cursor.fetchone()
-
-
-    '''
-    cursor.execute(("SELECT wa_code FROM genotypes, wa_results "
-                    "WHERE genotypes.genotype_id = wa_results.genotype_id "
-                    "AND wa_results.genotype_id = %s ORDER BY wa_results.wa_code"),
-                    [genotype_id])
-    '''
-
 
     cursor.execute(("SELECT wa_code, sample_id, "
                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
@@ -344,7 +339,8 @@ def genotypes_list(type, mode="web"):
 
     cursor.execute(("SELECT *, "
                     "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                    #"(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                    "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                     f"FROM genotypes {filter} "
                     "ORDER BY genotype_id"))
     results = cursor.fetchall()

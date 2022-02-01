@@ -58,11 +58,17 @@ def login_post():
 @fn.check_login
 def logout():
 
-    current_app.db_log.info(f"Logout of {session['firstname']} {session['lastname']} ({session['email']})")
+    try:
+        current_app.db_log.info(f"Logout of {session['firstname']} {session['lastname']} ({session['email']})")
+    except:
+        pass
 
-    session.pop('user_id', None)
-    session.pop('firstname', None)
-    session.pop('lastname', None)
-    session.pop('email', None)
+    try:
+        session.pop('user_id', None)
+        session.pop('firstname', None)
+        session.pop('lastname', None)
+        session.pop('email', None)
+    except:
+        pass
 
     return redirect("/")

@@ -27,11 +27,12 @@ from admin_bp import admin
 __version__ = "1"
 
 app = Flask(__name__)
+
+app.secret_key = secrets.token_hex(16)
+
 SESSION_TYPE = "filesystem"
 app.config.from_object(__name__)
 Session(app)
-
-app.secret_key = secrets.token_hex(16)
 
 app.register_blueprint(auth_blueprint)
 

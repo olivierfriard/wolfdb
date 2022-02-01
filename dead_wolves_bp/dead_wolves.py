@@ -76,7 +76,7 @@ def view_tissue(tissue_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT id from dw_short2 WHERE tissue_id = %s", [tissue_id])
+    cursor.execute("SELECT id from dw_short WHERE tissue_id = %s", [tissue_id])
     row = cursor.fetchone()
 
     if row is not None:
