@@ -1136,6 +1136,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
     data["allele"] = allele
     data["value"] = wa_locus["val"]
     data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
+    data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
 
     if request.method == "GET":
 
