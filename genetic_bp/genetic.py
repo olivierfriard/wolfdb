@@ -803,7 +803,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         if row['genotype_id'] is None:
             continue
 
-        cursor.execute("SELECT * FROM genotypes WHERE genotype_id = %s",
+        cursor.execute(("SELECT *, "
+                        "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                        "FROM genotypes WHERE genotype_id = %s"),
                         [row['genotype_id']])
         result = cursor.fetchone()
         if result is None:

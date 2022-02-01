@@ -122,7 +122,7 @@ def export_wa_analysis_group(loci_list, data, loci_values):
 
     header = ["Genotype ID", "Notes on genotype", "Temporary ID",
               "Sex", "Status", "Pack", "Hybrid", "Dispersal",
-              "Number of recaptures"]
+              "Number of recaptures", "Dead recovery"]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -142,6 +142,7 @@ def export_wa_analysis_group(loci_list, data, loci_values):
         out.append(data[genotype_id]["hybrid"])
         out.append(data[genotype_id]["dispersal"])
         out.append(data[genotype_id]["n_recap"])
+        out.append(data[genotype_id]["dead_recovery"])
 
         for locus in loci_list:
             out.extend([loci_values[genotype_id][locus]['a']['value'],

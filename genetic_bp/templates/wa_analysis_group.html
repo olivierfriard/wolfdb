@@ -47,6 +47,7 @@
 <th style="background-color: white;">Hybrid</th>
 <th style="background-color: white;">Dispersal</th>
 <th style="background-color: white;">n. recapt</th>
+<th style="background-color: white;">Dead recovery</th>
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
@@ -112,7 +113,7 @@ set ...
 
 <td>{{ data[genotype_id]["n_recap"] if data[genotype_id]["n_recap"] is not none else "" }}</td>
 
-
+<td>{{ data[genotype_id]["dead_recovery"] if data[genotype_id]["dead_recovery"] is not none else "" }}</td>
 
 
 {% for locus in loci_values[genotype_id] %}
