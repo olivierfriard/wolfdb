@@ -27,8 +27,8 @@ params = config()
 
 # genetic data super users
 # turn value in green
-data_super_users = ['olivier.friard@unito.it']
-#data_super_users = []
+#data_super_users = ['olivier.friard@unito.it']
+data_super_users = []
 
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
