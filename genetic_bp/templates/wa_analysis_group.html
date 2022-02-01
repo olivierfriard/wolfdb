@@ -118,7 +118,7 @@ set ...
 
 {% for locus in loci_values[genotype_id] %}
 
-<td style="border-left: 1px solid black; {% if loci_values[genotype_id][locus]['a']['notes'] %}background: #f35151{% endif %}">
+<td style="border-left: 1px solid black; {% if 'OK|' in loci_values[genotype_id][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[genotype_id][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
 
 {#
 {% if loci_values[genotype_id][locus]['a']['notes'] %}

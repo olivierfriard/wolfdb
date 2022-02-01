@@ -47,7 +47,7 @@
 
 {% if loci_values[locus['name']]['a']['notes'] %}<br><small>Notes:</small>{% endif %}
 
-<span {% if loci_values[locus['name']]['a']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+<span {% if 'OK|' in loci_values[locus['name']]['a']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 <small><b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small>
 </span>
 
@@ -65,7 +65,7 @@
 {% if loci_values[locus['name']]['b']['notes'] %}<br><small>Notes:</small>{% endif %}
 
 
-<span {% if loci_values[locus['name']]['b']['user_id'] in data_su %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+<span {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 <small><b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small>
 </span>
 

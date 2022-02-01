@@ -27,8 +27,8 @@ params = config()
 
 # genetic data super users
 # turn value in green
-#data_super_users = ['olivier.friard@unito.it']
-data_super_users = []
+data_super_users = ['olivier.friard@unito.it']
+#data_super_users = []
 
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
@@ -131,11 +131,11 @@ def get_loci_value(genotype_id, loci_list):
 
     for locus in loci_list:
 
-        cursor.execute(("SELECT val, allele, notes, extract(epoch from timestamp)::integer AS epoch "
+        cursor.execute(("SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
                         "FROM genotype_locus "
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
                         "UNION "
-                        "SELECT val, allele, notes, extract(epoch from timestamp)::integer AS epoch "
+                        "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
                         "FROM genotype_locus "
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
                         ),
@@ -146,9 +146,11 @@ def get_loci_value(genotype_id, loci_list):
         for row2 in locus_val:
             val = row2["val"] if row2["val"] is not None else "-"
             notes = row2["notes"] if row2["notes"] is not None else ""
+            user_id = row2["user_id"] if row2["user_id"] is not None else ""
             epoch = row2["epoch"] if row2["epoch"] is not None else ""
 
-            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes,
+                                                  "user_id": user_id, "epoch": epoch}
 
     return loci_values
 
@@ -610,7 +612,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
             for allele in  ['a', 'b'][:loci_list[locus]]:
 
-                cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch "
+                cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id "
                                 "FROM wa_locus "
                                 "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
                                 "ORDER BY timestamp DESC LIMIT 1"
@@ -622,6 +624,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                 if row2 is not None:
                     val = row2["val"] if row2["val"] is not None else "-"
                     notes = row2["notes"] if row2["notes"] is not None else ""
+                    user_id = row2["user_id"] if row2["user_id"] is not None else ""
                     if notes:
                         has_notes = True
                     epoch = row2["epoch"] if row2["epoch"] is not None else ""
@@ -631,7 +634,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                     notes = ""
                     epoch = ""
 
-                loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch}
+                loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "user_id": user_id}
 
 
         if (with_notes == "all") or (with_notes == "with_notes" and has_notes == True):
@@ -955,7 +958,8 @@ def add_genetic_data(wa_code):
                                 )
 
     if request.method == "POST":
-        # email of current user is inserted in the user_id field
+
+        # 'OK|' is inserted before the email in the user_id field to demonstrate that allele value has changed (or not) -> green
         for locus in loci:
             for allele in ["a", "b"]:
                 if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
@@ -968,10 +972,57 @@ def add_genetic_data(wa_code):
                            allele,
                            int(request.form[locus['name'] + f"_{allele}"]) if request.form[locus['name'] +f"_{allele}"] else None,
                            request.form[locus['name'] + f"_{allele}_notes"] if request.form[locus['name'] + f"_{allele}_notes"] else None,
-                           session['email']
+                           'OK|' + session['email']
                            ])
 
         connection.commit()
+
+        # update genotype_locus
+        for locus in loci:
+            for allele in ["a", "b"]:
+                if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
+
+
+                    sql = ("SELECT distinct (select val from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS val "
+                        "FROM wa_scat_tissue "
+                        "where genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
+                    cursor.execute(sql,
+                                   {"locus": locus['name'],
+                                    "allele": allele,
+                                    "wa_code": wa_code}
+                                  )
+
+                    rows = cursor.fetchall()
+                    if len(rows) > 1:
+                        print("Different WA code values")
+                    elif len(rows) == 1:
+
+                        sql = ("SELECT distinct (select id from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS id "
+                            "FROM wa_scat_tissue "
+                            "where genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
+
+                        cursor.execute(sql,
+                                   {"locus": locus['name'],
+                                    "allele": allele,
+                                    "wa_code": wa_code}
+                                  )
+
+                        rows2 = cursor.fetchall()
+
+                        for row2 in rows2:
+
+                            cursor.execute(("UPDATE genotype_locus "
+                                            "SET notes = %(notes)s, "
+                                            "val = %(val)s, "
+                                            "user_id = %(user_id)s "
+                                            "WHERE id = %(id)s "),
+                                            {"notes": request.form[locus['name'] + f"_{allele}_notes"] if request.form[locus['name'] + f"_{allele}_notes"] else None,
+                                            "id": row2["id"],
+                                            "val": int(request.form[locus['name'] + f"_{allele}"]) if request.form[locus['name'] +f"_{allele}"] else None,
+                                            "user_id": 'OK|' + session["email"]})
+
+        connection.commit()
+
 
         return redirect(f"/view_genetic_data/{wa_code}")
 
@@ -1051,7 +1102,7 @@ def locus_note(wa_code, locus, allele, timestamp):
         )
 
         data["notes"] = request.form["notes"]
-        data["user_id"] = session["firstname"] + " " + session["lastname"]
+        data["user_id"] = session["email"]
 
         cursor.execute(sql, data)
         connection.commit()
@@ -1104,7 +1155,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         )
 
         data["notes"] = request.form["notes"]
-        data["user_id"] = session["firstname"] + " " + session["lastname"]
+        data["user_id"] = session["email"]
 
         cursor.execute(sql, data)
         connection.commit()
