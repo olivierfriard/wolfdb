@@ -854,8 +854,8 @@ def view_genetic_data(wa_code):
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
-        loci_values[locus]['a'] = {"value": "-", "notes": "" }
-        loci_values[locus]['b'] = {"value": "-", "notes": "" }
+        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
+        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
 
     for locus in loci_list:
 
