@@ -25,10 +25,6 @@ app.debug = True
 
 params = config()
 
-# genetic data super users
-# turn value in green
-data_super_users = ['olivier.friard@unito.it']
-#data_super_users = []
 
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
@@ -759,8 +755,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
                                 wa_scats=wa_scats,
                                 loci_values=loci_values,
                                 distance=distance,
-                                cluster_id=cluster_id,
-                                data_su=data_super_users)
+                                cluster_id=cluster_id)
 
 
 
@@ -892,8 +887,7 @@ def view_genetic_data(wa_code):
                            go_back_url=session["go_back_url"],
                            wa_code=wa_code,
                            loci_list=loci_list,
-                           data=loci_values,
-                           data_su=data_super_users)
+                           data=loci_values)
 
 
 @app.route("/add_genetic_data/<wa_code>", methods=("GET", "POST",))
@@ -956,8 +950,7 @@ def add_genetic_data(wa_code):
                                 wa_code=wa_code,
                                 mode="modify",
                                 loci=loci,
-                                loci_values=loci_values,
-                                data_su=data_super_users
+                                loci_values=loci_values
                                 )
 
     if request.method == "POST":
