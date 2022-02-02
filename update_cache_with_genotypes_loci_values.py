@@ -27,11 +27,11 @@ def get_loci_value(genotype_id, loci_list):
 
     for locus in loci_list:
 
-        cursor.execute(("SELECT val, allele, notes, extract(epoch from timestamp)::integer AS epoch "
+        cursor.execute(("SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
                         "FROM genotype_locus "
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
                         "UNION "
-                        "SELECT val, allele, notes, extract(epoch from timestamp)::integer AS epoch "
+                        "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
                         "FROM genotype_locus "
                         "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
                         ),
@@ -42,9 +42,10 @@ def get_loci_value(genotype_id, loci_list):
         for row2 in locus_val:
             val = row2["val"] if row2["val"] is not None else "-"
             notes = row2["notes"] if row2["notes"] is not None else ""
+            user_id = row2["user_id"] if row2["user_id"] is not None else ""
             epoch = row2["epoch"] if row2["epoch"] is not None else ""
 
-            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch}
+            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "epoch": epoch, "user_id": user_id}
 
     return loci_values
 

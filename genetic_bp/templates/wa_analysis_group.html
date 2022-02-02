@@ -82,16 +82,7 @@ set ...
 </ul>
 </div>
 
-<!--
-<a href="/set_status/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap">Set status</a>
-<a href="/set_pack/{{ genotype_id }}" class="btn btn-sm btn-outline-primary text-nowrap ">Set pack</a><br>
 
-{% if data[genotype_id]["working_notes"] %}
-<a class="btn btn-sm  btn-outline-danger" href="/genotype_note/{{ genotype_id }}">notes</a>
-{% else %}
-<a class="btn btn-sm  btn-outline-primary" href="/genotype_note/{{ genotype_id }}">notes</a>
-{% endif %}
--->
 </td>
 
 <td><a href="/view_genotype/{{ genotype_id }}" target="_blank">{{ genotype_id }}</a></td>
@@ -119,20 +110,7 @@ set ...
 {% for locus in loci_values[genotype_id] %}
 
 <td style="border-left: 1px solid black; {% if 'OK|' in loci_values[genotype_id][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[genotype_id][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-
-{#
-{% if loci_values[genotype_id][locus]['a']['notes'] %}
-<span style="background: #f35151">
-{% endif %}
-#}
-
 {{ loci_values[genotype_id][locus]['a']['value'] }}
-
-{#
-{% if loci_values[genotype_id][locus]['a']['notes'] %}
-</span>
-{% endif %}
-#}
 <br>
 <small>
 <a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/a/{{ loci_values[genotype_id][locus]['a']['epoch'] }}">note</a>
@@ -140,18 +118,8 @@ set ...
 </td>
 
 
-<td style="{% if loci_values[genotype_id][locus]['b']['notes'] %}background: #f35151{% endif %}">
-{#
-{% if loci_values[genotype_id][locus]['b']['notes'] %}
-<span style="background: #f35151">
-{% endif %}
-#}
+<td style="{% if 'OK|' in loci_values[genotype_id][locus]['b']['user_id'] %}background: #90ee90{% else %}{% if loci_values[genotype_id][locus]['b']['notes'] %}background: #FF6461{%endif%}{% endif %}">
 {{ loci_values[genotype_id][locus]['b']['value'] }}
-{#
-{% if loci_values[genotype_id][locus]['b']['notes'] %}
-</span>
-{% endif %}
-#}
 <br>
 <small>
 <a href="/genotype_locus_note/{{ genotype_id }}/{{ locus }}/b/{{ loci_values[genotype_id][locus]['b']['epoch'] }}">note</a>
@@ -160,14 +128,8 @@ set ...
 
 {% endfor %}
 
-
-
 </tr>
 {% endfor %}
-
-
-
-
 
 </table>
 {% else %}
@@ -175,8 +137,6 @@ set ...
 <h2>No WA code found</h2>
 
 {% endif %}
-
-
 
 {% endblock %}
 

@@ -110,14 +110,15 @@ set ...
 
 {% if loci_list %}
 {% for locus in loci_values[result['genotype_id']] %}
-<td style="border-left: 1px solid black; {% if loci_values[result['genotype_id']][locus]['a']['notes'] %}background: #f35151{% endif %}" >
+<td style="border-left: 1px solid black; {% if 'OK|' in loci_values[result['genotype_id']][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
 {{ loci_values[result['genotype_id']][locus]['a']['value'] }}
 <br>
 <small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a></small>
 </td>
 
-<td style="{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}background: #f35151{% endif %}">
+<td style="{% if 'OK|' in loci_values[result['genotype_id']][locus]['b']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
 {{ loci_values[result['genotype_id']][locus]['b']['value'] }}
+
 <br>
 <small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a></small>
 </td>

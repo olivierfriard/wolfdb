@@ -341,7 +341,6 @@ def genotypes_list(type, mode="web"):
 
     cursor.execute(("SELECT *, "
                     "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                    #"(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id LIMIT 1) AS dead_recovery "
                     "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                     f"FROM genotypes {filter} "
                     "ORDER BY genotype_id"))
@@ -886,8 +885,10 @@ def view_genetic_data(wa_code):
 
             loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date, "user_id": user_id}
 
+
     return render_template("view_genetic_data.html",
                            header_title=f"{wa_code} genetic data",
+                           go_back_url=request.referrer,
                            wa_code=wa_code,
                            loci_list=loci_list,
                            data=loci_values,
@@ -978,12 +979,19 @@ def add_genetic_data(wa_code):
         connection.commit()
 
         # update genotype_locus
+
+        # for cache update 
+        loci_list = {}
+        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+        for row in cursor.fetchall():
+            loci_list[row["name"]] = row["n_alleles"]
+
         for locus in loci:
             for allele in ["a", "b"]:
                 if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
 
-
-                    sql = ("SELECT distinct (select val from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS val "
+                    sql = ("SELECT distinct (select val from wa_locus where locus = %(locus)s and allele = %(allele)s AND wa_code =wa_scat_tissue.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
+                        #"SELECT distinct (select val from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS val "
                         "FROM wa_scat_tissue "
                         "where genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
                     cursor.execute(sql,
@@ -993,6 +1001,9 @@ def add_genetic_data(wa_code):
                                   )
 
                     rows = cursor.fetchall()
+
+                    print(f"{rows=}")
+
                     if len(rows) > 1:
                         print("Different WA code values")
                     elif len(rows) == 1:
@@ -1009,6 +1020,8 @@ def add_genetic_data(wa_code):
 
                         rows2 = cursor.fetchall()
 
+                        print(f"{rows2=}")
+
                         for row2 in rows2:
 
                             cursor.execute(("UPDATE genotype_locus "
@@ -1020,9 +1033,20 @@ def add_genetic_data(wa_code):
                                             "id": row2["id"],
                                             "val": int(request.form[locus['name'] + f"_{allele}"]) if request.form[locus['name'] +f"_{allele}"] else None,
                                             "user_id": 'OK|' + session["email"]})
+                            connection.commit()
+
+                            # get genotype id
+                            cursor.execute("SELECT genotype_id FROM genotype_locus WHERE id = %s ", [row2["id"]])
+                            genotype_id = cursor.fetchone()["genotype_id"]
+
+                            cursor.execute("DELETE FROM cache WHERE key = %s ", [genotype_id])
+                            connection.commit()
+                            cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
+                                        [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
+                            connection.commit()
+
 
         connection.commit()
-
 
         return redirect(f"/view_genetic_data/{wa_code}")
 
