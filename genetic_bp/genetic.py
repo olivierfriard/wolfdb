@@ -595,8 +595,8 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         loci_values[row["wa_code"]] = {}
         for locus in loci_list:
             loci_values[row["wa_code"]][locus] = {}
-            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "" }
-            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
+            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
+            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
 
         has_notes = False
 
@@ -629,6 +629,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                     val = "-"
                     notes = ""
                     epoch = ""
+                    user_id = ""
 
                 loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "user_id": user_id}
 
