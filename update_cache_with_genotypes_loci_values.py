@@ -22,8 +22,8 @@ def get_loci_value(genotype_id, loci_list):
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
-        loci_values[locus]['a'] = {"value": "-", "notes": "" }
-        loci_values[locus]['b'] = {"value": "-", "notes": "" }
+        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
+        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
 
     for locus in loci_list:
 
