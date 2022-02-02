@@ -578,8 +578,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    # TODO: check why 583 and 585
-
     cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
                      "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
                      "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
@@ -590,7 +588,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                      "ORDER BY wa_code"))
 
     wa_scats = cursor.fetchall()
-    #print(wa_scats)
 
     out = []
     loci_values = {}
@@ -602,6 +599,10 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "" }
 
         has_notes = False
+
+        # genotype working notes
+        if row["notes"] is not None and row["notes"]:
+            has_notes = True
 
         for locus in loci_list:
 
