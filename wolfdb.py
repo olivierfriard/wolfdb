@@ -47,14 +47,14 @@ app.register_blueprint(admin.app)
 params = config()
 app.debug = params["debug"]
 
-app.db_log = logging.getLogger('db_activity')
+app.db_log = logging.getLogger("db_activity")
 
 # Create handlers
-log_handler = logging.FileHandler('/tmp/wolfdb_activity.log')
+log_handler = logging.FileHandler("/tmp/wolfdb_activity.log")
 log_handler.setLevel(logging.DEBUG)
 
 # Create formatters and add it to handlers
-log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 log_handler.setFormatter(log_format)
 
 # Add handlers to the logger
@@ -67,10 +67,7 @@ app.db_log.setLevel(logging.INFO)
 @app.route("/")
 @fn.check_login
 def home():
-    return render_template("home.html",
-                           header_title="Home",
-                           mode=params["mode"]
-                           )
+    return render_template("home.html", header_title="Home", mode=params["mode"])
 
 
 @app.route("/version")
@@ -78,20 +75,20 @@ def version():
     return __version__
 
 
-
 @app.route("/rev_geocoding/<east>/<north>/<zone>")
-def rev_geocoding(east, north ,zone):
+def rev_geocoding(east, north, zone):
     try:
         lat_lon = utm.to_latlon(int(east), int(north), int(zone.replace("N", "")), zone[-1])
     except Exception:
-        return {"continent": "",
-                "country": "",
-                "region": "",
-                "province": "",
-                "province_code": "",
-                "municipality": "",
-                "location": ""
-              }
+        return {
+            "continent": "",
+            "country": "",
+            "region": "",
+            "province": "",
+            "province_code": "",
+            "municipality": "",
+            "location": "",
+        }
     r = fn.reverse_geocoding(lat_lon[::-1])
 
     return r
@@ -111,9 +108,5 @@ def view_sample(sample_id):
     return redirect("/")
 
 
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
-
-

@@ -646,6 +646,8 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
     else:
 
+        session["go_back_url"] = f"/wa_genetic_samples"
+
         return render_template("wa_genetic_samples_list.html",
                             header_title="Genetic data of WA codes",
                             title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (with_notes == 'with_notes')}</h2>"),
@@ -882,9 +884,10 @@ def view_genetic_data(wa_code):
 
             loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date, "user_id": user_id}
 
+
     return render_template("view_genetic_data.html",
                            header_title=f"{wa_code} genetic data",
-                           go_back_url=session["go_back_url"],
+                           go_back_url=session.get("go_back_url", ""),
                            wa_code=wa_code,
                            loci_list=loci_list,
                            data=loci_values)
@@ -946,7 +949,7 @@ def add_genetic_data(wa_code):
 
         return render_template("add_genetic_data.html",
                                 header_title=f"Add genetic data for {wa_code}",
-                                go_back_url=session["go_back_url"],
+                                go_back_url=session.get("go_back_url", ""),
                                 wa_code=wa_code,
                                 mode="modify",
                                 loci=loci,
