@@ -122,8 +122,8 @@ def get_loci_value(genotype_id, loci_list):
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
-        loci_values[locus]['a'] = {"value": "-", "notes": "" }
-        loci_values[locus]['b'] = {"value": "-", "notes": "" }
+        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": ""}
+        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": ""}
 
     for locus in loci_list:
 
@@ -913,8 +913,8 @@ def add_genetic_data(wa_code):
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
-        loci_values[locus]["a"] = {"value": "-", "notes": "" }
-        loci_values[locus]["b"] = {"value": "-", "notes": "" }
+        loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": "" }
+        loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": "" }
 
     for locus in loci_list:
 
@@ -1059,7 +1059,7 @@ def view_genetic_data_history(wa_code, locus):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    locus_values = {"a": {"value": "-", "notes": ""}, "b": {"value": "-", "notes": ""}}
+    locus_values = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
     cursor.execute(("SELECT *, extract(epoch from timestamp)::integer AS epoch, "
                     "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, notes "
