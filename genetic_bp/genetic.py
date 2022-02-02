@@ -750,6 +750,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
 
     else:
 
+        session["go_back_url"] = f"/wa_analysis/{distance}/{cluster_id}"
+
         return render_template("wa_analysis.html",
                                 header_title = f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
                                 title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
@@ -885,10 +887,9 @@ def view_genetic_data(wa_code):
 
             loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date, "user_id": user_id}
 
-
     return render_template("view_genetic_data.html",
                            header_title=f"{wa_code} genetic data",
-                           go_back_url=request.referrer,
+                           go_back_url=session["go_back_url"],
                            wa_code=wa_code,
                            loci_list=loci_list,
                            data=loci_values,
@@ -951,6 +952,7 @@ def add_genetic_data(wa_code):
 
         return render_template("add_genetic_data.html",
                                 header_title=f"Add genetic data for {wa_code}",
+                                go_back_url=session["go_back_url"],
                                 wa_code=wa_code,
                                 mode="modify",
                                 loci=loci,
