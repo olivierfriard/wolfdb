@@ -709,8 +709,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
         loci_values[row["wa_code"]] = {}
         for locus in loci_list:
             loci_values[row["wa_code"]][locus] = {}
-            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "", "user_id": user_id }
-            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "", "user_id": user_id }
+            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
+            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
         for locus in loci_list:
 
             for allele in  ['a', 'b'][:loci_list[locus]]:
