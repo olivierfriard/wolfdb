@@ -24,7 +24,7 @@
 <th>Transect ID</th>
 <th>Date</th>
 <th>Sampling year</th>
-<th>Completeness</th>
+<th>Completeness (%)</th>
 <th>Number of tracks</th>
 <th>Number of samples</th>
 <th>Operator</th>
@@ -33,26 +33,17 @@
 </tr>
 {% for result in results %}
 <tr>
-
 <td>{{ result['region'] }}</td>
-
 <td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
-    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
-    <td>{{ result['date'] }}</td>
-    <td>{{ result['sampling_season'] }}</td>
-    <td>
-    {% if result['completeness'] %}
-    {{ result['completeness'] }} %
-    {% endif %}
-</td>
-    <td>{{ result['n_tracks'] }}</td>
-    <td>{{ result['n_samples'] }}</td>
-
-    <td>{% if result['observer'] %}{{ result['observer'] }}{% endif %}</td>
-
-    <td>{% if result['institution'] %}{{ result['institution'] }}{% endif %}</td>
-    <td>{% if result['notes'] %}{{ result['notes'] }}{% endif %}</td>
-
+<td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
+<td>{{ result['date'] }}</td>
+<td>{{ result['sampling_season'] }}</td>
+<td>{{ result['completeness'] }}</td>
+<td>{{ result['n_tracks'] }}</td>
+<td>{{ result['n_samples'] }}</td>
+<td>{% if result['observer'] %}{{ result['observer'] }}{% endif %}</td>
+<td>{% if result['institution'] %}{{ result['institution'] }}{% endif %}</td>
+<td>{% if result['notes'] %}{{ result['notes'] }}{% endif %}</td>
 </tr>
 {% endfor %}
 </table>

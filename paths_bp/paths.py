@@ -40,7 +40,9 @@ def view_path(path_id):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT *, (select count(*) from scats where scats.path_id=paths.path_id) as n_scats FROM paths WHERE path_id = %s",
+    cursor.execute(("SELECT *, "
+                    "(SELECT count(*) FROM scats WHERE scats.path_id=paths.path_id) AS n_scats "
+                    "FROM paths WHERE path_id = %s"),
                    [path_id])
     path = cursor.fetchone()
     if path is None:

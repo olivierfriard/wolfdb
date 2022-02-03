@@ -845,6 +845,11 @@ def view_genetic_data(wa_code):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    # get sex of WA code
+    cursor.execute("SELECT sex_id FROM wa_results WHERE wa_code = %s",
+                   [wa_code])
+    sex = cursor.fetchone()["sex_id"]
+
     # loci list
     cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
     loci_list = {}
@@ -892,6 +897,7 @@ def view_genetic_data(wa_code):
                            go_back_url=session.get("go_back_url", ""),
                            wa_code=wa_code,
                            loci_list=loci_list,
+                           sex=sex,
                            data=loci_values)
 
 
@@ -901,6 +907,12 @@ def add_genetic_data(wa_code):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # get sex of WA code
+    cursor.execute("SELECT sex_id FROM wa_results WHERE wa_code = %s",
+                   [wa_code])
+    sex = cursor.fetchone()["sex_id"]
+
     cursor.execute("SELECT * FROM loci ORDER BY position ASC")
     loci = cursor.fetchall()
 
@@ -953,12 +965,17 @@ def add_genetic_data(wa_code):
                                 header_title=f"Add genetic data for {wa_code}",
                                 go_back_url=session.get("go_back_url", ""),
                                 wa_code=wa_code,
-                                mode="modify",
                                 loci=loci,
-                                loci_values=loci_values
+                                loci_values=loci_values,
+                                sex=sex
                                 )
 
     if request.method == "POST":
+
+        # set sex
+        cursor.execute("UPDATE wa_results SET sex_id = %s WHERE wa_code = %s",
+                       [request.form["sex"], wa_code])
+        connection.commit()
 
         # 'OK|' is inserted before the email in the user_id field to demonstrate that allele value has changed (or not) -> green
         for locus in loci:
@@ -991,7 +1008,6 @@ def add_genetic_data(wa_code):
                 if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
 
                     sql = ("SELECT distinct (select val from wa_locus where locus = %(locus)s and allele = %(allele)s AND wa_code =wa_scat_tissue.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
-                        #"SELECT distinct (select val from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS val "
                         "FROM wa_scat_tissue "
                         "where genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
                     cursor.execute(sql,
@@ -1001,8 +1017,6 @@ def add_genetic_data(wa_code):
                                   )
 
                     rows = cursor.fetchall()
-
-                    print(f"{rows=}")
 
                     if len(rows) > 1:
                         print("Different WA code values")
@@ -1019,8 +1033,6 @@ def add_genetic_data(wa_code):
                                   )
 
                         rows2 = cursor.fetchall()
-
-                        print(f"{rows2=}")
 
                         for row2 in rows2:
 
@@ -1044,7 +1056,6 @@ def add_genetic_data(wa_code):
                             cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
                                         [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
                             connection.commit()
-
 
         connection.commit()
 

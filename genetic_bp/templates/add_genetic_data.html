@@ -4,6 +4,11 @@
 {% block content %}
 
 
+<script>
+
+
+</script>
+
 <h1>WolfDB</h1>
 <hr>
 
@@ -18,12 +23,19 @@
 <br>
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
-
-
-
-{% if mode != "view" %}
+<br>
 <form method="POST" action="/add_genetic_data/{{ wa_code }}">
-{% endif %}
+
+<span style="font-size: larger;">
+Sex <select name="sex" id="sex">
+<option value="" {% if sex == "" %}selected{% endif %}></option>
+<option value="M" {% if sex == "M" %}selected{% endif %}>M</option>
+<option value="F" {% if sex == "F" %}selected{% endif %}>F</option>
+</select>
+</span>
+<br>
+<br>
+
 <table class="table table-striped">
 <tr>
 
@@ -32,7 +44,6 @@
 <th>Notes</th>
 <th>Allele b</th>
 <th>Notes</th>
-
 <th>History</th>
 
 </tr>
@@ -66,12 +77,9 @@
 
 {% if loci_values[locus['name']]['b']['notes'] %}<br><small>Notes:</small>{% endif %}
 
-
 <span {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 <small><b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small>
 </span>
-
-
 
 </td>
 

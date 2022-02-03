@@ -19,7 +19,7 @@
 
 <table class="table table-striped">
 
-<tr><td>Sector</td><td>{% if transect["sector"] %}{{ transect["sector"] }}{%endif%}</td></tr>
+<tr><td>Sector</td><td>{{ transect["sector"] }}</td></tr>
 <tr><td>Location</td><td>{{ transect["location"] }}</td></tr>
 <tr><td>Municipality</td><td>{{ transect["municipality"] }}</td></tr>
 <tr><td>Province</td><td>{{ transect["province"] }}</td></tr>
@@ -28,28 +28,22 @@
 
 </table>
 
-
-
-
-
 <br><br>
-
 
 <h2>Paths</h2>
 
-
 {% if paths %}
 <table class="table table-striped">
-    <tr>
-        <th>Path ID</th>
-        <th>Date</th>
-        <th>Sampling season</th>
-        <th>Completeness</th>
-        <th>N. samples</th>
-        <th>Operator</th>
-        <th>Institution</th>
-        <th>Note</th>
-        </tr>
+<tr>
+<th>Path ID</th>
+<th>Date</th>
+<th>Sampling season</th>
+<th>Completeness (%)</th>
+<th>N. samples</th>
+<th>Operator</th>
+<th>Institution</th>
+<th>Note</th>
+</tr>
 
 {% for path in paths %}
 
@@ -57,27 +51,10 @@
 <td><a href="/view_path/{{ path["path_id"] }}">{{ path["path_id"] }}</a></td>
 <td>{{ path['date'] }}</td>
 <td>{{ path['sampling_season'] }}</td>
-<td>
-{% if path['completeness'] %}
-{{ path['completeness'] }}
-{%endif%}
-</td>
-
-<td>
-{{ path['n_scats'] }}
-</td>
-
-
-<td>
-{% if path['observer'] %}
-{{ path['observer'] }}
-{%endif%}
-</td>
-<td>
-{% if path['institution'] %}
-{{ path['institution'] }}
-{%endif%}
-</td>
+<td>{{ path['completeness'] }}</td>
+<td>{{ path['n_scats'] }}</td>
+<td>{% if path['observer'] %}{{ path['observer'] }}{%endif%}</td>
+<td>{% if path['institution'] %}{{ path['institution'] }}{%endif%}</td>
 <td>{{ path['note'] }}</td>
 </tr>
 
