@@ -976,6 +976,15 @@ def add_genetic_data(wa_code):
         cursor.execute("UPDATE wa_results SET sex_id = %s WHERE wa_code = %s",
                        [request.form["sex"], wa_code])
         connection.commit()
+        # test sex for all WA codes
+        cursor.execute("SELECT DISTINCT sex_id FROM wa_results WHERE genotype_id in (SELECT genotype_id FROM wa_results where wa_code = %s)",
+                       [wa_code])
+        rows = cursor.fetchall()
+        if len(rows) == 1:  # same sex value for all WA codes -> Set genotype
+            cursor.execute("UPDATE genotypes SET sex = %s WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = %s)",
+                           [rows[0]["sex_id"], wa_code])
+            connection.commit()    
+
 
         # 'OK|' is inserted before the email in the user_id field to demonstrate that allele value has changed (or not) -> green
         for locus in loci:
@@ -1008,23 +1017,20 @@ def add_genetic_data(wa_code):
                 if locus['name'] + f"_{allele}" in request.form and request.form[locus['name'] + f"_{allele}"]:
 
                     sql = ("SELECT distinct (select val from wa_locus where locus = %(locus)s and allele = %(allele)s AND wa_code =wa_scat_tissue.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
-                        "FROM wa_scat_tissue "
-                        "where genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
+                           "FROM wa_scat_tissue "
+                           "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
                     cursor.execute(sql,
                                    {"locus": locus['name'],
                                     "allele": allele,
                                     "wa_code": wa_code}
                                   )
-
                     rows = cursor.fetchall()
 
-                    if len(rows) > 1:
-                        print("Different WA code values")
-                    elif len(rows) == 1:
+                    if len(rows) == 1: # all wa code have the same value
 
                         sql = ("SELECT distinct (select id from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS id "
-                            "FROM wa_scat_tissue "
-                            "where genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
+                               "FROM wa_scat_tissue "
+                               "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)")
 
                         cursor.execute(sql,
                                    {"locus": locus['name'],
