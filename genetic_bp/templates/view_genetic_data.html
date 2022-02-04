@@ -15,13 +15,13 @@
 
 <h2>WA code: {{wa_code}}</h2>
 
-<a href="{{ go_back_url }}" class="btn btn-primary">Go back to WA cluster</a>&nbsp;
+<a href="{{ go_back_url }}" class="btn btn-primary">Go back to WA samples</a>&nbsp;
 
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;
 <br>
 <br>
 
-<span style="font-size: larger;">Sex: <b>{{ sex }}</b></span>
+<span style="font-size: larger;"><b>Sex: {{ sex }}</b></span>
 <br>
 <br>
 
@@ -32,6 +32,7 @@
 <th>Allele a</th>
 <th>Date</th>
 <th>Notes</th>
+<th></th>
 <th>Allele b</th>
 <th>Date</th>
 <th>Notes</th>
@@ -53,6 +54,9 @@
 <br><small>(Inserted by {{data[locus]['a']['user_id']}})</small>
 {% endif %}
 </td>
+
+
+<td style="background: #eeeeee">&nbsp;</td>
 
 <td  style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
 {{ data[locus]['b']['value'] }}

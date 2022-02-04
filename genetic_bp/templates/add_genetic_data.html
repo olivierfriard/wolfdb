@@ -17,7 +17,7 @@
 <a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
 <a href="/view_genetic_data/{{ wa_code }}" class="btn btn-primary">View genetic data for {{ wa_code }}</a>&nbsp;
 <br><br>
-<a href="{{go_back_url}}" class="btn btn-primary">Go back to WA cluster</a>
+<a href="{{go_back_url}}" class="btn btn-primary">Go back to WA samples</a>
 
 <br>
 <br>
@@ -27,7 +27,8 @@
 <form method="POST" action="/add_genetic_data/{{ wa_code }}">
 
 <span style="font-size: larger;">
-Sex <select name="sex" id="sex">
+<b>Sex</b>
+<select name="sex" id="sex">
 <option value="" {% if sex == "" %}selected{% endif %}></option>
 <option value="M" {% if sex == "M" %}selected{% endif %}>M</option>
 <option value="F" {% if sex == "F" %}selected{% endif %}>F</option>
@@ -55,23 +56,20 @@ Sex <select name="sex" id="sex">
 
 </td>
 
-<td><input type="TEXT" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value=""><br>
+<td {% if 'OK|' in loci_values[locus['name']]['a']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+<input type="text" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value="" pattern="[0-9]*"><br>
 <small>Current value: <b>{{ loci_values[locus['name']]['a']['value'] }}</b></small>
 
 {% if loci_values[locus['name']]['a']['notes'] %}<br><small>Notes:</small>{% endif %}
-
-<span {% if 'OK|' in loci_values[locus['name']]['a']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
 <small><b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small>
-</span>
-
-
 </td>
 
-<td><input type="TEXT" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""><br>
+<td><input type="text" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""><br>
 </td>
 
 {% if locus['n_alleles'] == 2 %}
-<td><input type="TEXT" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value=""><br>
+<td {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
+<input type="text" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value="" pattern="[0-9]*"><br>
 
 <small>Current value: <b>{{ loci_values[locus['name']]['b']['value'] }}</b></small>
 
@@ -83,7 +81,7 @@ Sex <select name="sex" id="sex">
 
 </td>
 
-<td><input type="TEXT" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""><br>
+<td><input type="text" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""><br>
 
 </td>
 {% else %}
@@ -98,8 +96,10 @@ Sex <select name="sex" id="sex">
 
 </table>
 
-<button type="submit" class="btn btn-danger" >Submit</button>
+<center><button type="submit" class="btn btn-danger btn-lg">Submit</button></center>
 
 </form>
 
 {% endblock %}
+
+
