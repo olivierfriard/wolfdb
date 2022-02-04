@@ -983,7 +983,7 @@ def add_genetic_data(wa_code):
         if len(rows) == 1:  # same sex value for all WA codes -> Set genotype
             cursor.execute("UPDATE genotypes SET sex = %s WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = %s)",
                            [rows[0]["sex_id"], wa_code])
-            connection.commit()    
+            connection.commit()
 
 
         # 'OK|' is inserted before the email in the user_id field to demonstrate that allele value has changed (or not) -> green
@@ -1006,7 +1006,7 @@ def add_genetic_data(wa_code):
 
         # update genotype_locus
 
-        # for cache update 
+        # for cache update
         loci_list = {}
         cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
         for row in cursor.fetchall():

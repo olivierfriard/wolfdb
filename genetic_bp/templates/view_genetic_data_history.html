@@ -25,15 +25,16 @@
 <th>Value</th>
 <th>Date</th>
 <th>Notes</th>
+<th>User</th>
 </tr>
-{% for row in locus_values %}
 
+{% for row in locus_values %}
 <tr>
 <td>{{ row["allele"] }}</td>
 <td>{{ row["val"]  if row["val"] is not none else "-"}}</td>
 <td>{{ row["formatted_timestamp"]  if row["formatted_timestamp"] is not none else ""}}</td>
 <td>{{ row["notes"] if row["notes"] is not none else ""}}</td>
-
+<td>{{ row["user_id"] if row["user_id"] is not none else ""}}</td>
 </tr>
 
 {% endfor %}
