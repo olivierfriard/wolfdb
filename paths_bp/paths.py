@@ -16,6 +16,7 @@ import json
 
 from .path_form import Path
 import functions as fn
+from . import paths_export
 
 app = flask.Blueprint("paths", __name__, template_folder="templates")
 
