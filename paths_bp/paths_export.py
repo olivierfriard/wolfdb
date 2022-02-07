@@ -14,7 +14,7 @@ def export_paths(paths):
     ws1 = wb.active
     ws1.title = f"Paths"
 
-    header = ["Path ID", "Transect ID", "Date", "Sampling season", "Completeness",
+    header = ["Path ID", "Transect ID", "Region", "Province", "Date", "Sampling season", "Completeness",
               "Number of samples", "Number of tracks",
               "Operator", "Institution", "Category", "Notes"]
 
@@ -25,6 +25,8 @@ def export_paths(paths):
         out = []
         out.append(row["path_id"])
         out.append(row["transect_id"])
+        out.append(row["region"])
+        out.append(row["province"])
         out.append(row["date"] if row["date"] is not None else "")
         out.append(row["sampling_season"] if row["sampling_season"] is not None else "")
         out.append(row["completeness"])

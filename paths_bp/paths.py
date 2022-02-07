@@ -169,13 +169,13 @@ def export_paths():
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cursor.execute(("SELECT *, "
-                    #"(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
+                    "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
                     "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
                     "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
                     "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
                    "FROM paths "
                    "ORDER BY region ASC, "
-                   #"province ASC, "
+                   "province ASC, "
                    "path_id, date DESC "
                    ))
 

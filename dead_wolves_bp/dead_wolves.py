@@ -179,7 +179,8 @@ def dead_wolves_list2():
     return render_template("dead_wolves_list2.html",
                            header_title="List of dead wolves",
                            length=len(results),
-                           results=results
+                           results=results,
+                           n_dead_wolves=len(results)
                            )
 
 
@@ -394,7 +395,6 @@ def edit_dead_wolf(id):
                          field83=default_values["field83"],
                         )
 
-
         return render_template("new_dead_wolf.html",
                             title="Edit dead wolf",
                             action=f"/edit_dead_wolf/{id}",
@@ -410,22 +410,12 @@ def edit_dead_wolf(id):
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            sql = ("UPDATE transects SET transect_id = %s, sector =%s, location = %s, municipality = %s, province = %s, region = %s "
-                   "WHERE transect_id = %s")
-            cursor.execute(sql,
-                           [
-                            request.form["transect_id"].strip(), request.form["sector"],
-                            request.form["location"].strip(), request.form["municipality"].strip(),
-                            request.form["province"].strip().upper(), transect_regions,
-                            transect_id
-                           ]
-                           )
 
             connection.commit()
 
-            return redirect(f"/view_transect/{transect_id}")
+            return redirect(f"/view_dead_wolf_id/{id}")
         else:
-            return not_valid("Transect form NOT validated")
+            return not_valid("Dead wolf form NOT validated")
 
 
 @app.route("/del_dead_wolf/<id>")
