@@ -8,7 +8,7 @@ flask blueprint for paths management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask import Flask, render_template, redirect, request, Markup, flash, session, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -122,10 +122,9 @@ def view_path(path_id):
 @app.route("/paths_list")
 @fn.check_login
 def paths_list():
-    # get  all paths
+    # get all paths
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
 
     cursor.execute(("SELECT *, "
                     #"(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
@@ -161,6 +160,32 @@ def paths_list():
                            results=results,
                           )
 
+
+@app.route("/export_paths")
+@fn.check_login
+def export_paths():
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(("SELECT *, "
+                    #"(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
+                    "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
+                    "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
+                    "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
+                   "FROM paths "
+                   "ORDER BY region ASC, "
+                   #"province ASC, "
+                   "path_id, date DESC "
+                   ))
+
+    file_content = paths_export.export_paths(cursor.fetchall())
+
+    response = make_response(file_content, 200)
+    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    response.headers["Content-disposition"] = "attachment; filename=paths.xlsx"
+
+    return response
 
 
 
