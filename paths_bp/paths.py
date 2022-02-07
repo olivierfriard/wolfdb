@@ -188,7 +188,7 @@ def new_path():
         if form.validate():
 
             # path_id
-            path_id = f'{request.form["transect_id"]}_{request.form["date"][2:].replace("-", "")}'
+            path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -233,20 +233,25 @@ def edit_path(path_id):
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute("SELECT * FROM paths WHERE path_id = %s",
-                    [path_id])
+                       [path_id])
         default_values = cursor.fetchone()
 
+        if default_values["category"] is None:
+            default_values["category"] = ""
+
         form = Path(transect_id=default_values["transect_id"],
-                    completeness=default_values["completeness"])
+                    completeness=default_values["completeness"],
+                    )
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
         form.notes.data = default_values["notes"]
 
         return render_template("new_path.html",
-                            title="Edit path",
-                            action=f"/edit_path/{path_id}",
-                            form=form,
-                            default_values=default_values)
+                               header_title=f"Edit path {path_id}",
+                               title="Edit path",
+                               action=f"/edit_path/{path_id}",
+                               form=form,
+                               default_values=default_values)
 
 
     if request.method == "POST":
@@ -258,19 +263,20 @@ def edit_path(path_id):
         if form.validate():
 
             # path_id
-            new_path_id = f'{request.form["transect_id"]}_{request.form["date"][2:].replace("-", "")}'
+            new_path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("UPDATE paths SET "
                    "path_id = %s,"
-                   "transect_id=%s, "
-                   "date=%s, "
-                   "sampling_season=%s, "
-                   "completeness=%s, "
-                   "observer=%s, "
-                   "institution=%s, "
-                   "notes=%s "
+                   "transect_id = %s, "
+                   "date = %s, "
+                   "sampling_season = %s, "
+                   "completeness = %s, "
+                   "observer = %s, "
+                   "institution = %s, "
+                   "category = %s, "
+                   "notes = %s "
                    "WHERE path_id = %s")
 
             cursor.execute(sql,
@@ -280,6 +286,7 @@ def edit_path(path_id):
                             fn.sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
                             request.form["observer"], request.form["institution"],
+                            request.form["category"],
                             request.form["notes"],
                             path_id
                            ]

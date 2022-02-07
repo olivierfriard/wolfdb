@@ -1,6 +1,7 @@
-{% include "header.html" %}
-<main class="flex-shrink-0">
-<div class="container">
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
 
     <h1>WolfDB</h1>
     <hr>
@@ -32,11 +33,8 @@
         </div><!-- col --><div class="col-8">
         {{ form.transect_id(class="form-control") }}
         {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-
-
         </div></div>
     </div>
-
 
 
     <div class="mb-3">
@@ -80,6 +78,16 @@
 
 
 <div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.category.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.category(class="form-control", value=default_values["category"]) }}
+    {% for message in form.category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div>
+</div>
+
+
+
+<div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.notes.label }}
     </div><!-- col --><div class="col-8">
     {{ form.notes(size=20, class="form-control") }}
@@ -92,9 +100,4 @@
 </form>
 
 
-
-
-
-</div>
-
-</main>
+{% endblock %}
