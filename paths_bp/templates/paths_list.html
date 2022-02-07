@@ -29,6 +29,7 @@
 <th>Number of samples</th>
 <th>Operator</th>
 <th>Institution</th>
+<th>Category</th>
 <th>Notes</th>
 </tr>
 {% for result in results %}
@@ -43,6 +44,7 @@
 <td>{{ result['n_samples'] }}</td>
 <td>{% if result['observer'] %}{{ result['observer'] }}{% endif %}</td>
 <td>{% if result['institution'] %}{{ result['institution'] }}{% endif %}</td>
+<td>{% if result['category'] %}{{ result['category'] }}{% endif %}</td>
 <td>{% if result['notes'] %}{{ result['notes'] }}{% endif %}</td>
 </tr>
 {% endfor %}
