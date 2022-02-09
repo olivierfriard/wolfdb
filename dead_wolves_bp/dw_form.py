@@ -6,6 +6,7 @@ WolfDB web service
 
 from flask import Markup
 import datetime
+import re
 
 from wtforms import (Form, StringField, SelectField)
 from wtforms.validators import Required, ValidationError
@@ -27,12 +28,31 @@ class Dead_wolf(Form):
         """
         validation for date in ISO 8601 format (YYYY-MM-DD)
         """
+        if field.data == "":
+            return
         try:
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
             return
         except ValueError:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'))
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Use the YYYY-MM-DD format</div>'))
 
+
+    def sampling_season_validator(form, field):
+        """
+        validation of YYYY-YYYY format
+        """
+
+        if field.data == "":
+            return
+        m = re.match('(\d{4})-(\d{4})', field.data)
+        if m is None:
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. Use the YYYY-YYYY format</div>'))
+        try:
+            if int(m.groups[0]) >= int(m.groups[1]):
+                raise ValidationError(Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>'))
+        except Exception:
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>'))
+        return
 
 
     field1 = StringField("ID", [], default="")
@@ -45,10 +65,10 @@ class Dead_wolf(Form):
     field5 = StringField("Reminder on genetic sample collecting and documentation", [], default="")
     field6 = StringField("Tissue ID", [], default="")
     field7 = StringField("Additional Note on wolf recovery", [], default="")
-    field8 = StringField("Presumed death date", [], default="")
-    field9 = StringField("Discovery Date", [], default="")
-    field10 = StringField("Sampling season", [], default="")
-    field11 = StringField("Necroscopy date", [], default="")
+    field8 = StringField("Presumed death date", validators=[iso_date_validator], default="")
+    field9 = StringField("Discovery Date", validators=[iso_date_validator], default="")
+    field10 = StringField("Sampling season", validators=[sampling_season_validator], default="")
+    field11 = StringField("Necroscopy date", validators=[iso_date_validator], default="")
 
     field12 = SelectField("Main cause of mortality", choices=[("", ""),
                                                       ("Indeterminata", "Indeterminata"),
@@ -59,7 +79,7 @@ class Dead_wolf(Form):
                                                       ],
                                                       default="")
 
-    field13 = SelectField("Specific cause of mortality", 
+    field13 = SelectField("Specific cause of mortality",
                           choices=[("", ""),
                            ("Indeterminata", "Indeterminata"),
                            ("Inanizione", "Inanizione"),
@@ -107,6 +127,7 @@ class Dead_wolf(Form):
 
     field32 = StringField("Estimated age with Cementum Anuli", [], default="")
     field33 = StringField("Canine collected", [], default="")
+
     field34 = SelectField("Age class",
                             choices=[("", ""),
                              ("<1", "<1"),
@@ -123,6 +144,7 @@ class Dead_wolf(Form):
     field40 = StringField("Aplotipe Result", [], default="")
     field41 = StringField("Genetic Result Note", [], default="")
     field42 = StringField("Genetic Lab", [], default="")
+
     field43 = SelectField("Type of recovery",
                             choices=[("", ""),
                             ("Carcassa", "Carcassa"),
@@ -174,14 +196,17 @@ class Dead_wolf(Form):
     field79 = StringField("Carcass Disposed", [], default="")
     field80 = StringField("Carcass Embalbed", [], default="")
     field81 = StringField("skeleton assembled", [], default="")
+
     field82 = SelectField("Skull cleaned",
                           choices=[('', ''), ('N.D.', 'N.D.'), ('SI', 'SI'), ('NO', 'NO')],
                           default=""
                          )
+
     field83 = SelectField("Recoverable for embalming",
                          choices=[('', ''), ('N.D.', 'N.D.'), ('SI', 'SI'), ('NO', 'NO')],
                          default=""
                          )
+
     field84 = StringField("Placed in", [], default="")
     field85 = StringField("CITES Code", [], default="")
     field86 = StringField("Marking type", [], default="")

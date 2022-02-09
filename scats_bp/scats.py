@@ -252,8 +252,6 @@ def new_scat():
         for k in request.form:
             default_values[k] = request.form[k]
 
-        #flash(Markup(f"<b>{msg}</b>"))
-
         flash(fn.alert_danger(f"<b>{msg}</b>"))
 
         return render_template("new_scat.html",
@@ -265,7 +263,9 @@ def new_scat():
 
 
     if request.method == "GET":
+
         form = Scat()
+
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
         # get id of all snow tracks
@@ -278,6 +278,7 @@ def new_scat():
                                default_values={"coord_zone": "32N"})
 
     if request.method == "POST":
+
         form = Scat(request.form)
 
         # get id of all transects
@@ -353,24 +354,26 @@ def new_scat():
 @fn.check_login
 def edit_scat(scat_id):
 
-    def not_valid(msg):
-            # default values
-            default_values = {}
-            for k in request.form:
-                default_values[k] = request.form[k]
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            flash(Markup(f"<b>{msg}</b>"))
+    def not_valid(form, msg):
+        # default values
+        default_values = {}
+        for k in request.form:
+            default_values[k] = request.form[k]
 
-            return render_template("new_scat.html",
-                                   title="Edit scat",
-                                   action=f"/edit_scat/{scat_id}",
-                                   form=form,
-                                   default_values=default_values)
+        flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
+
+        return render_template("new_scat.html",
+                                title="Edit scat",
+                                action=f"/edit_scat/{scat_id}",
+                                form=form,
+                                default_values=default_values)
 
 
     if request.method == "GET":
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
         cursor.execute("SELECT * FROM scats WHERE scat_id = %s",
                     [scat_id])
         default_values = cursor.fetchone()
@@ -389,10 +392,11 @@ def edit_scat(scat_id):
         form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
         return render_template("new_scat.html",
-                            title="Edit scat",
-                            action=f"/edit_scat/{scat_id}",
-                            form=form,
-                            default_values=default_values)
+                                header_title=f"Edit scat {scat_id}",
+                                title=f"Edit scat {scat_id}",
+                                action=f"/edit_scat/{scat_id}",
+                                form=form,
+                                default_values=default_values)
 
 
     if request.method == "POST":
@@ -430,13 +434,23 @@ def edit_scat(scat_id):
                 province = fn.province_name2code(request.form["province"])
                 scat_region = fn.get_region(province)
 
-            # UTM coord conversion
-            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+            # check UTM coord conversion
+            try:
+                coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+            except Exception:
+                return not_valid(form, "The UTM coordinates are not valid. Please check and submit again")
 
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            # check if WA code exists for another sample
+            if request.form["wa_code"]:
+                cursor.execute(("SELECT sample_id FROM wa_scat_tissue WHERE sample_id != %s AND wa_code = %s"),
+                               [request.form["scat_id"], request.form["wa_code"]])
+                if len(cursor.fetchall()):
+                     return not_valid(form, (f"Another sample has the same WA code ({request.form['wa_code']}). "
+                                              "Please check and submit again"))
+
 
             sql = ("UPDATE scats SET scat_id = %s, "
+                   "                wa_code = %s,"
                    "                date = %s,"
                    "                sampling_season = %s,"
                    "                sampling_type = %s,"
@@ -455,12 +469,12 @@ def edit_scat(scat_id):
                    #"                coord_zone = %s, "
                    "                observer = %s, "
                    "                institution = %s, "
-                   #"                geo = %s, "
                    "                geometry_utm = %s "
                    "WHERE scat_id = %s")
             cursor.execute(sql,
                            [
                             request.form["scat_id"],
+                            request.form["wa_code"],
                             date,
                             fn.sampling_season(date),
                             request.form["sampling_type"],
@@ -470,7 +484,6 @@ def edit_scat(scat_id):
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], #request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],
-                            #f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})",
                             f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
                             scat_id
                            ]
@@ -480,7 +493,7 @@ def edit_scat(scat_id):
 
             return redirect(f"/view_scat/{scat_id}")
         else:
-            return not_valid("Some values are not set or are wrong. Please check and submit again")
+            return not_valid(form, "Some values are not set or are wrong. Please check and submit again")
 
 
 @app.route("/del_scat/<scat_id>")

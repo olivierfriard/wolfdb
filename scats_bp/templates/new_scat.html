@@ -13,66 +13,28 @@
         {
           document.getElementById("systematic").style.display = 'none';
           }
-
     }
-    </script>
 
-
-<body onload="sampling_type_changed()">
-
-<main class="flex-shrink-0">
-<div class="container">
-
-
-    <h1>WolfDB</h1>
-    <hr>
-
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;
-
-<br><br>
-
-<h2>{{ title }}</h2>
-<hr>
-
-
-{% with messages = get_flashed_messages() %}
-   {% if messages %}
-      {% for message in messages %}
-         {{ message }}
-      {% endfor %}
-   {% endif %}
-{% endwith %}
-
-
-
-<form method="POST" action="{{ action }}"">
-
-
-    <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scat_id.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.scat_id(size=30, class="form-control",  value=default_values["scat_id"]) }}
-    {% for message in form.scat_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-
-    </div></div>
-</div>
-
-<script>
 function check_geocoding() {
-    if ((document.getElementById("coord_north").value != "")
+
+
+
+    if (
+         (document.getElementById("coord_north").value != "")
          && (document.getElementById("coord_east").value != "")
-         && (document.getElementById("coord_zone").value != ""))
+        )
         {
             var north = document.getElementById("coord_north").value;
             var east = document.getElementById("coord_east").value;
-            var zone = document.getElementById("coord_zone").value;
+            var zone = "32N";
 
             var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
+            xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 var json = JSON.parse(this.responseText);
-                //document.getElementById("location").value = this.responseText;
+
+                if (json["country"] == "") {alert("The UTM coordinates are not valid.");}
+
                 document.getElementById("location").value = json["location"];
                 document.getElementById("municipality").value = json["municipality"];
                 document.getElementById("province").value = json["province_code"];
@@ -83,28 +45,74 @@ function check_geocoding() {
         }
 
 }
+
 </script>
+
+
+<body onload="sampling_type_changed()">
+
+<main class="flex-shrink-0">
+<div class="container">
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/scats" class="btn btn-primary">Scats</a>&nbsp;
+
+<br><br>
+
+<h2>{{ title }}</h2>
+<hr>
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+      {% for message in messages %}
+         {{ message }}
+      {% endfor %}
+   {% endif %}
+{% endwith %}
+
+<form method="POST" action="{{ action }}"">
+
+<div class="mb-3">
+<div class="row g-3 align-items-top"><div class="col-2">{{ form.scat_id.label }}
+</div><!-- col --><div class="col-8">
+{{ form.scat_id(size=30, class="form-control",  value=default_values["scat_id"]) }}
+{% for message in form.scat_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div></div></div>
+
+
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.wa_code.label }}
+    </div><!-- col --><div class="col-8">
+    {{ form.wa_code(size=30, class="form-control",  value=default_values["wa_code"]) }}
+    {% for message in form.wa_code.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    </div></div></div>
 
 
 <div class="mb-3">
     <div class="row g-3 align-items-top">
-
     <div class="col-2">{{ form.coord_east.label }}</div>
-
     <div class="col-2">
-    {{ form.coord_east(onchange="check_geocoding(this)",class="form-control", value=default_values["coord_east"]) }}
+    {{ form.coord_east(class="form-control", value=default_values["coord_east"]) }}
     {% for message in form.coord_east.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     <span class="form-text">WGS 84 / UTM zone 32N</span>
 </div>
 
+<div class="col-2">{{ form.coord_north.label }}</div>
+<div class="col-2">
+    {{ form.coord_north(class="form-control",  value=default_values["coord_north"]) }}
+    {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    <span class="form-text">WGS 84 / UTM zone 32N</span>
+</div>
 
-    <div class="col-2">{{ form.coord_north.label }} </div>
 
-    <div class="col-2">
-        {{ form.coord_north(onchange="check_geocoding(this)", class="form-control",  value=default_values["coord_north"]) }}
-        {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-        <span class="form-text">WGS 84 / UTM zone 32N</span>
-    </div>
+        <div class="col-3">
+
+
+<button type="button" class="btn btn-primary" onclick="check_geocoding()">Check location</button>
+        </div>
 
 <!--
         <div class="col-1">{{ form.coord_zone.label }} </div>
@@ -119,22 +127,18 @@ function check_geocoding() {
 </div>
 
 
-
 <div class="mb-3">
     <div class="row g-3 align-items-top">
-
         <div class="col-2">{{ form.location.label }}</div>
         <div class="col-3">
         {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
         {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
         </div>
-
         <div class="col-1">{{ form.municipality.label }}</div>
         <div class="col-2">
             {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
             {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
         </div>
-
 
         <div class="col-1">{{ form.province.label }}</div>
         <div class="col-1">
@@ -143,9 +147,6 @@ function check_geocoding() {
         </div>
     </div>
     </div>
-
-
-
 
 
 
@@ -161,11 +162,7 @@ function check_geocoding() {
 
 
 
-
-
-
-
-<span id="systematic" style="display: {%  if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
+<span id="systematic" style="display: {% if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
 
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}

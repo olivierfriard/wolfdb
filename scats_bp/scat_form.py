@@ -7,6 +7,8 @@ WolfDB web service
 
 from flask import Markup
 import datetime
+import re
+
 from wtforms import (Form, StringField, SelectField)
 
 from wtforms.validators import Required, ValidationError
@@ -35,7 +37,22 @@ class Scat(Form):
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'))
 
 
+    def wa_validator(form, field):
+        """
+        validation of WA code
+        """
+        if field.data == "":
+            return
+        m = re.match('WA.*', field.data)
+        if m is None:
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'))
+        return
+
+
     scat_id = StringField("Scat ID", validators=[Required(),])
+
+    wa_code = StringField("WA code", validators=[wa_validator])
+
     sampling_type = SelectField("Sampling type", choices=[('', ''),
                                                           ('Opportunistic', 'Opportunistic'),
                                                           ('Systematic', 'Systematic')],

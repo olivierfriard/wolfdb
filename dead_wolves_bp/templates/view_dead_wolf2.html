@@ -6,7 +6,7 @@
 <hr>
 
 <a href="/" class="btn btn-primary">Home</a>&nbsp;
-<a href="/dead_wolves_list" class="btn btn-primary">Dead wolves</a>
+<a href="/dead_wolves_list2" class="btn btn-primary">Dead wolves</a>
 
 <br>
 <br>
@@ -14,6 +14,8 @@
 
 <h2>Dead wolf <b>#{{ dead_wolf["ID"] }}</b></h2>
 
+
+<a href="/edit_dead_wolf/{{ dead_wolf["ID"] }}" class="btn btn-danger">Edit dead wolf</a>&nbsp;
 
 <a href="/del_dead_wolf/{{ dead_wolf["ID"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete dead wolf</a><br>
 <br>

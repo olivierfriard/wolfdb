@@ -274,28 +274,29 @@ def plot_dead_wolves2():
 @fn.check_login
 def new_dead_wolf():
 
-    def not_valid(msg):
+    def not_valid(form, msg):
         # default values
         default_values = {}
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f"<b>{msg}</b>"))
+        flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
 
-        return render_template("new_transect.html",
-                            title="New transect",
-                            action=f"/new_transect",
+        return render_template("new_dead_wolf.html",
+                            title="New dead wolf",
+                            action=f"/new_dead_wolf",
                             form=form,
                             default_values=default_values)
 
 
     if request.method == "GET":
         form = Dead_wolf()
-        return render_template('new_dead_wolf.html',
+        return render_template("new_dead_wolf.html",
+                               header_title="New dead wolf",
                                title="New dead wolf",
                                action=f"/new_dead_wolf",
-                            form=form,
-                            default_values={})
+                               form=form,
+                               default_values={})
 
 
     if request.method == "POST":
@@ -332,9 +333,9 @@ def new_dead_wolf():
 
             connection.commit()
 
-            return redirect("/dead_wolves_list")
+            return redirect(f"/view_dead_wolf_id/{new_id}")
         else:
-            return not_valid("Dead wolf form NOT validated")
+            return not_valid(form, "Dead wolf form NOT validated. See details below.")
 
 
 
@@ -344,35 +345,32 @@ def new_dead_wolf():
 @fn.check_login
 def edit_dead_wolf(id):
 
-    def not_valid(msg):
+    def not_valid(form, msg):
         # default values
         default_values = {}
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f"<b>{msg}</b>"))
+        flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
 
         return render_template("new_dead_wolf.html",
-                            title="Edit dead wolf",
-                            action=f"/edit_dead_wolf/{id}",
-                            form=form,
-                            default_values=default_values)
+                               header_title=f"Edit dead wolf #{id}",
+                               title="Edit dead wolf",
+                               action=f"/edit_dead_wolf/{id}",
+                               form=form,
+                               default_values=default_values)
+
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 
     if request.method == "GET":
 
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-        # fields list
-        '''
-        cursor.execute("select * from dead_wolves_fields_definition order by position")
-        fields_list = cursor.fetchall()
-        '''
-
-        cursor.execute(("SELECT id, dead_wolves_values.field_id AS field_id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
+        cursor.execute(("SELECT id, dead_wolves_values.field_id AS field_id, name, val "
+                        "FROM dead_wolves_values, dead_wolves_fields_definition "
                         "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = %s"),
-                    [id])
+                       [id])
 
         rows = cursor.fetchall()
 
@@ -382,21 +380,22 @@ def edit_dead_wolf(id):
 
         print(default_values)
 
-        form = Dead_wolf(field2=default_values["field2"],
+        form = Dead_wolf(field2=default_values["field2"],  # for selectfield elements
                          field3=default_values["field3"],
                          field12=default_values["field12"],
 
                          field13=default_values["field13"],
                          field26=default_values["field26"],
 
-                         field35=default_values["field35"],
+                         field35=default_values["field34"],
                          field43=default_values["field43"],
                          field82=default_values["field82"],
                          field83=default_values["field83"],
                         )
 
         return render_template("new_dead_wolf.html",
-                            title="Edit dead wolf",
+                            header_title=f"Edit dead wolf #{id}",
+                            title=f"Edit dead wolf #{id}",
                             action=f"/edit_dead_wolf/{id}",
                             form=form,
                             default_values=default_values)
@@ -407,15 +406,27 @@ def edit_dead_wolf(id):
 
         if form.validate():
 
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("select * from dead_wolves_fields_definition order by position")
+            fields_list = cursor.fetchall()
 
+            #print(request.form)
+
+            for row in fields_list:
+                if f"field{row['field_id']}" in request.form:
+
+                    print(row['field_id'], request.form[f"field{row['field_id']}"])
+
+                    cursor.execute(("INSERT INTO dead_wolves_values VALUES (%s, %s, %s) "
+                                    "ON CONFLICT (id, field_id) DO UPDATE "
+                                    "SET val = EXCLUDED.val"
+                                    ),
+                                   [id, row['field_id'], request.form[f"field{row['field_id']}"]])
 
             connection.commit()
 
             return redirect(f"/view_dead_wolf_id/{id}")
         else:
-            return not_valid("Dead wolf form NOT validated")
+            return not_valid(form, "Dead wolf form NOT validated. See details below.")
 
 
 @app.route("/del_dead_wolf/<id>")
