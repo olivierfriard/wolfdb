@@ -8,7 +8,7 @@ flask blueprint for transects management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask import Flask, render_template, redirect, request, Markup, flash, session, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -17,6 +17,7 @@ import calendar
 
 from .transect_form import Transect
 import functions as fn
+from . import transects_export
 from italian_regions import regions
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
@@ -162,6 +163,28 @@ def transects_list():
                             header_title="List of transects",
                            n_transects=n_transects,
                            results=cursor.fetchall())
+
+
+
+@app.route("/export_transects")
+@fn.check_login
+def export_transects():
+    """
+    export all transects in XLSX
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+
+    file_content = transects_export.export_transects(cursor.fetchall())
+
+    response = make_response(file_content, 200)
+    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    response.headers["Content-disposition"] = "attachment; filename=transects.xlsx"
+
+    return response
 
 
 
