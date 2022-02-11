@@ -22,9 +22,8 @@ from italian_regions import regions
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 
-app.debug = True
-
 params = config()
+app.debug = params["debug"]
 
 @app.route("/transects")
 def transects():

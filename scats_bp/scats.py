@@ -26,9 +26,8 @@ import subprocess
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
-app.debug = True
-
 params = config()
+app.debug = params["debug"]
 
 ALLOWED_EXTENSIONS = [".TSV"]
 EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]

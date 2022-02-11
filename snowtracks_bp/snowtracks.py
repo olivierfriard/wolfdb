@@ -2,10 +2,8 @@
 WolfDB web service
 (c) Olivier Friard
 
-flask blueprint for scats management
+flask blueprint for tracks management
 """
-
-
 
 import flask
 from flask import Flask, render_template, redirect, request, Markup, flash, session
@@ -23,10 +21,8 @@ import pandas as pd
 
 app = flask.Blueprint("snowtracks", __name__, template_folder="templates")
 
-app.debug = True
-
-
 params = config()
+app.debug = params["debug"]
 
 EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
 UPLOAD_FOLDER = "/tmp"

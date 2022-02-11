@@ -20,10 +20,8 @@ from . import paths_export
 
 app = flask.Blueprint("paths", __name__, template_folder="templates")
 
-app.debug = True
-
-
 params = config()
+app.debug = params["debug"]
 
 @app.route("/paths")
 @fn.check_login

@@ -22,10 +22,9 @@ from italian_regions import regions
 
 app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
 
-app.debug = True
-
-
 params = config()
+
+app.debug = params["debug"]
 
 @app.route("/dead_wolves")
 @fn.check_login

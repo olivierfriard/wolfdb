@@ -21,9 +21,9 @@ from . import export
 
 app = flask.Blueprint("genetic", __name__, template_folder="templates")
 
-app.debug = True
-
 params = config()
+
+app.debug = params["debug"]
 
 
 def get_cmap(n, name='viridis'):

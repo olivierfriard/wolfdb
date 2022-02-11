@@ -18,9 +18,10 @@ import functions as fn
 
 app = flask.Blueprint("admin", __name__, template_folder="templates")
 
-app.debug = True
-
 params = config()
+
+app.debug = params["debug"]
+
 
 @app.route("/admin")
 @fn.check_login

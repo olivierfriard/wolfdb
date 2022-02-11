@@ -4,16 +4,11 @@ from configparser import ConfigParser
 
 def config():
 
-
-    if os.environ['WOLF_WS_MODE'] == 'prod':
-        filename = 'database.ini'
-    else:
-        filename = 'database_dev.ini'
-
+    config_filename = "config.ini"
 
     parser = ConfigParser()
     # read config file
-    parser.read(filename)
+    parser.read(config_filename)
 
     db = {}
     if parser.has_section('postgresql'):
