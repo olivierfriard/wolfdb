@@ -244,21 +244,22 @@ def new_path():
             if cursor.fetchone() is not None:
                 return not_valid(f"The path ID {path_id} already exists")
 
-            # check completness
+            # check if 0 < completeness <= 100
             if not (0 < int(request.form["completeness"]) <= 100):
                 return not_valid(f"Completeness must be an integer like 0 < completeness <= 100")
 
             sql = ("INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
-
-                   "observer, institution, notes) "
-                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+                   "observer, institution, notes, created, category) "
+                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)")
             cursor.execute(sql,
                            [path_id,
                             request.form["transect_id"],
                             request.form["date"],
                             fn.sampling_season(request.form["date"]),
                             request.form["completeness"] if request.form["completeness"] else None,
-                            request.form["observer"], request.form["institution"], request.form["notes"]
+                            request.form["observer"], request.form["institution"],
+                            request.form["notes"],
+                            request.form["category"]
                            ]
                            )
             connection.commit()
