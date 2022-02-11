@@ -176,7 +176,7 @@ def new_transect():
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f"<b>{msg}</b>"))
+        flash(fn.alert_danger(f"<b>{msg}</b>"))
 
         return render_template("new_transect.html",
                             title="New transect",

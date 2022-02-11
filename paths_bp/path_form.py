@@ -4,12 +4,6 @@ WolfDB web service
 """
 
 
-"""
-WolfDB web service
-(c) Olivier Friard
-"""
-
-
 from flask import Markup
 import datetime
 from wtforms import (Form, StringField, TextAreaField, SelectField)
@@ -24,15 +18,17 @@ class Path(Form):
         """
         validation for date in ISO8601 format (YYYY-MM-DD)
         """
-        try: # YYYY
+        try:
             datetime.datetime.strptime(field.data, '%Y-%m-%d')
             return
         except ValueError:
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. The format must be YYYY-MM-DD.</div>'))
 
-    def integer_validator(form, field):
-        if not field.data:
-            return
+
+    def required_integer_validator(form, field):
+        """
+        validation for a required integer value
+        """
         try:
             int(field.data)
             return
@@ -40,17 +36,16 @@ class Path(Form):
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
 
 
-    transect_id = SelectField("Transect ID", validators=[Required()])
+    transect_id = SelectField("Transect ID *", validators=[Required(), ])
 
-    date = StringField("Date", validators=[Required(), iso_date_validator])
+    date = StringField("Date *", validators=[Required(), iso_date_validator])
 
-    completeness  = StringField("Completeness (%)", validators=[integer_validator,])
+    completeness  = StringField("% of completeness *", validators=[required_integer_validator,])
     #completeness = SelectField("Completeness", choices=[('', ''),('25', '25'), ('50', '50'), ('100', '100')], default="")
 
     observer = StringField("Observer", [])
     institution = StringField("Institution", [])
 
-    #category = StringField("Category", [])
     category = SelectField("Category", choices=[('', ''),
                                                 ('Università', 'Università'),
                                                 ('Provincia', 'Provincia'),

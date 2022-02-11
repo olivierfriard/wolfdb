@@ -193,19 +193,39 @@ def export_paths():
 @fn.check_login
 def new_path():
 
+    def not_valid(msg):
+        # default values
+        default_values = {}
+        for k in request.form:
+            default_values[k] = request.form[k]
+
+        flash(fn.alert_danger(f"<b>{msg}</b>"))
+
+        return render_template("new_path.html",
+                                header_title="Insert a new path",
+                                title="New path",
+                                action=f"/new_path",
+                                form=form,
+                                default_values=default_values)
+
+
+
     if request.method == "GET":
         form = Path()
 
         # get id of all transects
-        form.transect_id.choices = [("-", "-")] + [(x, x) for x in fn.all_transect_id()]
+        form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         return render_template("new_path.html",
+                               header_title="Insert a new path",
                                title="New path",
                                action=f"/new_path",
                                form=form,
                                default_values={})
 
     if request.method == "POST":
+
+
         form = Path(request.form)
 
         # get id of all transects
@@ -213,11 +233,21 @@ def new_path():
 
         if form.validate():
 
+            connection = fn.get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
             # path_id
             path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
 
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            # check if path_id already exists
+            cursor.execute("SELECT path_id FROM paths WHERE path_id = %s", [path_id])
+            if cursor.fetchone() is not None:
+                return not_valid(f"The path ID {path_id} already exists")
+
+            # check completness
+            if not (0 < int(request.form["completeness"]) <= 100):
+                return not_valid(f"Completeness must be an integer like 0 < completeness <= 100")
+
             sql = ("INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
 
                    "observer, institution, notes) "
@@ -234,19 +264,10 @@ def new_path():
             connection.commit()
 
             return redirect("/paths_list")
+
         else:
-            # default values
-            default_values = {}
-            for k in request.form:
-                default_values[k] = request.form[k]
 
-            flash(Markup("<b>Some values are not set or are wrong. Please check and submit again</b>"))
-            return render_template('new_path.html',
-                                    title="New path",
-                                    action=f"/new_path",
-                                    form=form,
-                                    default_values=default_values)
-
+            return not_valid("Some values are not set or are wrong. Please check and submit again")
 
 
 

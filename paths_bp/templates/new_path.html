@@ -27,26 +27,22 @@
 
 <form method="POST" action="{{ action }}">
 
-
-    <div class="mb-3">
-        <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}
-        </div><!-- col --><div class="col-8">
-        {{ form.transect_id(class="form-control") }}
-        {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-        </div></div>
-    </div>
+<div class="mb-3">
+<div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}
+</div><div class="col-8">
+{{ form.transect_id(class="form-control") }}
+{% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div></div></div>
 
 
-    <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.date(size=30, class="form-control",  value=default_values["date"]) }}
-    {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+<div class="mb-3">
+<div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}
+</div><!-- col --><div class="col-8">
+{{ form.date(size=30, class="form-control",  value=default_values["date"]) }}
+{% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
-    <span class="form-text">format must be YYYY-MM-DD</span>
-
-    </div></div>
-</div>
+<span class="form-text">format must be YYYY-MM-DD</span>
+</div></div></div>
 
 
 <div class="mb-3">
