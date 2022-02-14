@@ -15,6 +15,8 @@ import json
 import matplotlib
 import matplotlib.pyplot as plt
 import subprocess
+import redis
+rdis = redis.Redis()
 
 import functions as fn
 from . import export
@@ -111,7 +113,7 @@ def genotypes():
                            header_title="Genotypes")
 
 
-def get_loci_value(genotype_id, loci_list):
+def get_loci_value(genotype_id: str, loci_list: list) -> dict:
     """
     get genotype loci values
     """
@@ -151,74 +153,6 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
-'''
-@app.route("/genotypes_list_nocache/<type>")
-@app.route("/genotypes_list_nocache/<type>/<mode>")
-@fn.check_login
-def genotypes_list_nocache(type, mode="web"):
-    """
-    list of genotypes: all, temp, definitive
-
-    no cache
-    """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    # loci list
-    loci_list = {}
-    if "short" not in type:
-        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
-        for row in cursor.fetchall():
-            loci_list[row["name"]] = row["n_alleles"]
-
-    if "all" in type:
-        filter = ""
-        header_title = f"List of all genotypes"
-
-    if "definitive" in type :
-        filter = "WHERE status = 'OK'"
-        header_title = f"List of definitive genotypes"
-
-    if "temp" in type:
-        filter = "WHERE status != 'OK'"
-        header_title = f"List of temporary genotypes"
-
-    cursor.execute(("SELECT *, "
-                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
-                    f"FROM genotypes {filter} "
-                    "ORDER BY genotype_id"))
-    results = cursor.fetchall()
-
-    loci_values = {}
-    for row in results:
-        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
-
-    cursor.execute(f"UPDATE cache SET val = %s WHERE key = 'genotypes_{type}' ", [json.dumps(loci_values)])
-    connection.commit()
-
-    if mode == "export":
-
-        file_content = export.export_genotypes_list(loci_list, results, loci_values)
-
-        response = make_response(file_content, 200)
-        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
-
-        return response
-
-    else:
-
-        return render_template("genotypes_list.html",
-                               header_title=header_title,
-                               title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
-                               type=type,
-                               results=results,
-                               loci_list=loci_list,
-                               loci_values=loci_values,
-                               short="_short" if "short" in type else "")
-'''
-
 
 @app.route("/update_cache_genotypes")
 def update_cache_genotypes():
@@ -232,75 +166,17 @@ def update_cache_genotypes():
     return 'Genotypes cache updating in progress. <a href="/admin">Go to Admin page</a>'
 
 
-'''
-@app.route("/genotypes_list_cache/<type>")
-@app.route("/genotypes_list_cache/<type>/<mode>")
-@fn.check_login
-def genotypes_list_cache(type, mode="web"):
+@app.route("/update_redis_genotypes")
+def update_redis_with_genotypes_loci():
     """
-    list of genotypes: all, temp, definitive
+    update redis with the genotypes loci values
 
-    read loci values from cache
+    !require the check_systematic_scats_transect_location.py script
     """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    _ = subprocess.Popen(["python3", "update_redis_with_genotypes_loci_values.py"])
 
-    # loci list
-    loci_list = {}
-    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
-    for row in cursor.fetchall():
-        loci_list[row["name"]] = row["n_alleles"]
+    return 'Genotypes redis updating in progress. <a href="/admin">Go to Admin page</a>'
 
-    if "all" in type:
-        filter = ""
-        header_title = f"List of all genotypes"
-
-    if "definitive" in type :
-        filter = "WHERE status = 'OK'"
-        header_title = f"List of definitive genotypes"
-
-    if "temp" in type:
-        filter = "WHERE status != 'OK'"
-        header_title = f"List of temporary genotypes"
-
-    cursor.execute(("SELECT *, "
-                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                    "(SELECT 'Yes' FROM dead_wolves where genotype_id = genotypes.genotype_id) AS dead_recovery "
-                    f"FROM genotypes {filter} "
-                    "ORDER BY genotype_id"))
-    results = cursor.fetchall()
-
-
-    #loci_values = {}
-    #for row in results:
-    #    loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
-
-    cursor.execute(f"SELECT val FROM cache WHERE key = 'genotypes_{type}'")
-
-    row = cursor.fetchone()
-    loci_values = json.loads(row["val"])
-
-    if mode == "export":
-
-        file_content = export.export_genotypes_list(loci_list, results, loci_values)
-
-        response = make_response(file_content, 200)
-        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
-
-        return response
-
-    else:
-
-        return render_template("genotypes_list.html",
-                               header_title=header_title,
-                               title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
-                               type=type,
-                               results=results,
-                               loci_list=loci_list,
-                               loci_values=loci_values,
-                               short="_short" if "short" in type else "")
-'''
 
 
 
@@ -367,6 +243,85 @@ def genotypes_list(type, mode="web"):
                                loci_list=loci_list,
                                loci_values=loci_values,
                                short="")
+
+
+
+
+
+@app.route("/genotypes_list_redis/<type>")
+@app.route("/genotypes_list_redis/<type>/<mode>")
+@fn.check_login
+def genotypes_list_redis(type, mode="web"):
+    """
+    list of genotypes: all, temp, definitive
+
+    read loci values from redis
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    loci_list = {}
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    if "all" in type:
+        filter = ""
+        header_title = f"List of all genotypes"
+
+    if "definitive" in type :
+        filter = "WHERE status = 'OK'"
+        header_title = f"List of definitive genotypes"
+
+    if "temp" in type:
+        filter = "WHERE status != 'OK'"
+        header_title = f"List of temporary genotypes"
+
+    cursor.execute(("SELECT *, "
+                    "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
+                    "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                    f"FROM genotypes {filter} "
+                    "ORDER BY genotype_id"))
+    results = cursor.fetchall()
+
+    loci_values = {}
+
+    for row in results:
+        '''
+        cursor.execute(f"SELECT val FROM cache WHERE key = %s", [row["genotype_id"]])
+        loci_values[row["genotype_id"]] = json.loads(cursor.fetchone()["val"])
+        '''
+
+        loci_val = rdis.get(row["genotype_id"])
+        if loci_val is not None:
+            loci_values[row["genotype_id"]] = json.loads(loci_val)
+        else:
+            loci_values[row["genotype_id"]] = get_loci_value(row['genotype_id'], loci_list)
+
+
+
+    if mode == "export":
+
+        file_content = export.export_genotypes_list(loci_list, results, loci_values)
+
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
+
+        return response
+
+    else:
+
+        return render_template("genotypes_list.html",
+                               header_title=header_title,
+                               title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
+                               type=type,
+                               results=results,
+                               loci_list=loci_list,
+                               loci_values=loci_values,
+                               short="")
+
 
 
 
@@ -817,7 +772,13 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         data[row['genotype_id']] = dict(result)
         data[row['genotype_id']]["n_recap"] = row["n_recap"]
 
-        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+        #loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
+
+        loci_val = rdis.get(row["genotype_id"])
+        if loci_val is not None:
+            loci_values[row["genotype_id"]] = json.loads(loci_val)
+        else:
+            loci_values[row["genotype_id"]] = get_loci_value(row['genotype_id'], loci_list)
 
     if mode == "export":
 
@@ -1058,11 +1019,16 @@ def add_genetic_data(wa_code):
                             cursor.execute("SELECT genotype_id FROM genotype_locus WHERE id = %s ", [row2["id"]])
                             genotype_id = cursor.fetchone()["genotype_id"]
 
+                            '''
                             cursor.execute("DELETE FROM cache WHERE key = %s ", [genotype_id])
                             connection.commit()
                             cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
                                         [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
                             connection.commit()
+                            '''
+
+                            rdis.set(genotype_id, json.dumps(get_loci_value(genotype_id, loci_list)))
+
 
         connection.commit()
 
@@ -1209,11 +1175,15 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         for row in cursor.fetchall():
             loci_list[row["name"]] = row["n_alleles"]
 
+        '''
         cursor.execute("DELETE FROM cache WHERE key = %s ", [genotype_id])
         connection.commit()
         cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
                        [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
         connection.commit()
+        '''
+
+        rdis.set(genotype_id, json.dumps(get_loci_value(genotype_id, loci_list)))
 
         # update wa_code
         sql = ("SELECT id FROM wa_locus, wa_results "
