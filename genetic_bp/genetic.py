@@ -180,7 +180,7 @@ def update_redis_with_genotypes_loci():
 
 
 
-
+'''
 @app.route("/genotypes_list/<type>")
 @app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
@@ -243,15 +243,15 @@ def genotypes_list(type, mode="web"):
                                loci_list=loci_list,
                                loci_values=loci_values,
                                short="")
+'''
 
 
 
 
-
-@app.route("/genotypes_list_redis/<type>")
-@app.route("/genotypes_list_redis/<type>/<mode>")
+@app.route("/genotypes_list/<type>")
+@app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
-def genotypes_list_redis(type, mode="web"):
+def genotypes_list(type, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
