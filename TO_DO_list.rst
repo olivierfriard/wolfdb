@@ -6,7 +6,15 @@ TO DO list
 
 * insert auto location in scats and transects
 
-* add pack view
 
-* add dead wolves 2
+* add notes in edit scat
+
+* add genotypes export
+
+
+
+
+
+
+
 
