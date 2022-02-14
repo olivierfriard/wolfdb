@@ -1,0 +1,54 @@
+{% extends "bootstrap.html" %}
+
+
+{% block content %}
+
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<a href="/dead_wolves_list" class="btn btn-primary">Dead wolves</a>
+
+<br>
+<br>
+
+
+<h2>Tissue ID: <b>{{ dead_wolf["tissue_id"] }}</b></h2>
+
+
+<table class="table table-striped">
+
+<tr><td>WA code</td><td><a href="/view_wa/{{ dead_wolf["wa_code"] }}">{{ dead_wolf["wa_code"] }}</a></td></tr>
+<tr><td>Genotype ID</td><td><a href="/view_genotype/{{ dead_wolf["genotype_id"] }}">{{ dead_wolf["genotype_id"] }}</a></td></tr>
+
+<tr><td>Data ritrovamento</td><td>{{ dead_wolf["data_ritrovamento"] }}</td></tr>
+<tr><td>Data presunta morte</td><td>{{ dead_wolf["data_presunta_morte"] }}</td></tr>
+<tr><td>Causa morte</td><td>{{ dead_wolf["causa_morte"] }}</td></tr>
+<tr><td>Description</td><td>{{ dead_wolf["description"] }}</td></tr>
+<tr><td>Coordinates (WGS 84 / UTM zone 32N EPSG:32632)</td><td>East: {{ dead_wolf["coord_x"] }}, North: {{ dead_wolf["coord_y"] }}</td></tr>
+<tr><td>Location</td><td>{{ dead_wolf["location"] }}</td></tr>
+<tr><td>Municipality</td><td>{{ dead_wolf["municipality"] }}</td></tr>
+
+</table>
+
+
+<h2>Map</h2>
+
+
+<div id="map" style="width: 800px; height: 800px;"></div>
+
+
+
+{{ map }}
+
+
+
+{% endblock %}
+
+
+
+
+
+

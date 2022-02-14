@@ -48,10 +48,11 @@ class Dead_wolf(Form):
         if m is None:
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. Use the YYYY-YYYY format</div>'))
         try:
-            if int(m.groups[0]) >= int(m.groups[1]):
+            y1, y2 = m.group().split("-")
+            if int(y1) >= int(y2):
                 raise ValidationError(Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>'))
         except Exception:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>'))
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Check the format (YYYY-YYYY)</div>'))
         return
 
 

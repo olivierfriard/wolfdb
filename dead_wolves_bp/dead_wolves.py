@@ -35,7 +35,7 @@ def dead_wolves():
 
 @app.route("/view_dead_wolf/<tissue_id>")
 @fn.check_login
-def view_dead_wolf(tissue_id):
+def view_dead_wolf_old(tissue_id):
     """
     view dead wolf from OLD table
     """
@@ -66,7 +66,7 @@ def view_dead_wolf(tissue_id):
     center = f"{dead_wolf['latitude']}, {dead_wolf['longitude']}"
 
 
-    return render_template("view_dead_wolf.html",
+    return render_template("view_dead_wolf_old.html",
                            dead_wolf=dead_wolf,
                            map=Markup(fn.leaflet_geojson(center, dw_features, []))
                           )
@@ -145,7 +145,7 @@ def view_dead_wolf_id(id):
         dw_features = []
         center = ""
 
-    return render_template("view_dead_wolf2.html",
+    return render_template("view_dead_wolf.html",
                            header_title=f"Dead wolf #{dead_wolf['ID']}",
                            fields_list=fields_list,
                            dead_wolf=dead_wolf,
@@ -385,9 +385,10 @@ def edit_dead_wolf(id):
 
         default_values = {}
         for row in rows:
-            default_values[f"field{row['field_id']}"] = row["val"]
-
-        print(default_values)
+            if row["val"] is None:
+                default_values[f"field{row['field_id']}"] = ""
+            else:
+                default_values[f"field{row['field_id']}"] = row["val"]
 
         form = Dead_wolf(field2=default_values["field2"],  # for selectfield elements
                          field3=default_values["field3"],
@@ -415,15 +416,11 @@ def edit_dead_wolf(id):
 
         if form.validate():
 
-            cursor.execute("select * from dead_wolves_fields_definition order by position")
+            cursor.execute("SELECT * FROM dead_wolves_fields_definition ORDER BY position")
             fields_list = cursor.fetchall()
-
-            #print(request.form)
 
             for row in fields_list:
                 if f"field{row['field_id']}" in request.form:
-
-                    print(row['field_id'], request.form[f"field{row['field_id']}"])
 
                     cursor.execute(("INSERT INTO dead_wolves_values VALUES (%s, %s, %s) "
                                     "ON CONFLICT (id, field_id) DO UPDATE "
