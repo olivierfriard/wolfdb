@@ -46,7 +46,13 @@ def view_pack(name):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM genotypes WHERE pack = %s", [name])
+    # cursor.execute("SELECT * FROM genotypes WHERE pack = %s", [name])
+
+    cursor.execute(("select *, "
+                    "(select date from wa_scat_tissue where wa_code = (select wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) as date "
+                    "FROM genotypes WHERE pack = %s"),
+                    [name])
+
     results = cursor.fetchall()
 
     return render_template("view_pack.html",
