@@ -20,6 +20,7 @@
 
 <tr>
 <th>Genotype ID</th>
+<th>Date</th>
 <th>Sex</th>
 <th>Status</th>
 <th>Dispersal</th>
@@ -29,6 +30,7 @@
 
 <tr>
 <td><a href="/view_genotype/{{ row['genotype_id'] }}">{{ row['genotype_id'] }}</a></td>
+<td>{{ row['date'] }}</td>
 <td>{{ row['sex'] }}</td>
 <td>{{ row['position'] if row['position'] is not none else ""}}</td>
 <td>{{ row['dispersal'] if row['dispersal'] is not none else ""}}</td>
