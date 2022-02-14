@@ -165,7 +165,7 @@ def update_cache_genotypes():
     """
     _ = subprocess.Popen(["python3", "update_cache_with_genotypes_loci_values.py"])
 
-    return 'Genotypes cache updating in progress. <a href="/admin">Go to Admin page</a>'
+    return 'Genotypes redis cache updating in progress. <a href="/admin">Go to Admin page</a>'
 
 
 @app.route("/update_redis_genotypes")

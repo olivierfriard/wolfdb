@@ -18,6 +18,7 @@ import secrets
 from auth import auth as auth_blueprint
 from scats_bp import scats
 from paths_bp import paths
+from packs_bp import packs
 from transects_bp import transects
 from snowtracks_bp import snowtracks
 from genetic_bp import genetic
@@ -38,6 +39,7 @@ app.register_blueprint(auth_blueprint)
 
 app.register_blueprint(scats.app)
 app.register_blueprint(paths.app)
+app.register_blueprint(packs.app)
 app.register_blueprint(transects.app)
 app.register_blueprint(snowtracks.app)
 app.register_blueprint(genetic.app)
@@ -106,6 +108,9 @@ def view_sample(sample_id):
         return redirect(f"/view_tissue/{sample_id}")
     flash(Markup("Sample not found"))
     return redirect("/")
+
+
+
 
 
 if __name__ == "__main__":

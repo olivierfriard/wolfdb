@@ -35,6 +35,9 @@
 
 </table>
 
+
+{% if wa_codes %}
+
 <hr>
 <h4>WA codes</h4>
 
@@ -45,11 +48,6 @@
 
 {% endfor %}
 
-<!--
-<hr>
-<h4>Genetic data</h4>
-
--->
 <hr>
 <h2>Localization of WA codes</h2>
 
@@ -58,6 +56,8 @@
 
 {{ map }}
 
+
+{% endif %}
 
 {% endblock %}
 

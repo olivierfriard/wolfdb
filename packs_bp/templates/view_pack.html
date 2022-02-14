@@ -1,0 +1,43 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/packs" class="btn btn-primary">Packs</a>
+
+<br>
+<br>
+
+<h2>pack: {{ pack_name }}</h2>
+
+<br><br>
+<table class="table table-striped">
+
+<tr>
+<th>Genotype ID</th>
+<th>Sex</th>
+<th>Status</th>
+<th>Dispersal</th>
+</tr>
+
+{% for row in results %}
+
+<tr>
+<td><a href="/view_genotype/{{ row['genotype_id'] }}">{{ row['genotype_id'] }}</a></td>
+<td>{{ row['sex'] }}</td>
+<td>{{ row['position'] if row['position'] is not none else ""}}</td>
+<td>{{ row['dispersal'] if row['dispersal'] is not none else ""}}</td>
+</tr>
+
+
+{% endfor %}
+
+</table>
+
+{% endblock %}
+
