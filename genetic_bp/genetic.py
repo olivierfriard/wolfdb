@@ -151,6 +151,7 @@ def get_loci_value(genotype_id, loci_list):
     return loci_values
 
 
+'''
 @app.route("/genotypes_list_nocache/<type>")
 @app.route("/genotypes_list_nocache/<type>/<mode>")
 @fn.check_login
@@ -216,7 +217,7 @@ def genotypes_list_nocache(type, mode="web"):
                                loci_list=loci_list,
                                loci_values=loci_values,
                                short="_short" if "short" in type else "")
-
+'''
 
 
 @app.route("/update_cache_genotypes")
@@ -231,9 +232,9 @@ def update_cache_genotypes():
     return 'Genotypes cache updating in progress. <a href="/admin">Go to Admin page</a>'
 
 
-
+'''
 @app.route("/genotypes_list_cache/<type>")
-@app.route("/genotypes_lis_cache/<type>/<mode>")
+@app.route("/genotypes_list_cache/<type>/<mode>")
 @fn.check_login
 def genotypes_list_cache(type, mode="web"):
     """
@@ -269,11 +270,10 @@ def genotypes_list_cache(type, mode="web"):
                     "ORDER BY genotype_id"))
     results = cursor.fetchall()
 
-    '''
-    loci_values = {}
-    for row in results:
-        loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
-    '''
+
+    #loci_values = {}
+    #for row in results:
+    #    loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
 
     cursor.execute(f"SELECT val FROM cache WHERE key = 'genotypes_{type}'")
 
@@ -300,7 +300,7 @@ def genotypes_list_cache(type, mode="web"):
                                loci_list=loci_list,
                                loci_values=loci_values,
                                short="_short" if "short" in type else "")
-
+'''
 
 
 
@@ -555,7 +555,8 @@ def plot_wa_clusters(distance):
 @fn.check_login
 def genetic_samples():
 
-    return render_template("genetic_samples.html", header_title="Genetic samples")
+    return render_template("genetic_samples.html",
+                           header_title="Genetic samples")
 
 
 @app.route("/wa_genetic_samples")

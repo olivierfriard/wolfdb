@@ -29,12 +29,16 @@ app.debug = params["debug"]
 @app.route("/dead_wolves")
 @fn.check_login
 def dead_wolves():
-    return render_template("dead_wolves.html")
+    return render_template("dead_wolves.html",
+                           header_title=f"Dead wolves")
 
 
 @app.route("/view_dead_wolf/<tissue_id>")
 @fn.check_login
 def view_dead_wolf(tissue_id):
+    """
+    view dead wolf from OLD table
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -98,7 +102,8 @@ def view_dead_wolf_id(id):
     cursor.execute("SELECT * FROM dead_wolves_fields_definition WHERE visible = 'Y' ORDER BY position")
     fields_list = cursor.fetchall()
 
-    cursor.execute(("SELECT id, name, val FROM dead_wolves_values, dead_wolves_fields_definition "
+    cursor.execute(("SELECT id, name, val "
+                    "FROM dead_wolves_values, dead_wolves_fields_definition "
                     "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id "
                     "AND id = %s"),
                    [id])
@@ -149,23 +154,28 @@ def view_dead_wolf_id(id):
 
 
 
-@app.route("/dead_wolves_list")
+@app.route("/dead_wolves_list_old")
 @fn.check_login
-def dead_wolves_list():
-    # get all dead_wolves
+def dead_wolves_list_old():
+    """
+    get all dead_wolves
+    """
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(("SELECT * FROM dead_wolves ORDER BY genotype_id ASC"))
 
     results = cursor.fetchall()
 
-    return render_template("dead_wolves_list.html",
+    return render_template("dead_wolves_list_old.html",
+                            header_title="OLD list of dead wolves",
                            results=results
                            )
 
-@app.route("/dead_wolves_list2")
+
+@app.route("/dead_wolves_list")
 @fn.check_login
-def dead_wolves_list2():
+def dead_wolves_list():
     """
     get list all dead_wolves from dw_short
     """
@@ -175,7 +185,7 @@ def dead_wolves_list2():
 
     results = cursor.fetchall()
 
-    return render_template("dead_wolves_list2.html",
+    return render_template("dead_wolves_list.html",
                            header_title="List of dead wolves",
                            length=len(results),
                            results=results,
@@ -184,9 +194,9 @@ def dead_wolves_list2():
 
 
 
-@app.route("/plot_dead_wolves")
+@app.route("/plot_dead_wolves_old")
 @fn.check_login
-def plot_dead_wolves():
+def plot_dead_wolves_old():
     """
     plot dead wolves
     """
@@ -217,9 +227,9 @@ def plot_dead_wolves():
                            )
 
 
-@app.route("/plot_dead_wolves2")
+@app.route("/plot_dead_wolves")
 @fn.check_login
-def plot_dead_wolves2():
+def plot_dead_wolves():
     """
     plot dead wolves from dw_short
     """
