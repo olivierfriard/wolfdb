@@ -1,5 +1,5 @@
 """
-update cache with genotypes loci values
+update redis with genotypes loci values
 
 This script is required by wolfdb.py
 
@@ -51,14 +51,6 @@ def get_loci_value(genotype_id, loci_list):
 
     return loci_values
 
-'''
-cursor.execute("CREATE TABLE IF NOT EXISTS cache (key varchar(50), val text, updated timestamp)")
-connection.commit()
-cursor.execute("DROP INDEX  IF EXISTS cache_key ")
-connection.commit()
-cursor.execute("CREATE UNIQUE index cache_key ON cache (key)")
-connection.commit()
-'''
 
 # loci list
 loci_list = {}
@@ -72,18 +64,4 @@ results = cursor.fetchall()
 for idx, row in enumerate(results):
 
     print(f"{idx=}")
-    '''
-    cursor.execute("DELETE FROM cache WHERE key = %s ", [row["genotype_id"]])
-    connection.commit()
-    '''
     r.set(row["genotype_id"], json.dumps(get_loci_value(row['genotype_id'], loci_list)))
-
-    '''
-    cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
-                [row["genotype_id"], json.dumps(get_loci_value(row['genotype_id'], loci_list))])
-    connection.commit()
-    '''
-
-
-
-
