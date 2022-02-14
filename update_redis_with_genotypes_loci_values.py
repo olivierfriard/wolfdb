@@ -7,11 +7,17 @@ This script is required by wolfdb.py
 
 import psycopg2
 import psycopg2.extras
-import functions as fn
 
+
+import functions as fn
 import json
 import redis
-r = redis.Redis()
+
+from config import config
+params = config()
+
+# dev version use db 0
+rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -64,4 +70,4 @@ results = cursor.fetchall()
 for idx, row in enumerate(results):
 
     print(f"{idx=}")
-    r.set(row["genotype_id"], json.dumps(get_loci_value(row['genotype_id'], loci_list)))
+    rdis.set(row["genotype_id"], json.dumps(get_loci_value(row['genotype_id'], loci_list)))

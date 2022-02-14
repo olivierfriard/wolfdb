@@ -16,7 +16,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import subprocess
 import redis
-rdis = redis.Redis()
+
 
 import functions as fn
 from . import export
@@ -27,6 +27,8 @@ params = config()
 
 app.debug = params["debug"]
 
+# dev version use db 0
+rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
 def get_cmap(n, name='viridis'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
