@@ -448,6 +448,6 @@ def del_dead_wolf(id):
                    [id])
     connection.commit()
 
-    return redirect("/dead_wolves_list2")
+    return redirect("/dead_wolves_list")
 
 
