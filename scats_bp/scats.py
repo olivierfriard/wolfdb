@@ -8,7 +8,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session, current_app
+from flask import Flask, render_template, redirect, request, Markup, flash, session, current_app, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -23,6 +23,8 @@ import uuid
 import os
 import sys
 import subprocess
+from . import scats_export
+
 
 app = flask.Blueprint("scats", __name__, template_folder="templates")
 
@@ -239,6 +241,33 @@ def scats_list():
                            header_title="List of scats",
                            n_scats=n_scats,
                            results=cursor.fetchall())
+
+@app.route("/export_scats")
+@fn.check_login
+def export_scats():
+    """
+    export all scats in XLSX
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(("SELECT *,"
+                    "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "(SELECT mtdna FROM wa_scat_tissue WHERE wa_code=scats.wa_code limit 1) AS mtdna "
+                    "FROM scats "
+                    "ORDER BY scat_id"
+                   ))
+
+    file_content = scats_export.export_scats(cursor.fetchall())
+
+    response = make_response(file_content, 200)
+    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    response.headers["Content-disposition"] = "attachment; filename=scats.xlsx"
+
+    return response
+
+
 
 
 @app.route("/new_scat", methods=("GET", "POST"))
