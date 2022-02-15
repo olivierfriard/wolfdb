@@ -25,13 +25,13 @@
 <tr><td>Other ID</td><td>{{ result["tmp_id"] }}</td></tr>
 <tr><td>Sex</td><td>{{ result["sex"] }}</td></tr>
 <tr><td>Status</td><td>{{ result["position"] if result["position"] is not none else "" }}</td></tr>
-<tr><td>Pack</td><td>{{ result["pack"] if result["pack"] is not none else "" }}</td></tr>
+<tr><td>Pack</td><td>{% if result["pack"] is not none %}<a href="/view_pack/{{result["pack"] }}">{{ result["pack"] }}{% endif %}</a></td></tr>
 
 <tr><td>Age at first capture</td><td>{{ result["age_first_capture"]  if result["age_first_capture"] is not none else ""}}</td></tr>
 <tr><td>Status at first capture</td><td>{{ result["status_first_capture"]  if result["status_first_capture"] is not none else ""}}</td></tr>
 <tr><td>Dispersal</td><td>{{ result["dispersal"]  if result["dispersal"] is not none else ""}}</td></tr>
 <tr><td>number of recaptures</td><td>{{ n_recap }}</td></tr>
-<tr><td>Dead recovery  </td><td>{{ result["dead_recovery"] }}</td></tr>
+<tr><td>Dead recovery  </td><td>{{ result["dead_recovery"] if result["dead_recovery"] is not none else ""}}</td></tr>
 
 </table>
 

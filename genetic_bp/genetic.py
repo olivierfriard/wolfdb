@@ -1371,6 +1371,18 @@ def set_sex(genotype_id):
 
         connection.commit()
 
+        # update WA results
+        sql = ("UPDATE wa_results SET sex_id = %(sex)s "
+               "WHERE genotype_id = %(genotype_id)s ")
+
+        cursor.execute(sql,
+                       {"sex": request.form["sex"].upper().strip(),
+                        "genotype_id": genotype_id})
+
+        connection.commit()
+
+
+
         return redirect(request.form["return_url"])
 
 
