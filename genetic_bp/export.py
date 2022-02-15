@@ -1,4 +1,7 @@
 """
+WolfDB web service
+(c) Olivier Friard
+
 export results in XLSX format
 """
 
@@ -14,8 +17,11 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
     ws1 = wb.active
     ws1.title = f"WA genetic samples"
 
-    header = ["WA code", "Sample ID", "Date", "Municipality", "Coordinates WGS84 UTM zone 32N", "mtDNA result",
-                "Genotype ID", "Temp ID", "Sex", "Status", "Pack", "Dead recovery"]
+    header = ["WA code", "Sample ID", "Date", "Municipality",
+              "Coordinate WGS84 UTM East", "Coordinate WGS84 UTM North", "UTM Zone",
+               "mtDNA result",
+               "Genotype ID", "Temp ID", "Sex", "Status", "Pack", "Dead recovery"]
+
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -29,7 +35,13 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         out.append(row["sample_id"] if row["sample_id"] is not None else "")
         out.append(row["date"] if row["date"] is not None else "")
         out.append(row["municipality"] if row["municipality"] is not None else "")
-        out.append(f'{row["coord_east"]}, {row["coord_north"]}')
+
+        out.append(row["coord_east"])
+        out.append(row["coord_north"])
+        out.append("32N")
+
+        #out.append(f'{row["coord_east"]}, {row["coord_north"]}')
+
         out.append(row["mtdna"] if row["mtdna"] is not None else "")
         out.append(row["genotype_id"] if row["genotype_id"] is not None else "")
         out.append(row["tmp_id"] if row["tmp_id"] is not None else "")
@@ -64,7 +76,9 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
     ws1.title = f"WA matches (DBSCAN distance {distance} cluster ID {cluster_id})"
     print(ws1.title)
 
-    header = ["WA code", "Sample ID", "Date", "Municipality", "Coordinates WGS84 UTM zone 32N", "mtDNA result",
+    header = ["WA code", "Sample ID", "Date", "Municipality",
+              "Coordinate WGS84 UTM East", "Coordinate WGS84 UTM North", "UTM Zone",
+               "mtDNA result",
               "Genotype ID", "Notes on genotype",  "Temporary ID", "Sex", "Status", "Pack", "Dead recovery"]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
@@ -79,7 +93,11 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
         out.append(row["sample_id"] if row["sample_id"] is not None else "")
         out.append(row["date"] if row["date"] is not None else "")
         out.append(row["municipality"] if row["municipality"] is not None else "")
-        out.append(f'{row["coord_east"]}, {row["coord_north"]}')
+
+        out.append(row["coord_east"])
+        out.append(row["coord_north"])
+        out.append("32N")
+
         out.append(row["mtdna"] if row["mtdna"] is not None else "")
         out.append(row["genotype_id"] if row["genotype_id"] is not None else "")
 

@@ -14,6 +14,10 @@ TO DO list
 
 
 
+* add modify WA coordinates
+
+* add delete genotypes
+
 
 
 
