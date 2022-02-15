@@ -23,13 +23,14 @@
 <h2>{{ title }}</h2>
 
 
-<br><a href="/genotypes_list/{{type }}/export" class="btn btn-info">Export data</a><br>
+<br><a href="/genotypes_list/{{type }}/export" class="btn btn-info">Export data in XLSX format</a><br>
 <br>
 
 <style>th {top:0;position:sticky;}</style>
 
 <table class="table table-striped">
 <tr>
+<th style="background-color: white;"></th>
 <th style="background-color: white;"></th>
 <th style="background-color: white;">Genotype ID</th>
 <th style="background-color: white;">Notes</th>
@@ -80,6 +81,14 @@ set ...
 <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
 </ul>
 </div>
+</td>
+<td>
+{% if type != "deleted" %}
+<a href="/del_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete this genotype?')">Delete</a>
+{% else %}
+<a href="/def_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to set this genotype definitive?')">Set definitive</a>
+<a href="/temp_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temporary</a>
+{% endif %}
 </td>
 
 <td><a href="/view_genotype/{{ result['genotype_id'] }}" >{{ result['genotype_id'] }}</a></td>

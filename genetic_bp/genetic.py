@@ -37,6 +37,49 @@ def get_cmap(n, name='viridis'):
     return plt.cm.get_cmap(name, n)
 
 
+@app.route("/del_genotype/<genotype_id>")
+@fn.check_login
+def del_genotype(genotype_id):
+    """
+    set genotype as deleted (status field)
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("UPDATE genotypes SET status = 'deleted' WHERE genotype_id = %s",
+                    [genotype_id])
+    connection.commit()
+    return redirect(request.referrer)
+
+
+@app.route("/def_genotype/<genotype_id>")
+@fn.check_login
+def def_genotype(genotype_id):
+    """
+    set genotype as definitive (status field)
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("UPDATE genotypes SET status = 'OK' WHERE genotype_id = %s",
+                    [genotype_id])
+    connection.commit()
+    return redirect(request.referrer)
+
+
+@app.route("/temp_genotype/<genotype_id>")
+@fn.check_login
+def temp_genotype(genotype_id):
+    """
+    set genotype as temporary (status field)
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("UPDATE genotypes SET status = 'temp' WHERE genotype_id = %s",
+                    [genotype_id])
+    connection.commit()
+    return redirect(request.referrer)
+
+
+
 @app.route("/view_genotype/<genotype_id>")
 @fn.check_login
 def view_genotype(genotype_id):
@@ -157,18 +200,6 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
 '''
 
 
-@app.route("/update_cache_genotypes")
-def update_cache_genotypes():
-    """
-    update the cache with the genotypes loci values
-
-    !require the check_systematic_scats_transect_location.py script
-    """
-    _ = subprocess.Popen(["python3", "update_cache_with_genotypes_loci_values.py"])
-
-    return 'Genotypes redis cache updating in progress. <a href="/admin">Go to Admin page</a>'
-
-
 @app.route("/update_redis_genotypes")
 def update_redis_with_genotypes_loci():
     """
@@ -276,6 +307,10 @@ def genotypes_list(type, mode="web"):
 
     read loci values from redis
     """
+
+    if type not in ["all", "definitive", "temp", "deleted"]:
+        return f"{type} not found"
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -286,7 +321,7 @@ def genotypes_list(type, mode="web"):
         loci_list[row["name"]] = row["n_alleles"]
 
     if "all" in type:
-        filter = ""
+        filter = "WHERE status != 'deleted'"
         header_title = f"List of all genotypes"
 
     if "definitive" in type :
@@ -294,8 +329,13 @@ def genotypes_list(type, mode="web"):
         header_title = f"List of definitive genotypes"
 
     if "temp" in type:
-        filter = "WHERE status != 'OK'"
+        filter = "WHERE status = 'temp'"
         header_title = f"List of temporary genotypes"
+
+    if "deleted" in type:
+        filter = "WHERE status = 'deleted'"
+        header_title = f"List of temporary genotypes"
+
 
     cursor.execute(("SELECT *, "
                     "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
@@ -305,16 +345,12 @@ def genotypes_list(type, mode="web"):
     results = cursor.fetchall()
 
     loci_values = {}
-
     for row in results:
-
         loci_val = rdis.get(row["genotype_id"])
         if loci_val is not None:
             loci_values[row["genotype_id"]] = json.loads(loci_val)
         else:
             loci_values[row["genotype_id"]] = fn.get_loci_value(row['genotype_id'], loci_list)
-
-
 
     if mode == "export":
 
