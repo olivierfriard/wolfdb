@@ -30,5 +30,6 @@ def admin():
         current_app.db_log.info(f"{session['email']} accessed to admin page")
 
     return render_template("admin.html",
+                           header_title="Administration page",
                            mode=params["mode"])
 

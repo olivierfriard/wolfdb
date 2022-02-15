@@ -174,12 +174,28 @@ def update_redis_with_genotypes_loci():
     """
     update redis with the genotypes loci values
 
-    !require the check_systematic_scats_transect_location.py script
+    !require the update_redis_with_genotypes_loci_values file
     """
     _ = subprocess.Popen(["python3", "update_redis_with_genotypes_loci_values.py"])
 
-    return 'Genotypes redis updating in progress. <a href="/admin">Go to Admin page</a>'
+    flash(fn.alert_danger(f"Redis updating with genotypes loci in progress"))
 
+    return redirect("/admin")
+
+
+
+@app.route("/update_redis_wa")
+def update_redis_with_wa_loci():
+    """
+    update redis with the WA loci values
+
+    !require the update_redis_with_wa_loci_values.py file
+    """
+    _ = subprocess.Popen(["python3", "update_redis_with_wa_loci_values.py"])
+
+    flash(fn.alert_danger(f"Redis updating with WA loci in progress"))
+
+    return redirect("/admin")
 
 
 
