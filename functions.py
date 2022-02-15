@@ -35,6 +35,62 @@ def get_connection():
                             database=params["database"])
 
 
+
+
+def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
+
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    has_loci_notes = False
+
+    loci_values = {}
+    for locus in loci_list:
+        loci_values[locus] = {}
+        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
+        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
+
+    for locus in loci_list:
+
+        for allele in  ['a', 'b'][:loci_list[locus]]:
+
+            cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
+                            "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
+                            "FROM wa_locus "
+                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
+                            "ORDER BY timestamp DESC LIMIT 1"
+                            ),
+                            {"wa_code": wa_code, "locus": locus, "allele": allele})
+
+            row2 = cursor.fetchone()
+
+            if row2 is not None:
+                val = row2["val"] if row2["val"] is not None else "-"
+                notes = row2["notes"] if row2["notes"] is not None else ""
+                user_id = row2["user_id"] if row2["user_id"] is not None else ""
+                if notes:
+                    has_loci_notes = True
+                epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
+
+            else:
+                val = "-"
+                notes = ""
+                epoch = ""
+                user_id = ""
+                date = ""
+
+            loci_values[locus][allele] = {"value": val, "notes": notes,
+                                          "epoch": epoch, "user_id": user_id,
+                                          "date": date}
+
+    return loci_values, has_loci_notes
+
+
+
+
+
+
 def get_loci_value(genotype_id: str, loci_list: list) -> dict:
     """
     get genotype loci values

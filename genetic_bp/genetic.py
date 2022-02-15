@@ -54,11 +54,12 @@ def view_genotype(genotype_id):
     cursor.execute(("SELECT wa_code, sample_id, "
                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
                    "FROM wa_scat_tissue "
-                   "WHERE genotype_id = %s "),
+                   "WHERE genotype_id = %s "
+                   "ORDER BY wa_code"),
                    [genotype_id])
 
-
     wa_codes = cursor.fetchall()
+
     samples_features = []
     count, sum_lon, sum_lat  = 0, 0, 0
     for row in wa_codes:
@@ -290,10 +291,6 @@ def genotypes_list(type, mode="web"):
     loci_values = {}
 
     for row in results:
-        '''
-        cursor.execute(f"SELECT val FROM cache WHERE key = %s", [row["genotype_id"]])
-        loci_values[row["genotype_id"]] = json.loads(cursor.fetchone()["val"])
-        '''
 
         loci_val = rdis.get(row["genotype_id"])
         if loci_val is not None:
@@ -550,17 +547,19 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     out = []
     loci_values = {}
     for row in wa_scats:
+
+        has_notes = False
+        # genotype working notes
+        if row["notes"] is not None and row["notes"]:
+            has_notes = True
+
+        '''
         loci_values[row["wa_code"]] = {}
+
         for locus in loci_list:
             loci_values[row["wa_code"]][locus] = {}
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
-
-        has_notes = False
-
-        # genotype working notes
-        if row["notes"] is not None and row["notes"]:
-            has_notes = True
 
         for locus in loci_list:
 
@@ -590,9 +589,20 @@ def wa_genetic_samples(with_notes="all", mode="web"):
                     user_id = ""
 
                 loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "user_id": user_id}
+        '''
 
+        loci_val = rdis.get(row["wa_code"])
+        if loci_val is not None:
+            loci_values[row["wa_code"]] = json.loads(loci_val)
 
-        if (with_notes == "all") or (with_notes == "with_notes" and has_notes == True):
+            # check if loci have notes
+            has_loci_notes = set([loci_values[row["wa_code"]][x][allele]['notes'] for x in loci_values[row["wa_code"]]
+                              for allele in ['a', 'b']]) != {''}
+
+        else:
+            loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
+
+        if (with_notes == "all") or (with_notes == "with_notes" and (has_notes or has_loci_notes)):
             out.append(dict(row))
 
     if mode == "export":
@@ -664,11 +674,14 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
 
     loci_values = {}
     for row in wa_scats:
+
+        '''
         loci_values[row["wa_code"]] = {}
         for locus in loci_list:
             loci_values[row["wa_code"]][locus] = {}
             loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
             loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
+
         for locus in loci_list:
 
             for allele in  ['a', 'b'][:loci_list[locus]]:
@@ -694,6 +707,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str="web"):
                     user_id = ""
 
                 loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "user_id": user_id}
+        '''
+
+        loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
 
     if mode == "export":
@@ -818,6 +834,7 @@ def view_genetic_data(wa_code):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
+    '''
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
@@ -852,7 +869,9 @@ def view_genetic_data(wa_code):
                 user_id = ""
 
             loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date, "user_id": user_id}
+    '''
 
+    loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
     return render_template("view_genetic_data.html",
                            header_title=f"{wa_code} genetic data",
@@ -866,6 +885,9 @@ def view_genetic_data(wa_code):
 @app.route("/add_genetic_data/<wa_code>", methods=("GET", "POST",))
 @fn.check_login
 def add_genetic_data(wa_code):
+    """
+    Let user add loci values for WA code
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -884,6 +906,7 @@ def add_genetic_data(wa_code):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
+    '''
     loci_values = {}
     for locus in loci_list:
         loci_values[locus] = {}
@@ -892,7 +915,7 @@ def add_genetic_data(wa_code):
 
     for locus in loci_list:
 
-        for allele in  ["a", "b"][:loci_list[locus]]:
+        for allele in  ['a', 'b'][:loci_list[locus]]:
 
             cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
                             "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
@@ -920,6 +943,13 @@ def add_genetic_data(wa_code):
             loci_values[locus][allele] = {"value": val, "notes": notes,
                                           "epoch": epoch, "date": date,
                                           "user_id": user_id}
+    '''
+
+    loci_val = rdis.get(wa_code)
+    if loci_val is not None:
+        loci_values = json.loads(loci_val)
+    else:
+        loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
     if request.method == "GET":
 
@@ -966,9 +996,10 @@ def add_genetic_data(wa_code):
 
         connection.commit()
 
-        # update genotype_locus
+        # update redis
+        rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, loci_list)[0]))
 
-        # for cache update
+        # update genotype_locus
         loci_list = {}
         cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
         for row in cursor.fetchall():
@@ -1018,14 +1049,6 @@ def add_genetic_data(wa_code):
                             # get genotype id
                             cursor.execute("SELECT genotype_id FROM genotype_locus WHERE id = %s ", [row2["id"]])
                             genotype_id = cursor.fetchone()["genotype_id"]
-
-                            '''
-                            cursor.execute("DELETE FROM cache WHERE key = %s ", [genotype_id])
-                            connection.commit()
-                            cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
-                                        [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
-                            connection.commit()
-                            '''
 
                             rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
 
@@ -1174,7 +1197,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
         for row in cursor.fetchall():
             loci_list[row["name"]] = row["n_alleles"]
-
 
         rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
 
