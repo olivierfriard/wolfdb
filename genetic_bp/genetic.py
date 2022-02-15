@@ -48,6 +48,14 @@ def del_genotype(genotype_id):
     cursor.execute("UPDATE genotypes SET status = 'deleted' WHERE genotype_id = %s",
                     [genotype_id])
     connection.commit()
+
+
+    cursor.execute("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = %s",
+                    [genotype_id])
+    connection.commit()
+
+    flash(fn.alert_danger(f"<b>Genotype {genotype_id} deleted</b>"))
+
     return redirect(request.referrer)
 
 
@@ -62,7 +70,11 @@ def def_genotype(genotype_id):
     cursor.execute("UPDATE genotypes SET status = 'OK' WHERE genotype_id = %s",
                     [genotype_id])
     connection.commit()
+
+    flash(fn.alert_danger(f"<b>Genotype {genotype_id} set as definitive</b>"))
+
     return redirect(request.referrer)
+
 
 
 @app.route("/temp_genotype/<genotype_id>")
@@ -76,6 +88,9 @@ def temp_genotype(genotype_id):
     cursor.execute("UPDATE genotypes SET status = 'temp' WHERE genotype_id = %s",
                     [genotype_id])
     connection.commit()
+
+    flash(fn.alert_danger(f"<b>Genotype {genotype_id} set as temporary</b>"))
+
     return redirect(request.referrer)
 
 

@@ -18,6 +18,13 @@
 <br>
 <br>
 
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {{ messages[0] }}
+    {% endif %}
+{% endwith %}
+
+
 
 {% if results %}
 <h2>{{ title }}</h2>
