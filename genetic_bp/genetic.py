@@ -37,6 +37,7 @@ def get_cmap(n, name='viridis'):
     return plt.cm.get_cmap(name, n)
 
 
+
 @app.route("/del_genotype/<genotype_id>")
 @fn.check_login
 def del_genotype(genotype_id):
@@ -1329,6 +1330,50 @@ def genotype_note(genotype_id):
         connection.commit()
 
         return redirect(request.form["return_url"])
+
+
+@app.route("/set_wa_genotype/<wa_code>", methods=("GET", "POST",))
+@fn.check_login
+def set_wa_genotype(wa_code):
+    """
+    set wa genotype
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    if request.method == "GET":
+        cursor.execute(("SELECT genotype_id FROM wa_results WHERE wa_code = %s "),
+                       [wa_code])
+        result = cursor.fetchone()
+        if result is None:
+            flash(fn.alert_danger(f"WA code not found: {wa_code}"))
+            return redirect(request.referrer)
+
+        genotype_id = "" if result["genotype_id"] is None else result["genotype_id"]
+
+        return render_template("set_wa_genotype.html",
+                               header_title=f"Set genotype ID for WA code {wa_code}",
+                               wa_code=wa_code,
+                               current_genotype_id=genotype_id,
+                               return_url=request.referrer)
+
+    if request.method == "POST":
+
+        sql = ("UPDATE wa_results SET genotype_id = %(genotype_id)s "
+               "WHERE wa_code = %(wa_code)s ")
+
+        cursor.execute(sql,
+                       {"genotype_id": request.form["genotype_id"].strip(),
+                        "wa_code": wa_code}
+                       )
+        connection.commit()
+
+        flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
+
+        return redirect(request.form["return_url"])
+
+
+
 
 
 @app.route("/set_status/<genotype_id>", methods=("GET", "POST",))

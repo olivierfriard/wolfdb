@@ -27,17 +27,18 @@ cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::inte
 scats = cursor.fetchall()
 for row in scats:
 
-    print(row["scat_id"], row['x'], row['y'], file=sys.stderr)
+    print(f"scat ID: {row['scat_id']}, Coordinates UTM: {row['x']}, {row['y']}", file=sys.stderr)
 
     r = db.search(Row.xy == f"{row['x']} {row['y']}")
     #print(r)
     if r:
         
         d = r[0]['geolocation']
-        print("found in db", d, file=sys.stderr)
+        print(f"found in db: {d}", file=sys.stderr)
 
     else:
         
+        print(f"NOT FOUND in db", file=sys.stderr)
         out, error = subprocess.Popen(f"wget -O - http://127.0.0.1:5000/rev_geocoding/{row['x']}/{row['y']}/32N",
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, shell=True).communicate()
@@ -54,7 +55,6 @@ for row in scats:
         #print(d, file=sys.stderr)
 
 
-    print(row['x'], row['y'], file=sys.stderr)
     print(d['region'] ,d['province_code'], d['municipality'], d['location'], file=sys.stderr)
 
     
