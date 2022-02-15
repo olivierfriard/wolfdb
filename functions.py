@@ -34,6 +34,48 @@ def get_connection():
                             #port="5432",
                             database=params["database"])
 
+
+def get_loci_value(genotype_id: str, loci_list: list) -> dict:
+    """
+    get genotype loci values
+    """
+
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    loci_values = {}
+    for locus in loci_list:
+        loci_values[locus] = {}
+        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": ""}
+        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": ""}
+
+    for locus in loci_list:
+
+        cursor.execute(("SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
+                        "FROM genotype_locus "
+                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
+                        "UNION "
+                        "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
+                        "FROM genotype_locus "
+                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
+                        ),
+                        {"genotype_id": genotype_id, "locus": locus})
+
+        locus_val = cursor.fetchall()
+
+        for row2 in locus_val:
+            val = row2["val"] if row2["val"] is not None else "-"
+            notes = row2["notes"] if row2["notes"] is not None else ""
+            user_id = row2["user_id"] if row2["user_id"] is not None else ""
+            epoch = row2["epoch"] if row2["epoch"] is not None else ""
+
+            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes,
+                                                  "user_id": user_id, "epoch": epoch}
+
+    return loci_values
+
+
+
 def alert_danger(text: str):
     return Markup(f'<div class="alert alert-danger" role="alert">{text}</div>')
 

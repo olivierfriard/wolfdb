@@ -27,7 +27,7 @@ params = config()
 
 app.debug = params["debug"]
 
-# dev version use db 0
+# db wolf -> db 0
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
 def get_cmap(n, name='viridis'):
@@ -114,7 +114,7 @@ def genotypes():
     return render_template("genotypes.html",
                            header_title="Genotypes")
 
-
+'''
 def get_loci_value(genotype_id: str, loci_list: list) -> dict:
     """
     get genotype loci values
@@ -153,7 +153,7 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
                                                   "user_id": user_id, "epoch": epoch}
 
     return loci_values
-
+'''
 
 
 @app.route("/update_cache_genotypes")
@@ -299,7 +299,7 @@ def genotypes_list(type, mode="web"):
         if loci_val is not None:
             loci_values[row["genotype_id"]] = json.loads(loci_val)
         else:
-            loci_values[row["genotype_id"]] = get_loci_value(row['genotype_id'], loci_list)
+            loci_values[row["genotype_id"]] = fn.get_loci_value(row['genotype_id'], loci_list)
 
 
 
@@ -774,13 +774,11 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         data[row['genotype_id']] = dict(result)
         data[row['genotype_id']]["n_recap"] = row["n_recap"]
 
-        #loci_values[row["genotype_id"]] = dict(get_loci_value(row['genotype_id'], loci_list))
-
         loci_val = rdis.get(row["genotype_id"])
         if loci_val is not None:
             loci_values[row["genotype_id"]] = json.loads(loci_val)
         else:
-            loci_values[row["genotype_id"]] = get_loci_value(row['genotype_id'], loci_list)
+            loci_values[row["genotype_id"]] = fn.get_loci_value(row['genotype_id'], loci_list)
 
     if mode == "export":
 
@@ -1029,7 +1027,7 @@ def add_genetic_data(wa_code):
                             connection.commit()
                             '''
 
-                            rdis.set(genotype_id, json.dumps(get_loci_value(genotype_id, loci_list)))
+                            rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
 
 
         connection.commit()
@@ -1177,15 +1175,8 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         for row in cursor.fetchall():
             loci_list[row["name"]] = row["n_alleles"]
 
-        '''
-        cursor.execute("DELETE FROM cache WHERE key = %s ", [genotype_id])
-        connection.commit()
-        cursor.execute("INSERT INTO cache (key, val, updated) VALUES (%s, %s, NOW()) ",
-                       [genotype_id, json.dumps(get_loci_value(genotype_id, loci_list))])
-        connection.commit()
-        '''
 
-        rdis.set(genotype_id, json.dumps(get_loci_value(genotype_id, loci_list)))
+        rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
 
         # update wa_code
         sql = ("SELECT id FROM wa_locus, wa_results "
@@ -1286,7 +1277,7 @@ def set_status(genotype_id):
                "WHERE genotype_id = %(genotype_id)s ")
 
         cursor.execute(sql,
-                       {"position": request.form["position"],
+                       {"position": request.form["position"].strip().lower(),
                         "genotype_id": genotype_id})
 
         connection.commit()
@@ -1331,7 +1322,7 @@ def set_pack(genotype_id):
                "WHERE genotype_id = %(genotype_id)s ")
 
         cursor.execute(sql,
-                       {"pack": request.form["pack"],
+                       {"pack": request.form["pack"].lower().strip(),
                         "genotype_id": genotype_id})
 
         connection.commit()
@@ -1364,7 +1355,7 @@ def set_sex(genotype_id):
         sex = "" if result["sex"] is None else result["sex"]
 
         return render_template("set_sex.html",
-                                header_title=f"Set sex for {genotype_id}",
+                               header_title=f"Set sex for {genotype_id}",
                                genotype_id=genotype_id,
                                current_sex=sex,
                                return_url=request.referrer)
@@ -1375,7 +1366,7 @@ def set_sex(genotype_id):
                "WHERE genotype_id = %(genotype_id)s ")
 
         cursor.execute(sql,
-                       {"sex": request.form["sex"],
+                       {"sex": request.form["sex"].upper().strip(),
                         "genotype_id": genotype_id})
 
         connection.commit()
@@ -1461,7 +1452,7 @@ def set_dispersal(genotype_id):
                "WHERE genotype_id = %(genotype_id)s ")
 
         cursor.execute(sql,
-                       {"dispersal": request.form["dispersal"],
+                       {"dispersal": request.form["dispersal"].strip(),
                         "genotype_id": genotype_id})
 
         connection.commit()
@@ -1504,7 +1495,7 @@ def set_hybrid(genotype_id):
                "WHERE genotype_id = %(genotype_id)s ")
 
         cursor.execute(sql,
-                       {"hybrid": request.form["hybrid"],
+                       {"hybrid": request.form["hybrid"].strip(),
                         "genotype_id": genotype_id})
 
         connection.commit()

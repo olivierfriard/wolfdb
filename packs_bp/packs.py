@@ -28,7 +28,7 @@ def packs():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT pack FROM genotypes GROUP BY pack ORDER BY pack")
+    cursor.execute("SELECT pack FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack")
     packs_list = cursor.fetchall()
 
     return render_template("packs_list.html",
@@ -46,10 +46,8 @@ def view_pack(name):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    # cursor.execute("SELECT * FROM genotypes WHERE pack = %s", [name])
-
-    cursor.execute(("select *, "
-                    "(select date from wa_scat_tissue where wa_code = (select wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) as date "
+    cursor.execute(("SELECT *, "
+                    "(SELECT date FROM wa_scat_tissue where wa_code = (select wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) as date "
                     "FROM genotypes WHERE pack = %s"),
                     [name])
 
