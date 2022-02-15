@@ -38,6 +38,7 @@
 <th>UTM Coordinates</th>
 <th>Operator</th>
 <th>Institution</th>
+<th>Notes</th>
 
 </tr>
 {% for result in results %}
@@ -86,6 +87,7 @@
 
 <td>{{ result['observer'] }}</td>
 <td>{{ result['institution'] }}</td>
+<td>{{ result['notes'] if result['notes'] is not none else ""}}</td>
 
 
 

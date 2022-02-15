@@ -229,8 +229,7 @@ function check_geocoding() {
     </div><!-- col --><div class="col-8">
     {{ form.observer(class="form-control",  value=default_values["observer"]) }}
     {% for message in form.observer.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
+    </div></div></div>
 
 
 <div class="mb-3">
@@ -238,12 +237,21 @@ function check_geocoding() {
     </div><!-- col --><div class="col-8">
     {{ form.institution(class="form-control",  value=default_values["institution"]) }}
     {% for message in form.institution.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
+    </div></div></div>
+
+
+<div class="mb-3">
+<div class="row g-3 align-items-top">
+<div class="col-2">{{ form.notes.label }}</div>
+<div class="col-8">{{ form.notes(size=20, class="form-control",  value=default_values["notes"]) }}
+{% for message in form.notes.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+</div></div></div>
 
 
 
-<button type="submit" class="btn btn-primary" >Submit</button>
+
+
+<button type="submit" class="btn btn-danger" >Submit</button>
 </form>
 
 

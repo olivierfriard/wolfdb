@@ -9,7 +9,7 @@ from flask import Markup
 import datetime
 import re
 
-from wtforms import (Form, StringField, SelectField)
+from wtforms import (Form, StringField, SelectField, TextAreaField)
 
 from wtforms.validators import Required, ValidationError
 
@@ -76,4 +76,6 @@ class Scat(Form):
 
     observer = StringField("Operator", [])
     institution = StringField("Institution", [])
+
+    notes = TextAreaField("Notes", [])
 

@@ -405,6 +405,8 @@ def edit_scat(scat_id):
         cursor.execute("SELECT * FROM scats WHERE scat_id = %s",
                     [scat_id])
         default_values = cursor.fetchone()
+        if default_values["notes"] is None:
+            default_values["notes"] = ""
 
         form = Scat(path_id=default_values["path_id"],
                     snowtrack_id=default_values["snowtrack_id"],
@@ -418,6 +420,8 @@ def edit_scat(scat_id):
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
         # get id of all snow tracks
         form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+
+        form.notes.data = default_values["notes"]
 
         return render_template("new_scat.html",
                                 header_title=f"Edit scat {scat_id}",
@@ -477,27 +481,29 @@ def edit_scat(scat_id):
                                               "Please check and submit again"))
 
 
-            sql = ("UPDATE scats SET scat_id = %s, "
-                   "                wa_code = %s,"
-                   "                date = %s,"
-                   "                sampling_season = %s,"
-                   "                sampling_type = %s,"
-                   "                path_id = %s, "
-                   "                snowtrack_id = %s, "
-                   "                location = %s, "
-                   "                municipality = %s, "
-                   "                province = %s, "
-                   "                region = %s, "
-                   "                deposition = %s, "
-                   "                matrix = %s, "
-                   "                collected_scat = %s, "
-                   "                scalp_category = %s, "
-                   "                coord_east = %s, "
-                   "                coord_north = %s, "
-                   #"                coord_zone = %s, "
-                   "                observer = %s, "
-                   "                institution = %s, "
-                   "                geometry_utm = %s "
+            sql = ("UPDATE scats SET "
+                   " scat_id = %s, "
+                   " wa_code = %s,"
+                   " date = %s,"
+                   " sampling_season = %s,"
+                   " sampling_type = %s,"
+                   " path_id = %s, "
+                   " snowtrack_id = %s, "
+                   " location = %s, "
+                   " municipality = %s, "
+                   " province = %s, "
+                   " region = %s, "
+                   " deposition = %s, "
+                   " matrix = %s, "
+                   " collected_scat = %s, "
+                   " scalp_category = %s, "
+                   " coord_east = %s, "
+                   " coord_north = %s, "
+                   #  coord_zone = %s, "
+                   " observer = %s, "
+                   " institution = %s, "
+                   " notes = %s, "
+                   " geometry_utm = %s "
                    "WHERE scat_id = %s")
             cursor.execute(sql,
                            [
@@ -512,6 +518,7 @@ def edit_scat(scat_id):
                             request.form["deposition"], request.form["matrix"], request.form["collected_scat"], request.form["scalp_category"],
                             request.form["coord_east"], request.form["coord_north"], #request.form["coord_zone"],
                             request.form["observer"], request.form["institution"],
+                            request.form["notes"],
                             f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
                             scat_id
                            ]

@@ -275,9 +275,11 @@ def new_path():
 @fn.check_login
 def edit_path(path_id):
 
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     if request.method == "GET":
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
         cursor.execute("SELECT * FROM paths WHERE path_id = %s",
                        [path_id])
         default_values = cursor.fetchone()
@@ -287,6 +289,7 @@ def edit_path(path_id):
 
         form = Path(transect_id=default_values["transect_id"],
                     completeness=default_values["completeness"],
+                    category=default_values["category"],
                     )
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
@@ -311,8 +314,6 @@ def edit_path(path_id):
             # path_id
             new_path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
 
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             sql = ("UPDATE paths SET "
                    "path_id = %s,"
                    "transect_id = %s, "
