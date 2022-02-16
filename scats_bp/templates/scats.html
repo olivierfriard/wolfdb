@@ -11,11 +11,11 @@
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-  <ul class=flashes>
+<ul class=flashes>
   {% for message in messages %}
-    <strong>{{ message }}</strong><br>
+  <strong>{{ message }}</strong><br>
   {% endfor %}
-  </ul>
+</ul>
 {% endif %}
 {% endwith %}
 {% block body %}{% endblock %}
@@ -45,13 +45,14 @@
 <br>
 
 
-<a href="/export_scats" class="btn btn-primary">Export scats in XLSX</a>
+<a href="/export_scats" class="btn btn-primary">Export scats in XLSX format</a>
 <br>
 <br>
 
 
 
-<a href="/static/systematic_scats_transects_location.html" class="btn btn-primary">Check location of scats from systematic sampling on transect</a>
+<a href="/static/systematic_scats_transects_location.html" class="btn btn-primary">Check location of scats from
+  systematic sampling on transect</a>
 
 
 <a href="/systematic_scats_transect_location" class="btn btn-primary">Update data</a><br>

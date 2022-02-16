@@ -19,9 +19,9 @@
 
 
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
 
 
@@ -30,95 +30,107 @@
 {{ title }}
 
 <br>
-<a href="/wa_genetic_samples/{{ with_notes }}/export" class="btn btn-info">Export data</a>
+<a href="/wa_genetic_samples/{{ with_notes }}/export" class="btn btn-info">Export data in XLSX format</a>
 <br>
 <br>
 
 
-<style>th {top:0;position:sticky;}</style>
+<style>
+    th {
+        top: 0;
+        position: sticky;
+    }
+</style>
 
 <table class="table table-striped">
-<tr>
-<th style="background-color: white;"></th>
-<th style="background-color: white;"></th>
-<th style="background-color: white;">WA code</th>
-<th style="background-color: white;">Sample ID</th>
-<th style="background-color: white;">Date</th>
-<th style="background-color: white;">Municipality</th>
-<th style="background-color: white;">Coordinates WGS84 UTM zone 32N</th>
-<th style="background-color: white;">mtDNA result</th>
-<th style="background-color: white;">Genotype ID</th>
-<th style="background-color: white;">Temp ID</th>
-<th style="background-color: white;">Sex</th>
-<th style="background-color: white;">Status</th>
-<th style="background-color: white;">Pack</th>
-<th style="background-color: white;">Dead recovery</th>
-{% for locus in loci_list %}
-{% if loci_list[locus] == 2%}
-<th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
-<th style="background-color: white;">{{ locus }} b</th>
-{% else %}
-<th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
-<th style="background-color: white;"></th>
-{% endif %}
+    <tr>
+        <th style="background-color: white;"></th>
+        <th style="background-color: white;"></th>
+        <th style="background-color: white;">WA code</th>
+        <th style="background-color: white;">Sample ID</th>
+        <th style="background-color: white;">Date</th>
+        <th style="background-color: white;">Municipality</th>
+        <th style="background-color: white;">Coordinates WGS84 UTM zone 32N</th>
+        <th style="background-color: white;">mtDNA result</th>
+        <th style="background-color: white;">Genotype ID</th>
+        <th style="background-color: white;">Temp ID</th>
+        <th style="background-color: white;">Sex</th>
+        <th style="background-color: white;">Status</th>
+        <th style="background-color: white;">Pack</th>
+        <th style="background-color: white;">Dead recovery</th>
+        {% for locus in loci_list %}
+        {% if loci_list[locus] == 2%}
+        <th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
+        <th style="background-color: white;">{{ locus }} b</th>
+        {% else %}
+        <th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
+        <th style="background-color: white;"></th>
+        {% endif %}
 
-{% endfor %}
+        {% endfor %}
 
-</tr>
-{% for result in wa_scats %}
+    </tr>
+    {% for result in wa_scats %}
 
-<tr>
-<td><a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a></td>
+    <tr>
+        <td><a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a></td>
 
-<td><a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a></td>
+        <td><a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a></td>
 
-<td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
+        <td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
 
-<td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
+        <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{%
+            endif %}</td>
 
-<td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
+        <td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
 
-<td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
+        <td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
 
-<td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
+        <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
 
-<td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
+        <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
-<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
-    {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}" class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
-</td>
+        <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id']
+                }}</a>{% endif %}
+            {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
+                class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
+        </td>
 
-<td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
+        <td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
 
-<td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
+        <td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
 
-<td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
+        <td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
 
-<td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+        <td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
 
-<td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
+        <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
-{% for locus in loci_values[result['wa_code']] %}
+        {% for locus in loci_values[result['wa_code']] %}
 
-<td style="border-left: 1px solid black; {% if 'OK|' in loci_values[result['wa_code']][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
+        <td
+            style="border-left: 1px solid black; {% if 'OK|' in loci_values[result['wa_code']][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            {{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
+            <a
+                href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
 
-</td>
+        </td>
 
-<td style="{% if 'OK|' in loci_values[result['wa_code']][locus]['b']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
+        <td
+            style="{% if 'OK|' in loci_values[result['wa_code']][locus]['b']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            {{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
 
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
+            <a
+                href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
 
-</td>
+        </td>
 
-{% endfor %}
+        {% endfor %}
 
 
 
-</tr>
-{% endfor %}
+    </tr>
+    {% endfor %}
 
 </table>
 

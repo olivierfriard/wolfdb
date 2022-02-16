@@ -16,83 +16,97 @@
 <h2>List of {{ n_scats }} scats</h2>
 
 
+<br>
+<a href="/export_scats" class="btn btn-info">Export data in XLSX format</a>
+<br>
+<br>
+
+<style>
+    th {
+        top: 0;
+        position: sticky;
+    }
+</style>
+
+
 <table class="table table-striped">
-<tr>
-<th>Scat ID</th>
-<th>Date</th>
-<th>Sampling season</th>
-<th>Sampling type</th>
-<th>Path ID</th>
-<th>Snowtrack ID</th>
-<th>WA code</th>
-<th>Genotype ID</th>
-<th>Location</th>
-<th>Municipality</th>
-<th>Province</th>
-<th>Region</th>
-<th>Deposition</th>
-<th>Matrix</th>
-<th>Collected scat</th>
-<th>Scalp category</th>
-<th>Genetic sample</th>
-<th>UTM Coordinates</th>
-<th>Operator</th>
-<th>Institution</th>
-<th>Notes</th>
+    <tr>
+        <th style="background-color: white;">Scat ID</th>
+        <th style="background-color: white;">Date</th>
+        <th style="background-color: white;">Sampling season</th>
+        <th style="background-color: white;">Sampling type</th>
+        <th style="background-color: white;">Path ID</th>
+        <th style="background-color: white;">Snowtrack ID</th>
+        <th style="background-color: white;">WA code</th>
+        <th style="background-color: white;">Genotype ID</th>
+        <th style="background-color: white;">Location</th>
+        <th style="background-color: white;">Municipality</th>
+        <th style="background-color: white;">Province</th>
+        <th style="background-color: white;">Region</th>
+        <th style="background-color: white;">Deposition</th>
+        <th style="background-color: white;">Matrix</th>
+        <th style="background-color: white;">Collected scat</th>
+        <th style="background-color: white;">Scalp category</th>
+        <th style="background-color: white;">Genetic sample</th>
+        <th style="background-color: white;">UTM Coordinates</th>
+        <th style="background-color: white;">Operator</th>
+        <th style="background-color: white;">Institution</th>
+        <th style="background-color: white;">Notes</th>
 
-</tr>
-{% for result in results %}
-<tr>
-<td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
-<td>{{ result['date'] }}</td>
-<td>{{ result['sampling_season'] }}</td>
-<td>{{ result['sampling_type'] }}</td>
+    </tr>
+    {% for result in results %}
+    <tr>
+        <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
+        <td>{{ result['date'] }}</td>
+        <td>{{ result['sampling_season'] }}</td>
+        <td>{{ result['sampling_type'] }}</td>
 
-<td>{% if result['sampling_type'] == "Systematic" %}
-    {% if result['path_id'] != "" %}
-    <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
-    {% else %}
-        {{ result['path_id'] }}
-    {% endif %}
-    {% endif %}
-</td>
+        <td>{% if result['sampling_type'] == "Systematic" %}
+            {% if result['path_id'] != "" %}
+            <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
+            {% else %}
+            {{ result['path_id'] }}
+            {% endif %}
+            {% endif %}
+        </td>
 
-<td>{% if result['sampling_type'] == "Systematic" %}
-    {% if result['snowtrack_id'] != "" %}
-    <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
-    {% else %}
-    {{ result['snowtrack_id'] }}
-    {% endif %}
-    {% endif %}
-    </td>
+        <td>{% if result['sampling_type'] == "Systematic" %}
+            {% if result['snowtrack_id'] != "" %}
+            <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
+            {% else %}
+            {{ result['snowtrack_id'] }}
+            {% endif %}
+            {% endif %}
+        </td>
 
-<td>{% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}</td>
-<td>
-{% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
-{% if result['genotype_id2'] %}{{ result['genotype_id2'] }}{% endif %}
-</td>
+        <td>{% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}</td>
+        <td>
+            {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
+            {% if result['genotype_id2'] %}{{ result['genotype_id2'] }}{% endif %}
+        </td>
 
-<td>{{ result['location'] }}</td>
-<td>{{ result['municipality'] }}</td>
-<td>{{ result['province'] }}</td>
-<td>{{ result['region'] }}</td>
+        <td>{{ result['location'] }}</td>
+        <td>{{ result['municipality'] }}</td>
+        <td>{{ result['province'] }}</td>
+        <td>{{ result['region'] }}</td>
 
-<td>{{ result['deposition'] }}</td>
-<td>{{ result['matrix'] }}</td>
-<td>{{ result['collected_scat'] }}</td>
-<td>{{ result['scalp_category'] }} {% if result['mtdna'] is not none and 'Wolf' in result['mtdna'] %}<br>C1 (from mtDNA) {%endif%}</td>
-<td>{% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}</td>
+        <td>{{ result['deposition'] }}</td>
+        <td>{{ result['matrix'] }}</td>
+        <td>{{ result['collected_scat'] }}</td>
+        <td>{{ result['scalp_category'] }} {% if result['mtdna'] is not none and 'Wolf' in result['mtdna'] %}<br>C1
+            (from mtDNA) {%endif%}</td>
+        <td>{% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}</td>
 
-<td>{{ result['coord_east'] }}, {{ result['coord_north'] }}  {{ result['coord_zone'] }}</td>
+        <td>{{ result['coord_east'] }}, {{ result['coord_north'] }} {{ result['coord_zone'] }}</td>
 
-<td>{{ result['observer'] }}</td>
-<td>{{ result['institution'] }}</td>
-<td>{{ result['notes'] if result['notes'] is not none else ""}}</td>
+        <td>{{ result['observer'] }}</td>
+        <td>{{ result['institution'] }}</td>
+        <td>{{ result['notes'] if result['notes'] is not none else ""}}</td>
 
 
 
-</tr>
-{% endfor %}
+    </tr>
+    {% endfor %}
 </table>
 {% else %}
 
@@ -101,7 +115,3 @@
 {% endif %}
 
 {% endblock %}
-
-
-
-
