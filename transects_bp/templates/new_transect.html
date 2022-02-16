@@ -1,16 +1,16 @@
-{% include "header.html" %}
-<main class="flex-shrink-0">
-<div class="container">
+{% extends "bootstrap.html" %}
 
-    <h1>WolfDB</h1>
-    <hr>
+{% block content %}
 
-    <a href="/" class="btn btn-primary">Home</a>&nbsp;
+<h1>WolfDB - Transects</h1>
+<hr>
 
-    <a href="/transects" class="btn btn-primary">Transects</a>
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/transects" class="btn btn-primary">Transects</a>
 
 
-    <br><br>
+<br><br>
 
 
 
@@ -18,11 +18,11 @@
 <hr>
 
 {% with messages = get_flashed_messages() %}
-   {% if messages %}
-      {% for message in messages %}
-         {{ message }}
-      {% endfor %}
-   {% endif %}
+{% if messages %}
+{% for message in messages %}
+{{ message }}
+{% endfor %}
+{% endif %}
 {% endwith %}
 
 
@@ -30,62 +30,82 @@
 
 
     <div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.transect_id.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.transect_id(size=30, class="form-control",  value=default_values["transect_id"]) }}
-    {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+        <div class="row g-3 align-items-top">
+            <div class="col-2">{{ form.transect_id.label }}
+            </div><!-- col -->
+            <div class="col-8">
+                {{ form.transect_id(size=30, class="form-control", value=default_values["transect_id"]) }}
+                {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
-    </div></div>
-</div>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sector.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.sector(size=16, class="form-control", value=default_values["sector"]) }}
-    {% for message in form.sector.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-
-</div></div>
-</div>
+            </div>
+        </div>
+    </div>
 
 
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.location.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
-    {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    <div class="mb-3">
+        <div class="row g-3 align-items-top">
+            <div class="col-2">{{ form.sector.label }}
+            </div><!-- col -->
+            <div class="col-8">
+                {{ form.sector(size=16, class="form-control", value=default_values["sector"]) }}
+                {% for message in form.sector.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
-</div></div>
-</div>
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.municipality.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
-    {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.province.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.province(class="form-control", value=default_values["province"]) }}
-    {% for message in form.province.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
+            </div>
+        </div>
+    </div>
 
 
+    <div class="mb-3">
+        <div class="row g-3 align-items-top">
+            <div class="col-2">{{ form.location.label }}
+            </div><!-- col -->
+            <div class="col-8">
+                {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
+                {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="row g-3 align-items-top">
+            <div class="col-2">{{ form.municipality.label }}
+            </div><!-- col -->
+            <div class="col-8">
+                {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
+                {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="row g-3 align-items-top">
+            <div class="col-2">{{ form.province.label }}
+            </div><!-- col -->
+            <div class="col-8">
+                {{ form.province(class="form-control", value=default_values["province"]) }}
+                {% for message in form.province.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+            </div>
+        </div>
+    </div>
+
+
+    <div class="mb-3">
+        <div class="row g-3 align-items-top">
+            <div class="col-2">{{ form.multilines.label }}</div>
+            <div class="col-8">
+                {{ form.multilines(rows=15, class="form-control", value=default_values["multilines"]) }}
+                {% for message in form.multilines.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+            </div>
+        </div>
+    </div>
 
 
 
 
-<button type="submit" class="btn btn-primary" >Submit</button>
+    <button type="submit" class="btn btn-danger">Submit</button>
+
 </form>
 
 
-
-
-
-</div>
-
-</main>
+{% endblock %}

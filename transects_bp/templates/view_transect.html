@@ -16,15 +16,34 @@
 <h2>transect ID: <b>{{ transect["transect_id"] }}</b></h2>
 
 <a href="/edit_transect/{{ transect['transect_id'] }}" class="btn btn-danger">Edit transect</a>
-
+<br>
+<br>
 <table class="table table-striped">
 
-<tr><td>Sector</td><td>{{ transect["sector"] }}</td></tr>
-<tr><td>Location</td><td>{{ transect["location"] }}</td></tr>
-<tr><td>Municipality</td><td>{{ transect["municipality"] }}</td></tr>
-<tr><td>Province</td><td>{{ transect["province"] }}</td></tr>
-<tr><td>Region</td><td>{{ transect["region"] }}</td></tr>
-<tr><td>Transect length (m)</td><td>{{ transect["transect_length"] }}</td></tr>
+    <tr>
+        <td>Sector</td>
+        <td>{{ transect["sector"] if transect["sector"] is not none else ""}}</td>
+    </tr>
+    <tr>
+        <td>Location</td>
+        <td>{{ transect["location"] }}</td>
+    </tr>
+    <tr>
+        <td>Municipality</td>
+        <td>{{ transect["municipality"] }}</td>
+    </tr>
+    <tr>
+        <td>Province</td>
+        <td>{{ transect["province"] }}</td>
+    </tr>
+    <tr>
+        <td>Region</td>
+        <td>{{ transect["region"] }}</td>
+    </tr>
+    <tr>
+        <td>Transect length (m)</td>
+        <td>{{ transect["transect_length"] if transect["transect_length"] is not none else ""}}</td>
+    </tr>
 
 </table>
 
@@ -34,43 +53,43 @@
 
 {% if paths %}
 <table class="table table-striped">
-<tr>
-<th>Path ID</th>
-<th>Date</th>
-<th>Sampling season</th>
-<th>Completeness (%)</th>
-<th>N. samples</th>
-<th>Operator</th>
-<th>Institution</th>
-<th>Note</th>
-</tr>
+    <tr>
+        <th>Path ID</th>
+        <th>Date</th>
+        <th>Sampling season</th>
+        <th>Completeness (%)</th>
+        <th>N. samples</th>
+        <th>Operator</th>
+        <th>Institution</th>
+        <th>Note</th>
+    </tr>
 
-{% for path in paths %}
+    {% for path in paths %}
 
-<tr>
-<td><a href="/view_path/{{ path["path_id"] }}">{{ path["path_id"] }}</a></td>
-<td>{{ path['date'] }}</td>
-<td>{{ path['sampling_season'] }}</td>
-<td>{{ path['completeness'] }}</td>
-<td>{{ path['n_scats'] }}</td>
-<td>{% if path['observer'] %}{{ path['observer'] }}{%endif%}</td>
-<td>{% if path['institution'] %}{{ path['institution'] }}{%endif%}</td>
-<td>{{ path['note'] }}</td>
-</tr>
+    <tr>
+        <td><a href="/view_path/{{ path[" path_id"] }}">{{ path["path_id"] }}</a></td>
+        <td>{{ path['date'] }}</td>
+        <td>{{ path['sampling_season'] }}</td>
+        <td>{{ path['completeness'] }}</td>
+        <td>{{ path['n_scats'] }}</td>
+        <td>{% if path['observer'] %}{{ path['observer'] }}{%endif%}</td>
+        <td>{% if path['institution'] %}{{ path['institution'] }}{%endif%}</td>
+        <td>{{ path['note'] }}</td>
+    </tr>
 
-{% endfor %}
+    {% endfor %}
 
-<tr>
-    <td>Total</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td>{{ n_scats }}</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <tr>
+        <td>Total</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>{{ n_scats }}</td>
+        <td></td>
+        <td></td>
+        <td></td>
 
-</tr>
+    </tr>
 
 </table>
 {% else %}
@@ -100,32 +119,32 @@ No paths found
         <th>Minimum number of wolves</th>
         <th>Track format</th>
         <th>Notes</th>
-        </tr>
+    </tr>
 
 
-{% for snowtrack in snowtracks %}
+    {% for snowtrack in snowtracks %}
 
-<tr>
+    <tr>
 
-    <td><a href="/view_snowtrack/{{ snowtrack['snowtrack_id'] }}">{{ snowtrack['snowtrack_id'] }}</a></td>
-    <td>{{ snowtrack['date'] }}</td>
-    <td>{{ snowtrack['sampling_season'] }}</td>
-    <td>{{ snowtrack['location'] }}</td>
-    <td>{{ snowtrack['municipality'] }}</td>
-    <td>{{ snowtrack['province'] }}</td>
-    <td>{{ snowtrack['region'] }}</td>
-    <td>{{ snowtrack['observer'] }}</td>
-    <td>{{ snowtrack['scalp_category'] }}</td>
-    <td>{{ snowtrack['sampling_type'] }}</td>
-    <td>{{ snowtrack['days_after_snowfall'] }}</td>
-    <td>{{ snowtrack['minimum_number_of_wolves'] }}</td>
-    <td>{{ snowtrack['track_format'] }}</td>
-    <td>{{ snowtrack['note'] }}</td>
+        <td><a href="/view_snowtrack/{{ snowtrack['snowtrack_id'] }}">{{ snowtrack['snowtrack_id'] }}</a></td>
+        <td>{{ snowtrack['date'] }}</td>
+        <td>{{ snowtrack['sampling_season'] }}</td>
+        <td>{{ snowtrack['location'] }}</td>
+        <td>{{ snowtrack['municipality'] }}</td>
+        <td>{{ snowtrack['province'] }}</td>
+        <td>{{ snowtrack['region'] }}</td>
+        <td>{{ snowtrack['observer'] }}</td>
+        <td>{{ snowtrack['scalp_category'] }}</td>
+        <td>{{ snowtrack['sampling_type'] }}</td>
+        <td>{{ snowtrack['days_after_snowfall'] }}</td>
+        <td>{{ snowtrack['minimum_number_of_wolves'] }}</td>
+        <td>{{ snowtrack['track_format'] }}</td>
+        <td>{{ snowtrack['note'] }}</td>
 
 
-</tr>
+    </tr>
 
-{% endfor %}
+    {% endfor %}
 </table>
 {% else %}
 No snow tracks found
@@ -151,7 +170,3 @@ Transect ID <b>{{transect_id}}</b> not found
 {% endif %}
 
 {% endblock %}
-
-
-
-
