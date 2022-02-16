@@ -17,7 +17,7 @@ import calendar
 from .transect_form import Transect
 import functions as fn
 from . import transects_export
-from italian_regions import regions
+from italian_regions import regions, province_codes
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 
@@ -245,16 +245,44 @@ def new_transect():
             if len(rows):
                 return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-            transect_regions = fn.get_regions(request.form["province"])
-            if request.form["province"] and transect_regions == "":
-                return not_valid("Check the province field!")
+            # convert province code in province name
+            if request.form["province"].upper() in province_codes:
+                transect_province_name = province_codes[request.form["province"].upper()]["nome"]
+                transect_region = province_codes[request.form["province"].upper()]["regione"]
+            else:
+                transect_province_name = request.form["province"].strip().upper()
+                transect_region = fn.province_name2region(request.form["province"])
 
-            sql = (
-                "INSERT INTO transects (transect_id, sector, location, municipality, province, region, multilines) "
-                "VALUES (%s, %s, %s, %s, %s, %s, ST_GeomFromText(%s , 32632))"
-            )
+            if request.form["multilines"]:
+                sql = (
+                    "INSERT INTO transects (transect_id, sector, location, municipality, province, region, multilines) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, ST_GeomFromText(%s , 32632))"
+                )
 
-            try:
+                try:
+                    cursor.execute(
+                        sql,
+                        [
+                            request.form["transect_id"].upper().strip(),
+                            request.form["sector"].strip(),
+                            request.form["location"].strip(),
+                            request.form["municipality"].strip(),
+                            transect_province_name,
+                            transect_region,
+                            request.form["multilines"].strip(),
+                        ],
+                    )
+                    connection.commit()
+
+                except Exception:
+                    return not_valid(f"Check the MultiLineString field")
+
+            else:
+                sql = (
+                    "INSERT INTO transects (transect_id, sector, location, municipality, province, region) "
+                    "VALUES (%s, %s, %s, %s, %s, %s)"
+                )
+
                 cursor.execute(
                     sql,
                     [
@@ -262,16 +290,11 @@ def new_transect():
                         request.form["sector"].strip(),
                         request.form["location"].strip(),
                         request.form["municipality"].strip(),
-                        request.form["province"].strip().upper(),
-                        transect_regions,
-                        request.form["multilines"].strip(),
+                        transect_province_name,
+                        transect_region,
                     ],
                 )
-
                 connection.commit()
-
-            except Exception:
-                return not_valid(f"Check the MultiLineString field")
 
             return redirect("/transects_list")
         else:
@@ -346,31 +369,47 @@ def edit_transect(transect_id):
                 if len(rows):
                     return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-            transect_regions = fn.get_regions(request.form["province"])
-            if request.form["province"] and transect_regions == "":
-                return not_valid("Check the province field!")
+            # convert province code in province name
+            if request.form["province"].upper() in province_codes:
+                transect_province_name = province_codes[request.form["province"].upper()]["nome"]
+                transect_region = province_codes[request.form["province"].upper()]["regione"]
+            else:
+                transect_province_name = request.form["province"].strip().upper()
+                transect_region = fn.province_name2region(request.form["province"])
 
             sql = (
-                "UPDATE transects SET transect_id = %s, sector =%s, location = %s, municipality = %s, province = %s, region = %s, multilines = ST_GeomFromText(%s , 32632) "
+                "UPDATE transects SET transect_id = %s, sector =%s, location = %s, municipality = %s, province = %s, region = %s "
                 "WHERE transect_id = %s"
             )
-            try:
-                cursor.execute(
-                    sql,
-                    [
-                        request.form["transect_id"].strip(),
-                        request.form["sector"] if request.form["sector"] else None,
-                        request.form["location"].strip(),
-                        request.form["municipality"].strip(),
-                        request.form["province"].strip().upper(),
-                        transect_regions,
-                        request.form["multilines"].strip(),
-                        transect_id,
-                    ],
-                )
-                connection.commit()
-            except Exception:
-                return not_valid(f"Check the MultiLineString field")
+
+            cursor.execute(
+                sql,
+                [
+                    request.form["transect_id"].strip(),
+                    request.form["sector"] if request.form["sector"] else None,
+                    request.form["location"].strip(),
+                    request.form["municipality"].strip(),
+                    transect_province_name,
+                    transect_region,
+                    transect_id,
+                ],
+            )
+            connection.commit()
+
+            if request.form["multilines"].strip():
+                try:
+                    sql = "UPDATE transects SET multilines = ST_GeomFromText(%s , 32632) WHERE transect_id = %s"
+                    cursor.execute(
+                        sql,
+                        [
+                            request.form["multilines"].strip(),
+                            transect_id,
+                        ],
+                    )
+                    connection.commit()
+
+                except Exception:
+                    return not_valid(f"Check the MultiLineString field")
 
             return redirect(f"/view_transect/{transect_id}")
         else:

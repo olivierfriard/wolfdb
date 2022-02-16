@@ -200,18 +200,32 @@ def province_name2code(province_name):
     return ""
 
 
-def get_region(province):
+def get_region(province_code):
     """
     get region by province code
     """
-    scat_region = ""
-    if province:
+    region_out = ""
+    if province_code:
         for region in regions:
-            if province.upper() in region["province"]:
-                scat_region = region["nome"]
+            if province_code.upper() in region["province"]:
+                region_out = region["nome"]
                 break
 
-    return scat_region
+    return region_out
+
+
+def province_name2region(province_name):
+    """
+    get region by province name
+    """
+    region_out = ""
+    if province_name:
+        for region in regions:
+            if province_name.upper() in [x.upper() for x in region["capoluoghi"]]:
+                region_out = region["nome"]
+                break
+
+    return region_out
 
 
 def get_regions(provinces):
