@@ -16,35 +16,89 @@
 
 <h2>Track ID: {{ results["snowtrack_id"] }}</h2>
 
-<a href="/edit_snowtrack/{{results["snowtrack_id"] }}" class="btn btn-primary">Edit</a>
-<a href="/del_snowtrack/{{ results["snowtrack_id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete track</a>
+<a href="/edit_snowtrack/{{results['snowtrack_id'] }}" class="btn btn-danger">Edit</a>
+<a href="/del_snowtrack/{{ results['snowtrack_id'] }}" class="btn btn-danger"
+    onclick="return confirm('Are you sure?')">Delete track</a>
+<br>
+<br>
+
 
 <table class="table table-striped">
 
-<tr><td>Date</td><td>{{ results["date"] }}</td></tr>
-<tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
+    <tr>        <td>Date</td>
+        <td>{{ results["date"] }}</td>
+    </tr>
+    <tr>
+        <td>Sampling season</td>
+        <td>{{ results["sampling_season"] }}</td>
+    </tr>
 
-<tr><td>Sampling type</td><td>{% if results["sampling_type"] %}{{ results["sampling_type"] }}{% endif %}</td></tr>
+    <tr>
+        <td>Sampling type</td>
+        <td>{% if results["sampling_type"] %}{{ results["sampling_type"] }}{% endif %}</td>
+    </tr>
 
-<tr><td>Track type</td><td>{% if results["track_type"] %}{{ results["track_type"] }}{% endif %}</td></tr>
+    <tr>
+        <td>Track type</td>
+        <td>{% if results["track_type"] %}{{ results["track_type"] }}{% endif %}</td>
+    </tr>
 
-<tr><td>Location</td><td>{% if results["location"] %}{{ results["location"] }}{% endif %}</td></tr>
-<tr><td>Municipality</td><td>{% if results["municipality"] %}{{ results["municipality"] }}{% endif %}</td></tr>
-<tr><td>Province</td><td>{{ results["province"] }}</td></tr>
+    <tr>
+        <td>Location</td>
+        <td>{% if results["location"] %}{{ results["location"] }}{% endif %}</td>
+    </tr>
+    <tr>
+        <td>Municipality</td>
+        <td>{% if results["municipality"] %}{{ results["municipality"] }}{% endif %}</td>
+    </tr>
+    <tr>
+        <td>Province</td>
+        <td>{{ results["province"] }}</td>
+    </tr>
 
-<tr><td>Region</td><td>{{ results["region"] }}</td></tr>
-<tr><td>Operator</td><td>{% if results["observer"] %}{{ results["observer"] }}{% endif %}</td></tr>
-<tr><td>Institution</td><td>{% if results["institution"] %}{{ results["institution"] }}{% endif %}</td></tr>
-<tr><td>Scalp category</td><td>{{ results["scalp_category"] }}</td></tr>
-<tr><td>Transect ID</td><td><a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a></td></tr>
-<tr><td>Days after snowfall</td><td>{{ results['days_after_snowfall'] }}</td></tr>
-<tr><td>Minimum number of wolves</td><td>{{ results['minimum_number_of_wolves'] }}</td></tr>
-<tr><td>Track format</td><td>{{ results['track_format'] }}</td></tr>
-<tr><td>Notes</td><td>{{ results['notes'] }}</td></tr>
+    <tr>
+        <td>Region</td>
+        <td>{{ results["region"] }}</td>
+    </tr>
+    <tr>
+        <td>Operator</td>
+        <td>{% if results["observer"] %}{{ results["observer"] }}{% endif %}</td>
+    </tr>
+    <tr>
+        <td>Institution</td>
+        <td>{% if results["institution"] %}{{ results["institution"] }}{% endif %}</td>
+    </tr>
+    <tr>
+        <td>Scalp category</td>
+        <td>{{ results["scalp_category"] }}</td>
+    </tr>
+    <tr>
+        <td>Transect ID</td>
+        <td>
+            {% if results['transect_id'] is not none %}
+            <a href="/view_transect/{{ results['transect_id'] }}">{{ results['transect_id'] }}</a>
+            {% endif %}
+
+        </td>
+    </tr>
+    <tr>
+        <td>Days after snowfall</td>
+        <td>{{ results['days_after_snowfall'] if results['days_after_snowfall'] is not none else "" }}</td>
+    </tr>
+    <tr>
+        <td>Minimum number of wolves</td>
+        <td>{{ results['minimum_number_of_wolves'] if results['minimum_number_of_wolves'] is not none else "" }}</td>
+    </tr>
+    <tr>
+        <td>Track format</td>
+        <td>{{ results['track_format'] if results['track_format'] is not none else "" }}</td>
+    </tr>
+    <tr>
+        <td>Notes</td>
+        <td>{{ results['notes'] }}</td>
+    </tr>
 
 </table>
 
 
 {% endblock %}
-
-
