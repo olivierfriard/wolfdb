@@ -17,7 +17,9 @@
 <a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
 <a href="/view_genetic_data/{{ wa_code }}" class="btn btn-primary">View genetic data for {{ wa_code }}</a>&nbsp;
 <br><br>
-<a href="{{go_back_url}}" class="btn btn-primary">Go back to WA samples</a>
+<a href="{{go_back_url}}" class="btn btn-primary">Go back to WA samples</a></a>&nbsp;
+
+<a href="/wa_genetic_samples/with_notes" class="btn btn-primary">WA samples with notes</a></a>&nbsp;
 
 <br>
 <br>
@@ -26,80 +28,84 @@
 <br>
 <form method="POST" action="/add_genetic_data/{{ wa_code }}">
 
-<span style="font-size: larger;">
-<b>Sex</b>
-<select name="sex" id="sex">
-<option value="" {% if sex == "" %}selected{% endif %}></option>
-<option value="M" {% if sex == "M" %}selected{% endif %}>M</option>
-<option value="F" {% if sex == "F" %}selected{% endif %}>F</option>
-</select>
-</span>
-<br>
-<br>
+    <span style="font-size: larger;">
+        <b>Sex</b>
+        <select name="sex" id="sex">
+            <option value="" {% if sex=="" %}selected{% endif %}></option>
+            <option value="M" {% if sex=="M" %}selected{% endif %}>M</option>
+            <option value="F" {% if sex=="F" %}selected{% endif %}>F</option>
+        </select>
+    </span>
+    <br>
+    <br>
 
-<table class="table table-striped">
-<tr>
+    <table class="table table-striped">
+        <tr>
 
-<th>Locus</th>
-<th>Allele a</th>
-<th>Notes</th>
-<th>Allele b</th>
-<th>Notes</th>
-<th>History</th>
+            <th>Locus</th>
+            <th>Allele a</th>
+            <th>Notes</th>
+            <th>Allele b</th>
+            <th>Notes</th>
+            <th>History</th>
 
-</tr>
-{% for locus in loci %}
-<tr>
-<td>
+        </tr>
+        {% for locus in loci %}
+        <tr>
+            <td>
 
-{{ locus['name'] }}
+                {{ locus['name'] }}
 
-</td>
+            </td>
 
-<td {% if 'OK|' in loci_values[locus['name']]['a']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
-<input type="text" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value="" pattern="[0-9]*"><br>
-<small>Current value: <b>{{ loci_values[locus['name']]['a']['value'] }}</b></small>
+            <td {% if 'OK|' in loci_values[locus['name']]['a']['user_id'] %}style="background: #90ee90" {%else%}{% if
+                loci_values[locus['name']]['a']['notes'] %}style="background: #FF6461" {%endif%}{%endif%}>
+                <input type="text" id="{{ locus['name'] }}_a" name="{{ locus['name'] }}_a" value=""
+                    pattern="[0-9]*"><br>
+                <small>Current value: <b>{{ loci_values[locus['name']]['a']['value'] }}</b></small>
 
-{% if loci_values[locus['name']]['a']['notes'] %}<br><small>Notes:</small>{% endif %}
-<small><b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small>
-</td>
+                {% if loci_values[locus['name']]['a']['notes'] %}<br><small>Notes:</small>{% endif %}
+                <small><b>{{ loci_values[locus['name']]['a']['notes'] }}</b></small>
+            </td>
 
-<td><input type="text" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""><br>
-</td>
+            <td><input type="text" id="{{ locus['name'] }}_a_notes" name="{{ locus['name'] }}_a_notes" value=""><br>
+            </td>
 
-{% if locus['n_alleles'] == 2 %}
-<td {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
-<input type="text" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value="" pattern="[0-9]*"><br>
+            {% if locus['n_alleles'] == 2 %}
+            <td {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90" {%else%}{% if
+                loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461" {%endif%}{%endif%}>
+                <input type="text" id="{{ locus['name'] }}_b" name="{{ locus['name'] }}_b" value=""
+                    pattern="[0-9]*"><br>
 
-<small>Current value: <b>{{ loci_values[locus['name']]['b']['value'] }}</b></small>
+                <small>Current value: <b>{{ loci_values[locus['name']]['b']['value'] }}</b></small>
 
-{% if loci_values[locus['name']]['b']['notes'] %}<br><small>Notes:</small>{% endif %}
+                {% if loci_values[locus['name']]['b']['notes'] %}<br><small>Notes:</small>{% endif %}
 
-<span {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
-<small><b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small>
-</span>
+                <span {% if 'OK|' in loci_values[locus['name']]['b']['user_id'] %}style="background: #90ee90" {%else%}{%
+                    if loci_values[locus['name']]['b']['notes'] %}style="background: #FF6461" {%endif%}{%endif%}>
+                    <small><b>{{ loci_values[locus['name']]['b']['notes'] }}</b></small>
+                </span>
 
-</td>
+            </td>
 
-<td><input type="text" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""><br>
+            <td><input type="text" id="{{ locus['name'] }}_b_notes" name="{{ locus['name'] }}_b_notes" value=""><br>
 
-</td>
-{% else %}
-<td></td>
-<td></td>
-{% endif %}
+            </td>
+            {% else %}
+            <td></td>
+            <td></td>
+            {% endif %}
 
-<td><a class="btn btn-sm btn-primary" href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
+            <td><a class="btn btn-sm btn-primary"
+                    href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
 
-</tr>
-{% endfor %}
+        </tr>
+        {% endfor %}
 
-</table>
+    </table>
 
-<center><button type="submit" class="btn btn-danger btn-lg">Submit</button></center>
+    <center><button type="submit" class="btn btn-danger btn-lg">Submit</button></center>
 
 </form>
 
 {% endblock %}
-
-

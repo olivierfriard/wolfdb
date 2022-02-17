@@ -17,6 +17,9 @@
 
 <a href="{{ go_back_url }}" class="btn btn-primary">Go back to WA samples</a>&nbsp;
 
+
+<a href="/wa_genetic_samples/with_notes" class="btn btn-primary">WA samples with notes</a></a>&nbsp;
+
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;
 <br>
 <br>
@@ -27,55 +30,59 @@
 
 
 <table class="table table-striped">
-<tr>
-<th>Locus</th>
-<th>Allele a</th>
-<th>Date</th>
-<th>Notes</th>
-<th></th>
-<th>Allele b</th>
-<th>Date</th>
-<th>Notes</th>
-<th>History</th>
-</tr>
-{% for locus in loci_list %}
-<tr>
-<td>{{ locus }}</td>
+    <tr>
+        <th>Locus</th>
+        <th>Allele a</th>
+        <th>Date</th>
+        <th>Notes</th>
+        <th></th>
+        <th>Allele b</th>
+        <th>Date</th>
+        <th>Notes</th>
+        <th>History</th>
+    </tr>
+    {% for locus in loci_list %}
+    <tr>
+        <td>{{ locus }}</td>
 
-<td style="{% if 'OK|' in data[locus]['a']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ data[locus]['a']['value'] }}
-</td>
+        <td
+            style="{% if 'OK|' in data[locus]['a']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            {{ data[locus]['a']['value'] }}
+        </td>
 
-<td><small>{{ data[locus]['a']['date'] }}</small></td>
+        <td><small>{{ data[locus]['a']['date'] }}</small></td>
 
-<td style="{% if 'OK|' in data[locus]['a']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-<small>{{ data[locus]['a']['notes'] }}</small>
-{% if data[locus]['a']['user_id'] %}
-<br><small>(Inserted by {{data[locus]['a']['user_id']}})</small>
-{% endif %}
-</td>
-
-
-<td style="background: #eeeeee">&nbsp;</td>
-
-<td  style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ data[locus]['b']['value'] }}
-</td>
-
-<td><small>{{ data[locus]['b']['date'] }}</small></td>
-
-<td  style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-<small>{{ data[locus]['b']['notes'] }}</small>
-{% if data[locus]['b']['user_id'] %}
-<br><small>(Inserted by {{data[locus]['b']['user_id']}})</small>
-{% endif %}
-</td>
+        <td
+            style="{% if 'OK|' in data[locus]['a']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            <small>{{ data[locus]['a']['notes'] }}</small>
+            {% if data[locus]['a']['user_id'] %}
+            <br><small>(Inserted by {{data[locus]['a']['user_id']}})</small>
+            {% endif %}
+        </td>
 
 
-<td><a class="btn btn-sm btn-primary" href="/view_genetic_data_history/{{ wa_code }}/{{ locus }}">view</a></td>
+        <td style="background: #eeeeee">&nbsp;</td>
 
-</tr>
-{% endfor %}
+        <td
+            style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            {{ data[locus]['b']['value'] }}
+        </td>
+
+        <td><small>{{ data[locus]['b']['date'] }}</small></td>
+
+        <td
+            style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            <small>{{ data[locus]['b']['notes'] }}</small>
+            {% if data[locus]['b']['user_id'] %}
+            <br><small>(Inserted by {{data[locus]['b']['user_id']}})</small>
+            {% endif %}
+        </td>
+
+
+        <td><a class="btn btn-sm btn-primary" href="/view_genetic_data_history/{{ wa_code }}/{{ locus }}">view</a></td>
+
+    </tr>
+    {% endfor %}
 
 </table>
 
