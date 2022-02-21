@@ -26,25 +26,30 @@
 
 {% if results %}
 <h2>List of {{ n_tracks }} tracks</h2>
+
+
+<style>th {top: 0; position: sticky;}</style>
+
 <table class="table table-striped">
 <tr>
-<th>Track ID</th>
-<th>Sampling type</th>
-<th>Transect ID</th>
-<th>Date</th>
-<th>Sampling season</th>
-<th>Track type</th>
-<th>Location</th>
-<th>Municipality</th>
-<th>Province</th>
-<th>Region</th>
-<th>Operator</th>
-<th>Institution</th>
-<th>Scalp category</th>
-<th>Days after snowfall</th>
-<th>Minimum number of wolves</th>
-<th>Track format</th>
-<th>Notes</th>
+<th style="background-color: white;">Track ID</th>
+<th style="background-color: white;">Sampling type</th>
+<th style="background-color: white;">Transect ID</th>
+<th style="background-color: white;">Date</th>
+<th style="background-color: white;">Sampling season</th>
+<th style="background-color: white;">Track type</th>
+<th style="background-color: white;">Coordinates</th>
+<th style="background-color: white;">Location</th>
+<th style="background-color: white;">Municipality</th>
+<th style="background-color: white;">Province</th>
+<th style="background-color: white;">Region</th>
+<th style="background-color: white;">Operator</th>
+<th style="background-color: white;">Institution</th>
+<th style="background-color: white;">Scalp category</th>
+<th style="background-color: white;">Days after snowfall</th>
+<th style="background-color: white;">Minimum number of wolves</th>
+<th style="background-color: white;">Track format</th>
+<th style="background-color: white;">Notes</th>
 
 </tr>
 {% for result in results %}
@@ -59,12 +64,14 @@
         <a href="/view_transect/{{ tr }}">{{ tr }}</a><br>
     {% endfor %}
 
-
     </td>
 
     <td>{{ result['date'] }}</td>
     <td>{{ result['sampling_season'] }}</td>
     <td>{% if result["track_type"] %}{{ result['track_type'] }}{% endif %}</td>
+
+    <td>{% if result["multilines"] is not none %}Yes{% else %}No{%endif%}</td>
+
     <td>{% if result["location"] %}{{ result['location'] }}{% endif %}</td>
     <td>{{ result['municipality'] }}</td>
     <td>{{ result['province'] }}</td>
@@ -83,7 +90,7 @@
 </table>
 {% else %}
 
-<h2>No snow track found</h2>
+<h2>No track found</h2>
 
 {% endif %}
 

@@ -168,11 +168,14 @@ def view_snowtrack(snowtrack_id):
         ),
     )
 
-
+@app.route("/tracks_list")
 @app.route("/snowtracks_list")
 @fn.check_login
 def snowtracks_list():
-    # get  all tracks
+    """
+    list of tracks
+    """
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
