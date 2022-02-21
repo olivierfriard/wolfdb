@@ -108,6 +108,7 @@ No paths found
         <th>snow-tracking ID</th>
         <th>Date</th>
         <th>Sampling season</th>
+        <th>Coordinates</th>
         <th>Location</th>
         <th>Municipality</th>
         <th>Province</th>
@@ -129,6 +130,7 @@ No paths found
         <td><a href="/view_snowtrack/{{ snowtrack['snowtrack_id'] }}">{{ snowtrack['snowtrack_id'] }}</a></td>
         <td>{{ snowtrack['date'] }}</td>
         <td>{{ snowtrack['sampling_season'] }}</td>
+        <td>{% if snowtrack['multilines'] is not none %}Yes{% else %}No{% endif %}</td>
         <td>{{ snowtrack['location'] }}</td>
         <td>{{ snowtrack['municipality'] }}</td>
         <td>{{ snowtrack['province'] }}</td>

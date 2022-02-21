@@ -61,7 +61,7 @@ def view_transect(transect_id):
     transect = cursor.fetchone()
 
     if transect is None:
-        flash(fn.alert_danger(f"<b>Track {transect_id} not found</b>"))
+        flash(fn.alert_danger(f"<b>Transect {transect_id} not found</b>"))
         return redirect("/transects_list")
 
     transect_features = []
@@ -158,28 +158,28 @@ def view_transect(transect_id):
         if row["track_geojson"] is not None:
             track_geojson = json.loads(row["track_geojson"])
 
-        for line in track_geojson["coordinates"]:
-            latitudes = [lat for _, lat in line]
-            longitudes = [lon for lon, _ in line]
+            for line in track_geojson["coordinates"]:
+                latitudes = [lat for _, lat in line]
+                longitudes = [lon for lon, _ in line]
 
-            min_lat = min(min_lat, min(latitudes))
-            max_lat = max(max_lat, max(latitudes))
+                min_lat = min(min_lat, min(latitudes))
+                max_lat = max(max_lat, max(latitudes))
 
-            min_lon = min(min_lon, min(longitudes))
-            max_lon = max(max_lon, max(longitudes))
+                min_lon = min(min_lon, min(longitudes))
+                max_lon = max(max_lon, max(longitudes))
 
-        track_feature = {
-            "geometry": dict(track_geojson),
-            "type": "Feature",
-            "properties": {
-                # "style": {"color": color, "fillColor": color },
-                "popupContent": (
-                    f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
-                ),
-            },
-            "id": row["snowtrack_id"],
-        }
-        track_features.append(track_feature)
+            track_feature = {
+                "geometry": dict(track_geojson),
+                "type": "Feature",
+                "properties": {
+                    # "style": {"color": color, "fillColor": color },
+                    "popupContent": (
+                        f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
+                    ),
+                },
+                "id": row["snowtrack_id"],
+            }
+            track_features.append(track_feature)
 
     return render_template(
         "view_transect.html",
