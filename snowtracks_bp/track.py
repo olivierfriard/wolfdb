@@ -66,3 +66,5 @@ class Track(Form):
                                 default="")
 
     notes = TextAreaField("Notes", [])
+
+    multilines = TextAreaField("MultiLineString (WKT)", [])

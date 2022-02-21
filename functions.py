@@ -14,6 +14,8 @@ from config import config
 import urllib.request
 import json
 
+from jinja2 import Template
+
 from italian_regions import regions, province_codes, prov_name2prov_code
 
 params = config()
@@ -302,8 +304,6 @@ L.geoJSON([scats], {
     pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, {
             radius: 8,
-            fillColor: "#ff7800",
-            color: "#red",
             weight: 1,
             opacity: 1,
             fillOpacity: 0.8
@@ -313,7 +313,11 @@ L.geoJSON([scats], {
 
 
 L.geoJSON(transects, {
-    onEachFeature: onEachFeature
+    onEachFeature: onEachFeature,
+    style: function(){
+    return { color: 'red' }
+  }
+
 }).addTo(map);
 
 
@@ -686,3 +690,113 @@ def reverse_geocoding(lon_lat: list) -> dict:
         "municipality": municipality,
         "location": location,
     }
+
+
+def leaflet_geojson2(data) -> str:
+
+    # center, scat_features, transect_features, fit="", zoom=13
+
+    map = Template(
+        """
+
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+
+<script>
+
+var transects = {
+    "type": "FeatureCollection",
+    "features": {{ transects}}
+};
+
+
+var scats = {
+    "type": "FeatureCollection",
+    "features": {{ scats }}
+};
+
+
+var dead_wolves = {
+    "type": "FeatureCollection",
+    "features": {{ dead_wolves }}
+};
+
+
+var map = L.map('map').setView([{{ center }}], {{ zoom }});
+
+/*
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+*/
+
+
+L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
+	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+}).addTo(map);
+
+
+function onEachFeature(feature, layer) {
+    var popupContent = "";
+
+    if (feature.properties && feature.properties.popupContent) {
+        popupContent += feature.properties.popupContent;
+    }
+
+    layer.bindPopup(popupContent);
+}
+
+L.geoJSON([scats], {
+
+    style: function (feature) {
+        return feature.properties && feature.properties.style;
+    },
+
+    onEachFeature: onEachFeature,
+
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            radius: 8,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+    }
+}).addTo(map);
+
+
+L.geoJSON(transects, {
+    onEachFeature: onEachFeature,
+    style: function(){
+    return { color: 'red' }
+  }
+
+}).addTo(map);
+
+
+var scale = L.control.scale(); // Creating scale control
+         scale.addTo(map); // Adding scale control to the map
+
+
+var markerBounds = L.latLngBounds([{{ fit }}]);
+map.fitBounds(markerBounds);
+
+</script>
+
+    """
+    )
+
+    return map.render(
+        {
+            "transects": data.get("transects", ""),
+            "scats": data.get("scats", ""),
+            "dead_wolves": data.get("dead_wolves", ""),
+            "center": data.get("center", ""),
+            "zoom": data.get("zoom", 13),
+        }
+    )

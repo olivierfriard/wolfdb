@@ -56,15 +56,15 @@ def view_transect(transect_id):
     transect = cursor.fetchone()
 
     if transect is None:
-
-        return render_template(
-            "view_transect.html", transect={}, paths={}, snowtracks={}, transect_id=transect_id, n_scats=0, map=""
-        )
+        flash(fn.alert_danger(f"<b>Track {transect_id} not found</b>"))
+        return redirect("/transects_list")
 
     center = f"45, 7"
     transect_features = []
     min_lat, max_lat = 90, -90
     min_lon, max_lon = 90, -90
+
+    color = "red"
 
     if transect["transect_geojson"] is not None:
         transect_geojson = json.loads(transect["transect_geojson"])
@@ -77,8 +77,11 @@ def view_transect(transect_id):
 
         transect_feature = {
             "type": "Feature",
+            "properties": {
+                "style": {"stroke": color, "stroke-width": 2, "stroke-opacity": 1},
+                "popupContent": transect_id,
+            },
             "geometry": dict(transect_geojson),
-            "properties": {"popupContent": transect_id},
             "id": 1,
         }
         transect_features = [transect_feature]
@@ -151,7 +154,9 @@ def view_transect(transect_id):
         snowtracks=results_snowtracks,
         transect_id=transect_id,
         n_scats=n_scats,
-        map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, fit=str(fit))),
+        #map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, fit=str(fit))),
+        map=Markup(fn.leaflet_geojson({"center": center,
+                                       scat_features, transect_features, fit=str(fit))),
     )
 
 

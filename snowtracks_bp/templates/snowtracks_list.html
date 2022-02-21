@@ -15,6 +15,14 @@
 <br>
 <br>
 
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+{{ message }}
+{% endfor %}
+{% endif %}
+{% endwith %}
+
 
 {% if results %}
 <h2>List of {{ n_tracks }} tracks</h2>
