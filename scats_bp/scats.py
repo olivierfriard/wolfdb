@@ -183,6 +183,8 @@ def plot_all_scats():
     plot all scats
     """
 
+    scats_color = "orange"
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
@@ -207,7 +209,7 @@ def plot_all_scats():
             "geometry": dict(scat_geojson),
             "type": "Feature",
             "properties": {
-                "style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
+                # "style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
                 "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
             },
             "id": row["scat_id"],
@@ -215,14 +217,16 @@ def plot_all_scats():
 
         scat_features.append(dict(scat_feature))
 
-    center = f"45 , 9"
-
     return render_template(
         "plot_all_scats.html",
         header_title="Plot of scats",
         map=Markup(
-            fn.leaflet_geojson(
-                center, scat_features, [], fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": scats_color,
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                }
             )
         ),
     )

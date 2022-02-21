@@ -61,6 +61,10 @@ def view_snowtrack(snowtrack_id):
     """
     visualize the snow track
     """
+
+    tracks_color = "blue"
+    scats_color = "orange"
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -83,9 +87,8 @@ def view_snowtrack(snowtrack_id):
     min_lat, max_lat = 90, -90
     min_lon, max_lon = 90, -90
 
-    color = "blue"
-
     if track["track_geojson"] is not None:
+        has_coordinates = True
         track_geojson = json.loads(track["track_geojson"])
 
         for line in track_geojson["coordinates"]:
@@ -98,12 +101,14 @@ def view_snowtrack(snowtrack_id):
             "type": "Feature",
             "geometry": dict(track_geojson),
             "properties": {
-                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
-                "popupContent": snowtrack_id,
+                # "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                "popupContent": f"Track ID: {snowtrack_id}",
             },
-            "id": 1,
+            "id": snowtrack_id,
         }
         track_features = [track_feature]
+    else:
+        has_coordinates = False
 
     # number of scats
     cursor.execute(
@@ -112,13 +117,13 @@ def view_snowtrack(snowtrack_id):
             "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
             "FROM scats WHERE snowtrack_id LIKE %s"
         ),
-        [f"{snowtrack_id}|%"],
+        [snowtrack_id],
     )
 
     scats = cursor.fetchall()
     n_scats = len(scats)
     scat_features = []
-    color = "orange"
+
     for row in scats:
         scat_geojson = json.loads(row["scat_lonlat"])
 
@@ -133,7 +138,7 @@ def view_snowtrack(snowtrack_id):
             "geometry": dict(scat_geojson),
             "type": "Feature",
             "properties": {
-                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                # "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                 "popupContent": (
                     f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
@@ -144,14 +149,23 @@ def view_snowtrack(snowtrack_id):
         }
         scat_features.append(scat_feature)
 
-    fit = [[min_lat, min_lon], [max_lat, max_lon]]
-
     return render_template(
         "view_snowtrack.html",
         header_title=f"Track ID: {snowtrack_id}",
         results=track,
+        has_coordinates=has_coordinates,
         n_scats=n_scats,
-        map=Markup(fn.leaflet_geojson(f"45, 7", scat_features, track_features, fit=str(fit))),
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": scats_color,
+                    "tracks": track_features,
+                    "tracks_color": tracks_color,
+                    "fit": [[min_lat, min_lon], [max_lat, max_lon]],
+                }
+            )
+        ),
     )
 
 

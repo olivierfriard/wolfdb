@@ -114,10 +114,18 @@ Number of scats found: {{ n_scats }}
 
 {% endif %}
 
+{% if n_scats or has_coordinates %}
+
 <h2>Map</h2>
+
+{% if not has_coordinates %}
+<b>Track has no coordinates</b><br>
+<br>
+{% endif %}
 <div id="map" style="width: 1200px; height: 600px;"></div>
 
 {{ map }}
 
+{% endif %}
 
 {% endblock %}

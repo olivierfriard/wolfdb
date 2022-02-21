@@ -692,9 +692,15 @@ def reverse_geocoding(lon_lat: list) -> dict:
     }
 
 
-def leaflet_geojson2(data) -> str:
+def leaflet_geojson2(data: dict) -> str:
 
     # center, scat_features, transect_features, fit="", zoom=13
+
+    SCATS_COLOR_DEFAULT = "orange"
+    TRANSECTS_COLOR_DEFAULT = "red"
+    TRACKS_COLOR_DEFAULT = "blue"
+    DEAD_WOLVES_COLOR_DEFAULT = "purple"
+    CENTER_DEFAULT = "45, 7"
 
     map = Template(
         """
@@ -714,18 +720,20 @@ var transects = {
     "features": {{ transects}}
 };
 
+var tracks = {
+    "type": "FeatureCollection",
+    "features": {{ tracks}}
+};
 
 var scats = {
     "type": "FeatureCollection",
     "features": {{ scats }}
 };
 
-
 var dead_wolves = {
     "type": "FeatureCollection",
     "features": {{ dead_wolves }}
 };
-
 
 var map = L.map('map').setView([{{ center }}], {{ zoom }});
 
@@ -743,60 +751,92 @@ L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
 
 function onEachFeature(feature, layer) {
     var popupContent = "";
-
     if (feature.properties && feature.properties.popupContent) {
         popupContent += feature.properties.popupContent;
     }
-
     layer.bindPopup(popupContent);
 }
 
 L.geoJSON([scats], {
 
-    style: function (feature) {
-        return feature.properties && feature.properties.style;
-    },
+    style: function (feature) { return feature.properties && feature.properties.style; },
 
     onEachFeature: onEachFeature,
 
     pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, {
+            color: '{{ scats_color }}',
+            fillcolor: '{{ scats_color }}',
             radius: 8,
             weight: 1,
             opacity: 1,
-            fillOpacity: 0.8
+            fillOpacity: 1
         });
     }
 }).addTo(map);
 
 
-L.geoJSON(transects, {
+L.geoJSON([dead_wolves], {
+
+    style: function (feature) { return feature.properties && feature.properties.style; },
+
     onEachFeature: onEachFeature,
-    style: function(){
-    return { color: 'red' }
-  }
+
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            color: '{{ dead_wolves_color }}',
+            fillcolor: '{{ dead_wolves_color }}',
+            radius: 8,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+        });
+    }
+}).addTo(map);
+
+
+
+L.geoJSON(transects, {
+
+    style: function(feature) { return { color: '{{ transects_color }}' } },
+
+    onEachFeature: onEachFeature,
 
 }).addTo(map);
 
 
-var scale = L.control.scale(); // Creating scale control
-         scale.addTo(map); // Adding scale control to the map
+L.geoJSON(tracks, {
 
+    style: function(feature) { return { color: '{{ tracks_color }}' } },
+
+    onEachFeature: onEachFeature,
+
+}).addTo(map);
+
+
+ // Creating scale control
+var scale = L.control.scale();
+scale.addTo(map);
 
 var markerBounds = L.latLngBounds([{{ fit }}]);
 map.fitBounds(markerBounds);
 
 </script>
-
-    """
+"""
     )
 
     return map.render(
         {
-            "transects": data.get("transects", ""),
-            "scats": data.get("scats", ""),
-            "dead_wolves": data.get("dead_wolves", ""),
-            "center": data.get("center", ""),
+            "transects": data.get("transects", []),
+            "transects_color": data.get("transects_color", TRANSECTS_COLOR_DEFAULT),
+            "tracks": data.get("tracks", []),
+            "tracks_color": data.get("tracks_color", TRACKS_COLOR_DEFAULT),
+            "scats": data.get("scats", []),
+            "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
+            "dead_wolves": data.get("dead_wolves", []),
+            "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),
+            "center": data.get("center", CENTER_DEFAULT),
             "zoom": data.get("zoom", 13),
+            "fit": data.get("fit", ""),
         }
     )

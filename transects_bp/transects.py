@@ -39,6 +39,11 @@ def view_transect(transect_id):
     """
     Display transect data
     """
+
+    scats_color = "orange"
+    transects_color = "red"
+    tracks_color = "blue"
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -59,12 +64,9 @@ def view_transect(transect_id):
         flash(fn.alert_danger(f"<b>Track {transect_id} not found</b>"))
         return redirect("/transects_list")
 
-    center = f"45, 7"
     transect_features = []
     min_lat, max_lat = 90, -90
     min_lon, max_lon = 90, -90
-
-    color = "red"
 
     if transect["transect_geojson"] is not None:
         transect_geojson = json.loads(transect["transect_geojson"])
@@ -78,8 +80,8 @@ def view_transect(transect_id):
         transect_feature = {
             "type": "Feature",
             "properties": {
-                "style": {"stroke": color, "stroke-width": 2, "stroke-opacity": 1},
-                "popupContent": transect_id,
+                # "style": {"stroke": transects_color, "stroke-width": 2, "stroke-opacity": 1},
+                "popupContent": f"Transect ID: {transect_id}",
             },
             "geometry": dict(transect_geojson),
             "id": 1,
@@ -98,6 +100,8 @@ def view_transect(transect_id):
     )
     results_paths = cursor.fetchall()
 
+    # scats
+
     # number of scats
     cursor.execute(
         (
@@ -110,8 +114,8 @@ def view_transect(transect_id):
 
     scats = cursor.fetchall()
     n_scats = len(scats)
+
     scat_features = []
-    color = "orange"
     for row in scats:
         scat_geojson = json.loads(row["scat_lonlat"])
 
@@ -126,7 +130,7 @@ def view_transect(transect_id):
             "geometry": dict(scat_geojson),
             "type": "Feature",
             "properties": {
-                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                # "style": {"color": color, "fillColor": color },
                 "popupContent": (
                     f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
@@ -138,25 +142,67 @@ def view_transect(transect_id):
         scat_features.append(scat_feature)
 
     # snow tracks
+
     cursor.execute(
-        "SELECT * FROM snow_tracks WHERE (transect_id = %s OR transect_id LIKE %s) ORDER BY date DESC",
+        (
+            "SELECT *, "
+            "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson "
+            "FROM snow_tracks WHERE (transect_id = %s OR transect_id LIKE %s) ORDER BY date DESC"
+        ),
         [transect_id, f"%{transect_id};%"],
     )
-    results_snowtracks = cursor.fetchall()
+    tracks = cursor.fetchall()
 
-    fit = [[min_lat, min_lon], [max_lat, max_lon]]
+    track_features = []
+    for row in tracks:
+        if row["track_geojson"] is not None:
+            track_geojson = json.loads(row["track_geojson"])
+
+        for line in track_geojson["coordinates"]:
+            latitudes = [lat for _, lat in line]
+            longitudes = [lon for lon, _ in line]
+
+            min_lat = min(min_lat, min(latitudes))
+            max_lat = max(max_lat, max(latitudes))
+
+            min_lon = min(min_lon, min(longitudes))
+            max_lon = max(max_lon, max(longitudes))
+
+        track_feature = {
+            "geometry": dict(track_geojson),
+            "type": "Feature",
+            "properties": {
+                # "style": {"color": color, "fillColor": color },
+                "popupContent": (
+                    f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
+                ),
+            },
+            "id": row["snowtrack_id"],
+        }
+        track_features.append(track_feature)
 
     return render_template(
         "view_transect.html",
         header_title=f"Transect {transect_id}",
         transect=transect,
         paths=results_paths,
-        snowtracks=results_snowtracks,
+        snowtracks=tracks,
         transect_id=transect_id,
         n_scats=n_scats,
-        #map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, fit=str(fit))),
-        map=Markup(fn.leaflet_geojson({"center": center,
-                                       scat_features, transect_features, fit=str(fit))),
+        # map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, fit=str(fit))),
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": scats_color,
+                    "transects": transect_features,
+                    "transects_color": transects_color,
+                    "tracks": track_features,
+                    "tracks_color": tracks_color,
+                    "fit": [[min_lat, min_lon], [max_lat, max_lon]],
+                }
+            )
+        ),
     )
 
 
@@ -445,6 +491,7 @@ def plot_transects():
     """
     Plot all transects
     """
+    transects_color = "red"
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -456,38 +503,43 @@ def plot_transects():
     tot_max_lat, tot_max_lon = -90, -90
 
     for row in cursor.fetchall():
-        transect_geojson = json.loads(row["transect_lonlat"])
+        if row["transect_lonlat"] is not None:
+            transect_geojson = json.loads(row["transect_lonlat"])
 
-        for line in transect_geojson["coordinates"]:
+            for line in transect_geojson["coordinates"]:
 
-            # bounding box
-            latitudes = [lat for _, lat in line]
-            longitudes = [lon for lon, _ in line]
-            tot_min_lat = min([tot_min_lat, min(latitudes)])
-            tot_max_lat = max([tot_max_lat, max(latitudes)])
-            tot_min_lon = min([tot_min_lon, min(longitudes)])
-            tot_max_lon = max([tot_max_lon, max(longitudes)])
+                # bounding box
+                latitudes = [lat for _, lat in line]
+                longitudes = [lon for lon, _ in line]
+                tot_min_lat = min([tot_min_lat, min(latitudes)])
+                tot_max_lat = max([tot_max_lat, max(latitudes)])
+                tot_min_lon = min([tot_min_lon, min(longitudes)])
+                tot_max_lon = max([tot_max_lon, max(longitudes)])
 
-        transect_feature = {
-            "geometry": dict(transect_geojson),
-            "type": "Feature",
-            "properties": {
-                # "style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
-                "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
-            },
-            "id": row["transect_id"],
-        }
+            transect_feature = {
+                "geometry": dict(transect_geojson),
+                "type": "Feature",
+                "properties": {
+                    "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
+                },
+                "id": row["transect_id"],
+            }
 
-        transects_features.append(dict(transect_feature))
+            transects_features.append(dict(transect_feature))
 
-    center = f"45 , 7"
+        else:
+            print(f"{row['transect_id']} WITHOUT coordinates")
 
     return render_template(
         "plot_transects.html",
         header_title="Plot of transects",
         map=Markup(
-            fn.leaflet_geojson(
-                center, [], transects_features, fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])
+            fn.leaflet_geojson2(
+                {
+                    "transects": transects_features,
+                    "transects_color": transects_color,
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                }
             )
         ),
     )
