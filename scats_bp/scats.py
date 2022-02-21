@@ -232,6 +232,62 @@ def plot_all_scats():
     )
 
 
+@app.route("/plot_all_scats_markerclusters")
+@fn.check_login
+def plot_all_scats_markerclusters():
+    """
+    plot all scats using the markercluster plugin
+    see https://github.com/Leaflet/Leaflet.markercluster#usage
+    """
+
+    scats_color = "orange"
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
+
+    scat_features = []
+
+    tot_min_lat, tot_min_lon = 90, 90
+    tot_max_lat, tot_max_lon = -90, -90
+
+    for row in cursor.fetchall():
+        scat_geojson = json.loads(row["scat_lonlat"])
+
+        # bounding box
+        lon, lat = scat_geojson["coordinates"]
+
+        tot_min_lat = min([tot_min_lat, lat])
+        tot_max_lat = max([tot_max_lat, lat])
+        tot_min_lon = min([tot_min_lon, lon])
+        tot_max_lon = max([tot_max_lon, lon])
+
+        scat_feature = {
+            "geometry": dict(scat_geojson),
+            "type": "Feature",
+            "properties": {
+                "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
+            },
+            "id": row["scat_id"],
+        }
+
+        scat_features.append(dict(scat_feature))
+
+    return render_template(
+        "plot_all_scats.html",
+        header_title="Plot of scats",
+        map=Markup(
+            fn.leaflet_geojson3(
+                {
+                    "scats": scat_features,
+                    "scats_color": scats_color,
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                }
+            )
+        ),
+    )
+
+
 @app.route("/scats_list")
 @fn.check_login
 def scats_list():

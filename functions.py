@@ -840,3 +840,184 @@ map.fitBounds(markerBounds);
             "fit": data.get("fit", ""),
         }
     )
+
+
+def leaflet_geojson3(data: dict) -> str:
+
+    # center, scat_features, transect_features, fit="", zoom=13
+
+    SCATS_COLOR_DEFAULT = "orange"
+    TRANSECTS_COLOR_DEFAULT = "red"
+    TRACKS_COLOR_DEFAULT = "blue"
+    DEAD_WOLVES_COLOR_DEFAULT = "purple"
+    CENTER_DEFAULT = "45, 7"
+
+    map = Template(
+        """
+
+
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin="">
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin="">
+</script>
+
+
+<link rel="stylesheet" href="/static/MarkerCluster.Default.css">
+<script src="/static/leaflet.markercluster.js"></script>
+
+<script>
+
+var transects = {
+    "type": "FeatureCollection",
+    "features": {{ transects}}
+};
+
+var tracks = {
+    "type": "FeatureCollection",
+    "features": {{ tracks}}
+};
+
+var scats = {
+    "type": "FeatureCollection",
+    "features": {{ scats }}
+};
+
+var dead_wolves = {
+    "type": "FeatureCollection",
+    "features": {{ dead_wolves }}
+};
+
+var map = L.map('map').setView([{{ center }}], {{ zoom }});
+
+/*
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+*/
+
+
+L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
+	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+}).addTo(map);
+
+
+function onEachFeature(feature, layer) {
+    var popupContent = "";
+    if (feature.properties && feature.properties.popupContent) {
+        popupContent += feature.properties.popupContent;
+    }
+    layer.bindPopup(popupContent);
+}
+
+/*
+L.geoJSON([scats], {
+
+    style: function (feature) { return feature.properties && feature.properties.style; },
+
+    onEachFeature: onEachFeature,
+
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            color: '{{ scats_color }}',
+            fillcolor: '{{ scats_color }}',
+            radius: 8,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+        });
+    }
+}).addTo(map);
+*/
+
+
+var scat_markers = L.geoJson(scats,
+                       {onEachFeature: onEachFeature,
+                        pointToLayer: function(feature, latlng)
+                                          {
+                                          return L.circleMarker(latlng, {
+                                                            color: '{{ scats_color }}',
+                                                            fillcolor: '{{ scats_color }}',
+                                                            radius: 8,
+                                                            weight: 1,
+                                                            opacity: 1,
+                                                            fillOpacity: 1
+                                                  });
+                                          }
+                        }
+                      );
+
+var scats_clusters = L.markerClusterGroup();
+scats_clusters.addLayer(scat_markers);
+map.addLayer(scats_clusters);
+
+
+L.geoJSON([dead_wolves], {
+
+    style: function (feature) { return feature.properties && feature.properties.style; },
+
+    onEachFeature: onEachFeature,
+
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            color: '{{ dead_wolves_color }}',
+            fillcolor: '{{ dead_wolves_color }}',
+            radius: 8,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+        });
+    }
+}).addTo(map);
+
+
+
+
+
+L.geoJSON(transects, {
+
+    style: function(feature) { return { color: '{{ transects_color }}' } },
+
+    onEachFeature: onEachFeature,
+
+}).addTo(map);
+
+
+L.geoJSON(tracks, {
+
+    style: function(feature) { return { color: '{{ tracks_color }}' } },
+
+    onEachFeature: onEachFeature,
+
+}).addTo(map);
+
+
+ // Creating scale control
+var scale = L.control.scale();
+scale.addTo(map);
+
+var markerBounds = L.latLngBounds([{{ fit }}]);
+map.fitBounds(markerBounds);
+
+</script>
+"""
+    )
+
+    return map.render(
+        {
+            "transects": data.get("transects", []),
+            "transects_color": data.get("transects_color", TRANSECTS_COLOR_DEFAULT),
+            "tracks": data.get("tracks", []),
+            "tracks_color": data.get("tracks_color", TRACKS_COLOR_DEFAULT),
+            "scats": data.get("scats", []),
+            "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
+            "dead_wolves": data.get("dead_wolves", []),
+            "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),
+            "center": data.get("center", CENTER_DEFAULT),
+            "zoom": data.get("zoom", 13),
+            "fit": data.get("fit", ""),
+        }
+    )
