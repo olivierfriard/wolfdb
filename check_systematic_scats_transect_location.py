@@ -129,7 +129,7 @@ out += '<a href="/systematic_scats_transect_location" class="btn btn-primary">Up
 
 out += f"{len(scats)} systematic scats.<br>\n"
 
-out += f"{c} scat positions that does not match the transect ID.<br>\n"
+out += f"{c} scat positions that do not match the transect ID.<br>\n"
 
 out += '<table class="table table-striped">\n'
 
