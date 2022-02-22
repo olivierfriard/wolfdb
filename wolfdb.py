@@ -25,7 +25,7 @@ from genetic_bp import genetic
 from dead_wolves_bp import dead_wolves
 from admin_bp import admin
 
-__version__ = "1"
+__version__ = "2022-02-22"
 
 app = Flask(__name__)
 

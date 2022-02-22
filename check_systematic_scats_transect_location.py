@@ -43,7 +43,9 @@ main > .container {
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
+cursor.execute(
+    "SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'"
+)
 scats = cursor.fetchall()
 
 
@@ -63,7 +65,6 @@ for row in scats:
     else:
         transect_id_found = ""
 
-
     sql = f"""
     SELECT transect_id, st_distance(ST_GeomFromText('POINT({row["x"]} {row["y"]})',32632), multilines)::integer AS distance
     FROM transects
@@ -77,26 +78,54 @@ for row in scats:
 
     if path_id.startswith(transect["transect_id"] + "|"):
         match = "OK"
-        out2 += '<tr>'
+        out2 += "<tr>"
     else:
         match = "NO"
         c += 1
         out2 += '<tr class="table-danger">'
 
+        sql = "SELECT path_id FROM paths WHERE path_id = %s  "
+        cursor.execute(sql, [transect["transect_id"] + "|" + row["scat_id"][1:7]])
+        results = cursor.fetchone()
+        if results is not None:
+            new_path_id = results["path_id"]
+        else:
+            new_path_id = f"""path ID {transect['transect_id'] + "|" + row['scat_id'][1:7]} NOT FOUND"""
+
+        transect["transect_id"]
+
     if match == "NO":
-        out2 += (f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
-                 f"""<td>{row['sampling_type']}</td>"""
-                 f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
-                 f"""<td>{'<b>NOT FOUND</b>' if transect_id_found == '' else transect_id_found}</td>"""
-                 f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
-                 f"""<td>{transect['distance']}</td>"""
-                 f"""<td>{match}</td></tr>\n"""
-                )
+
+        if "NOT FOUND" in new_path_id:
+            out2 += (
+                f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
+                f"""<td>{row['sampling_type']}</td>"""
+                f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
+                f"""<td>{'<b>NOT FOUND</b>' if transect_id_found == '' else transect_id_found}</td>"""
+                f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
+                f"""<td>{transect['distance']}</td>"""
+                f"""<td>{new_path_id}</td>"""
+            )
+
+        else:
+            out2 += (
+                f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
+                f"""<td>{row['sampling_type']}</td>"""
+                f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
+                f"""<td>{'<b>NOT FOUND</b>' if transect_id_found == '' else transect_id_found}</td>"""
+                f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
+                f"""<td>{transect['distance']}</td>"""
+                f"""<td><a class="btn btn-danger btn-small" href="/set_path_id/{row['scat_id']}/{new_path_id}" onclick="return confirm('Are you sure to set the path ID?')">Set {new_path_id} as path ID</a></td>"""
+            )
 
 
 out += "<h1>Location on transects for scats from systematic sample</h1>\n"
 
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
+
+
+out += '<a href="/systematic_scats_transect_location" class="btn btn-primary">Update data</a><br><br>'
+
 
 out += f"{len(scats)} systematic scats.<br>\n"
 
@@ -104,7 +133,7 @@ out += f"{c} scat positions that does not match the transect ID.<br>\n"
 
 out += '<table class="table table-striped">\n'
 
-out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Match with path ID</th></tr>"
+out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Action</th></tr>"
 
 out += out2
 
@@ -115,5 +144,3 @@ out += "</body></html>"
 
 with open("static/systematic_scats_transects_location.html", "w") as f_out:
     f_out.write(out)
-
-

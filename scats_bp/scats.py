@@ -632,11 +632,31 @@ def edit_scat(scat_id):
 @app.route("/del_scat/<scat_id>")
 @fn.check_login
 def del_scat(scat_id):
+    """
+    Delete scat
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("DELETE FROM scats WHERE scat_id = %(scat_id)s", {"scat_id": scat_id})
     connection.commit()
     return redirect("/scats_list")
+
+
+@app.route("/set_path_id/<scat_id>/<path_id>")
+@fn.check_login
+def set_path_id(scat_id, path_id):
+    """
+    Set path_id for scat
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        "UPDATE scats SET path_id = %(path_id)s WHERE scat_id = %(scat_id)s", {"path_id": path_id, "scat_id": scat_id}
+    )
+    connection.commit()
+
+    return redirect("/static/systematic_scats_transects_location.html")
 
 
 def extract_data_from_xlsx(filename):
