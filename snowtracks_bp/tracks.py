@@ -14,13 +14,13 @@ import sys
 import os
 import json
 
-from .track import Track
+from .track_form import Track
 import functions as fn
 import uuid
 import pathlib as pl
 import pandas as pd
 
-app = flask.Blueprint("snowtracks", __name__, template_folder="templates")
+app = flask.Blueprint("tracks", __name__, template_folder="templates")
 
 params = config()
 app.debug = params["debug"]
@@ -53,7 +53,7 @@ def error_info(exc_info: tuple) -> tuple:
 @app.route("/tracks")
 @fn.check_login
 def snow_tracks():
-    return render_template("snow_tracks.html")
+    return render_template("snow_tracks.html", header_title="Tracks")
 
 
 @app.route("/view_snowtrack/<snowtrack_id>")
@@ -168,6 +168,7 @@ def view_snowtrack(snowtrack_id):
         ),
     )
 
+
 @app.route("/tracks_list")
 @app.route("/snowtracks_list")
 @fn.check_login
@@ -196,9 +197,10 @@ def snowtracks_list():
     return render_template("snowtracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
 
 
+@app.route("/new_track", methods=("GET", "POST"))
 @app.route("/new_snowtrack", methods=("GET", "POST"))
 @fn.check_login
-def new_snowtrack():
+def new_track():
     """
     insert a new track
     """
@@ -227,8 +229,9 @@ def new_snowtrack():
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
         return render_template(
             "new_snowtrack.html",
-            title="New snow track",
-            action="/new_snowtrack",
+            header_title="New track",
+            title="New track",
+            action="/new_track",
             form=form,
             default_values={},
         )
@@ -363,7 +366,7 @@ def edit_snowtrack(snowtrack_id):
         return render_template(
             "new_snowtrack.html",
             header_title=f"Edit track {snowtrack_id}",
-            title="Edit track",
+            title=f"Edit track {snowtrack_id}",
             action=f"/edit_snowtrack/{snowtrack_id}",
             form=form,
             default_values=default_values,

@@ -20,7 +20,7 @@ from scats_bp import scats
 from paths_bp import paths
 from packs_bp import packs
 from transects_bp import transects
-from snowtracks_bp import snowtracks
+from snowtracks_bp import tracks
 from genetic_bp import genetic
 from dead_wolves_bp import dead_wolves
 from admin_bp import admin
@@ -41,7 +41,7 @@ app.register_blueprint(scats.app)
 app.register_blueprint(paths.app)
 app.register_blueprint(packs.app)
 app.register_blueprint(transects.app)
-app.register_blueprint(snowtracks.app)
+app.register_blueprint(tracks.app)
 app.register_blueprint(genetic.app)
 app.register_blueprint(dead_wolves.app)
 app.register_blueprint(admin.app)
@@ -108,9 +108,6 @@ def view_sample(sample_id):
         return redirect(f"/view_tissue/{sample_id}")
     flash(Markup("Sample not found"))
     return redirect("/")
-
-
-
 
 
 if __name__ == "__main__":
