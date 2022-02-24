@@ -7,26 +7,43 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Font
 from tempfile import NamedTemporaryFile
 
-def export_scats(paths):
+
+def export_scats(scats):
 
     wb = Workbook()
 
     ws1 = wb.active
     ws1.title = f"Scats"
 
-    header = ["Scat ID", "Date", "Sampling season", "Sampling type", "path ID", "Snowtrack ID",
-              "WA code", "Genotype ID", 
-              "location", "municipality", "province", "region",
-              "Deposition", "Matrix", "Collected scat", "Scalp category",
-              "Genetic sample",
-              "Coordinate east", "Coordinate north", "Zone",
-              "Operator", "Institution",
-              "Notes"]
-
+    header = [
+        "Scat ID",
+        "Date",
+        "Sampling season",
+        "Sampling type",
+        "path ID",
+        "Snowtrack ID",
+        "WA code",
+        "Genotype ID",
+        "location",
+        "municipality",
+        "province",
+        "region",
+        "Deposition",
+        "Matrix",
+        "Collected scat",
+        "Scalp category",
+        "Genetic sample",
+        "Coordinate east",
+        "Coordinate north",
+        "Zone",
+        "Operator",
+        "Institution",
+        "Notes",
+    ]
 
     ws1.append(header)
 
-    for row in paths:
+    for row in scats:
         out = []
         out.append(row["scat_id"])
         out.append(row["date"])
@@ -43,7 +60,13 @@ def export_scats(paths):
         out.append(row["deposition"])
         out.append(row["matrix"])
         out.append(row["collected_scat"])
-        out.append(row["scalp_category"])
+
+        scalp_cat = row["scalp_category"]
+        if row["mtdna"] is not None and "WOLF" in row["mtdna"].upper():
+            scalp_cat += " (from mtDNA: C1)"
+
+        out.append(scalp_cat)
+
         out.append(row["genetic_sample"])
         out.append(row["coord_east"])
         out.append(row["coord_north"])
@@ -60,5 +83,3 @@ def export_scats(paths):
         stream = tmp.read()
 
         return stream
-
-
