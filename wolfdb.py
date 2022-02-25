@@ -100,12 +100,14 @@ def rev_geocoding(east, north, zone):
 @fn.check_login
 def view_sample(sample_id):
     """
-    View sample: scat (E) or tissue (T)
+    View sample: scat (E) or tissue (T, M)
     """
     if sample_id.startswith("E"):
         return redirect(f"/view_scat/{sample_id}")
-    if sample_id.startswith("T"):
+
+    if sample_id.startswith("T") or sample_id.startswith("M"):
         return redirect(f"/view_tissue/{sample_id}")
+
     flash(Markup("Sample not found"))
     return redirect("/")
 
