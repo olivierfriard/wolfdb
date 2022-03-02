@@ -114,6 +114,7 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
 
     for locus in loci_list:
 
+        """
         cursor.execute(
             (
                 "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
@@ -126,16 +127,31 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
             ),
             {"genotype_id": genotype_id, "locus": locus},
         )
+        """
+        for allele in ["a", "b"]:
+            cursor.execute(
+                (
+                    "SELECT val, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
+                    "FROM genotype_locus "
+                    "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
+                    "ORDER BY timestamp DESC LIMIT 1"
+                ),
+                {"allele": allele, "genotype_id": genotype_id, "locus": locus},
+            )
 
-        locus_val = cursor.fetchall()
+            locus_val = cursor.fetchone()
+            if locus_val is None:
+                val = "-"
+                notes = ""
+                user_id = ""
+                epoch = ""
+            else:
+                val = locus_val["val"] if locus_val["val"] is not None else "-"
+                notes = locus_val["notes"] if locus_val["notes"] is not None else ""
+                user_id = locus_val["user_id"] if locus_val["user_id"] is not None else ""
+                epoch = locus_val["epoch"] if locus_val["epoch"] is not None else ""
 
-        for row2 in locus_val:
-            val = row2["val"] if row2["val"] is not None else "-"
-            notes = row2["notes"] if row2["notes"] is not None else ""
-            user_id = row2["user_id"] if row2["user_id"] is not None else ""
-            epoch = row2["epoch"] if row2["epoch"] is not None else ""
-
-            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes, "user_id": user_id, "epoch": epoch}
+            loci_values[locus][allele] = {"value": val, "notes": notes, "user_id": user_id, "epoch": epoch}
 
     return loci_values
 
