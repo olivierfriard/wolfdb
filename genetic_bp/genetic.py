@@ -1292,7 +1292,7 @@ def add_genetic_data(wa_code):
                         """
 
                         sql = (
-                            "SELECT distinct (select id from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_dw.genotype_id) AS id "
+                            "SELECT distinct (select id from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_dw.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
                             "FROM wa_scat_dw "
                             "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)"
                         )
