@@ -1645,7 +1645,11 @@ def set_status(genotype_id):
         position = "" if result["position"] is None else result["position"]
 
         return render_template(
-            "set_status.html", genotype_id=genotype_id, current_position=position, return_url=request.referrer
+            "set_status.html",
+            header_title="Set status",
+            genotype_id=genotype_id,
+            current_position=position,
+            return_url=request.referrer,
         )
 
     if request.method == "POST":
