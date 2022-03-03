@@ -3,7 +3,7 @@
 {% block content %}
 
 
-    <h1>WolfDB</h1>
+    <h1>WolfDB - Insert a new path</h1>
     <hr>
 
     <a href="/" class="btn btn-primary">Home</a>&nbsp;
@@ -32,6 +32,9 @@
 </div><div class="col-8">
 {{ form.transect_id(class="form-control") }}
 {% for message in form.transect_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+<span class="form-text">Choose from the list</span>
+
 </div></div></div>
 
 
@@ -51,7 +54,7 @@
 {{ form.completeness(class="form-control", pattern="[0-9]*", value=default_values["completeness"]) }}
 {% for message in form.completeness.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 
-<span class="form-text">Must br > 0 and &gt;= 100</span>
+<span class="form-text">Must be &gt; 0 and &lt;= 100</span>
 
 </div></div></div>
 
@@ -79,8 +82,9 @@
     </div><!-- col --><div class="col-8">
     {{ form.category(class="form-control", value=default_values["category"]) }}
     {% for message in form.category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
+
+<span class="form-text">Choose from the list</span>
+</div></div></div>
 
 
 
@@ -93,7 +97,7 @@
 </div>
 
 
-<button type="submit" class="btn btn-primary" >Submit</button>
+<button type="submit" class="btn btn-danger" >Submit</button>
 </form>
 
 
