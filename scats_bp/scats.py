@@ -480,7 +480,12 @@ def edit_scat(scat_id):
         flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
 
         return render_template(
-            "new_scat.html", title="Edit scat", action=f"/edit_scat/{scat_id}", form=form, default_values=default_values
+            "new_scat.html",
+            header_title=f"Edit scat {scat_id}",
+            title="Edit scat",
+            action=f"/edit_scat/{scat_id}",
+            form=form,
+            default_values=default_values,
         )
 
     if request.method == "GET":
@@ -528,6 +533,17 @@ def edit_scat(scat_id):
 
         if form.validate():
 
+            # check if scat id already exists
+            cursor.execute("SELECT scat_id FROM scats WHERE scat_id = %s", [request.form["scat_id"]])
+            if len(cursor.fetchall()):
+                return not_valid(
+                    form,
+                    (
+                        f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). "
+                        "Please check and submit again"
+                    ),
+                )
+
             # date
             try:
                 year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
@@ -561,7 +577,7 @@ def edit_scat(scat_id):
             if request.form["wa_code"]:
                 cursor.execute(
                     ("SELECT sample_id FROM wa_scat_tissue WHERE sample_id != %s AND wa_code = %s"),
-                    [request.form["scat_id"], request.form["wa_code"]],
+                    [scat_id, request.form["wa_code"]],
                 )
                 if len(cursor.fetchall()):
                     return not_valid(
