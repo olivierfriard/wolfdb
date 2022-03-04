@@ -117,7 +117,11 @@ def view_scat(scat_id):
         [scat_id],
     )
 
-    results = dict(cursor.fetchone())
+    results = cursor.fetchone()
+    if results is None:
+        return f"Scat {scat_id} not found"
+    else:
+        results = dict(results)
 
     scat_geojson = json.loads(results["scat_lonlat"])
 
@@ -624,7 +628,7 @@ def edit_scat(scat_id):
 
             connection.commit()
 
-            return redirect(f"/view_scat/{scat_id}")
+            return redirect(f"/view_scat/{request.form['scat_id']}")
         else:
             return not_valid(form, "Some values are not set or are wrong. Please check and submit again")
 
