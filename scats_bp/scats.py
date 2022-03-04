@@ -534,15 +534,16 @@ def edit_scat(scat_id):
         if form.validate():
 
             # check if scat id already exists
-            cursor.execute("SELECT scat_id FROM scats WHERE scat_id = %s", [request.form["scat_id"]])
-            if len(cursor.fetchall()):
-                return not_valid(
-                    form,
-                    (
-                        f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). "
-                        "Please check and submit again"
-                    ),
-                )
+            if scat_id != request.form["scat_id"]:
+                cursor.execute("SELECT scat_id FROM scats WHERE scat_id = %s", [request.form["scat_id"]])
+                if len(cursor.fetchall()):
+                    return not_valid(
+                        form,
+                        (
+                            f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). "
+                            "Please check and submit again"
+                        ),
+                    )
 
             # date
             try:
