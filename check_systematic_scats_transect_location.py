@@ -5,6 +5,9 @@ The output file contains the closest transect for every systematic scat
 
 This script is required by wolfdb.py
 
+
+see https://gist.github.com/NihalHarish/8597e5691889cd719e6c to improve with multiprocessing
+
 """
 
 import psycopg2

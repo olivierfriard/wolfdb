@@ -197,6 +197,66 @@ def snowtracks_list():
     return render_template("snowtracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
 
 
+@app.route("/plot_tracks")
+@fn.check_login
+def plot_tracks():
+    """
+    Plot all tracks
+    """
+    color = "blue"
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT snowtrack_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_lonlat FROM snow_tracks")
+
+    features = []
+    tot_min_lat, tot_min_lon = 90, 90
+    tot_max_lat, tot_max_lon = -90, -90
+
+    for row in cursor.fetchall():
+        if row["track_lonlat"] is not None:
+            geojson = json.loads(row["track_lonlat"])
+
+            for line in geojson["coordinates"]:
+
+                # bounding box
+                latitudes = [lat for _, lat in line]
+                longitudes = [lon for lon, _ in line]
+                tot_min_lat = min([tot_min_lat, min(latitudes)])
+                tot_max_lat = max([tot_max_lat, max(latitudes)])
+                tot_min_lon = min([tot_min_lon, min(longitudes)])
+                tot_max_lon = max([tot_max_lon, max(longitudes)])
+
+            feature = {
+                "geometry": dict(geojson),
+                "type": "Feature",
+                "properties": {
+                    "popupContent": f"""Track ID: <a href="/view_track/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a>"""
+                },
+                "id": row["snowtrack_id"],
+            }
+
+            features.append(dict(feature))
+
+        else:
+            print(f"{row['snowtrack_id']} WITHOUT coordinates")
+
+    return render_template(
+        "plot_transects.html",
+        header_title="Plot of transects",
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "transects": features,
+                    "transects_color": color,
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                }
+            )
+        ),
+    )
+
+
 @app.route("/new_track", methods=("GET", "POST"))
 @app.route("/new_snowtrack", methods=("GET", "POST"))
 @fn.check_login

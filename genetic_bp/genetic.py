@@ -16,7 +16,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import subprocess
 import redis
-
+import pathlib as pl
+import uuid
+import pandas as pd
 
 import functions as fn
 from . import export
@@ -24,8 +26,10 @@ from . import export
 app = flask.Blueprint("genetic", __name__, template_folder="templates")
 
 params = config()
-
 app.debug = params["debug"]
+
+EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
+UPLOAD_FOLDER = "/tmp"
 
 # db wolf -> db 0
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
@@ -96,16 +100,6 @@ def view_genotype(genotype_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    """
-    cursor.execute(
-        (
-            "SELECT *, "
-            "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
-            "FROM genotypes WHERE genotype_id = %s "
-        ),
-        [genotype_id],
-    )"""
-
     cursor.execute(
         (
             "SELECT *, "
@@ -116,19 +110,6 @@ def view_genotype(genotype_id):
     )
 
     genotype = cursor.fetchone()
-
-    """
-    cursor.execute(
-        (
-            "SELECT wa_code, sample_id, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
-            "FROM wa_scat_tissue "
-            "WHERE genotype_id = %s "
-            "ORDER BY wa_code"
-        ),
-        [genotype_id],
-    )
-    """
 
     cursor.execute(
         (
@@ -1902,3 +1883,234 @@ def set_hybrid(genotype_id):
         connection.commit()
 
         return redirect(request.form["return_url"])
+
+
+@app.route(
+    "/load_definitive_genotypes_xlsx",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def load_definitive_genotypes_xlsx():
+    """
+    Ask for loading new definitive genotypes from XLSX file
+    """
+
+    if request.method == "GET":
+        return render_template("load_definitive_genotypes_xlsx.html")
+
+    if request.method == "POST":
+
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if pl.Path(new_file.filename).suffix.upper() not in EXCEL_ALLOWED_EXTENSIONS:
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
+                )
+            )
+            return redirect(f"/load_definitive_genotypes_xlsx")
+
+        try:
+            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file"))
+            return redirect(f"/load_definitive_genotypes_xlsx")
+
+        r, msg, data = extract_genotypes_data_from_xlsx(filename)
+
+        if not r:
+            # check if genotype_id already in DB
+            connection = fn.get_connection()
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            genotypes_list = "','".join([data[idx]["genotype_id"] for idx in data])
+            sql = f"SELECT genotype_id FROM genotypes WHERE genotype_id IN ('{genotypes_list}')"
+            cursor.execute(sql)
+            genotypes_to_update = [row["genotype_id"] for row in cursor.fetchall()]
+
+            return render_template(
+                "confirm_load_definitive_genotypes_xlsx.html",
+                genotypes_to_update=genotypes_to_update,
+                data=data,
+                filename=filename,
+            )
+
+        else:
+            flash(msg)
+            return redirect(f"/load_definitive_genotypes_xlsx")
+
+
+@app.route(
+    "/confirm_load_definitive_genotypes_xlsx/<filename>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def confirm_load_definitive_genotypes_xlsx(filename):
+    """
+    Load new definitive genotypes from XLSX file
+    """
+    _, _, data = extract_genotypes_data_from_xlsx(filename)
+
+    print(data)
+
+    sql = (
+        "INSERT INTO genotypes ("
+        "genotype_id,"
+        "date,"
+        "pack,"
+        "sex,"
+        "age_first_capture,"
+        "status_first_capture,"
+        "dispersal,"
+        "dead_recovery,"
+        "position,"
+        "tmp_id,"
+        "notes,"
+        "changed_status,"
+        "hybrid,"
+        "mtdna,"
+        "status"
+        ") VALUES ("
+        "%(genotype_id)s,"
+        "%(date)s,"
+        "%(pack)s,"
+        "%(sex)s,"
+        "%(age_first_capture)s,"
+        "%(status_first_capture)s,"
+        "%(dispersal)s,"
+        "%(dead_recovery)s,"
+        "%(status)s,"
+        "%(tmp_id)s,"
+        "%(notes)s,"
+        "%(changed_status)s,"
+        "%(hybrid)s,"
+        "%(mtdna)s,"
+        "'OK'"
+        ") "
+        "ON CONFLICT (genotype_id) DO UPDATE "
+        "SET "
+        "date = EXCLUDED.date,"
+        "pack = EXCLUDED.pack,"
+        "sex = EXCLUDED.sex,"
+        "age_first_capture = EXCLUDED.age_first_capture,"
+        "status_first_capture = EXCLUDED.status_first_capture,"
+        "dispersal = EXCLUDED.dispersal,"
+        "dead_recovery = EXCLUDED.dead_recovery,"
+        "position = EXCLUDED.status,"
+        "tmp_id = EXCLUDED.tmp_id,"
+        "notes = EXCLUDED.notes,"
+        "changed_status = EXCLUDED.changed_status,"
+        "hybrid = EXCLUDED.hybrid,"
+        "mtdna = EXCLUDED.mtdna,"
+        "status = 'OK'"
+    )
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    for idx in data:
+        d = dict(data[idx])
+        cursor.execute(
+            sql,
+            {
+                "genotype_id": d["genotype_id"].strip(),
+                "date": d["date"],
+                "pack": d["pack"].strip(),
+                "sex": d["sex"].strip(),
+                "age_first_capture": d["age_first_capture"].strip(),
+                "status_first_capture": d["status_first_capture"].strip(),
+                "dispersal": d["dispersal"].strip(),
+                "dead_recovery": d["dead_recovery"].strip(),
+                "status": d["status"].strip(),
+                "tmp_id": d["tmp_id"].strip(),
+                "notes": d["notes"].strip(),
+                "changed_status": d["changed_status"].strip(),
+                "hybrid": d["hybrid"].strip(),
+                "mtdna": d["mtdna"].strip(),
+                "status": d["status"].strip(),
+            },
+        )
+
+    connection.commit()
+    return redirect("/genotypes")
+
+
+def extract_genotypes_data_from_xlsx(filename):
+    """
+    Extract and check data from a XLSX file
+    """
+
+    if pl.Path(filename).suffix == ".XLSX":
+        engine = "openpyxl"
+    if pl.Path(filename).suffix == ".ODS":
+        engine = "odf"
+
+    out = ""
+
+    try:
+        df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=0, engine=engine)
+    except Exception:
+        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
+
+    for column in [
+        "genotype_id",
+        "date",
+        "pack",
+        "sex",
+        "age_first_capture",
+        "status_first_capture",
+        "dispersal",
+        "n_recaptures",
+        "dead_recovery",
+        "tmp_id",
+        "notes",
+        "status",
+        "changed_status",
+        "hybrid",
+        "mtdna",
+    ]:
+        if column not in list(df.columns):
+            return True, fn.alert_danger(f"Column {column} is missing"), {}
+
+    all_data = {}
+    for index, row in df.iterrows():
+        data = {}
+        for column in [
+            "genotype_id",
+            "date",
+            "pack",
+            "sex",
+            "age_first_capture",
+            "status_first_capture",
+            "dispersal",
+            "n_recaptures",
+            "dead_recovery",
+            "tmp_id",
+            "notes",
+            "status",
+            "changed_status",
+            "hybrid",
+            "mtdna",
+        ]:
+            if column == "date":
+                if str(row[column]) == "nan" or str(row[column]) == "NaT":
+                    data[column] = None
+                else:
+                    data[column] = str(row[column])
+            else:
+                if isinstance(row[column], float) and str(row[column]) == "nan":
+                    data[column] = ""
+                else:
+                    data[column] = str(row[column])
+
+        all_data[index] = dict(data)
+
+    return 0, "OK", all_data

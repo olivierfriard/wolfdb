@@ -30,7 +30,6 @@ app = flask.Blueprint("scats", __name__, template_folder="templates")
 params = config()
 app.debug = params["debug"]
 
-ALLOWED_EXTENSIONS = [".TSV"]
 EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
 UPLOAD_FOLDER = "/tmp"
 
@@ -944,7 +943,7 @@ def load_scats_xlsx():
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect(f"/load_scats_xlsx")
 
-        r, msg, all_data, all_paths, all_tracks = extract_data_from_xlsx(filename)
+        r, msg, all_data, _, _ = extract_data_from_xlsx(filename)
         if r:
             msg = Markup(f"File name: {new_file.filename}<br>" + msg)
             flash(msg)
