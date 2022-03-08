@@ -1,10 +1,7 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 {% block content %}
 
-<main class="flex-shrink-0">
-
-<div class="container">
 
 <h1>WolfDB - Insert new definitive genotypes</h1>
 <hr>
@@ -48,6 +45,7 @@
 <th>Sex</th>
 <th>Pack</th>
 <th>Status</th>
+{% for locus in loci_list %}<th>{{ locus }}</th>{% endfor %}
 </tr>
 
 {% for idx in data %}
@@ -62,6 +60,9 @@
 <td>{{ data[idx]['sex'] }}</td>
 <td>{{ data[idx]['pack'] }}</td>
 <td>{{ data[idx]['status'] }}</td>
+
+{% for locus in loci_list %}<td>{{ data[idx][locus]['a'] }}{% if 'b' in data[idx][locus] %}<br>{{ data[idx][locus]['b'] }}{%endif%}</td>{% endfor %}
+
 </tr>
 
 {% endfor %}

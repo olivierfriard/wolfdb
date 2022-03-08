@@ -1896,6 +1896,7 @@ def set_hybrid(genotype_id):
 def load_definitive_genotypes_xlsx():
     """
     Ask for loading new definitive genotypes from XLSX file
+    parse XLSX file and load the confirm page
     """
 
     if request.method == "GET":
@@ -1921,28 +1922,34 @@ def load_definitive_genotypes_xlsx():
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect(f"/load_definitive_genotypes_xlsx")
 
-        r, msg, data = extract_genotypes_data_from_xlsx(filename)
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-        if not r:
-            # check if genotype_id already in DB
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # loci list
+        loci_list = {}
+        cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+        for row in cursor.fetchall():
+            loci_list[row["name"]] = row["n_alleles"]
 
-            genotypes_list = "','".join([data[idx]["genotype_id"] for idx in data])
-            sql = f"SELECT genotype_id FROM genotypes WHERE genotype_id IN ('{genotypes_list}')"
-            cursor.execute(sql)
-            genotypes_to_update = [row["genotype_id"] for row in cursor.fetchall()]
+        r, msg, data = extract_genotypes_data_from_xlsx(filename, loci_list)
 
-            return render_template(
-                "confirm_load_definitive_genotypes_xlsx.html",
-                genotypes_to_update=genotypes_to_update,
-                data=data,
-                filename=filename,
-            )
-
-        else:
+        if r:
             flash(msg)
             return redirect(f"/load_definitive_genotypes_xlsx")
+
+        # check if genotype_id already in DB
+        genotypes_list = "','".join([data[idx]["genotype_id"] for idx in data])
+        sql = f"SELECT genotype_id FROM genotypes WHERE genotype_id IN ('{genotypes_list}')"
+        cursor.execute(sql)
+        genotypes_to_update = [row["genotype_id"] for row in cursor.fetchall()]
+
+        return render_template(
+            "confirm_load_definitive_genotypes_xlsx.html",
+            genotypes_to_update=genotypes_to_update,
+            loci_list=loci_list,
+            data=data,
+            filename=filename,
+        )
 
 
 @app.route(
@@ -1957,9 +1964,17 @@ def confirm_load_definitive_genotypes_xlsx(filename):
     """
     Load new definitive genotypes from XLSX file
     """
-    _, _, data = extract_genotypes_data_from_xlsx(filename)
 
-    print(data)
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # loci list
+    loci_list = {}
+    cursor.execute("SELECT name, n_alleles FROM loci ORDER BY position ASC")
+    for row in cursor.fetchall():
+        loci_list[row["name"]] = row["n_alleles"]
+
+    _, _, data = extract_genotypes_data_from_xlsx(filename, loci_list)
 
     sql = (
         "INSERT INTO genotypes ("
@@ -2013,9 +2028,6 @@ def confirm_load_definitive_genotypes_xlsx(filename):
         "status = 'OK'"
     )
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
     for idx in data:
         d = dict(data[idx])
         cursor.execute(
@@ -2038,15 +2050,35 @@ def confirm_load_definitive_genotypes_xlsx(filename):
                 "status": d["status"].strip(),
             },
         )
+        connection.commit()
 
-    connection.commit()
+        # insert loci
+        for locus in loci_list:
+            sql = (
+                "INSERT INTO genotype_locus (genotype_id, locus, allele, val, timestamp) VALUES "
+                "(%s, %s, %s, %s, NOW())"
+            )
+
+            print(d["genotype_id"], locus, "a", d[locus]["a"])
+
+            cursor.execute(sql, [d["genotype_id"], locus, "a", d[locus]["a"]])
+            connection.commit()
+
+            cursor.execute(sql, [d["genotype_id"], locus, "b", d[locus]["b"]])
+            connection.commit()
+
     return redirect("/genotypes")
 
 
-def extract_genotypes_data_from_xlsx(filename):
+def extract_genotypes_data_from_xlsx(filename, loci_list):
     """
     Extract and check data from a XLSX file
     """
+
+    def test_nan(v):
+        if str(v) == "NaT":
+            return True
+        return isinstance(v, float) and str(v) == "nan"
 
     if pl.Path(filename).suffix == ".XLSX":
         engine = "openpyxl"
@@ -2111,6 +2143,18 @@ def extract_genotypes_data_from_xlsx(filename):
                 else:
                     data[column] = str(row[column])
 
-        all_data[index] = dict(data)
+        loci_dict = {}
+        for locus in loci_list:
+            if locus in row:
+                loci_dict[locus] = {}
+                loci_dict[locus]["a"] = row[locus] if not test_nan(row[locus]) else None
+
+            if loci_list[locus] == 2:
+                if locus + ".1" in row:
+                    if locus not in loci_dict:
+                        loci_dict[locus] = {}
+                    loci_dict[locus]["b"] = row[locus + ".1"] if not test_nan(row[locus + ".1"]) else None
+
+        all_data[index] = {**data, **loci_dict}
 
     return 0, "OK", all_data
