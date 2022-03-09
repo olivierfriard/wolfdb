@@ -57,6 +57,7 @@ def snow_tracks():
 
 
 @app.route("/view_snowtrack/<snowtrack_id>")
+@app.route("/view_track/<snowtrack_id>")
 def view_snowtrack(snowtrack_id):
     """
     visualize the snow track
@@ -203,7 +204,7 @@ def plot_tracks():
     """
     Plot all tracks
     """
-    color = "blue"
+    tracks_color = "blue"
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -239,17 +240,17 @@ def plot_tracks():
 
             features.append(dict(feature))
 
-        else:
-            print(f"{row['snowtrack_id']} WITHOUT coordinates")
+        # else:
+        #    print(f"{row['snowtrack_id']} WITHOUT coordinates")
 
     return render_template(
-        "plot_transects.html",
+        "plot_tracks.html",
         header_title="Plot of transects",
         map=Markup(
             fn.leaflet_geojson2(
                 {
-                    "transects": features,
-                    "transects_color": color,
+                    "tracks": features,
+                    "tracks_color": tracks_color,
                     "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
                 }
             )

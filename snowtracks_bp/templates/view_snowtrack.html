@@ -25,9 +25,9 @@
 
 <table class="table table-striped">
 
-<tr><td>Date</td><td>{{ results["date"] }}</td></tr>
+<tr><td>Date</td><td>{{ results["date"] if results["date"] is not none else ""}}</td></tr>
 
-<tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
+<tr><td>Sampling season</td><td>{{ results["sampling_season"] if results["sampling_season"] is not none else "" }}</td></tr>
 
 <tr><td>Sampling type</td><td>{% if results["sampling_type"] %}{{ results["sampling_type"] }}{% endif %}</td></tr>
    <tr>
@@ -48,7 +48,7 @@
    </tr>
    <tr>
        <td>Region</td>
-       <td>{{ results["region"] }}</td>
+       <td>{{ results["region"] if results["region"] is not none else ""}}</td>
    </tr>
    <tr>
        <td>Operator</td>
@@ -60,7 +60,7 @@
    </tr>
    <tr>
        <td>Scalp category</td>
-       <td>{{ results["scalp_category"] }}</td>
+       <td>{{ results["scalp_category"] if results["scalp_category"] is not none else "" }}</td>
    </tr>
    <tr>
        <td>Transect ID</td>
@@ -84,7 +84,7 @@
    </tr>
    <tr>
        <td>Notes</td>
-       <td>{{ results['notes'] }}</td>
+       <td>{{ results['notes'] if results["notes"] is not none else "" }}</td>
    </tr>
    <tr>
        <td>Number of scats found</td>
