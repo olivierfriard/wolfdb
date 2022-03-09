@@ -46,11 +46,11 @@ def get_cmap(n, name="viridis"):
 @fn.check_login
 def del_genotype(genotype_id):
     """
-    set genotype as deleted (status field)
+    set genotype as deleted (record_status field)
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("UPDATE genotypes SET status = 'deleted' WHERE genotype_id = %s", [genotype_id])
+    cursor.execute("UPDATE genotypes SET record_status = 'deleted' WHERE genotype_id = %s", [genotype_id])
     connection.commit()
 
     cursor.execute("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = %s", [genotype_id])
@@ -65,11 +65,11 @@ def del_genotype(genotype_id):
 @fn.check_login
 def def_genotype(genotype_id):
     """
-    set genotype as definitive (status field)
+    set genotype as definitive (record_status field)
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("UPDATE genotypes SET status = 'OK' WHERE genotype_id = %s", [genotype_id])
+    cursor.execute("UPDATE genotypes SET record_status = 'OK' WHERE genotype_id = %s", [genotype_id])
     connection.commit()
 
     flash(fn.alert_danger(f"<b>Genotype {genotype_id} set as definitive</b>"))
@@ -81,11 +81,11 @@ def def_genotype(genotype_id):
 @fn.check_login
 def temp_genotype(genotype_id):
     """
-    set genotype as temporary (status field)
+    set genotype as temporary (record_status field)
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("UPDATE genotypes SET status = 'temp' WHERE genotype_id = %s", [genotype_id])
+    cursor.execute("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = %s", [genotype_id])
     connection.commit()
 
     flash(fn.alert_danger(f"<b>Genotype {genotype_id} set as temporary</b>"))
@@ -225,14 +225,24 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
 '''
 
 
-@app.route("/update_redis_genotypes")
 def update_redis_with_genotypes_loci():
     """
     update redis with the genotypes loci values
 
     !require the update_redis_with_genotypes_loci_values file
     """
+
     _ = subprocess.Popen(["python3", "update_redis_with_genotypes_loci_values.py"])
+
+
+@app.route("/update_redis_genotypes")
+def web_update_redis_with_genotypes_loci():
+    """
+    web interface to update redis with the genotypes loci values
+
+    !require the update_redis_with_genotypes_loci_values file
+    """
+    update_redis_with_genotypes_loci()
 
     flash(fn.alert_danger(f"Redis updating with genotypes loci in progress"))
 
@@ -342,32 +352,20 @@ def genotypes_list(type, mode="web"):
         loci_list[row["name"]] = row["n_alleles"]
 
     if "all" in type:
-        filter = "WHERE status != 'deleted'"
+        filter = "WHERE record_status != 'deleted'"
         header_title = f"List of all genotypes"
 
     if "definitive" in type:
-        filter = "WHERE status = 'OK'"
+        filter = "WHERE record_status = 'OK'"
         header_title = f"List of definitive genotypes"
 
     if "temp" in type:
-        filter = "WHERE status = 'temp'"
+        filter = "WHERE record_status = 'temp'"
         header_title = f"List of temporary genotypes"
 
     if "deleted" in type:
-        filter = "WHERE status = 'deleted'"
+        filter = "WHERE record_status = 'deleted'"
         header_title = f"List of temporary genotypes"
-
-    """
-    cursor.execute(
-        (
-            "SELECT *, "
-            "(SELECT count(sample_id) FROM wa_scat_tissue WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-            "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
-            f"FROM genotypes {filter} "
-            "ORDER BY genotype_id"
-        )
-    )
-    """
 
     cursor.execute(
         (
@@ -684,22 +682,11 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    """
-    cursor.execute(("SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
-                     "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
-                     "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
-                     "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack, "
-                     "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
-                     "FROM wa_scat_tissue "
-                     "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-                     "ORDER BY wa_code"))
-    """
-
     cursor.execute(
         (
             "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
             "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
-            "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
+            "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
             "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
             "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
             "FROM wa_scat_dw "
@@ -808,28 +795,12 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
 
-    """
-    cursor.execute(
-        (
-            "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, "
-            "mtdna, genotype_id, tmp_id, sex_id, "
-            "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS notes, "
-            "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS status, "
-            "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_tissue.genotype_id) AS pack, "
-            "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
-            "FROM wa_scat_tissue "
-            f"WHERE wa_code in ('{wa_list_str}') "
-            "ORDER BY wa_code ASC"
-        )
-    )
-    """
-
     cursor.execute(
         (
             "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, "
             "mtdna, genotype_id, tmp_id, sex_id, "
             "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
-            "(SELECT position FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
+            "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
             "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
             "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
             "FROM wa_scat_dw "
@@ -1615,29 +1586,28 @@ def set_status(genotype_id):
 
     if request.method == "GET":
 
-        # 'status' field used for definitive / temp
-        cursor.execute(("SELECT position FROM genotypes " "WHERE genotype_id = %s  "), [genotype_id])
+        cursor.execute(("SELECT status FROM genotypes WHERE genotype_id = %s"), [genotype_id])
         result = cursor.fetchone()
 
         if result is None:
             flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
             return redirect(request.referrer)
 
-        position = "" if result["position"] is None else result["position"]
+        status = "" if result["status"] is None else result["status"]
 
         return render_template(
             "set_status.html",
             header_title="Set status",
             genotype_id=genotype_id,
-            current_position=position,
+            current_status=status,
             return_url=request.referrer,
         )
 
     if request.method == "POST":
 
-        sql = "UPDATE genotypes SET position = %(position)s " "WHERE genotype_id = %(genotype_id)s "
+        sql = "UPDATE genotypes SET status = %(status)s " "WHERE genotype_id = %(genotype_id)s "
 
-        cursor.execute(sql, {"position": request.form["position"].strip().lower(), "genotype_id": genotype_id})
+        cursor.execute(sql, {"status": request.form["status"].strip().lower(), "genotype_id": genotype_id})
 
         connection.commit()
 
@@ -1662,8 +1632,7 @@ def set_pack(genotype_id):
 
     if request.method == "GET":
 
-        # 'status' field used for definitive / temp
-        cursor.execute(("SELECT pack FROM genotypes " "WHERE genotype_id = %s  "), [genotype_id])
+        cursor.execute(("SELECT pack FROM genotypes WHERE genotype_id = %s  "), [genotype_id])
         result = cursor.fetchone()
 
         if result is None:
@@ -1986,13 +1955,13 @@ def confirm_load_definitive_genotypes_xlsx(filename):
         "status_first_capture,"
         "dispersal,"
         "dead_recovery,"
-        "position,"
+        "status,"
         "tmp_id,"
         "notes,"
         "changed_status,"
         "hybrid,"
         "mtdna,"
-        "status"
+        "record_status"
         ") VALUES ("
         "%(genotype_id)s,"
         "%(date)s,"
@@ -2019,55 +1988,39 @@ def confirm_load_definitive_genotypes_xlsx(filename):
         "status_first_capture = EXCLUDED.status_first_capture,"
         "dispersal = EXCLUDED.dispersal,"
         "dead_recovery = EXCLUDED.dead_recovery,"
-        "position = EXCLUDED.status,"
+        "status = EXCLUDED.status,"
         "tmp_id = EXCLUDED.tmp_id,"
         "notes = EXCLUDED.notes,"
         "changed_status = EXCLUDED.changed_status,"
         "hybrid = EXCLUDED.hybrid,"
         "mtdna = EXCLUDED.mtdna,"
-        "status = 'OK'"
+        "record_status = 'OK'"
     )
 
     for idx in data:
         d = dict(data[idx])
-        cursor.execute(
-            sql,
-            {
-                "genotype_id": d["genotype_id"].strip(),
-                "date": d["date"],
-                "pack": d["pack"].strip(),
-                "sex": d["sex"].strip(),
-                "age_first_capture": d["age_first_capture"].strip(),
-                "status_first_capture": d["status_first_capture"].strip(),
-                "dispersal": d["dispersal"].strip(),
-                "dead_recovery": d["dead_recovery"].strip(),
-                "status": d["status"].strip(),
-                "tmp_id": d["tmp_id"].strip(),
-                "notes": d["notes"].strip(),
-                "changed_status": d["changed_status"].strip(),
-                "hybrid": d["hybrid"].strip(),
-                "mtdna": d["mtdna"].strip(),
-                "status": d["status"].strip(),
-            },
-        )
+
+        cursor.execute(sql, d)
         connection.commit()
 
         # insert loci
         for locus in loci_list:
-            sql = (
+            sql_loci = (
                 "INSERT INTO genotype_locus (genotype_id, locus, allele, val, timestamp) VALUES "
                 "(%s, %s, %s, %s, NOW())"
             )
 
-            # print(d["genotype_id"], locus, "a", d[locus]["a"])
-
             if "a" in d[locus]:
-                cursor.execute(sql, [d["genotype_id"], locus, "a", d[locus]["a"]])
+                cursor.execute(sql_loci, [d["genotype_id"], locus, "a", d[locus]["a"]])
                 connection.commit()
 
             if "b" in d[locus]:
-                cursor.execute(sql, [d["genotype_id"], locus, "b", d[locus]["b"]])
+                cursor.execute(sql_loci, [d["genotype_id"], locus, "b", d[locus]["b"]])
                 connection.commit()
+
+    update_redis_with_genotypes_loci()
+
+    flash(fn.alert_danger(f"Updating the new genotypes in progress. Wait for 5 minutes..."))
 
     return redirect("/genotypes")
 
