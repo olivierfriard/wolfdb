@@ -24,8 +24,6 @@
     {% endif %}
 {% endwith %}
 
-
-
 {% if results %}
 <h2>{{ title }}</h2>
 
@@ -112,7 +110,7 @@ set ...
 
 <td>{% if result['hybrid'] %}{{ result['hybrid'] }}{% endif %}</td>
 
-<td>{% if result['position'] %}{{ result['position'] }}{% endif %}</td>
+<td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
 
 <td>{% if result['age_first_capture'] %}{{ result['age_first_capture'] }}{% endif %}</td>
 
