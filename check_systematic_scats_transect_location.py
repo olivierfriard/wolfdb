@@ -34,6 +34,12 @@ out += """
 </head>
 """
 
+try:
+    with open("templates/dev_style.html", "r") as f_in:
+        out += f"<style>{f_in.read()}</style>"
+except Exception:
+    pass
+
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -41,11 +47,10 @@ cursor.execute(
     (
         "SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y "
         "FROM scats "
-        "WHERE sampling_type = 'Systematic' "
+        "WHERE sampling_type != 'Opportunistic' "
     )
 )
 scats = cursor.fetchall()
-
 
 out2 = ""
 c = 0

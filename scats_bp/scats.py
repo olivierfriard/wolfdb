@@ -99,6 +99,10 @@ def view_scat(scat_id):
     """
     Display scat info
     """
+
+    scat_color = "orange"
+    transect_color = "red"
+
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -134,6 +138,7 @@ def view_scat(scat_id):
     scat_features = [scat_feature]
 
     center = f"{results['latitude']}, {results['longitude']}"
+    # fit = [[results["latitude"], results["longitude"]], [results["latitude"], results["longitude"]]]
 
     # transect
     if results["path_id"]:  # Systematic sampling
@@ -175,7 +180,18 @@ def view_scat(scat_id):
         header_title=f"Scat ID: {scat_id}",
         results=results,
         transect_id=transect_id,
-        map=Markup(fn.leaflet_geojson(center, scat_features, transect_features)),
+        # map=Markup(fn.leaflet_geojson(center, scat_features, transect_features)),
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": scat_color,
+                    "transects": transect_features,
+                    "transects_color": transect_color,
+                    "center": center,
+                }
+            )
+        ),
     )
 
 
@@ -212,7 +228,6 @@ def plot_all_scats():
             "geometry": dict(scat_geojson),
             "type": "Feature",
             "properties": {
-                # "style": {"color": "orange", "fillColor": "orange", "fillOpacity": 1},
                 "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
             },
             "id": row["scat_id"],
