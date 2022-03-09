@@ -130,7 +130,7 @@ out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat
 out += '<a href="/systematic_scats_transect_location" class="btn btn-primary">Update data</a><br><br>'
 
 
-out += f"{len(scats)} systematic scats.<br>\n"
+out += f"{len(scats)} scats (sampling type &ne; Opportunistic).<br>\n"
 
 out += f"{c} scat positions that do not match the transect ID.<br>\n"
 
