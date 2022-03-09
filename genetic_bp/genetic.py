@@ -2059,13 +2059,15 @@ def confirm_load_definitive_genotypes_xlsx(filename):
                 "(%s, %s, %s, %s, NOW())"
             )
 
-            print(d["genotype_id"], locus, "a", d[locus]["a"])
+            # print(d["genotype_id"], locus, "a", d[locus]["a"])
 
-            cursor.execute(sql, [d["genotype_id"], locus, "a", d[locus]["a"]])
-            connection.commit()
+            if "a" in d[locus]:
+                cursor.execute(sql, [d["genotype_id"], locus, "a", d[locus]["a"]])
+                connection.commit()
 
-            cursor.execute(sql, [d["genotype_id"], locus, "b", d[locus]["b"]])
-            connection.commit()
+            if "b" in d[locus]:
+                cursor.execute(sql, [d["genotype_id"], locus, "b", d[locus]["b"]])
+                connection.commit()
 
     return redirect("/genotypes")
 
@@ -2085,12 +2087,10 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
     if pl.Path(filename).suffix == ".ODS":
         engine = "odf"
 
-    out = ""
-
     try:
         df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=0, engine=engine)
     except Exception:
-        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
+        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}
 
     for column in [
         "genotype_id",
