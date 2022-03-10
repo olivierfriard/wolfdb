@@ -126,9 +126,6 @@ for row in scats:
                 f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
                 f"""<td>{transect['distance']}</td>"""
                 f"""<td>{new_path_id}</td>"""
-                f"""<td>{row['snowtrack_id']}</td>"""
-                f"""<td>{track['snowtrack_id']}</td>"""
-                f"<td>{track['distance']}</td>"
             )
 
         else:
@@ -140,10 +137,13 @@ for row in scats:
                 f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
                 f"""<td>{transect['distance']}</td>"""
                 f"""<td><a class="btn btn-danger btn-small" href="/set_path_id/{row['scat_id']}/{new_path_id}" onclick="return confirm('Are you sure to set the path ID?')">Set {new_path_id} as path ID</a></td>"""
-                f"<td>{row['snowtrack_id']}</td>"
-                f"<td>{track['snowtrack_id']}</td>"
-                f"<td>{track['distance']}</td>"
             )
+
+        out2 += (
+            f"""<td><a href="/view_track/{row['snowtrack_id']}">{row['snowtrack_id']}</a></td>"""
+            f"""<td>{track['snowtrack_id']}</td>"""
+            f"<td>{track['distance']}</td>"
+        )
 
 
 out += "<h1>Location on transects for systematic scats</h1>\n"
