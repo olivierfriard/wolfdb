@@ -4,18 +4,16 @@ WolfDB web service
 """
 
 
-
 from flask import Markup
 import datetime
 import re
 
-from wtforms import (Form, StringField, SelectField, TextAreaField)
+from wtforms import Form, StringField, SelectField, TextAreaField
 
 from wtforms.validators import Required, ValidationError
 
 
 class Scat(Form):
-
     def integer_validator(form, field):
         if not field.data:
             return
@@ -23,19 +21,23 @@ class Scat(Form):
             int(field.data)
             return
         except:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
-
+            raise ValidationError(
+                Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
+            )
 
     def iso_date_validator(form, field):
         """
         validation for date in ISO 8601 format (YYYY-MM-DD)
         """
-        try: # YYYY
-            datetime.datetime.strptime(field.data, '%Y-%m-%d')
+        try:  # YYYY
+            datetime.datetime.strptime(field.data, "%Y-%m-%d")
             return
         except ValueError:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'))
-
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'
+                )
+            )
 
     def wa_validator(form, field):
         """
@@ -43,39 +45,46 @@ class Scat(Form):
         """
         if field.data == "":
             return
-        m = re.match('WA.*', field.data)
+        m = re.match("WA.*", field.data)
         if m is None:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'))
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'
+                )
+            )
         return
 
-
-    scat_id = StringField("Scat ID", validators=[Required(),])
+    scat_id = StringField(
+        "Scat ID",
+        validators=[
+            Required(),
+        ],
+    )
 
     wa_code = StringField("WA code", validators=[wa_validator])
 
-    sampling_type = SelectField("Sampling type", choices=[('', ''),
-                                                          ('Opportunistic', 'Opportunistic'),
-                                                          ('Systematic', 'Systematic')],
-                                default="")
+    sampling_type = SelectField(
+        "Sampling type",
+        choices=[("", ""), ("Opportunistic", "Opportunistic"), ("Systematic", "Systematic")],
+        default="",
+    )
     path_id = SelectField("Path ID")
-    snowtrack_id = SelectField("Snow-tracking ID")
+    snowtrack_id = SelectField("Track ID")
 
     location = StringField("Location", [])
     municipality = StringField("Municipality", [])
     province = StringField("Province", [])
 
-
-    deposition = SelectField("Deposition", choices=[('', ''),('fresh', 'fresh'), ('old', 'old')], default="")
-    matrix = SelectField("Matrix", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
-    collected_scat = SelectField("Collected scat", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
-    scalp_category = SelectField("SCALP category", choices=[('C1', 'C1'), ('C2', 'C2'), ('C3', 'C3')], default="C2")
-    genetic_sample = SelectField("Genetic sample", choices=[('', ''),('Yes', 'Yes'), ('No', 'No')], default="")
+    deposition = SelectField("Deposition", choices=[("", ""), ("Fresh", "Fresh"), ("Old", "Old")], default="")
+    matrix = SelectField("Matrix", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
+    collected_scat = SelectField("Collected scat", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
+    scalp_category = SelectField("SCALP category", choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")], default="C2")
+    genetic_sample = SelectField("Genetic sample", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
     coord_east = StringField("Coordinate East", validators=[Required(), integer_validator])
-    coord_north  = StringField("Coordinate North", validators=[Required(), integer_validator])
-    coord_zone = SelectField("Zone", choices=[('32N', '32N'), ('33N', '33N')], default="32N")
+    coord_north = StringField("Coordinate North", validators=[Required(), integer_validator])
+    coord_zone = SelectField("Zone", choices=[("32N", "32N"), ("33N", "33N")], default="32N")
 
     observer = StringField("Operator", [])
     institution = StringField("Institution", [])
 
     notes = TextAreaField("Notes", [])
-

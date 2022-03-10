@@ -16,9 +16,6 @@
     }
 
 function check_geocoding() {
-
-
-
     if (
          (document.getElementById("coord_north").value != "")
          && (document.getElementById("coord_east").value != "")
@@ -43,17 +40,13 @@ function check_geocoding() {
         xhttp.open("GET", "/rev_geocoding/"+east+"/"+north+"/"+zone, true);
         xhttp.send();
         }
-
 }
-
 </script>
-
 
 <body onload="sampling_type_changed()">
 
 <main class="flex-shrink-0">
 <div class="container">
-
 
 <h1>WolfDB</h1>
 <hr>
@@ -167,11 +160,10 @@ function check_geocoding() {
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.path_id(class="form-control") }}
+    {{ form.path_id(class="form-control", value=default_values["path_id"]) }}
     {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
-
 
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
@@ -187,7 +179,7 @@ function check_geocoding() {
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.deposition.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.deposition(class="form-control",  value=default_values["deposition"]) }}
+    {{ form.deposition(class="form-control", value=default_values["deposition"]) }}
     {% for message in form.deposition.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
@@ -197,7 +189,7 @@ function check_geocoding() {
 <div class="mb-3">
     <div class="row g-3 align-items-top"><div class="col-2">{{ form.matrix.label }}
     </div><!-- col --><div class="col-8">
-    {{ form.matrix(class="form-control",  value=default_values["matrix"]) }}
+    {{ form.matrix(class="form-control", value=default_values["matrix"]) }}
     {% for message in form.matrix.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
     </div></div>
 </div>
@@ -251,7 +243,7 @@ function check_geocoding() {
 
 
 
-<button type="submit" class="btn btn-danger" >Submit</button>
+<center><button type="submit" class="btn btn-lg btn-danger" >Submit</button></center>
 </form>
 
 

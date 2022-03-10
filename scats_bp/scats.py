@@ -481,6 +481,9 @@ def new_scat():
 @app.route("/edit_scat/<scat_id>", methods=("GET", "POST"))
 @fn.check_login
 def edit_scat(scat_id):
+    """
+    Let user edit a scat
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -509,6 +512,10 @@ def edit_scat(scat_id):
         if default_values["notes"] is None:
             default_values["notes"] = ""
 
+        default_values["path_id"] = "BL_27 2020-11-26"
+
+        print(default_values["path_id"])
+
         form = Scat(
             path_id=default_values["path_id"],
             snowtrack_id=default_values["snowtrack_id"],
@@ -521,9 +528,13 @@ def edit_scat(scat_id):
 
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+
+        print((default_values["path_id"], default_values["path_id"]) in form.path_id.choices)
+
         # get id of all snow tracks
         form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
+        # default values
         form.notes.data = default_values["notes"]
 
         return render_template(
@@ -570,6 +581,7 @@ def edit_scat(scat_id):
 
             # path id
             if request.form["sampling_type"] == "Systematic":
+                # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
                 path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
             else:
                 path_id = ""
