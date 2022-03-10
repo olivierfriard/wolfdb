@@ -533,8 +533,7 @@ def edit_scat(scat_id):
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
-        print((default_values["path_id"], default_values["path_id"]) in form.path_id.choices)
-
+        """
         # get id of all snow tracks
         all_tracks = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
         # check if current track_id is in the list of all_tracks
@@ -542,6 +541,8 @@ def edit_scat(scat_id):
             # add current track_id to list
             all_tracks.append((default_values["snowtrack_id"], default_values["snowtrack_id"]))
         form.snowtrack_id.choices = list(all_tracks)
+        """
+        form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
         # default values
         form.notes.data = default_values["notes"]
