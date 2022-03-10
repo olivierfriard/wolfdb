@@ -2,14 +2,16 @@ TO DO list
 ===================================
 
 
-* insert snow_track coordinates
+* region in dw_
+
+* edit scat -> track not found
 
 
 
 
 
 
-
+* insert snow_track coordinates [DONE]
 
 * insert auto location in  transects [DONE]
 

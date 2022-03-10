@@ -45,7 +45,7 @@ cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 cursor.execute(
     (
-        "SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y "
+        "SELECT scat_id, sampling_type, path_id, snowtrack_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y "
         "FROM scats "
         "WHERE sampling_type != 'Opportunistic' "
     )
@@ -67,6 +67,24 @@ for row in scats:
             transect_id_found = ""
     else:
         transect_id_found = ""
+
+    # check if track ID exists
+    track_id_to_search = row["snowtrack_id"]
+    cursor.execute("SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = %s", [track_id_to_search])
+    row3 = cursor.fetchone()
+    if row3 is not None:
+        track_id_found = row3["snowtrack_id"]
+    else:
+        track_id_found = ""
+
+    sql = (
+        f" SELECT snowtrack_id, st_distance(ST_GeomFromText('POINT({row['x']} {row['y']})',32632), multilines)::integer AS distance "
+        "FROM snow_tracks "
+        f"WHERE multilines is not null "
+        f"AND st_distance(ST_GeomFromText('POINT({row['x']} {row['y']})',32632), multilines) = (SELECT min(st_distance(ST_GeomFromText('POINT({row['x']} {row['y']})',32632), multilines)) FROM snow_tracks) "
+    )
+    cursor.execute(sql)
+    track = cursor.fetchone()
 
     sql = (
         f" SELECT transect_id, st_distance(ST_GeomFromText('POINT({row['x']} {row['y']})',32632), multilines)::integer AS distance "
@@ -108,6 +126,9 @@ for row in scats:
                 f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
                 f"""<td>{transect['distance']}</td>"""
                 f"""<td>{new_path_id}</td>"""
+                f"""<td>{row['snowtrack_id']}</td>"""
+                f"""<td>{track['snowtrack_id']}</td>"""
+                f"<td>{track['distance']}</td>"
             )
 
         else:
@@ -119,6 +140,9 @@ for row in scats:
                 f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
                 f"""<td>{transect['distance']}</td>"""
                 f"""<td><a class="btn btn-danger btn-small" href="/set_path_id/{row['scat_id']}/{new_path_id}" onclick="return confirm('Are you sure to set the path ID?')">Set {new_path_id} as path ID</a></td>"""
+                f"<td>{row['snowtrack_id']}</td>"
+                f"<td>{track['snowtrack_id']}</td>"
+                f"<td>{track['distance']}</td>"
             )
 
 
@@ -136,7 +160,7 @@ out += f"{c} scat positions that do not match the transect ID.<br>\n"
 
 out += '<table class="table table-striped">\n'
 
-out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Action</th></tr>"
+out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Action</th><th>Current track ID</th><th>Closer Track ID</th><th>Distance to closer track ID</th></tr>"
 
 out += out2
 
