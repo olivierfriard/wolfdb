@@ -146,7 +146,7 @@ for row in scats:
         )
 
 
-out += "<h1>Location on transects for systematic scats</h1>\n"
+out += "<h1>Location on transects/tracks for systematic scats</h1>\n"
 
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
 
