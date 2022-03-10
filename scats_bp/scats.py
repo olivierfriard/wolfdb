@@ -512,7 +512,11 @@ def edit_scat(scat_id):
         if default_values["notes"] is None:
             default_values["notes"] = ""
 
-        default_values["path_id"] = "BL_27 2020-11-26"
+        # convert convert XX_NN|YYMMDD to XX_NN YYYY-MM-DD
+        if "|" in default_values["path_id"]:
+            transect_id, date = default_values["path_id"].split("|")
+            date = f"20{date[:2]}-{date[2:4]}-{date[4:]}"
+            default_values["path_id"] = f"{transect_id} {date}"
 
         print(default_values["path_id"])
 
@@ -532,7 +536,12 @@ def edit_scat(scat_id):
         print((default_values["path_id"], default_values["path_id"]) in form.path_id.choices)
 
         # get id of all snow tracks
-        form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+        all_tracks = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+        # check if current track_id is in the list of all_tracks
+        if (default_values["snowtrack_id"], default_values["snowtrack_id"]) not in all_tracks:
+            # add current track_id to list
+            all_tracks.append((default_values["snowtrack_id"], default_values["snowtrack_id"]))
+        form.snowtrack_id.choices = list(all_tracks)
 
         # default values
         form.notes.data = default_values["notes"]
