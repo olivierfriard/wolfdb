@@ -957,43 +957,6 @@ def view_genetic_data(wa_code):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    """
-    loci_values = {}
-    for locus in loci_list:
-        loci_values[locus] = {}
-        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
-        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
-
-    for locus in loci_list:
-
-        for allele in  ['a', 'b'][:loci_list[locus]]:
-
-            cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
-                            "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                            "user_id "
-                            "FROM wa_locus "
-                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
-                            "ORDER BY timestamp DESC LIMIT 1"
-                            ),
-                            {"wa_code": wa_code, "locus": locus, "allele": allele})
-
-            row2 = cursor.fetchone()
-            if row2 is not None:
-                val = row2["val"] if row2["val"] is not None else "-"
-                notes = row2["notes"] if row2["notes"] is not None else ""
-                epoch = row2["epoch"] if row2["epoch"] is not None else ""
-                date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
-                user_id = row2["user_id"] if row2["user_id"] is not None else ""
-            else:
-                val = "-"
-                notes = ""
-                epoch = ""
-                date = ""
-                user_id = ""
-
-            loci_values[locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "date": date, "user_id": user_id}
-    """
-
     loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
     return render_template(
@@ -1038,8 +1001,10 @@ def add_genetic_data(wa_code):
 
     loci_val = rdis.get(wa_code)
     if loci_val is not None:
+        print("from redis")
         loci_values = json.loads(loci_val)
     else:
+        print("from db")
         loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
     if request.method == "GET":
@@ -1122,18 +1087,10 @@ def add_genetic_data(wa_code):
 
                     if len(rows) == 1:  # all wa code have the same value
 
-                        """
                         sql = (
-                            "SELECT distinct (select id from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_tissue.genotype_id) AS id "
-                            "FROM wa_scat_tissue "
-                            "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)"
-                        )
-                        """
-
-                        sql = (
-                            "SELECT distinct (select id from genotype_locus where locus = %(locus)s and allele = %(allele)s AND genotype_id =wa_scat_dw.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
+                            "SELECT distinct (SELECT id FROM genotype_locus where locus = %(locus)s AND allele = %(allele)s AND genotype_id =wa_scat_dw.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
                             "FROM wa_scat_dw "
-                            "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)"
+                            "WHERE genotype_id = (SELECT genotype_id FROM wa_results where wa_code = %(wa_code)s)"
                         )
 
                         cursor.execute(sql, {"locus": locus["name"], "allele": allele, "wa_code": wa_code})
@@ -1147,6 +1104,7 @@ def add_genetic_data(wa_code):
                                     "UPDATE genotype_locus "
                                     "SET notes = %(notes)s, "
                                     "val = %(val)s, "
+                                    "timestamp = NOW(), "
                                     "user_id = %(user_id)s "
                                     "WHERE id = %(id)s "
                                 ),
