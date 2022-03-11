@@ -1036,45 +1036,6 @@ def add_genetic_data(wa_code):
     for row in cursor.fetchall():
         loci_list[row["name"]] = row["n_alleles"]
 
-    """
-    loci_values = {}
-    for locus in loci_list:
-        loci_values[locus] = {}
-        loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": "" }
-        loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": "" }
-
-    for locus in loci_list:
-
-        for allele in  ['a', 'b'][:loci_list[locus]]:
-
-            cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
-                            "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                            "user_id "
-                            "FROM wa_locus "
-                            "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
-                            "ORDER BY timestamp DESC LIMIT 1"
-                            ),
-                            {"wa_code": wa_code, "locus": locus, "allele": allele})
-
-            row2 = cursor.fetchone()
-            if row2 is not None:
-                val = row2["val"] if row2["val"] is not None else "-"
-                notes = row2["notes"] if row2["notes"] is not None else ""
-                epoch = row2["epoch"] if row2["epoch"] is not None else ""
-                user_id = row2["user_id"] if row2["user_id"] is not None else ""
-                date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
-            else:
-                val = "-"
-                notes = ""
-                epoch = ""
-                date = ""
-                user_id = ""
-
-            loci_values[locus][allele] = {"value": val, "notes": notes,
-                                          "epoch": epoch, "date": date,
-                                          "user_id": user_id}
-    """
-
     loci_val = rdis.get(wa_code)
     if loci_val is not None:
         loci_values = json.loads(loci_val)
@@ -1150,18 +1111,10 @@ def add_genetic_data(wa_code):
             for allele in ["a", "b"]:
                 if locus["name"] + f"_{allele}" in request.form and request.form[locus["name"] + f"_{allele}"]:
 
-                    """
                     sql = (
-                        "SELECT distinct (select val from wa_locus where locus = %(locus)s and allele = %(allele)s AND wa_code =wa_scat_tissue.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
-                        "FROM wa_scat_tissue "
-                        "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)"
-                    )
-                    """
-
-                    sql = (
-                        "SELECT distinct (select val from wa_locus where locus = %(locus)s and allele = %(allele)s AND wa_code =wa_scat_dw.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
+                        "SELECT DISTINCT (SELECT val FROM wa_locus WHERE locus = %(locus)s AND allele = %(allele)s AND wa_code =wa_scat_dw.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
                         "FROM wa_scat_dw "
-                        "WHERE genotype_id = (select genotype_id from wa_results where wa_code = %(wa_code)s)"
+                        "WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = %(wa_code)s)"
                     )
 
                     cursor.execute(sql, {"locus": locus["name"], "allele": allele, "wa_code": wa_code})

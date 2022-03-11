@@ -10,6 +10,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Font
 from tempfile import NamedTemporaryFile
 
+
 def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
 
     wb = Workbook()
@@ -17,10 +18,22 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
     ws1 = wb.active
     ws1.title = f"WA genetic samples"
 
-    header = ["WA code", "Sample ID", "Date", "Municipality",
-              "Coordinate WGS84 UTM East", "Coordinate WGS84 UTM North", "UTM Zone",
-               "mtDNA result",
-               "Genotype ID", "Temp ID", "Sex", "Status", "Pack", "Dead recovery"]
+    header = [
+        "WA code",
+        "Sample ID",
+        "Date",
+        "Municipality",
+        "Coordinate WGS84 UTM East",
+        "Coordinate WGS84 UTM North",
+        "UTM Zone",
+        "mtDNA result",
+        "Genotype ID",
+        "Temp ID",
+        "Sex",
+        "Status",
+        "Pack",
+        "Dead recovery",
+    ]
 
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
@@ -40,7 +53,7 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         out.append(row["coord_north"])
         out.append("32N")
 
-        #out.append(f'{row["coord_east"]}, {row["coord_north"]}')
+        # out.append(f'{row["coord_east"]}, {row["coord_north"]}')
 
         out.append(row["mtdna"] if row["mtdna"] is not None else "")
         out.append(row["genotype_id"] if row["genotype_id"] is not None else "")
@@ -51,12 +64,14 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
 
         for locus in loci_list:
-            out.extend([loci_values[row['wa_code']][locus]['a']['value'],
-                        loci_values[row['wa_code']][locus]['a']['notes'],
-                        loci_values[row['wa_code']][locus]['b']['value'],
-                        loci_values[row['wa_code']][locus]['b']['notes'],
-                       ]
-                      )
+            out.extend(
+                [
+                    loci_values[row["wa_code"]][locus]["a"]["value"],
+                    loci_values[row["wa_code"]][locus]["a"]["notes"],
+                    loci_values[row["wa_code"]][locus]["b"]["value"],
+                    loci_values[row["wa_code"]][locus]["b"]["notes"],
+                ]
+            )
 
         ws1.append(out)
 
@@ -76,10 +91,23 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
     ws1.title = f"WA matches (DBSCAN distance {distance} cluster ID {cluster_id})"
     print(ws1.title)
 
-    header = ["WA code", "Sample ID", "Date", "Municipality",
-              "Coordinate WGS84 UTM East", "Coordinate WGS84 UTM North", "UTM Zone",
-               "mtDNA result",
-              "Genotype ID", "Notes on genotype",  "Temporary ID", "Sex", "Status", "Pack", "Dead recovery"]
+    header = [
+        "WA code",
+        "Sample ID",
+        "Date",
+        "Municipality",
+        "Coordinate WGS84 UTM East",
+        "Coordinate WGS84 UTM North",
+        "UTM Zone",
+        "mtDNA result",
+        "Genotype ID",
+        "Notes on genotype",
+        "Temporary ID",
+        "Sex",
+        "Status",
+        "Pack",
+        "Dead recovery",
+    ]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -110,15 +138,15 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
         out.append(row["pack"] if row["pack"] is not None else "")
         out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
 
-
-
         for locus in loci_list:
-            out.extend([loci_values[row['wa_code']][locus]['a']['value'],
-                        loci_values[row['wa_code']][locus]['a']['notes'],
-                        loci_values[row['wa_code']][locus]['b']['value'],
-                        loci_values[row['wa_code']][locus]['b']['notes'],
-                       ]
-                      )
+            out.extend(
+                [
+                    loci_values[row["wa_code"]][locus]["a"]["value"],
+                    loci_values[row["wa_code"]][locus]["a"]["notes"],
+                    loci_values[row["wa_code"]][locus]["b"]["value"],
+                    loci_values[row["wa_code"]][locus]["b"]["notes"],
+                ]
+            )
 
         ws1.append(out)
 
@@ -130,7 +158,6 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
         return stream
 
 
-
 def export_wa_analysis_group(loci_list, data, loci_values):
 
     wb = Workbook()
@@ -138,9 +165,18 @@ def export_wa_analysis_group(loci_list, data, loci_values):
     ws1 = wb.active
     ws1.title = f"Genotype matches"
 
-    header = ["Genotype ID", "Notes on genotype", "Temporary ID",
-              "Sex", "Status", "Pack", "Hybrid", "Dispersal",
-              "Number of recaptures", "Dead recovery"]
+    header = [
+        "Genotype ID",
+        "Notes on genotype",
+        "Temporary ID",
+        "Sex",
+        "Status",
+        "Pack",
+        "Hybrid",
+        "Dispersal",
+        "Number of recaptures",
+        "Dead recovery",
+    ]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -163,12 +199,14 @@ def export_wa_analysis_group(loci_list, data, loci_values):
         out.append(data[genotype_id]["dead_recovery"])
 
         for locus in loci_list:
-            out.extend([loci_values[genotype_id][locus]['a']['value'],
-                        loci_values[genotype_id][locus]['a']['notes'],
-                        loci_values[genotype_id][locus]['b']['value'],
-                        loci_values[genotype_id][locus]['b']['notes'],
-                       ]
-                      )
+            out.extend(
+                [
+                    loci_values[genotype_id][locus]["a"]["value"],
+                    loci_values[genotype_id][locus]["a"]["notes"],
+                    loci_values[genotype_id][locus]["b"]["value"],
+                    loci_values[genotype_id][locus]["b"]["notes"],
+                ]
+            )
 
         ws1.append(out)
 
@@ -187,9 +225,20 @@ def export_genotypes_list(loci_list, results, loci_values):
     ws1 = wb.active
     ws1.title = f"Genotype matches"
 
-    header = ["Genotype ID", "Other ID", "Date", "Pack", "Sex", "Hybrid", "Status",
-              "Age at first capture", "status at first capture",
-              "Dispersal", "Number of recaptures", "Dead recovery"]
+    header = [
+        "Genotype ID",
+        "Other ID",
+        "Date",
+        "Pack",
+        "Sex",
+        "Hybrid",
+        "Status",
+        "Age at first capture",
+        "status at first capture",
+        "Dispersal",
+        "Number of recaptures",
+        "Dead recovery",
+    ]
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -205,7 +254,7 @@ def export_genotypes_list(loci_list, results, loci_values):
         out.append(row["pack"] if row["pack"] is not None else "")
         out.append(row["sex"] if row["sex"] is not None else "")
         out.append(row["hybrid"] if row["hybrid"] is not None else "")
-        out.append(row["position"] if row["position"] is not None else "")
+        out.append(row["status"] if row["status"] is not None else "")
         out.append(row["age_first_capture"] if row["age_first_capture"] is not None else "")
         out.append(row["status_first_capture"] if row["status_first_capture"] is not None else "")
 
@@ -214,12 +263,14 @@ def export_genotypes_list(loci_list, results, loci_values):
         out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
 
         for locus in loci_list:
-            out.extend([loci_values[row['genotype_id']][locus]['a']['value'],
-                        loci_values[row['genotype_id']][locus]['a']['notes'],
-                        loci_values[row['genotype_id']][locus]['b']['value'],
-                        loci_values[row['genotype_id']][locus]['b']['notes'],
-                       ]
-                      )
+            out.extend(
+                [
+                    loci_values[row["genotype_id"]][locus]["a"]["value"],
+                    loci_values[row["genotype_id"]][locus]["a"]["notes"],
+                    loci_values[row["genotype_id"]][locus]["b"]["value"],
+                    loci_values[row["genotype_id"]][locus]["b"]["notes"],
+                ]
+            )
 
         ws1.append(out)
 
