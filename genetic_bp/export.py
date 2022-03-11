@@ -191,7 +191,7 @@ def export_wa_analysis_group(loci_list, data, loci_values):
         out.append(data[genotype_id]["working_notes"])
         out.append(data[genotype_id]["tmp_id"])
         out.append(data[genotype_id]["sex"])
-        out.append(data[genotype_id]["position"])
+        out.append(data[genotype_id]["status"])
         out.append(data[genotype_id]["pack"])
         out.append(data[genotype_id]["hybrid"])
         out.append(data[genotype_id]["dispersal"])
