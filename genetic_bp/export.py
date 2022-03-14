@@ -28,6 +28,7 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         "UTM Zone",
         "mtDNA result",
         "Genotype ID",
+        "Notes on genotype",
         "Temp ID",
         "Sex",
         "Status",
@@ -53,10 +54,9 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         out.append(row["coord_north"])
         out.append("32N")
 
-        # out.append(f'{row["coord_east"]}, {row["coord_north"]}')
-
         out.append(row["mtdna"] if row["mtdna"] is not None else "")
         out.append(row["genotype_id"] if row["genotype_id"] is not None else "")
+        out.append(row["notes"] if row["notes"] is not None else "")
         out.append(row["tmp_id"] if row["tmp_id"] is not None else "")
         out.append(row["sex_id"] if row["sex_id"] is not None else "")
         out.append(row["status"] if row["status"] is not None else "")

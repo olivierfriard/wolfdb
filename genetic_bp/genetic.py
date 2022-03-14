@@ -183,48 +183,6 @@ def genotypes():
     return render_template("genotypes.html", header_title="Genotypes")
 
 
-'''
-def get_loci_value(genotype_id: str, loci_list: list) -> dict:
-    """
-    get genotype loci values
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    loci_values = {}
-    for locus in loci_list:
-        loci_values[locus] = {}
-        loci_values[locus]['a'] = {"value": "-", "notes": "", "user_id": ""}
-        loci_values[locus]['b'] = {"value": "-", "notes": "", "user_id": ""}
-
-    for locus in loci_list:
-
-        cursor.execute(("SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
-                        "FROM genotype_locus "
-                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
-                        "UNION "
-                        "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
-                        "FROM genotype_locus "
-                        "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
-                        ),
-                        {"genotype_id": genotype_id, "locus": locus})
-
-        locus_val = cursor.fetchall()
-
-        for row2 in locus_val:
-            val = row2["val"] if row2["val"] is not None else "-"
-            notes = row2["notes"] if row2["notes"] is not None else ""
-            user_id = row2["user_id"] if row2["user_id"] is not None else ""
-            epoch = row2["epoch"] if row2["epoch"] is not None else ""
-
-            loci_values[locus][row2["allele"]] = {"value": val, "notes": notes,
-                                                  "user_id": user_id, "epoch": epoch}
-
-    return loci_values
-'''
-
-
 def update_redis_with_genotypes_loci():
     """
     update redis with the genotypes loci values
@@ -354,18 +312,6 @@ def view_wa(wa_code):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    """
-    cursor.execute(
-        (
-            "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
-            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-            " FROM scats WHERE wa_code = %s "
-        ),
-        [wa_code],
-    )
-    """
-
     cursor.execute(
         (
             "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
@@ -442,17 +388,6 @@ def plot_all_wa():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    """
-    cursor.execute(
-        (
-            "SELECT wa_code, sample_id, genotype_id, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-            "FROM wa_scat_tissue "
-            "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        )
-    )
-    """
-
     cursor.execute(
         (
             "SELECT wa_code, sample_id, genotype_id, "
@@ -517,18 +452,6 @@ def plot_wa_clusters(distance):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    """
-    cursor.execute(
-        (
-            "SELECT wa_code, sample_id, municipality, genotype_id, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-            f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
-            "FROM wa_scat_tissue "
-            "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        )
-    )
-    """
-
     cursor.execute(
         (
             "SELECT wa_code, sample_id, municipality, genotype_id, "
@@ -592,7 +515,9 @@ def plot_wa_clusters(distance):
 @app.route("/genetic_samples")
 @fn.check_login
 def genetic_samples():
-
+    """
+    genetic samples home page
+    """
     return render_template("genetic_samples.html", header_title="Genetic samples")
 
 
@@ -700,19 +625,6 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         loci_list[row["name"]] = row["n_alleles"]
 
     # DBScan
-
-    """
-    cursor.execute(
-        (
-            "SELECT wa_code, sample_id, municipality, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-            f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-            "FROM wa_scat_tissue "
-            "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        )
-    )
-    """
-
     cursor.execute(
         (
             "SELECT wa_code, sample_id, municipality, "
@@ -747,41 +659,6 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
     loci_values = {}
     for row in wa_scats:
-
-        """
-        loci_values[row["wa_code"]] = {}
-        for locus in loci_list:
-            loci_values[row["wa_code"]][locus] = {}
-            loci_values[row["wa_code"]][locus]['a'] = {"value": "-", "notes": "", "user_id": "" }
-            loci_values[row["wa_code"]][locus]['b'] = {"value": "-", "notes": "", "user_id": "" }
-
-        for locus in loci_list:
-
-            for allele in  ['a', 'b'][:loci_list[locus]]:
-
-                cursor.execute(("SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, "
-                                "user_id "
-                                "FROM wa_locus "
-                                "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
-                                "ORDER BY timestamp DESC LIMIT 1"
-                               ),
-                               {"wa_code": row["wa_code"], "locus": locus, "allele": allele})
-
-                row2 = cursor.fetchone()
-                if row2 is not None:
-                    val = row2["val"] if row2["val"] is not None else "-"
-                    notes = row2["notes"] if row2["notes"] is not None else ""
-                    epoch = row2["epoch"] if row2["epoch"] is not None else ""
-                    user_id = row2["user_id"] if row2["user_id"] is not None else ""
-                else:
-                    val = "-"
-                    notes = ""
-                    epoch = ""
-                    user_id = ""
-
-                loci_values[row["wa_code"]][locus][allele] = {"value": val, "notes": notes, "epoch": epoch, "user_id": user_id}
-        """
-
         loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
     if mode == "export":
@@ -826,17 +703,6 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         loci_list[row["name"]] = row["n_alleles"]
 
     # DBScan
-    """
-    cursor.execute(
-        (
-            "SELECT wa_code, "
-            f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-            "FROM wa_scat_tissue "
-            "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        )
-    )
-    """
-
     cursor.execute(
         (
             "SELECT wa_code, "
@@ -853,18 +719,6 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     wa_list_str = "','".join(wa_list)
 
     # fetch grouped genotypes
-    """
-    cursor.execute(
-        (
-            "SELECT genotype_id, count(wa_code) AS n_recap "
-            "FROM wa_scat_tissue "
-            f"WHERE wa_code in ('{wa_list_str}') "
-            "GROUP BY genotype_id "
-            "ORDER BY genotype_id ASC"
-        )
-    )
-    """
-
     cursor.execute(
         (
             "SELECT genotype_id, count(wa_code) AS n_recap "
@@ -883,17 +737,6 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 
         if row["genotype_id"] is None:
             continue
-
-        """
-        cursor.execute(
-            (
-                "SELECT *, "
-                "(SELECT 'Yes' FROM wa_scat_tissue WHERE sample_id like 'T%%' AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
-                "FROM genotypes WHERE genotype_id = %s"
-            ),
-            [row["genotype_id"]],
-        )
-        """
 
         cursor.execute(
             (
