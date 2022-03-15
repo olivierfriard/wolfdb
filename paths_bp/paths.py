@@ -12,10 +12,13 @@ import psycopg2
 import psycopg2.extras
 from config import config
 import json
+import pathlib as pl
+import os
 
 from .path_form import Path
 import functions as fn
 from . import paths_export
+import paths_completeness
 
 app = flask.Blueprint("paths", __name__, template_folder="templates")
 
@@ -26,6 +29,10 @@ app.debug = params["debug"]
 @app.route("/paths")
 @fn.check_login
 def paths():
+    """
+    paths home page
+    """
+
     return render_template("paths.html", header_title="Paths")
 
 
@@ -410,8 +417,30 @@ def edit_path(path_id):
 @app.route("/del_path/<path_id>")
 @fn.check_login
 def del_path(path_id):
+    """
+    delate a path
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("DELETE FROM paths WHERE path_id = %s", [path_id])
     connection.commit()
     return redirect("/paths_list")
+
+
+@app.route("/path_completeness")
+@fn.check_login
+def path_completeness():
+    """
+    create shapefile with paths completeness
+    """
+
+    if pl.Path("static/paths_completeness.zip").is_file():
+        os.remove("static/paths_completeness.zip")
+
+    zip_path = paths_completeness.paths_completeness_shapefile(
+        "static/paths_completeness", "/tmp/paths_completeness.log"
+    )
+
+    zip_file_name = pl.Path(zip_path).name
+
+    return redirect(f"/static/{zip_file_name}")

@@ -22,6 +22,7 @@ import uuid
 import os
 import sys
 import subprocess
+import time
 from . import scats_export
 
 
@@ -57,7 +58,15 @@ def error_info(exc_info: tuple) -> tuple:
 @app.route("/scats")
 @fn.check_login
 def scats():
-    return render_template("scats.html", header_title="Scats")
+    """
+    Scats home page
+    """
+
+    check_location_creation_time = time.ctime(os.path.getctime("static/systematic_scats_transects_location.html"))
+
+    return render_template(
+        "scats.html", header_title="Scats", check_location_creation_time=check_location_creation_time
+    )
 
 
 @app.route("/wa_form", methods=("POST",))
