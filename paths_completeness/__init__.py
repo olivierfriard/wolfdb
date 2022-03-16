@@ -124,4 +124,4 @@ def paths_completeness_shapefile(dir_path: str, log_file: str):
     return zip_file_name
 
 
-print(paths_completeness_shapefile("/tmp/8", "/tmp/log8.txt"))
+# print(paths_completeness_shapefile("/tmp/8", "/tmp/log8.txt"))
