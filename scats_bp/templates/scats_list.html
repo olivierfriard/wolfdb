@@ -30,7 +30,7 @@
 <th style="background-color: white;">Sampling season</th>
 <th style="background-color: white;">Sampling type</th>
 <th style="background-color: white;">Path ID</th>
-<th style="background-color: white;">Snowtrack ID</th>
+<th style="background-color: white;">Track ID</th>
 <th style="background-color: white;">WA code</th>
 <th style="background-color: white;">Genotype ID</th>
 <th style="background-color: white;">Location</th>
@@ -57,27 +57,24 @@
 <td>{{ result['sampling_type'] }}</td>
 
 <td>{% if result['sampling_type'] == "Systematic" %}
-    {% if result['path_id'] != "" %}
-    <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
-    {% else %}
-    {{ result['path_id'] }}
-    {% endif %}
-    {% endif %}
+{% if result['path_id'] != "" %}
+<a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
+{% else %}
+{{ result['path_id'] }}
+{% endif %}
+{% endif %}
 </td>
 
-<td>{% if result['sampling_type'] == "Systematic" %}
-    {% if result['snowtrack_id'] != "" %}
-    <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
-    {% else %}
-    {{ result['snowtrack_id'] }}
-    {% endif %}
-    {% endif %}
+<td>
+{% if result['snowtrack_id'] %}
+<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
+{% endif %}
 </td>
 
 <td>{% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}</td>
 <td>
-    {% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
-    {% if result['genotype_id2'] %}{{ result['genotype_id2'] }}{% endif %}
+{% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
+{% if result['genotype_id2'] %}{{ result['genotype_id2'] }}{% endif %}
 </td>
 
 <td>{{ result['location'] }}</td>
