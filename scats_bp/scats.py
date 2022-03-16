@@ -119,7 +119,10 @@ def view_scat(scat_id):
         (
             "SELECT *, "
             "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT mtdna FROM wa_scat_dw WHERE wa_code=scats.wa_code limit 1) AS mtdna, "
+            "CASE "
+            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%%wolf%%' THEN 'C1' "
+            "ELSE scats.scalp_category "
+            "END, "
             "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
             "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
             "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
@@ -325,14 +328,17 @@ def scats_list():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT count(*) as n_scats FROM scats")
+    cursor.execute("SELECT COUNT(scat_id) AS n_scats FROM scats")
     n_scats = cursor.fetchone()["n_scats"]
 
     cursor.execute(
         (
             "SELECT *,"
             "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT mtdna FROM wa_scat_dw WHERE wa_code=scats.wa_code limit 1) AS mtdna "
+            "CASE "
+            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+            "ELSE scats.scalp_category "
+            "END "
             "FROM scats "
             "ORDER BY scat_id"
         )
@@ -355,7 +361,10 @@ def export_scats():
         (
             "SELECT *,"
             "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT mtdna FROM wa_scat_dw WHERE wa_code=scats.wa_code limit 1) AS mtdna "
+            "CASE "
+            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+            "ELSE scats.scalp_category "
+            "END "
             "FROM scats "
             "ORDER BY scat_id"
         )

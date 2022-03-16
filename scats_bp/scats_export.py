@@ -60,12 +60,14 @@ def export_scats(scats):
         out.append(row["deposition"])
         out.append(row["matrix"])
         out.append(row["collected_scat"])
+        out.append(row["scalp_category"])
 
+        """
         scalp_cat = row["scalp_category"]
         if row["mtdna"] is not None and "WOLF" in row["mtdna"].upper():
             scalp_cat += " (from mtDNA: C1)"
-
         out.append(scalp_cat)
+        """
 
         out.append(row["genetic_sample"])
         out.append(row["coord_east"])

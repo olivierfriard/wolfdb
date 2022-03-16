@@ -6,7 +6,6 @@ flask blueprint for service administration
 """
 
 
-
 import flask
 from flask import Flask, render_template, redirect, request, Markup, flash, session, current_app
 import psycopg2
@@ -29,7 +28,4 @@ def admin():
     if "email" in session:
         current_app.db_log.info(f"{session['email']} accessed to admin page")
 
-    return render_template("admin.html",
-                           header_title="Administration page",
-                           mode=params["mode"])
-
+    return render_template("admin.html", header_title="Administration page", mode=params["mode"])

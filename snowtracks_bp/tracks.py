@@ -53,6 +53,9 @@ def error_info(exc_info: tuple) -> tuple:
 @app.route("/tracks")
 @fn.check_login
 def snow_tracks():
+    """
+    Tracks home page
+    """
     return render_template("snow_tracks.html", header_title="Tracks")
 
 
@@ -72,9 +75,17 @@ def view_snowtrack(snowtrack_id):
     cursor.execute(
         (
             "SELECT *, "
+            "case when (SELECT lower(mtdna) FROM wa_scat_dw  "
+            " WHERE "
+            "   lower(mtdna) LIKE '%%wolf%%' "
+            "   AND wa_code in (select wa_code from scats WHERE snowtrack_id = t.snowtrack_id)  "
+            "LIMIT 1 "
+            ") LIKE '%%wolf%%' THEN 'C1' "
+            "ELSE t.scalp_category "
+            "END, "
             "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson, "
             "ROUND(ST_Length(multilines)) AS track_length "
-            "FROM snow_tracks WHERE snowtrack_id = %s"
+            "FROM snow_tracks t WHERE snowtrack_id = %s"
         ),
         [snowtrack_id],
     )
@@ -173,7 +184,7 @@ def view_snowtrack(snowtrack_id):
 @app.route("/tracks_list")
 @app.route("/snowtracks_list")
 @fn.check_login
-def snowtracks_list():
+def tracks_list():
     """
     list of tracks
     """
@@ -181,7 +192,22 @@ def snowtracks_list():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM snow_tracks ORDER BY region ASC, province ASC, date DESC")
+    cursor.execute(
+        (
+            "SELECT *, "
+            "CASE "
+            "WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw "
+            " WHERE "
+            "   LOWER(mtdna) LIKE '%%wolf%%' "
+            "   AND wa_code IN (SELECT wa_code FROM scats WHERE snowtrack_id = t.snowtrack_id)  "
+            "LIMIT 1 "
+            ") LIKE '%%wolf%%' THEN 'C1' "
+            "ELSE t.scalp_category "
+            "END "
+            "FROM snow_tracks t "
+            "ORDER BY region ASC, province ASC, date DESC"
+        )
+    )
 
     # split transects (more transects can be specified)
     results = []
