@@ -6,6 +6,8 @@ TO DO list
 
 * edit scat -> track not found
 
+* add check for sampling type when scats are uploaded
+
 
 
 

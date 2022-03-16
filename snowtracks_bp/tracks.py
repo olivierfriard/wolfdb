@@ -221,7 +221,7 @@ def tracks_list():
     # count tracks
     n_tracks = len(results)
 
-    return render_template("snowtracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
+    return render_template("tracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
 
 
 @app.route("/plot_tracks")
@@ -265,9 +265,6 @@ def plot_tracks():
             }
 
             features.append(dict(feature))
-
-        # else:
-        #    print(f"{row['snowtrack_id']} WITHOUT coordinates")
 
     return render_template(
         "plot_tracks.html",
