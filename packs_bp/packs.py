@@ -57,7 +57,7 @@ def view_pack(name):
     cursor.execute(
         (
             "SELECT *, "
-            "(SELECT date FROM wa_scat_tissue where wa_code = "
+            "(SELECT date FROM wa_scat_dw where wa_code = "
             "(SELECT wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) AS date "
             "FROM genotypes WHERE pack = %s"
         ),

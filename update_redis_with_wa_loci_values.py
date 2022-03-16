@@ -14,6 +14,7 @@ import json
 import redis
 
 from config import config
+
 params = config()
 
 # dev version use db 0
@@ -30,11 +31,7 @@ for row in cursor.fetchall():
     loci_list[row["name"]] = row["n_alleles"]
 
 
-
-sql = ("SELECT wa_code "
-       "FROM wa_scat_tissue "
-       "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-      )
+sql = "SELECT wa_code " "FROM wa_scat_dw " "WHERE UPPER(mtdna) not like '%POOR DNA%' "
 
 
 cursor.execute(sql)
@@ -42,5 +39,5 @@ results = cursor.fetchall()
 
 for idx, row in enumerate(results):
 
-    print(row['wa_code'])
-    rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row['wa_code'], loci_list)[0]))
+    print(row["wa_code"])
+    rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))

@@ -32,49 +32,6 @@ def dead_wolves():
     return render_template("dead_wolves.html", header_title=f"Dead wolves")
 
 
-@app.route("/view_dead_wolf/<tissue_id>")
-@fn.check_login
-def view_dead_wolf_old(tissue_id):
-    """
-    view dead wolf from OLD table
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        (
-            "SELECT *, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS dw_lonlat, "
-            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-            "FROM dead_wolves WHERE tissue_id = %s"
-        ),
-        [tissue_id],
-    )
-    dead_wolf = cursor.fetchone()
-
-    dw_geojson = json.loads(dead_wolf["dw_lonlat"])
-
-    dw_feature = {
-        "geometry": dict(dw_geojson),
-        "type": "Feature",
-        "properties": {
-            "style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
-            "popupContent": f"Tissue ID: {tissue_id}",
-        },
-        "id": tissue_id,
-    }
-
-    dw_features = [dw_feature]
-
-    center = f"{dead_wolf['latitude']}, {dead_wolf['longitude']}"
-
-    return render_template(
-        "view_dead_wolf_old.html", dead_wolf=dead_wolf, map=Markup(fn.leaflet_geojson(center, dw_features, []))
-    )
-
-
 @app.route("/view_tissue/<tissue_id>")
 def view_tissue(tissue_id):
     """
@@ -163,43 +120,6 @@ def view_dead_wolf_id(id):
         fields_list=fields_list,
         dead_wolf=dead_wolf,
         map=Markup(fn.leaflet_geojson(center, dw_features, [])),
-    )
-
-
-@app.route("/dead_wolves_list_old")
-@fn.check_login
-def dead_wolves_list_old():
-    """
-    get all dead_wolves
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT * FROM dead_wolves ORDER BY genotype_id ASC"))
-
-    results = cursor.fetchall()
-
-    return render_template("dead_wolves_list_old.html", header_title="OLD list of dead wolves", results=results)
-
-
-@app.route("/dead_wolves_list")
-@fn.check_login
-def dead_wolves_list():
-    """
-    get list all dead_wolves from dw_short2
-    """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT * FROM dw_short2 WHERE deleted is NULL ORDER BY id"))
-
-    results = cursor.fetchall()
-
-    return render_template(
-        "dead_wolves_list.html",
-        header_title="List of dead wolves",
-        length=len(results),
-        results=results,
-        n_dead_wolves=len(results),
     )
 
 
@@ -481,3 +401,87 @@ def del_dead_wolf(id):
     connection.commit()
 
     return redirect("/dead_wolves_list")
+
+
+'''
+@app.route("/view_dead_wolf/<tissue_id>")
+@fn.check_login
+def view_dead_wolf_old(tissue_id):
+    """
+    view dead wolf from OLD table
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        (
+            "SELECT *, "
+            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS dw_lonlat, "
+            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+            "FROM dead_wolves WHERE tissue_id = %s"
+        ),
+        [tissue_id],
+    )
+    dead_wolf = cursor.fetchone()
+
+    dw_geojson = json.loads(dead_wolf["dw_lonlat"])
+
+    dw_feature = {
+        "geometry": dict(dw_geojson),
+        "type": "Feature",
+        "properties": {
+            "style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
+            "popupContent": f"Tissue ID: {tissue_id}",
+        },
+        "id": tissue_id,
+    }
+
+    dw_features = [dw_feature]
+
+    center = f"{dead_wolf['latitude']}, {dead_wolf['longitude']}"
+
+    return render_template(
+        "view_dead_wolf_old.html", dead_wolf=dead_wolf, map=Markup(fn.leaflet_geojson(center, dw_features, []))
+    )
+'''
+
+
+'''
+@app.route("/dead_wolves_list_old")
+@fn.check_login
+def dead_wolves_list_old():
+    """
+    get all dead_wolves
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute(("SELECT * FROM dead_wolves ORDER BY genotype_id ASC"))
+
+    results = cursor.fetchall()
+
+    return render_template("dead_wolves_list_old.html", header_title="OLD list of dead wolves", results=results)
+
+
+@app.route("/dead_wolves_list")
+@fn.check_login
+def dead_wolves_list():
+    """
+    get list all dead_wolves from dw_short2
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute(("SELECT * FROM dw_short2 WHERE deleted is NULL ORDER BY id"))
+
+    results = cursor.fetchall()
+
+    return render_template(
+        "dead_wolves_list.html",
+        header_title="List of dead wolves",
+        length=len(results),
+        results=results,
+        n_dead_wolves=len(results),
+    )
+'''

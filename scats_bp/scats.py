@@ -118,8 +118,8 @@ def view_scat(scat_id):
     cursor.execute(
         (
             "SELECT *, "
-            "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT mtdna FROM wa_scat_tissue WHERE wa_code=scats.wa_code limit 1) AS mtdna, "
+            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+            "(SELECT mtdna FROM wa_scat_dw WHERE wa_code=scats.wa_code limit 1) AS mtdna, "
             "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
             "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
             "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
@@ -331,8 +331,8 @@ def scats_list():
     cursor.execute(
         (
             "SELECT *,"
-            "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT mtdna FROM wa_scat_tissue WHERE wa_code=scats.wa_code limit 1) AS mtdna "
+            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+            "(SELECT mtdna FROM wa_scat_dw WHERE wa_code=scats.wa_code limit 1) AS mtdna "
             "FROM scats "
             "ORDER BY scat_id"
         )
@@ -354,8 +354,8 @@ def export_scats():
     cursor.execute(
         (
             "SELECT *,"
-            "(SELECT genotype_id FROM wa_scat_tissue WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT mtdna FROM wa_scat_tissue WHERE wa_code=scats.wa_code limit 1) AS mtdna "
+            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+            "(SELECT mtdna FROM wa_scat_dw WHERE wa_code=scats.wa_code limit 1) AS mtdna "
             "FROM scats "
             "ORDER BY scat_id"
         )
@@ -527,8 +527,6 @@ def edit_scat(scat_id):
             date = f"20{date[:2]}-{date[2:4]}-{date[4:]}"
             default_values["path_id"] = f"{transect_id} {date}"
 
-        print(default_values["path_id"])
-
         form = Scat(
             path_id=default_values["path_id"],
             snowtrack_id=default_values["snowtrack_id"],
@@ -622,7 +620,7 @@ def edit_scat(scat_id):
             # check if WA code exists for another sample
             if request.form["wa_code"]:
                 cursor.execute(
-                    ("SELECT sample_id FROM wa_scat_tissue WHERE sample_id != %s AND wa_code = %s"),
+                    ("SELECT sample_id FROM wa_scat_dw WHERE sample_id != %s AND wa_code = %s"),
                     [scat_id, request.form["wa_code"]],
                 )
                 if len(cursor.fetchall()):
