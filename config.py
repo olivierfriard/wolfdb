@@ -1,4 +1,8 @@
-import os
+"""
+WolfDB
+Read configuration file (config.ini)
+"""
+
 from configparser import ConfigParser
 
 
@@ -11,8 +15,8 @@ def config():
     parser.read(config_filename)
 
     db = {}
-    if parser.has_section('postgresql'):
-        params = parser.items('postgresql')
+    if parser.has_section("postgresql"):
+        params = parser.items("postgresql")
         for param in params:
             db[param[0]] = param[1]
     else:
@@ -26,5 +30,3 @@ def config():
         raise Exception("Section web_service not found")
 
     return db
-
-
