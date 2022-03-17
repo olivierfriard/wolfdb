@@ -52,11 +52,11 @@ def error_info(exc_info: tuple) -> tuple:
 @app.route("/snow_tracks")
 @app.route("/tracks")
 @fn.check_login
-def snow_tracks():
+def tracks():
     """
     Tracks home page
     """
-    return render_template("snow_tracks.html", header_title="Tracks")
+    return render_template("tracks.html", header_title="Tracks")
 
 
 @app.route("/view_snowtrack/<snowtrack_id>")
@@ -162,7 +162,7 @@ def view_snowtrack(snowtrack_id):
         scat_features.append(scat_feature)
 
     return render_template(
-        "view_snowtrack.html",
+        "view_track.html",
         header_title=f"Track ID: {snowtrack_id}",
         results=track,
         has_coordinates=has_coordinates,
@@ -299,7 +299,7 @@ def new_track():
         flash(fn.alert_danger(f"<b>{msg}</b>"))
 
         return render_template(
-            "new_snowtrack.html",
+            "new_track.html",
             title="New snow track",
             action="/new_snowtrack",
             form=form,
@@ -312,7 +312,7 @@ def new_track():
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
         return render_template(
-            "new_snowtrack.html",
+            "new_track.html",
             header_title="New track",
             title="New track",
             action="/new_track",
@@ -408,7 +408,7 @@ def edit_snowtrack(snowtrack_id):
 
         flash(Markup(f"<b>{msg}</b>"))
         return render_template(
-            "new_snowtrack.html",
+            "new_track.html",
             title="Edit track",
             action=f"/edit_snowtrack/{snowtrack_id}",
             form=form,
@@ -448,7 +448,7 @@ def edit_snowtrack(snowtrack_id):
         form.notes.data = default_values["notes"]
 
         return render_template(
-            "new_snowtrack.html",
+            "new_track.html",
             header_title=f"Edit track {snowtrack_id}",
             title=f"Edit track {snowtrack_id}",
             action=f"/edit_snowtrack/{snowtrack_id}",
