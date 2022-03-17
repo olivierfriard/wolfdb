@@ -1,7 +1,6 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_no-body.html" %}
 
 {% block content %}
-
 
 <script>
     function sampling_type_changed(selectObject) {
@@ -66,7 +65,7 @@ function check_geocoding() {
    {% endif %}
 {% endwith %}
 
-<form method="POST" action="{{ action }}"">
+<form method="POST" action="{{ action }}">
 
 <div class="mb-3">
 <div class="row g-3 align-items-top"><div class="col-2">{{ form.scat_id.label }}
@@ -246,6 +245,9 @@ function check_geocoding() {
 <center><button type="submit" class="btn btn-lg btn-danger" >Submit</button></center>
 </form>
 
-
+</div>
+</main>
+</body>
 
 {% endblock %}
+

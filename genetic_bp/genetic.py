@@ -28,8 +28,8 @@ app = flask.Blueprint("genetic", __name__, template_folder="templates")
 params = config()
 app.debug = params["debug"]
 
-EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
-UPLOAD_FOLDER = "/tmp"
+params["excel_allowed_extensions"] = json.loads(params["excel_allowed_extensions"])
+
 
 # db wolf -> db 0
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
@@ -1564,7 +1564,7 @@ def load_definitive_genotypes_xlsx():
         new_file = request.files["new_file"]
 
         # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in EXCEL_ALLOWED_EXTENSIONS:
+        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
             flash(
                 fn.alert_danger(
                     "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
@@ -1574,7 +1574,7 @@ def load_definitive_genotypes_xlsx():
 
         try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
-            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
+            new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect(f"/load_definitive_genotypes_xlsx")
@@ -1729,7 +1729,7 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
         engine = "odf"
 
     try:
-        df = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=0, engine=engine)
+        df = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=0, engine=engine)
     except Exception:
         return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}
 

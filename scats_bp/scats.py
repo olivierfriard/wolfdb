@@ -409,7 +409,12 @@ def new_scat():
         form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
         return render_template(
-            "new_scat.html", title="New scat", action=f"/new_scat", form=form, default_values={"coord_zone": "32N"}
+            "new_scat.html",
+            header_title="New scat",
+            title="New scat",
+            action=f"/new_scat",
+            form=form,
+            default_values={"coord_zone": "32N"},
         )
 
     if request.method == "POST":
@@ -434,6 +439,8 @@ def new_scat():
                 return not_valid("The scat ID value is not correct")
 
             # path id
+            # if "|" not in request.form["path_id"]:
+            #    return not_valid("The path ID does not have a correct value (must be XX_NN YYYY-MM-DD)")
             path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
 
             # region
@@ -452,7 +459,6 @@ def new_scat():
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            print(fn.sampling_season(date))
 
             sql = (
                 "INSERT INTO scats (scat_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "

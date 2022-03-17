@@ -13,6 +13,7 @@ from config import config
 import sys
 import os
 import json
+import datetime
 
 from .track_form import Track
 import functions as fn
@@ -25,8 +26,7 @@ app = flask.Blueprint("tracks", __name__, template_folder="templates")
 params = config()
 app.debug = params["debug"]
 
-EXCEL_ALLOWED_EXTENSIONS = [".XLSX", ".ODS"]
-UPLOAD_FOLDER = "/tmp"
+params["excel_allowed_extensions"] = json.loads(params["excel_allowed_extensions"])
 
 
 def error_info(exc_info: tuple) -> tuple:
@@ -61,9 +61,9 @@ def tracks():
 
 @app.route("/view_snowtrack/<snowtrack_id>")
 @app.route("/view_track/<snowtrack_id>")
-def view_snowtrack(snowtrack_id):
+def view_track(snowtrack_id):
     """
-    visualize the snow track
+    visualize the track
     """
 
     tracks_color = "blue"
@@ -94,6 +94,10 @@ def view_snowtrack(snowtrack_id):
     if track is None:
         flash(fn.alert_danger(f"<b>Track {snowtrack_id} not found</b>"))
         return redirect("/snowtracks_list")
+
+    # eventually split transect_id
+    if track["transect_id"] is not None:
+        track["transect_id"] = track["transect_id"].split(";")
 
     track_features = []
     min_lat, max_lat = 90, -90
@@ -309,8 +313,17 @@ def new_track():
     if request.method == "GET":
         form = Track()
 
+        """
+        automatic selection not possible because many transects can be selected
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+        """
+
+        """
+        # get id of all paths
+        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+        """
+
         return render_template(
             "new_track.html",
             header_title="New track",
@@ -323,8 +336,15 @@ def new_track():
     if request.method == "POST":
         form = Track(request.form)
 
-        # get id of all paths
+        """
+        # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+        """
+
+        """
+        # get id of all paths
+        form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
+        """
 
         if form.validate():
 
@@ -340,14 +360,40 @@ def new_track():
             if len(rows):
                 return not_valid(f"The track ID {request.form['snowtrack_id']} already exists")
 
+            # check sampling type
+            if request.form["sampling_type"] == "":
+                return not_valid(f"You must select a sampling type (Systematic or Opportunistic)")
+
+            # check transect ID
+            if request.form["sampling_type"] == "Systematic":
+                if request.form["transect_id"] == "":
+                    return not_valid(f"You must specify a transect ID for a systematic sampling")
+                all_transects = fn.all_transect_id()
+                transects_id = request.form["transect_id"].upper().replace(" ", "")
+                for transect_id in transects_id.split(";"):
+                    if transect_id not in all_transects:
+                        return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
+
+            if request.form["sampling_type"] == "Opportunistic":
+                transects_id = ""
+
             # date
             try:
                 year = int(request.form["snowtrack_id"][1 : 2 + 1]) + 2000
                 month = int(request.form["snowtrack_id"][3 : 4 + 1])
                 day = int(request.form["snowtrack_id"][5 : 6 + 1])
                 date = f"{year}-{month:02}-{day:02}"
+                try:
+                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                except Exception:
+                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
             except Exception:
-                return not_valid("The snowtrack_id value is not correct")
+                return not_valid("The track ID value is not correct")
+
+            """
+            # path id
+            path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+            """
 
             # region
             track_region = fn.get_region(request.form["province"])
@@ -368,7 +414,7 @@ def new_track():
                 sql,
                 [
                     request.form["snowtrack_id"],
-                    request.form["transect_id"].upper(),
+                    transects_id,
                     date,
                     fn.sampling_season(date),
                     request.form["location"].strip(),
@@ -394,10 +440,11 @@ def new_track():
 
 
 @app.route("/edit_snowtrack/<snowtrack_id>", methods=("GET", "POST"))
+@app.route("/edit_track/<snowtrack_id>", methods=("GET", "POST"))
 @fn.check_login
-def edit_snowtrack(snowtrack_id):
+def edit_track(snowtrack_id):
     """
-    Edit snow track
+    Edit track
     """
 
     def not_valid(msg):
@@ -443,8 +490,10 @@ def edit_snowtrack(snowtrack_id):
 
         form.multilines.data = default_values["multilines"]
 
+        """
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+        """
         form.notes.data = default_values["notes"]
 
         return render_template(
@@ -459,8 +508,10 @@ def edit_snowtrack(snowtrack_id):
     if request.method == "POST":
         form = Track(request.form)
 
+        """
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+        """
 
         if form.validate():
 
@@ -477,14 +528,32 @@ def edit_snowtrack(snowtrack_id):
                 if len(rows):
                     return not_valid(f"The snowtrack ID {request.form['snowtrack_id']} already exists")
 
+            # check transect ID
+            if request.form["sampling_type"] == "Systematic":
+                if request.form["transect_id"] == "":
+                    return not_valid(f"You must specify a transect ID for a systematic sampling")
+                all_transects = fn.all_transect_id()
+                transects_id = request.form["transect_id"].upper().replace(" ", "")
+                for transect_id in transects_id.split(";"):
+                    if transect_id not in all_transects:
+                        return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
+
+            if request.form["sampling_type"] == "Opportunistic":
+                transects_id = ""
+
             # date
             try:
                 year = int(request.form["snowtrack_id"][1 : 2 + 1]) + 2000
                 month = int(request.form["snowtrack_id"][3 : 4 + 1])
                 day = int(request.form["snowtrack_id"][5 : 6 + 1])
                 date = f"{year}-{month:02}-{day:02}"
+                try:
+                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                except Exception:
+                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
+
             except Exception:
-                return not_valid("The snowtrack_id value is not correct")
+                return not_valid("The track ID value is not correct")
 
             # region
             track_region = fn.get_region(request.form["province"])
@@ -518,7 +587,7 @@ def edit_snowtrack(snowtrack_id):
                 [
                     request.form["snowtrack_id"],
                     request.form["track_type"],
-                    request.form["transect_id"],
+                    transects_id,
                     date,
                     fn.sampling_season(date),
                     request.form["location"],
@@ -584,7 +653,7 @@ def extract_data_from_tracks_xlsx(filename: str):
     out = ""
 
     try:
-        df_all = pd.read_excel(pl.Path(UPLOAD_FOLDER) / pl.Path(filename), sheet_name=None, engine=engine)
+        df_all = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=None, engine=engine)
     except Exception:
         return (
             True,
@@ -728,7 +797,7 @@ def load_tracks_xlsx():
         new_file = request.files["new_file"]
 
         # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in EXCEL_ALLOWED_EXTENSIONS:
+        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
             flash(
                 fn.alert_danger(
                     "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
@@ -738,7 +807,7 @@ def load_tracks_xlsx():
 
         try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
-            new_file.save(pl.Path(UPLOAD_FOLDER) / pl.Path(filename))
+            new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect(f"/load_tracks_xlsx")
