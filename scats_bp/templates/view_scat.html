@@ -48,35 +48,36 @@
 <tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
 <tr><td>Sampling type</td><td>{{ results["sampling_type"] }}</td></tr>
 
-<tr>
-    <td>Transect ID</td>
-    <td>
-        {% if transect_id %}
-        <a href="/view_transect/{{ transect_id }}">{{ transect_id }}</a>
-    {% endif %}
 
-    </td>
+<tr>
+<td>Transect ID</td>
+<td>{% if transect_id %}
+<a href="/view_transect/{{ transect_id }}">{{ transect_id }}</a>
+{% endif %}
+</td>
 </tr>
 
 <tr>
-    <td>Path ID</td>
-    <td>
-        {% if results['path_id'] != "-" %}
-        <a href="/view_path/{{ results['path_id'] }}">{{ results['path_id'] }}</a>
-        {% else %}
-    {{ results['path_id'] }}
-    {% endif %}
-    </td>
+<td>Path ID</td>
+<td>{% if results['path_id'] and results['path_id_verif'] %}
+<a href="/view_path/{{ results['path_id'] }}">{{ results['path_id'] }}</a>
+{% else %}
+{{ results['path_id'] }} NOT FOUND
+{% endif %}
+
+</td>
 </tr>
+
+
+
 <tr><td>Track ID</td><td>
-
-    {% if results['snowtrack_id'] != "-" %}
-    <a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
-    {% else %}
-    {{ results['snowtrack_id'] }}
-    {% endif %}
-
+{% if results['snowtrack_id'] and results['snowtrack_id_verif'] %}
+<a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
+{% else %}
+{% if results['snowtrack_id'] %}{{ results['snowtrack_id'] }} NOT FOUND{% endif %}
+{% endif %}
 </td></tr>
+
 <tr><td>Location</td><td>{{ results["location"] }}</td></tr>
 <tr><td>Municipality</td><td>{{ results["municipality"] }}</td></tr>
 <tr><td>Province</td><td>{{ results["province"] }}</td></tr>

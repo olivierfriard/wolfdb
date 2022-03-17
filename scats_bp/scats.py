@@ -119,6 +119,8 @@ def view_scat(scat_id):
         (
             "SELECT *, "
             "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+            "(SELECT path_id FROM paths WHERE path_id = scats.path_id) AS path_id_verif, "
+            "(SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = scats.snowtrack_id) AS snowtrack_id_verif, "
             "CASE "
             "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%%wolf%%' THEN 'C1' "
             "ELSE scats.scalp_category "
@@ -150,10 +152,10 @@ def view_scat(scat_id):
     scat_features = [scat_feature]
 
     center = f"{results['latitude']}, {results['longitude']}"
-    # fit = [[results["latitude"], results["longitude"]], [results["latitude"], results["longitude"]]]
 
     # transect
-    if results["path_id"]:  # Systematic sampling
+    if results["path_id"]:
+        # Systematic sampling
         transect_id = results["path_id"].split("|")[0]
 
         cursor.execute(
@@ -164,6 +166,7 @@ def view_scat(scat_id):
             [transect_id],
         )
         transect = cursor.fetchone()
+        print(f"{transect_id=}")
 
         if transect is not None:
 
