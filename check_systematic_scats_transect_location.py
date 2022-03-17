@@ -13,7 +13,6 @@ see https://gist.github.com/NihalHarish/8597e5691889cd719e6c to improve with mul
 import psycopg2
 import psycopg2.extras
 import functions as fn
-
 import datetime
 
 out = '<html lang="en" class="h-100"><body>'
@@ -140,20 +139,17 @@ for row in scats:
             )
 
         if track_id_found:
-            out2 += (
-                f"""<td><a href="/view_track/{row['snowtrack_id']}">{row['snowtrack_id']}</a></td>"""
-                f"""<td>{track['snowtrack_id']}</td>"""
-                f"<td>{track['distance']}</td>"
-            )
+            out2 += f"""<td><a href="/view_track/{row['snowtrack_id']}">{row['snowtrack_id']}</a></td>"""
         else:
-            out2 += (
-                f"""<td>{row['snowtrack_id']} NOT FOUND</a></td>"""
-                f"""<td>{track['snowtrack_id']}</td>"""
-                f"<td>{track['distance']}</td>"
-            )
+            if row["snowtrack_id"]:
+                out2 += f"""<td>{row['snowtrack_id']} NOT FOUND IN DB</a></td>"""
+            else:
+                out2 += "<td></td>"
+
+        out2 += f"""<td>{track['snowtrack_id']}</td>""" f"<td>{track['distance']}</td>"
 
 
-out += "<h1>Location on transects/tracks for systematic scats</h1>\n"
+out += "<h1>Location of scats on transects and tracks</h1>\n"
 
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
 
