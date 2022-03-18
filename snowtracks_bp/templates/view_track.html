@@ -41,59 +41,67 @@
 </td>
 </tr>
 
-
 <tr>
-       <td>Track type</td>
-       <td>{% if results["track_type"] %}{{ results["track_type"] }}{% endif %}</td>
-   </tr>
-   <tr>
-       <td>Location</td>
-       <td>{% if results["location"] %}{{ results["location"] }}{% endif %}</td>
-   </tr>
-   <tr>
-       <td>Municipality</td>
-       <td>{% if results["municipality"] %}{{ results["municipality"] }}{% endif %}</td>
-   </tr>
-   <tr>
-       <td>Province</td>
-       <td>{{ results["province"] }}</td>
-   </tr>
-   <tr>
-       <td>Region</td>
-       <td>{{ results["region"] if results["region"] is not none else ""}}</td>
-   </tr>
-   <tr>
-       <td>Operator</td>
-       <td>{% if results["observer"] %}{{ results["observer"] }}{% endif %}</td>
-   </tr>
-   <tr>
-       <td>Institution</td>
-       <td>{% if results["institution"] %}{{ results["institution"] }}{% endif %}</td>
-   </tr>
-   <tr>
-       <td>Scalp category</td>
-       <td>{{ results["scalp_category"] if results["scalp_category"] is not none else "" }}</td>
-   </tr>
-   <tr>
-       <td>Days after snowfall</td>
-       <td>{{ results['days_after_snowfall'] if results['days_after_snowfall'] is not none else "" }}</td>
-   </tr>
-   <tr>
-       <td>Minimum number of wolves</td>
-       <td>{{ results['minimum_number_of_wolves'] if results['minimum_number_of_wolves'] is not none else "" }}</td>
-   </tr>
-   <tr>
-       <td>Track format</td>
-       <td>{{ results['track_format'] if results['track_format'] is not none else "" }}</td>
-   </tr>
-   <tr>
-       <td>Notes</td>
-       <td>{{ results['notes'] if results["notes"] is not none else "" }}</td>
-   </tr>
-   <tr>
-       <td>Number of scats found</td>
-       <td>{{ n_scats }}</td>
-   </tr>
+<td>Track type</td>
+<td>{% if results["track_type"] %}{{ results["track_type"] }}{% endif %}</td>
+</tr>
+<tr>
+<td>Location</td>
+<td>{% if results["location"] %}{{ results["location"] }}{% endif %}</td>
+</tr>
+<tr>
+<td>Municipality</td>
+<td>{% if results["municipality"] %}{{ results["municipality"] }}{% endif %}</td>
+</tr>
+<tr>
+<td>Province</td>
+<td>{{ results["province"] }}</td>
+</tr>
+<tr>
+<td>Region</td>
+<td>{{ results["region"] if results["region"] is not none else ""}}</td>
+</tr>
+<tr>
+{% if results["coord_east"] and results["coord_north"] %}
+<tr>
+<td>Coordinates (WGS 84 / UTM zone 32N EPSG:32632)</td>
+<td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td>
+</tr>
+<tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td>
+<td>{{ results["longitude"] }}, {{ results["latitude"] }}</td></tr>
+{% endif %}
+
+<td>Operator</td>
+<td>{% if results["observer"] %}{{ results["observer"] }}{% endif %}</td>
+</tr>
+<tr>
+<td>Institution</td>
+<td>{% if results["institution"] %}{{ results["institution"] }}{% endif %}</td>
+</tr>
+<tr>
+<td>Scalp category</td>
+<td>{{ results["scalp_category"] if results["scalp_category"] is not none else "" }}</td>
+</tr>
+<tr>
+<td>Days after snowfall</td>
+<td>{{ results['days_after_snowfall'] if results['days_after_snowfall'] is not none else "" }}</td>
+</tr>
+<tr>
+<td>Minimum number of wolves</td>
+<td>{{ results['minimum_number_of_wolves'] if results['minimum_number_of_wolves'] is not none else "" }}</td>
+</tr>
+<tr>
+<td>Track format</td>
+<td>{{ results['track_format'] if results['track_format'] is not none else "" }}</td>
+</tr>
+<tr>
+<td>Notes</td>
+<td>{{ results['notes'] if results["notes"] is not none else "" }}</td>
+</tr>
+<tr>
+<td>Number of scats found</td>
+<td>{{ n_scats }}</td>
+</tr>
 </table>
 
 {% if n_scats %}

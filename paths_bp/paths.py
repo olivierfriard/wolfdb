@@ -7,14 +7,16 @@ flask blueprint for paths management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session, make_response
+from flask import render_template, redirect, request, Markup, flash, session, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
 import json
 import pathlib as pl
 import os
-
+import sys
+import uuid
+from . import paths_import
 from .path_form import Path
 import functions as fn
 from . import paths_export
@@ -24,6 +26,26 @@ app = flask.Blueprint("paths", __name__, template_folder="templates")
 
 params = config()
 app.debug = params["debug"]
+
+
+def error_info(exc_info: tuple) -> tuple:
+    """
+    return details about error
+    usage: error_info(sys.exc_info())
+
+    Args:
+        sys.exc_info() (tuple):
+
+    Returns:
+        tuple: error type, error file name, error line number
+    """
+
+    exc_type, exc_obj, exc_tb = exc_info
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+
+    error_type, error_file_name, error_lineno = exc_obj, fname, exc_tb.tb_lineno
+
+    return f"Error {error_type} in {error_file_name} at line #{error_lineno}"
 
 
 @app.route("/paths")
@@ -444,3 +466,152 @@ def path_completeness():
     zip_file_name = pl.Path(zip_path).name
 
     return redirect(f"/static/{zip_file_name}")
+
+
+@app.route(
+    "/load_paths_xlsx",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def load_paths_xlsx():
+
+    if request.method == "GET":
+        return render_template("load_paths_xlsx.html", header_title="Import paths from XLSX/ODS")
+
+    if request.method == "POST":
+
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
+                )
+            )
+            return redirect(f"/load_paths_xlsx")
+
+        try:
+            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file"))
+            return redirect(f"/load_paths_xlsx")
+
+        r, msg, paths_data = paths_import.extract_data_from_paths_xlsx(filename)
+        if r:
+            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            return redirect(f"/load_paths_xlsx")
+
+        # check if path_id already in DB
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        paths_list = "','".join([paths_data[idx]["path_id"] for idx in paths_data])
+        sql = f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')"
+        cursor.execute(sql)
+        paths_to_update = [row["path_id"] for row in cursor.fetchall()]
+
+        return render_template(
+            "confirm_load_paths_xlsx.html",
+            n_paths=len(paths_data),
+            n_paths_to_update=paths_to_update,
+            all_data=paths_data,
+            filename=filename,
+        )
+
+
+@app.route("/confirm_load_paths_xlsx/<filename>/<mode>")
+@fn.check_login
+def confirm_load_paths_xlsx(filename, mode):
+
+    if mode not in ["new", "all"]:
+        flash(fn.alert_danger("Error: mode not allowed"))
+        return redirect(f"/load_paths_xlsx")
+
+    r, msg, all_data = paths_import.extract_data_from_paths_xlsx(filename)
+    if r:
+        flash(Markup(f"File name: <b>{filename}</b>") + Markup("<hr><br>") + msg)
+        return redirect(f"/load_paths_xlsx")
+
+    # check if path_id already in DB
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    paths_list = "','".join([all_data[idx]["path_id"] for idx in all_data])
+    sql = f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')"
+    cursor.execute(sql)
+    paths_to_update = [row["path_id"] for row in cursor.fetchall()]
+
+    sql = (
+        "UPDATE paths SET "
+        "path_id = %(path_id)s, "
+        "transect_id = %(transect_id)s,"
+        "date = %(date)s,"
+        "sampling_season = %(sampling_season)s,"
+        "completeness = %(completeness)s,"
+        "observer = %(operator)s, "
+        "institution = %(institution)s, "
+        "notes = %(notes)s "
+        "WHERE path_id = %(path_id)s;"
+        "INSERT INTO paths ("
+        "path_id,"
+        "transect_id,"
+        "date,"
+        "sampling_season,"
+        "completeness,"
+        "observer,"
+        "institution,"
+        "notes "
+        ") "
+        "SELECT "
+        "%(path_id)s,"
+        "%(transect_id)s,"
+        "%(date)s,"
+        "%(sampling_season)s,"
+        "%(completeness)s, "
+        "%(operator)s,"
+        "%(institution)s,"
+        "%(notes)s "
+        "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
+    )
+    count_added = 0
+    count_updated = 0
+    for idx in all_data:
+        data = dict(all_data[idx])
+
+        if mode == "new" and (data["path_id"] in paths_to_update):
+            continue
+        if data["path_id"] in paths_to_update:
+            count_updated += 1
+        else:
+            count_added += 1
+        print(f"{data=}")
+        try:
+            cursor.execute(
+                sql,
+                {
+                    "path_id": data["path_id"],
+                    "transect_id": data["transect_id"],
+                    "date": data["date"],
+                    "sampling_season": fn.sampling_season(data["date"]),
+                    "completeness": data["completeness"] if data["completeness"] else None,
+                    "operator": data["operator"].strip(),
+                    "institution": data["institution"].strip(),
+                    "notes": data["notes"].strip(),
+                },
+            )
+        except Exception:
+            return "An error occured during the import of paths. Contact the administrator.<br>" + error_info(
+                sys.exc_info()
+            )
+
+    connection.commit()
+
+    msg = f"XLSX/ODS file successfully loaded. {count_added} paths added, {count_updated} paths updated."
+    flash(fn.alert_success(msg))
+
+    return redirect(f"/paths")

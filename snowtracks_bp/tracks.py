@@ -19,7 +19,6 @@ from .track_form import Track
 import functions as fn
 import uuid
 import pathlib as pl
-import pandas as pd
 
 app = flask.Blueprint("tracks", __name__, template_folder="templates")
 
@@ -84,6 +83,8 @@ def view_track(snowtrack_id):
             "ELSE t.scalp_category "
             "END, "
             "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson, "
+            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
             "ROUND(ST_Length(multilines)) AS track_length "
             "FROM snow_tracks t WHERE snowtrack_id = %s"
         ),
@@ -708,9 +709,9 @@ def confirm_load_tracks_xlsx(filename, mode):
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect(f"/load_tracks_xlsx")
 
-    r, msg, all_data = extract_data_from_tracks_xlsx(filename)
+    r, msg, all_data = tracks_import.extract_data_from_tracks_xlsx(filename)
     if r:
-        flash(msg)
+        flash(Markup(f"File name: <b>{filename}</b>") + Markup("<hr><br>") + msg)
         return redirect(f"/load_tracks_xlsx")
 
     connection = fn.get_connection()
@@ -723,19 +724,24 @@ def confirm_load_tracks_xlsx(filename, mode):
     tracks_to_update = [row["snowtrack_id"] for row in cursor.fetchall()]
 
     sql = (
-        "UPDATE snow_tracks SET snowtrack_id = %(snowtrack_id)s, "
-        "                date = %(date)s,"
-        "                sampling_season = %(sampling_season)s,"
-        "                track_type = %(track_type)s,"
-        "                sampling_type = %(sampling_type)s,"
-        "                location = %(location)s, "
-        "                municipality = %(municipality)s, "
-        "                province = %(province)s, "
-        "                region = %(region)s, "
-        "                scalp_category = %(scalp_category)s, "
-        "                observer = %(operator)s, "
-        "                institution = %(institution)s, "
-        "                notes = %(notes)s "
+        "UPDATE snow_tracks SET "
+        "snowtrack_id = %(snowtrack_id)s, "
+        "date = %(date)s,"
+        "sampling_season = %(sampling_season)s,"
+        "track_type = %(track_type)s,"
+        "sampling_type = %(sampling_type)s,"
+        "location = %(location)s, "
+        "municipality = %(municipality)s, "
+        "province = %(province)s, "
+        "region = %(region)s, "
+        "scalp_category = %(scalp_category)s, "
+        "observer = %(operator)s, "
+        "institution = %(institution)s, "
+        "notes = %(notes)s, "
+        "coord_east = %(coord_east)s, "
+        "coord_north = %(coord_north)s, "
+        "coord_zone = %(coord_zone)s, "
+        "geometry_utm = %(geometry_utm)s "
         "WHERE snowtrack_id = %(snowtrack_id)s;"
         "INSERT INTO snow_tracks ("
         "snowtrack_id,"
@@ -750,7 +756,9 @@ def confirm_load_tracks_xlsx(filename, mode):
         "scalp_category,"
         "observer,"
         "institution,"
-        "notes"
+        "notes,"
+        "coord_east, coord_north, coord_zone, "
+        "geometry_utm"
         ") "
         "SELECT "
         "%(snowtrack_id)s,"
@@ -765,7 +773,9 @@ def confirm_load_tracks_xlsx(filename, mode):
         "%(scalp_category)s, "
         "%(operator)s,"
         "%(institution)s,"
-        "%(notes)s "
+        "%(notes)s, "
+        "%(coord_east)s, %(coord_north)s, %(coord_zone)s,"
+        "%(geometry_utm)s "
         "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = %(snowtrack_id)s)"
     )
     count_added = 0
@@ -797,10 +807,14 @@ def confirm_load_tracks_xlsx(filename, mode):
                     "operator": data["operator"],
                     "institution": data["institution"],
                     "notes": data["notes"],
+                    "coord_east": data["coord_east"],
+                    "coord_north": data["coord_north"],
+                    "coord_zone": data["coord_zone"],
+                    "geometry_utm": data["geometry_utm"],
                 },
             )
         except Exception:
-            return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(
+            return "An error occured during the import of tracks. Contact the administrator.<br>" + error_info(
                 sys.exc_info()
             )
 
