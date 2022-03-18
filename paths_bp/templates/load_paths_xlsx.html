@@ -1,0 +1,52 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/paths" class="btn btn-primary">Paths</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class=flashes>{% for message in messages %}<strong>{{ message }}</strong><br>{% endfor %}</ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+<h2>Import paths from XLSX/ODS file</h2>
+
+<form id="upload_file" action="/load_paths_xlsx"  method="POST" enctype="multipart/form-data">
+<br>
+<div class="form-group">
+<label for="new_file">Select the Excel file (XLSX) or the OpenDocument (ODS) file</label><br>
+<br>
+<input type="file" id="new_file" placeholder="" name="new_file" >
+</div>
+<br>
+<button type="submit" class="btn btn-lg btn-danger" id="upload-file-btn" type="button">Upload file</button>
+
+</form>
+
+
+<hr>
+
+<h3>Template and example</h3>
+
+
+<br>
+<a href="/static/paths_template.xltx">Download Excel 2007-365 Spreadsheet template (XLTX) for importing paths</a><br>
+
+
+<br>
+<a href="/static/paths_upload_example.xlsx">XLSX example for importing paths</a><br>
+
+
+{% endblock %}
+
+
