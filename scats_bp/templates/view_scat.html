@@ -62,7 +62,7 @@
 <td>{% if results['path_id'] and results['path_id_verif'] %}
 <a href="/view_path/{{ results['path_id'] }}">{{ results['path_id'] }}</a>
 {% else %}
-{{ results['path_id'] }} NOT FOUND
+{{ results['path_id'] }} <span style="color:red">NOT FOUND</span>
 {% endif %}
 
 </td>
@@ -74,7 +74,7 @@
 {% if results['snowtrack_id'] and results['snowtrack_id_verif'] %}
 <a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
 {% else %}
-{% if results['snowtrack_id'] %}{{ results['snowtrack_id'] }} NOT FOUND{% endif %}
+{% if results['snowtrack_id'] %}{{ results['snowtrack_id'] }} <span style="color:red">NOT FOUND</span>{% endif %}
 {% endif %}
 </td></tr>
 

@@ -568,16 +568,23 @@ def edit_scat(scat_id):
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
-        """
         # get id of all snow tracks
         all_tracks = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
         # check if current track_id is in the list of all_tracks
+
+        # print((default_values["snowtrack_id"], default_values["snowtrack_id"]) in all_tracks)
+
         if (default_values["snowtrack_id"], default_values["snowtrack_id"]) not in all_tracks:
             # add current track_id to list
-            all_tracks.append((default_values["snowtrack_id"], default_values["snowtrack_id"]))
+            all_tracks = [(default_values["snowtrack_id"], default_values["snowtrack_id"])] + all_tracks
+            # all_tracks.append((default_values["snowtrack_id"], default_values["snowtrack_id"]))
+
+        # print((default_values["snowtrack_id"], default_values["snowtrack_id"]) in all_tracks)
+        # print(all_tracks[:10])
+
         form.snowtrack_id.choices = list(all_tracks)
-        """
-        form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+
+        # form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
         # default values
         form.notes.data = default_values["notes"]
@@ -593,132 +600,138 @@ def edit_scat(scat_id):
 
     if request.method == "POST":
 
+        print("post")
+        print(f'{request.form["snowtrack_id"]}=')
+
         form = Scat(request.form)
 
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
         # get id of all snow tracks
-        form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+        all_tracks = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+        all_tracks = [(request.form["snowtrack_id"], request.form["snowtrack_id"])] + all_tracks
+        form.snowtrack_id.choices = list(all_tracks)
 
-        if form.validate():
+        # form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
-            # check if scat id already exists
-            if scat_id != request.form["scat_id"]:
-                cursor.execute("SELECT scat_id FROM scats WHERE scat_id = %s", [request.form["scat_id"]])
-                if len(cursor.fetchall()):
-                    return not_valid(
-                        form,
-                        (
-                            f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). "
-                            "Please check and submit again"
-                        ),
-                    )
-
-            # date
-            try:
-                year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
-                month = int(request.form["scat_id"][3 : 4 + 1])
-                day = int(request.form["scat_id"][5 : 6 + 1])
-                date = f"{year}-{month:02}-{day:02}"
-            except Exception:
-                return not_valid("The scat_id value is not correct")
-
-            # path id
-            if request.form["sampling_type"] == "Systematic":
-                # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
-                path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
-            else:
-                path_id = ""
-
-            # region
-            if len(request.form["province"]) == 2:
-                province = request.form["province"].upper()
-                scat_region = fn.get_region(request.form["province"])
-            else:
-                province = fn.province_name2code(request.form["province"])
-                scat_region = fn.get_region(province)
-
-            # check UTM coord conversion
-            try:
-                coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
-            except Exception:
-                return not_valid(form, "The UTM coordinates are not valid. Please check and submit again")
-
-            # check if WA code exists for another sample
-            if request.form["wa_code"]:
-                cursor.execute(
-                    ("SELECT sample_id FROM wa_scat_dw WHERE sample_id != %s AND wa_code = %s"),
-                    [scat_id, request.form["wa_code"]],
-                )
-                if len(cursor.fetchall()):
-                    return not_valid(
-                        form,
-                        (
-                            f"Another sample has the same WA code ({request.form['wa_code']}). "
-                            "Please check and submit again"
-                        ),
-                    )
-
-            sql = (
-                "UPDATE scats SET "
-                " scat_id = %s, "
-                " wa_code = %s,"
-                " date = %s,"
-                " sampling_season = %s,"
-                " sampling_type = %s,"
-                " path_id = %s, "
-                " snowtrack_id = %s, "
-                " location = %s, "
-                " municipality = %s, "
-                " province = %s, "
-                " region = %s, "
-                " deposition = %s, "
-                " matrix = %s, "
-                " collected_scat = %s, "
-                " scalp_category = %s, "
-                " coord_east = %s, "
-                " coord_north = %s, "
-                #  coord_zone = %s, "
-                " observer = %s, "
-                " institution = %s, "
-                " notes = %s, "
-                " geometry_utm = %s "
-                "WHERE scat_id = %s"
-            )
-            cursor.execute(
-                sql,
-                [
-                    request.form["scat_id"],
-                    request.form["wa_code"],
-                    date,
-                    fn.sampling_season(date),
-                    request.form["sampling_type"],
-                    path_id,
-                    request.form["snowtrack_id"],
-                    request.form["location"],
-                    request.form["municipality"],
-                    province,
-                    scat_region,
-                    request.form["deposition"],
-                    request.form["matrix"],
-                    request.form["collected_scat"],
-                    request.form["scalp_category"],
-                    request.form["coord_east"],
-                    request.form["coord_north"],  # request.form["coord_zone"],
-                    request.form["observer"],
-                    request.form["institution"],
-                    request.form["notes"],
-                    f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
-                    scat_id,
-                ],
-            )
-
-            connection.commit()
-
-            return redirect(f"/view_scat/{request.form['scat_id']}")
-        else:
+        if not form.validate():
             return not_valid(form, "Some values are not set or are wrong. Please check and submit again")
+
+        # check if scat id already exists
+        if scat_id != request.form["scat_id"]:
+            cursor.execute("SELECT scat_id FROM scats WHERE scat_id = %s", [request.form["scat_id"]])
+            if len(cursor.fetchall()):
+                return not_valid(
+                    form,
+                    (
+                        f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). "
+                        "Please check and submit again"
+                    ),
+                )
+
+        # date
+        try:
+            year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
+            month = int(request.form["scat_id"][3 : 4 + 1])
+            day = int(request.form["scat_id"][5 : 6 + 1])
+            date = f"{year}-{month:02}-{day:02}"
+        except Exception:
+            return not_valid("The scat_id value is not correct")
+
+        # path id
+        if request.form["sampling_type"] == "Systematic":
+            # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
+            path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+        else:
+            path_id = ""
+
+        # region
+        if len(request.form["province"]) == 2:
+            province = request.form["province"].upper()
+            scat_region = fn.get_region(request.form["province"])
+        else:
+            province = fn.province_name2code(request.form["province"])
+            scat_region = fn.get_region(province)
+
+        # check UTM coord conversion
+        try:
+            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+        except Exception:
+            return not_valid(form, "The UTM coordinates are not valid. Please check and submit again")
+
+        # check if WA code exists for another sample
+        if request.form["wa_code"]:
+            cursor.execute(
+                ("SELECT sample_id FROM wa_scat_dw WHERE sample_id != %s AND wa_code = %s"),
+                [scat_id, request.form["wa_code"]],
+            )
+            if len(cursor.fetchall()):
+                return not_valid(
+                    form,
+                    (
+                        f"Another sample has the same WA code ({request.form['wa_code']}). "
+                        "Please check and submit again"
+                    ),
+                )
+
+        sql = (
+            "UPDATE scats SET "
+            " scat_id = %s, "
+            " wa_code = %s,"
+            " date = %s,"
+            " sampling_season = %s,"
+            " sampling_type = %s,"
+            " path_id = %s, "
+            " snowtrack_id = %s, "
+            " location = %s, "
+            " municipality = %s, "
+            " province = %s, "
+            " region = %s, "
+            " deposition = %s, "
+            " matrix = %s, "
+            " collected_scat = %s, "
+            " scalp_category = %s, "
+            " coord_east = %s, "
+            " coord_north = %s, "
+            #  coord_zone = %s, "
+            " observer = %s, "
+            " institution = %s, "
+            " notes = %s, "
+            " geometry_utm = %s "
+            "WHERE scat_id = %s"
+        )
+        cursor.execute(
+            sql,
+            [
+                request.form["scat_id"],
+                request.form["wa_code"],
+                date,
+                fn.sampling_season(date),
+                request.form["sampling_type"],
+                path_id,
+                request.form["snowtrack_id"],
+                request.form["location"],
+                request.form["municipality"],
+                province,
+                scat_region,
+                request.form["deposition"],
+                request.form["matrix"],
+                request.form["collected_scat"],
+                request.form["scalp_category"],
+                request.form["coord_east"],
+                request.form["coord_north"],  # request.form["coord_zone"],
+                request.form["observer"],
+                request.form["institution"],
+                request.form["notes"],
+                f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
+                scat_id,
+            ],
+        )
+
+        connection.commit()
+
+        return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
 @app.route("/del_scat/<scat_id>")
