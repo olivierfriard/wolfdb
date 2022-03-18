@@ -473,14 +473,18 @@ def edit_track(snowtrack_id):
         )
         default_values = cursor.fetchone()
 
-        if default_values["location"] is None:
-            default_values["location"] = ""
-        if default_values["observer"] is None:
-            default_values["observer"] = ""
+        for field in [
+            "location",
+            "observer",
+            "institution",
+            "days_after_snowfall",
+            "minimum_number_of_wolves",
+            "track_format",
+        ]:
+            if default_values[field] is None:
+                default_values[field] = ""
 
-        if default_values["institution"] is None:
-            default_values["institution"] = ""
-
+        # default values for select
         form = Track(
             transect_id=default_values["transect_id"],
             sampling_type=default_values["sampling_type"],
