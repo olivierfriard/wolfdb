@@ -5,22 +5,18 @@
 <h1>WolfDB - Scats</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>
-<br>
-<br>
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-<ul class=flashes>
-  {% for message in messages %}
-  <strong>{{ message }}</strong><br>
-  {% endfor %}
-</ul>
+<ul class=flashes>{% for message in messages %}{{ message }}<br>{% endfor %}</ul>
 {% endif %}
 {% endwith %}
+
 {% block body %}{% endblock %}
 
 
+<a href="/" class="btn btn-primary">Home</a>
+<br>
+<br>
 
 <a href="/scats_list" class="btn btn-primary">List of scats</a>
 <br>

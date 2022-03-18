@@ -7,7 +7,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session, current_app, make_response
+from flask import render_template, redirect, request, Markup, flash, session, current_app, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -33,6 +33,8 @@ params = config()
 params["excel_allowed_extensions"] = json.loads(params["excel_allowed_extensions"])
 
 app.debug = params["debug"]
+
+LOCK_FILE_NAME_PATH = "check_location.lock"
 
 
 def error_info(exc_info: tuple) -> tuple:
@@ -62,7 +64,15 @@ def scats():
     Scats home page
     """
 
-    check_location_creation_time = time.ctime(os.path.getctime("static/systematic_scats_transects_location.html"))
+    if os.path.exists(LOCK_FILE_NAME_PATH):
+        check_location_creation_time = "Check location is running. Please wait."
+    else:
+        if os.path.exists("static/systematic_scats_transects_location.html"):
+            check_location_creation_time = time.ctime(
+                os.path.getctime("static/systematic_scats_transects_location.html")
+            )
+        else:
+            check_location_creation_time = "File not found"
 
     return render_template(
         "scats.html", header_title="Scats", check_location_creation_time=check_location_creation_time
@@ -1013,4 +1023,8 @@ def systematic_scats_transect_location():
 
     _ = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])
 
-    return 'The analysis will be available soon. Please wait for 5 minutes. <a href="/scats">Go to Scats page</a>'
+    time.sleep(2)
+
+    flash(fn.alert_danger(f"The Check location for scats results will be available soon.<br>Please wait for 5 min"))
+
+    return redirect("/scats")

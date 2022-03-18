@@ -14,6 +14,20 @@ import psycopg2
 import psycopg2.extras
 import functions as fn
 import datetime
+import os
+import sys
+
+
+LOCK_FILE_NAME_PATH = "check_location.lock"
+
+# verify if lock exist
+if os.path.exists(LOCK_FILE_NAME_PATH):
+    print("Check systematic locations already running. Exiting")
+    sys.exit()
+
+# create lock file
+with open(LOCK_FILE_NAME_PATH, "w") as f_out:
+    f_out.write(datetime.datetime.now().isoformat())
 
 out = '<html lang="en" class="h-100"><body>'
 
@@ -174,3 +188,6 @@ out += "</body></html>"
 
 with open("static/systematic_scats_transects_location.html", "w") as f_out:
     f_out.write(out)
+
+if os.path.exists(LOCK_FILE_NAME_PATH):
+    os.remove(LOCK_FILE_NAME_PATH)
