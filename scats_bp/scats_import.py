@@ -4,6 +4,8 @@ import scats from XLSX file
 
 import pathlib as pl
 import pandas as pd
+import datetime
+import utm
 
 from config import config
 import functions as fn
@@ -76,6 +78,13 @@ def extract_data_from_xlsx(filename):
             month = int(data["scat_id"][3 : 4 + 1])
             day = int(data["scat_id"][5 : 6 + 1])
             date = f"{year}-{month:02}-{day:02}"
+
+            try:
+                datetime.datetime.strptime(date, "%Y-%m-%d")
+            except Exception:
+                out += fn.alert_danger(
+                    f'Row {index + 2}: the date ({date}) of the scat ID {data["scat_id"]} is not valid. Use the YYMMDD format'
+                )
         except Exception:
             out += fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}")
 
@@ -107,9 +116,9 @@ def extract_data_from_xlsx(filename):
                 f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2}): found {data['coord_zone']}"
             )
 
+        # check if coordinates are OK
         try:
-            coord_latlon = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
-            data["coord_latlon"] = f"SRID=4326;POINT({coord_latlon[1]} {coord_latlon[0]})"
+            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
         except Exception:
             out += fn.alert_danger(
                 f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'
@@ -119,9 +128,9 @@ def extract_data_from_xlsx(filename):
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
-        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
+        if data["sampling_type"] not in ["Opportunistic", "Systematic"]:
             out += fn.alert_danger(
-                f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty at row {index + 2}: found {data["sampling_type"]}'
+                f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b>  at row {index + 2}: found {data["sampling_type"]}'
             )
 
         # no path ID if scat is opportunistc

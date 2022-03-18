@@ -775,7 +775,7 @@ def set_path_id(scat_id, path_id):
 def load_scats_xlsx():
 
     if request.method == "GET":
-        return render_template("load_scats_xlsx.html")
+        return render_template("load_scats_xlsx.html", header_title="Load scats from XLSX/ODS file")
 
     if request.method == "POST":
 

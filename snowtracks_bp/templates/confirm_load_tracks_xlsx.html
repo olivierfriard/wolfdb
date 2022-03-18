@@ -1,11 +1,6 @@
-{% include "header.html" %}
+{% extends "bootstrap_simple.html" %}
 
-<script src="https://unpkg.com/htmx.org@1.6.0"></script>
-
-<main class="flex-shrink-0">
-
-<div class="container">
-
+{% block content %}
 
 <h1>WolfDB</h1>
 <hr>
@@ -47,6 +42,10 @@
 <tr>
   <th>Track ID</th>
   <th>Date</th>
+  <th>Sampling type</th>
+  <th>Transect ID</th>
+  <th>Location</th>
+  <th>Operator</th>
 </tr>
 
 {% for idx in all_data %}
@@ -58,22 +57,16 @@
 {% endif %}
   <td>{{ all_data[idx]['snowtrack_id'] }}</td>
   <td>{{ all_data[idx]['date'] }}</td>
-
+  <td>{{ all_data[idx]['sampling_type'] }}</td>
+  <td>{{ all_data[idx]['transect_id'] }}</td>
+  <td>{{ all_data[idx]['location'] }}</td>
+  <td>{{ all_data[idx]['operator'] }}</td>
 </tr>
 
 {% endfor %}
 
 </table>
 
-
-
-</div>
-</main>
-
-</body>
-</html>
-
-
-
+{% endblock %}
 
 

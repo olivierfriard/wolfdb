@@ -14,7 +14,7 @@ import sys
 import os
 import json
 import datetime
-
+from . import tracks_import
 from .track_form import Track
 import functions as fn
 import uuid
@@ -644,145 +644,6 @@ def del_snowtrack(snowtrack_id):
     return redirect("/snowtracks_list")
 
 
-def extract_data_from_tracks_xlsx(filename: str):
-    """
-    Extract and check data from a XLSX file
-    """
-
-    if pl.Path(filename).suffix == ".XLSX":
-        engine = "openpyxl"
-    if pl.Path(filename).suffix == ".ODS":
-        engine = "odf"
-
-    out = ""
-
-    try:
-        df_all = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=None, engine=engine)
-    except Exception:
-        return (
-            True,
-            fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"),
-            {},
-        )
-
-    """
-    if "Tracks" not in df.keys():
-        return True, fn.alert_danger(f"Tracks sheet not found in workbook"), {}, {}, {}
-    scats_df = df["Tracks"]
-    """
-
-    first_sheet_name = list(df_all.keys())[0]
-
-    tracks_df = df_all[first_sheet_name]
-
-    columns = [
-        "snowtrack_id",
-        "transect_id",
-        "date",
-        "coord_e",
-        "coord_n",
-        "location",
-        "municipality",
-        "province",
-        "operator",
-        "institution",
-        "scalp_category",
-        "sampling_type",
-        "days_after_snowfall",
-        "track_type",
-        "minimum_number_of_wolves",
-        "track_format",
-        "notes",
-    ]
-
-    # check columns
-    for column in columns:
-        if column not in list(tracks_df.columns) and column != "track_type":
-            return True, fn.alert_danger(f"Column {column} is missing"), {}
-
-    tracks_data = {}
-    for index, row in tracks_df.iterrows():
-        data = {}
-        for column in list(tracks_df.columns):
-            data[column] = row[column]
-            if isinstance(data[column], float) and str(data[column]) == "nan":
-                data[column] = ""
-
-        # date
-        try:
-            year = int(data["snowtrack_id"][1 : 2 + 1]) + 2000
-            month = int(data["snowtrack_id"][3 : 4 + 1])
-            day = int(data["snowtrack_id"][5 : 6 + 1])
-            date = f"{year}-{month:02}-{day:02}"
-        except Exception:
-            out += fn.alert_danger(f"The track ID is not valid at row {index + 2}: {data['snowtrack_id']}")
-
-        # check date
-        try:
-            date_from_file = str(data["date"]).split(" ")[0].strip()
-        except Exception:
-            date_from_file = ""
-
-        if date != date_from_file:
-            out += fn.alert_danger(
-                f"Check the track ID and the date at row {index + 2}: {data['snowtrack_id']}  {date_from_file}"
-            )
-
-        data["date"] = date_from_file
-
-        """
-        # path_id
-        path_id = fn.get_path_id(data['transect_id'], date)
-        """
-
-        # region
-        track_region = fn.get_region(data["province"])
-        data["region"] = track_region
-
-        # data["geometry_utm"] = f"SRID=32632;POINT({data['coord_e']} {data['coord_n']})"
-
-        # sampling_type
-        data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
-        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
-            out += fn.alert_danger(
-                f'Sampling type must be <i>Opportunistic</i>, <i>Systematic</i> or empty at row {index + 2}: found <b>{data["sampling_type"]}</b>'
-            )
-
-        # no path ID if scat is opportunistic
-        if data["sampling_type"] == "Opportunistic":
-            data["transect_id"] = ""
-
-        # scalp_category
-        data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
-        if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
-            out += fn.alert_danger(
-                f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'
-            )
-
-        data["operator"] = str(data["operator"]).strip()
-
-        data["institution"] = str(data["institution"]).strip()
-
-        data["days_after_snowfall"] = str(data["days_after_snowfall"]).strip()
-
-        if "trcks_type" in tracks_df.columns:
-            data["track_type"] = str(data["trcks_type"]).strip()
-        else:
-            data["track_type"] = ""
-
-        data["minimum_number_of_wolves"] = str(data["minimum_number_of_wolves"]).strip()
-
-        # notes
-        data["notes"] = str(data["notes"]).strip()
-
-        tracks_data[index] = dict(data)
-
-    if out:
-        return True, out, {}
-
-    return False, "", tracks_data
-
-
 @app.route(
     "/load_tracks_xlsx",
     methods=(
@@ -794,7 +655,7 @@ def extract_data_from_tracks_xlsx(filename: str):
 def load_tracks_xlsx():
 
     if request.method == "GET":
-        return render_template("load_tracks_xlsx.html")
+        return render_template("load_tracks_xlsx.html", header_title="Load tracks from XLSX/ODS")
 
     if request.method == "POST":
 
@@ -816,29 +677,27 @@ def load_tracks_xlsx():
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect(f"/load_tracks_xlsx")
 
-        r, msg, all_data = extract_data_from_tracks_xlsx(filename)
+        r, msg, tracks_data = tracks_import.extract_data_from_tracks_xlsx(filename)
         if r:
-            msg = Markup(f"File name: {new_file.filename}<br>") + msg
-            flash(msg)
+            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
             return redirect(f"/load_tracks_xlsx")
 
-        else:
-            # check if scat_id already in DB
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # check if scat_id already in DB
+        connection = fn.get_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            tracks_list = "','".join([all_data[idx]["snowtrack_id"] for idx in all_data])
-            sql = f"SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id IN ('{tracks_list}')"
-            cursor.execute(sql)
-            tracks_to_update = [row["snowtrack_id"] for row in cursor.fetchall()]
+        tracks_list = "','".join([tracks_data[idx]["snowtrack_id"] for idx in tracks_data])
+        sql = f"SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id IN ('{tracks_list}')"
+        cursor.execute(sql)
+        tracks_to_update = [row["snowtrack_id"] for row in cursor.fetchall()]
 
-            return render_template(
-                "confirm_load_tracks_xlsx.html",
-                n_tracks=len(all_data),
-                n_tracks_to_update=tracks_to_update,
-                all_data=all_data,
-                filename=filename,
-            )
+        return render_template(
+            "confirm_load_tracks_xlsx.html",
+            n_tracks=len(tracks_data),
+            n_tracks_to_update=tracks_to_update,
+            all_data=tracks_data,
+            filename=filename,
+        )
 
 
 @app.route("/confirm_load_tracks_xlsx/<filename>/<mode>")

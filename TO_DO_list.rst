@@ -2,9 +2,10 @@ TO DO list
 ===================================
 
 
+* import paths from XLSX
+
 * region in dw_
 
-* edit scat -> track not found
 
 * add check for sampling type when scats are uploaded
 

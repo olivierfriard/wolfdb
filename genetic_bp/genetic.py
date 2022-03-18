@@ -1557,7 +1557,9 @@ def load_definitive_genotypes_xlsx():
     """
 
     if request.method == "GET":
-        return render_template("load_definitive_genotypes_xlsx.html")
+        return render_template(
+            "load_definitive_genotypes_xlsx.html", header_title="Load genetic data for genotypes from XLSX/ODS file"
+        )
 
     if request.method == "POST":
 
