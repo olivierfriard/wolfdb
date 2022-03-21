@@ -15,6 +15,7 @@ import os
 import json
 import datetime
 from . import tracks_import
+from . import tracks_export
 from .track_form import Track
 import functions as fn
 import uuid
@@ -824,3 +825,20 @@ def confirm_load_tracks_xlsx(filename, mode):
     flash(fn.alert_success(msg))
 
     return redirect(f"/tracks")
+
+
+@app.route("/export_tracks_shapefile")
+@fn.check_login
+def export_tracks_shapefile():
+    """
+    create shapefile with tracks
+    """
+
+    if pl.Path("static/tracks.zip").is_file():
+        os.remove("static/tracks.zip")
+
+    zip_path = tracks_export.export_shapefile("static/tracks", "/tmp/tracks_shapefile.log")
+
+    zip_file_name = pl.Path(zip_path).name
+
+    return redirect(f"/static/{zip_file_name}")

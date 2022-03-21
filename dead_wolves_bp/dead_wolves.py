@@ -470,11 +470,17 @@ def dead_wolves_list_old():
 @fn.check_login
 def dead_wolves_list():
     """
-    get list all dead_wolves from dw_short2
+    get list of all dead_wolves from dw_short2
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT * FROM dw_short2 WHERE deleted is NULL ORDER BY id"))
+    cursor.execute(
+        (
+            "SELECT *,"
+            "(SELECT genotype_id FROM genotypes WHERE genotype_id=dw_short2.genotype_id) AS genotype_id_verif "
+            "FROM dw_short2 WHERE deleted is NULL ORDER BY id"
+        )
+    )
 
     results = cursor.fetchall()
 

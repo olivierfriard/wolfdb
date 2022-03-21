@@ -1,20 +1,17 @@
 {% extends "bootstrap.html" %}
 
-
 {% block content %}
-
 
 <h1>WolfDB - Genotypes</h1>
 <hr>
 
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
 
 <a href="/" class="btn btn-primary">Home</a>
-
 
 <br>
 <br>
@@ -58,7 +55,7 @@
 
 <br>
 <br>
-<a href="/load_definitive_genotypes_xlsx" class="btn btn-primary">Load definitive genotypes from XLSX file</a>
+<a href="/load_definitive_genotypes_xlsx" class="btn btn-primary">Import definitive genotypes from XLSX/ODS file</a>
 
 
 

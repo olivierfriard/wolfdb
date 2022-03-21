@@ -96,21 +96,29 @@ def temp_genotype(genotype_id):
 @app.route("/view_genotype/<genotype_id>")
 @fn.check_login
 def view_genotype(genotype_id):
-
+    """
+    view genotype
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cursor.execute(
         (
             "SELECT *, "
-            "(SELECT 'Yes' FROM wa_scat_dw WHERE (sample_id like 'T%%' OR sample_id like 'M%%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+            "(SELECT 'Yes' FROM wa_scat_dw "
+            "       WHERE (sample_id LIKE 'T%%' OR sample_id like 'M%%') "
+            "             AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
             "FROM genotypes WHERE genotype_id = %s "
         ),
         [genotype_id],
     )
 
     genotype = cursor.fetchone()
+    if genotype is None:
+        flash(fn.alert_danger(f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"))
+        return redirect("/dead_wolves_list")
 
+    # sample
     cursor.execute(
         (
             "SELECT wa_code, sample_id, "
@@ -162,9 +170,6 @@ def view_genotype(genotype_id):
         map = Markup(fn.leaflet_geojson(center, samples_features, transect_features=[], zoom=8))
     else:
         map = ""
-
-    # genetic data
-    # cursor.execute("", [genotype_id])
 
     return render_template(
         "view_genotype.html",

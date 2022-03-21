@@ -1,11 +1,12 @@
 """
-export results in XLSX format
+export paths in XLSX format
 """
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Font
 from tempfile import NamedTemporaryFile
+
 
 def export_paths(paths):
 
@@ -14,10 +15,21 @@ def export_paths(paths):
     ws1 = wb.active
     ws1.title = f"Paths"
 
-    header = ["Path ID", "Transect ID", "Region", "Province", "Date", "Sampling season", "Completeness",
-              "Number of samples", "Number of tracks",
-              "Operator", "Institution", "Category", "Notes"]
-
+    header = [
+        "Path ID",
+        "Transect ID",
+        "Region",
+        "Province",
+        "Date",
+        "Sampling season",
+        "Completeness",
+        "Number of samples",
+        "Number of tracks",
+        "Operator",
+        "Institution",
+        "Category",
+        "Notes",
+    ]
 
     ws1.append(header)
 
@@ -45,5 +57,3 @@ def export_paths(paths):
         stream = tmp.read()
 
         return stream
-
-

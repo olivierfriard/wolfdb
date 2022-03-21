@@ -13,6 +13,13 @@
 <br>
 <br>
 
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
+
+
 {% if results %}
 <h2>List of {{ n_dead_wolves }} dead wolves</h2>
 <table class="table table-striped">
@@ -29,12 +36,15 @@
 
     <td><a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
 
-    <td><a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a></td>
+<td>
+{% if result['genotype_id_verif'] is not none %}
+<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>
+{% else %}
+{{ result['genotype_id'] }}
+{% endif %}
+</td>
 
-    <td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
-
-
-
+<td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
 </tr>
 {% endfor %}
 </table>
