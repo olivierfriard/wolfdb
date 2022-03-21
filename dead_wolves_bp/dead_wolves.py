@@ -463,6 +463,7 @@ def dead_wolves_list_old():
     results = cursor.fetchall()
 
     return render_template("dead_wolves_list_old.html", header_title="OLD list of dead wolves", results=results)
+'''
 
 
 @app.route("/dead_wolves_list")
@@ -484,4 +485,3 @@ def dead_wolves_list():
         results=results,
         n_dead_wolves=len(results),
     )
-'''
