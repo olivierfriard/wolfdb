@@ -21,37 +21,47 @@ def export_tracks(tracks):
     ws1.title = f"Tracks"
 
     header = [
-        "Path ID",
-        "Transect ID",
-        "Region",
-        "Province",
-        "Date",
-        "Sampling season",
-        "Completeness",
-        "Number of samples",
-        "Number of tracks",
-        "Operator",
-        "Institution",
-        "Category",
-        "Notes",
+        "snowtrack_id",
+        "sampling_type",
+        "transect_id",
+        "date",
+        "coord_east",
+        "coord_north",
+        "coord_zone",
+        "track_type",
+        "location",
+        "municipality",
+        "province",
+        "operator",
+        "institution",
+        "scalp_category",
+        "days_after_snowfall",
+        "minimum_number_of_wolves",
+        "track_format",
+        "notes",
     ]
 
     ws1.append(header)
 
     for row in tracks:
         out = []
-        out.append(row["path_id"])
+        out.append(row["snowtrack_id"])
+        out.append(row["sampling_type"])
         out.append(row["transect_id"])
-        out.append(row["region"])
-        out.append(row["province"])
         out.append(row["date"] if row["date"] is not None else "")
-        out.append(row["sampling_season"] if row["sampling_season"] is not None else "")
-        out.append(row["completeness"])
-        out.append(row["n_samples"])
-        out.append(row["n_tracks"])
+        out.append(row["coord_east"])
+        out.append(row["coord_north"])
+        out.append(row["coord_zone"])
+        out.append(row["track_type"])
+        out.append(row["location"])
+        out.append(row["municipality"])
+        out.append(row["province"])
         out.append(row["observer"] if row["observer"] is not None else "")
         out.append(row["institution"] if row["institution"] is not None else "")
-        out.append(row["category"] if row["category"] is not None else "")
+        out.append(row["scalp_category"])
+        out.append(row["days_after_snowfall"])
+        out.append(row["minimum_number_of_wolves"])
+        out.append(row["track_format"])
         out.append(row["notes"] if row["notes"] is not None else "")
 
         ws1.append(out)

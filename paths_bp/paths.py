@@ -201,6 +201,9 @@ def paths_list():
 @app.route("/export_paths")
 @fn.check_login
 def export_paths():
+    """
+    export tracks in XLSX file
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)

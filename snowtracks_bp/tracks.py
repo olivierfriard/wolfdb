@@ -6,7 +6,7 @@ flask blueprint for tracks management
 """
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask import render_template, redirect, request, Markup, flash, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -825,6 +825,36 @@ def confirm_load_tracks_xlsx(filename, mode):
     flash(fn.alert_success(msg))
 
     return redirect(f"/tracks")
+
+
+@app.route("/export_tracks")
+@fn.check_login
+def export_tracks():
+    """
+    export tracks in XLSX file
+    """
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        (
+            "SELECT * "
+            # "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
+            # "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
+            # "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
+            # "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
+            "FROM snow_tracks "
+            "ORDER BY snowtrack_id ASC "
+        )
+    )
+
+    file_content = tracks_export.export_tracks(cursor.fetchall())
+
+    response = make_response(file_content, 200)
+    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    response.headers["Content-disposition"] = "attachment; filename=tracks.xlsx"
+
+    return response
 
 
 @app.route("/export_tracks_shapefile")
