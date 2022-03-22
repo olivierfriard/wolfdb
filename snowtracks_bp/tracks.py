@@ -20,6 +20,8 @@ from .track_form import Track
 import functions as fn
 import uuid
 import pathlib as pl
+import shutil
+import time
 
 app = flask.Blueprint("tracks", __name__, template_folder="templates")
 
@@ -864,11 +866,20 @@ def export_tracks_shapefile():
     create shapefile with tracks
     """
 
-    if pl.Path("static/tracks.zip").is_file():
-        os.remove("static/tracks.zip")
+    if pl.Path("static/tmp/tracks").is_dir():
+        shutil.rmtree("static/tmp/tracks", ignore_errors=True)
 
-    zip_path = tracks_export.export_shapefile("static/tracks", "/tmp/tracks_shapefile.log")
+    # delete old files
+    for file_path in pl.Path("static").glob("tmp/tracks_*.zip"):
+        if time.time() - os.path.getmtime(file_path) > 3600:
+            os.remove(file_path)
+
+    file_name = datetime.datetime.now().replace(microsecond=0).isoformat("_").replace(":", "")
+
+    zip_path = tracks_export.export_shapefile(
+        "static/tmp/tracks", f"static/tmp/tracks_{file_name}", "/tmp/tracks_shapefile.log"
+    )
 
     zip_file_name = pl.Path(zip_path).name
 
-    return redirect(f"/static/{zip_file_name}")
+    return redirect(f"/static/tmp/{zip_file_name}")

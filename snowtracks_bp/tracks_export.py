@@ -74,7 +74,7 @@ def export_tracks(tracks):
         return stream
 
 
-def export_shapefile(dir_path: str, log_file: str):
+def export_shapefile(dir_path: str, file_name: str, log_file: str) -> str:
     """
     export tracks that have shape in an ESRI shapefile
     """
@@ -103,8 +103,6 @@ def export_shapefile(dir_path: str, log_file: str):
                 continue
             transect_geojson = json.loads(track["track_geojson"])
 
-            print(transect_geojson)
-
             rowDict = {
                 "geometry": {"type": "MultiLineString", "coordinates": transect_geojson["coordinates"]},
                 "properties": {"track_id": track["snowtrack_id"]},
@@ -114,6 +112,6 @@ def export_shapefile(dir_path: str, log_file: str):
     log.close()
 
     # make a ZIP archive
-    zip_file_name = shutil.make_archive(dir_path, "zip", dir_path)
+    zip_file_name = shutil.make_archive(file_name, "zip", dir_path)
 
     return zip_file_name
