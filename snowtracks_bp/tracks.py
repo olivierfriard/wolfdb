@@ -883,3 +883,35 @@ def export_tracks_shapefile():
     zip_file_name = pl.Path(zip_path).name
 
     return redirect(f"/static/tmp/{zip_file_name}")
+
+
+@app.route("/check_tracks_location")
+@fn.check_login
+def check_tracks_location():
+    """
+    check_tracks_location
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        (
+            "select snowtrack_id,  "
+            "(select concat(transect_id, '|', ROUND(st_distance(s.multilines, multilines))) FROM transects  "
+            "   where st_distance(s.multilines, multilines) = "
+            "                 (select min(st_distance(s.multilines, multilines)) from transects) LIMIT 1) AS transect_dist "
+            "FROM snow_tracks s "
+            "WHERE sampling_type != 'Opportunistic' "
+            "AND transect_id is null "
+            "AND s.multilines IS NOT NULL "
+        )
+    )
+    tracks = cursor.fetchall()
+
+    return render_template(
+        "check_tracks_location.html",
+        header_title="Check tracks location",
+        n_tracks=len(tracks),
+        tracks=tracks,
+    )
