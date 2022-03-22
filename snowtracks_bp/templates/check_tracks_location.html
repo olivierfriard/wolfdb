@@ -1,0 +1,63 @@
+{% extends "bootstrap_simple.html" %}
+
+{% block content %}
+
+
+
+<h1>WolfDB - Tracks</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/tracks" class="btn btn-primary">Tracks</a>
+
+<br>
+<br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+{{ message }}
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+
+<h2>Check tracks location (sampling type &ne; Opportunistic)</h2>
+
+<h3>List of {{ n_tracks }} tracks</h3>
+<br>
+
+<style>th {top: 0; position: sticky;}</style>
+
+<table class="table table-striped">
+<tr>
+<th style="background-color: white;">Track ID</th>
+<th style="background-color: white;">Closest transect ID</th>
+<th style="background-color: white;">Distance (m)</th>
+</tr>
+{% for track in tracks %}
+<tr>
+
+    <td><a href="/view_track/{{ track['snowtrack_id'] }}">{{ track['snowtrack_id'] }}</a></td>
+
+
+    {% set list1 = track["transect_dist"].split('|') %}
+
+    <td><a href="/view_transect/{{ list1[0] }}">{{ list1[0] }}</a></td>
+    <td>{{ list1[1] }}</td>
+
+</tr>
+{% endfor %}
+</table>
+
+
+
+{% endblock %}
+
+
+
+
+
+
+
