@@ -1,0 +1,11 @@
+distance from scat to closest track:
+
+select scat_id,
+(select concat(snowtrack_id, '|', ROUND(st_distance(s.geometry_utm, multilines))) FROM snow_tracks
+   where st_distance(s.geometry_utm, multilines) = (select min(st_distance(s.geometry_utm, multilines)) from snow_tracks) LIMIT 1) AS track_dist
+from scats s where sampling_type = 'Systematic';
+
+
+replace province name by province code:
+
+update transects set province=(select province_code from geo_info where province_name=transects.province) WHERE province in (select province_name from geo_info);
