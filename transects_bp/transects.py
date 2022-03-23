@@ -710,56 +710,50 @@ def transects_n_samples(year_init, year_end):
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
     transects = cursor.fetchall()
 
-    sampling_years = range(int(year_init), int(year_end) + 1)
-
     out = {}
     template = {}
     header = "Transect ID\t"
     # check max number of sampling by year
-    for year in sampling_years:
-        cursor.execute(
-            "select max(c) as m from (select count(*) as c from paths where extract(YEAR FROM date) = %s AND transect_id != '' group by transect_id) x",
-            [year],
-        )
-        result = cursor.fetchone()
-        template[year] = ["NA"] * result["m"]
-        for i in range(result["m"]):
-            header += f"{year}-{i + 1}\t"
+    cursor.execute(
+        "select max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
 
     for transect in transects:
 
         row_out = copy.deepcopy(template)
 
-        for year in sampling_years:
+        cursor.execute(
+            (
+                "SELECT path_id FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
 
+        idx = 0
+        for path in paths:
             cursor.execute(
-                (
-                    "SELECT path_id FROM paths "
-                    "WHERE transect_id = %s "
-                    "AND EXTRACT(YEAR FROM date) = %s "
-                    "ORDER BY date"
-                ),
-                [transect["transect_id"], year],
+                ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
+                [path["path_id"]],
             )
-            paths = cursor.fetchall()
-            if len(paths):
-                idx = 0
-                for path in paths:
-                    cursor.execute(
-                        ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
-                        [path["path_id"]],
-                    )
-                    scats = cursor.fetchone()
-                    row_out[year][idx] = str(scats["n_scats"])
-                    idx += 1
+            scats = cursor.fetchone()
+            row_out[idx] = str(scats["n_scats"])
+            idx += 1
+
         out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:
         out_str += transect + "\t"
-        for year in sampling_years:
-            out_str += "\t".join(out[transect][year])
-            out_str += "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
@@ -783,56 +777,50 @@ def transects_samples_presence(year_init, year_end):
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
     transects = cursor.fetchall()
 
-    sampling_years = range(int(year_init), int(year_end) + 1)
-
     out = {}
     template = {}
     header = "Transect ID\t"
-    # check max number of sampling by year
-    for year in sampling_years:
-        cursor.execute(
-            "select max(c) as m from (select count(*) as c from paths where extract(YEAR FROM date) = %s AND transect_id != '' group by transect_id) x",
-            [year],
-        )
-        result = cursor.fetchone()
-        template[year] = ["NA"] * result["m"]
-        for i in range(result["m"]):
-            header += f"{year}-{i + 1}\t"
+    # check max number of sampling
+    cursor.execute(
+        "select max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
 
     for transect in transects:
 
         row_out = copy.deepcopy(template)
 
-        for year in sampling_years:
+        cursor.execute(
+            (
+                "SELECT path_id FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
 
+        idx = 0
+        for path in paths:
             cursor.execute(
-                (
-                    "SELECT path_id FROM paths "
-                    "WHERE transect_id = %s "
-                    "AND EXTRACT(YEAR FROM date) = %s "
-                    "ORDER BY date"
-                ),
-                [transect["transect_id"], year],
+                ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
+                [path["path_id"]],
             )
-            paths = cursor.fetchall()
-            if len(paths):
-                idx = 0
-                for path in paths:
-                    cursor.execute(
-                        ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
-                        [path["path_id"]],
-                    )
-                    scats = cursor.fetchone()
-                    row_out[year][idx] = str(1 if scats["n_scats"] > 0 else 0)
-                    idx += 1
+            scats = cursor.fetchone()
+            row_out[idx] = str(1 if scats["n_scats"] > 0 else 0)
+            idx += 1
+
         out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:
         out_str += transect + "\t"
-        for year in sampling_years:
-            out_str += "\t".join(out[transect][year])
-            out_str += "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
@@ -858,45 +846,44 @@ def transects_dates(year_init, year_end):
     out = {}
     template = {}
     header = "Transect ID\t"
-    # check max number of sampling by year
-    for year in sampling_years:
-        cursor.execute(
-            "select max(c) as m from (select count(*) as c from paths where extract(YEAR FROM date) = %s AND transect_id != '' group by transect_id) x",
-            [year],
+    # check max number of sampling
+    cursor.execute(
+        (
+            "select max(c) as n_paths from "
+            "      (select count(*) as c from paths where transect_id != '' group by transect_id) x"
         )
-        result = cursor.fetchone()
-        template[year] = ["NA"] * result["m"]
-        for i in range(result["m"]):
-            header += f"{year}-{i + 1}\t"
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
 
     for transect in transects:
 
         row_out = copy.deepcopy(template)
 
-        for year in sampling_years:
+        cursor.execute(
+            (
+                "SELECT path_id, date::date as date FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
+        idx = 0
+        for path in paths:
+            row_out[idx] = str(path["date"])
+            idx += 1
 
-            cursor.execute(
-                (
-                    "SELECT path_id, (date - %s::date + 1) as n_days FROM paths "
-                    "WHERE transect_id = %s "
-                    "AND EXTRACT(YEAR FROM date) = %s "
-                    "ORDER BY date"
-                ),
-                [f"{year}-01-01", transect["transect_id"], year],
-            )
-            paths = cursor.fetchall()
-            idx = 0
-            for path in paths:
-                row_out[year][idx] = str(path["n_days"])
-                idx += 1
         out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:
         out_str += transect + "\t"
-        for year in sampling_years:
-            out_str += "\t".join(out[transect][year])
-            out_str += "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
@@ -917,50 +904,44 @@ def transects_completeness(year_init, year_end):
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
     transects = cursor.fetchall()
 
-    sampling_years = range(int(year_init), int(year_end) + 1)
-
     out = {}
     template = {}
     header = "Transect ID\t"
-    # check max number of sampling by year
-    for year in sampling_years:
-        cursor.execute(
-            "select max(c) as m from (select count(*) as c from paths where extract(YEAR FROM date) = %s AND transect_id != '' group by transect_id) x",
-            [year],
-        )
-        result = cursor.fetchone()
-        template[year] = ["NA"] * result["m"]
-        for i in range(result["m"]):
-            header += f"{year}-{i + 1}\t"
+    # check max number of sampling
+    cursor.execute(
+        "SELECT max(c) AS n_paths FROM (SELECT count(*) AS c from paths where transect_id != '' group by transect_id) x"
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
 
     for transect in transects:
 
         row_out = copy.deepcopy(template)
 
-        for year in sampling_years:
+        cursor.execute(
+            (
+                "SELECT completeness FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
+        idx = 0
+        for path in paths:
+            row_out[idx] = str(path["completeness"])
+            idx += 1
 
-            cursor.execute(
-                (
-                    "SELECT completeness FROM paths "
-                    "WHERE transect_id = %s "
-                    "AND EXTRACT(YEAR FROM date) = %s "
-                    "ORDER BY date"
-                ),
-                [transect["transect_id"], year],
-            )
-            paths = cursor.fetchall()
-            idx = 0
-            for path in paths:
-                row_out[year][idx] = str(path["completeness"])
-                idx += 1
         out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:
         out_str += transect + "\t"
-        for year in sampling_years:
-            out_str += "\t".join(out[transect][year])
-            out_str += "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
