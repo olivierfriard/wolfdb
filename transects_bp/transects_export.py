@@ -7,7 +7,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Font
 from tempfile import NamedTemporaryFile
 
-def export_transects(paths):
+
+def export_transects(paths: list):
 
     wb = Workbook()
 
@@ -35,5 +36,3 @@ def export_transects(paths):
         stream = tmp.read()
 
         return stream
-
-

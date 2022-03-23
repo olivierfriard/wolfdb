@@ -636,3 +636,63 @@ def transects_analysis():
 
     out += "</table>"
     return out
+
+
+@app.route("/transects_n_samples/<year_init>/<year_end>")
+@fn.check_login
+def transects_n_samples(year_init, year_end):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    transects = cursor.fetchall()
+
+    sampling_years = range(int(year_init), int(year_end) + 1)
+    season_months = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
+
+    out = []
+
+    # header
+    row = ["path_id"]
+    for year in sampling_years:
+        for month in season_months:
+            row.append(f"{year}-{month:02}")
+    out.append(row)
+
+    for transect in transects:
+
+        transect_id = transect["transect_id"]
+        row = [transect_id]
+
+        for year in sampling_years:
+            for month in season_months:
+                cursor.execute(
+                    (
+                        "SELECT path_id AS n_paths FROM paths "
+                        "WHERE transect_id = %s "
+                        "AND EXTRACT(YEAR FROM date) = %s"
+                        "AND EXTRACT(MONTH FROM date) = %s"
+                    ),
+                    [transect_id, year, month],
+                )
+                paths = cursor.fetchall()
+                if len(paths):
+                    cursor.execute(
+                        "SELECT count(*) AS n_scats FROM scats where path_id IN (SELECT path_id FROM paths WHERE transect_id = %s AND EXTRACT(YEAR FROM date) = %s AND EXTRACT(MONTH FROM date) = %s)",
+                        [transect_id, year, month],
+                    )
+                    scats = cursor.fetchone()
+                    row.append(str(scats["n_scats"]))
+                else:
+                    row.append("NA")
+        out.append(row)
+
+    out_str = "\n".join([z for z in ["\t".join(x) for x in out]])
+
+    response = make_response(out_str, 200)
+    response.headers["Content-type"] = "'text/tab-separated-values"
+    response.headers["Content-disposition"] = "attachment; filename=transects_n-samples.tsv"
+
+    return response
