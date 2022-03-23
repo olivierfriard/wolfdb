@@ -638,9 +638,9 @@ def transects_analysis():
     return out
 
 
-@app.route("/transects_n_samples/<year_init>/<year_end>")
+@app.route("/transects_n_samples_by_month/<year_init>/<year_end>")
 @fn.check_login
-def transects_n_samples(year_init, year_end):
+def transects_n_samples_by_month(year_init, year_end):
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -670,7 +670,7 @@ def transects_n_samples(year_init, year_end):
             for month in season_months:
                 cursor.execute(
                     (
-                        "SELECT path_id AS n_paths FROM paths "
+                        "SELECT path_id FROM paths "
                         "WHERE transect_id = %s "
                         "AND EXTRACT(YEAR FROM date) = %s"
                         "AND EXTRACT(MONTH FROM date) = %s"
@@ -690,6 +690,88 @@ def transects_n_samples(year_init, year_end):
         out.append(row)
 
     out_str = "\n".join([z for z in ["\t".join(x) for x in out]])
+
+    response = make_response(out_str, 200)
+    response.headers["Content-type"] = "'text/tab-separated-values"
+    response.headers["Content-disposition"] = "attachment; filename=transects_n-samples.tsv"
+
+    return response
+
+
+@app.route("/transects_n_samples/<year_init>/<year_end>")
+@fn.check_login
+def transects_n_samples(year_init, year_end):
+
+    import copy
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    transects = cursor.fetchall()
+
+    sampling_years = range(int(year_init), int(year_end) + 1)
+    season_months = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
+
+    out = {}
+    template = {}
+    header = "Transect ID\t"
+    # check max number of sampling by year
+    for year in sampling_years:
+        cursor.execute(
+            "select max(c) as m from (select count(*) as c from paths where extract(YEAR FROM date) = %s AND transect_id != '' group by transect_id) x",
+            [year],
+        )
+        result = cursor.fetchone()
+        template[year] = ["NA"] * result["m"]
+        for i in range(result["m"]):
+            header += f"{year}-{i + 1}\t"
+
+    # header
+    """
+    row = ["path_id"]
+    for year in sampling_years:
+        for month in season_months:
+            row.append(f"{year}-{month:02}")
+    out.append(row)
+    """
+
+    for transect in transects:
+
+        row_out = copy.deepcopy(template)
+
+        for year in sampling_years:
+
+            cursor.execute(
+                (
+                    "SELECT path_id FROM paths "
+                    "WHERE transect_id = %s "
+                    "AND EXTRACT(YEAR FROM date) = %s "
+                    "ORDER BY date"
+                ),
+                [transect["transect_id"], year],
+            )
+            paths = cursor.fetchall()
+            if len(paths):
+                idx = 0
+                for path in paths:
+                    cursor.execute(
+                        ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
+                        [path["path_id"]],
+                    )
+                    scats = cursor.fetchone()
+                    row_out[year][idx] = str(scats["n_scats"])
+                    idx += 1
+        out[transect["transect_id"]] = copy.deepcopy(row_out)
+
+    out_str = header[:-1] + "\n"
+    for transect in out:
+        out_str += transect + "\t"
+        for year in sampling_years:
+            out_str += "\t".join(out[transect][year])
+            out_str += "\t"
+        out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
     response.headers["Content-type"] = "'text/tab-separated-values"
