@@ -71,16 +71,16 @@
 {% endif %}
 </td>
 
-<td>{% if result['wa_code'] %}{{ result['wa_code'] }}{% endif %}</td>
+<td>{% if result['wa_code'] %}<a href="/view_genotype/{{result['wa_code'] }}">{{ result['wa_code'] }}</a>{% endif %}</td>
 <td>
-{% if result['genotype_id'] %}{{ result['genotype_id'] }}{% endif %}
-{% if result['genotype_id2'] %}{{ result['genotype_id2'] }}{% endif %}
+{% if result['genotype_id'] %}<a href="/view_genotype/{{result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
+{% if result['genotype_id2'] %}<a href="/view_genotype/{{result['genotype_id2'] }}">{{ result['genotype_id2'] }}</a>{% endif %}
 </td>
 
-<td>{{ result['location'] }}</td>
-<td>{{ result['municipality'] }}</td>
-<td>{{ result['province'] }}</td>
-<td>{{ result['region'] }}</td>
+<td>{{ result['location'] if result['location'] is not none else ""}}</td>
+<td>{{ result['municipality'] if result['municipality'] is not none else ""}}</td>
+<td>{{ result['province'] if result['province'] is not none else ""}}</td>
+<td>{{ result['region'] if result['region'] is not none else ""}}</td>
 
 <td>{{ result['deposition'] }}</td>
 <td>{{ result['matrix'] }}</td>
@@ -92,7 +92,7 @@
 
 <td>{{ result['observer'] }}</td>
 <td>{{ result['institution'] }}</td>
-<td>{{ result['notes'] if result['notes'] is not none else ""}}</td>
+<td><small>{{ result['notes'] if result['notes'] is not none else ""}}</small></td>
 </tr>
 {% endfor %}
 </table>
