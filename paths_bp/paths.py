@@ -150,7 +150,17 @@ def view_path(path_id):
         path=path,
         n_tracks=n_tracks,
         path_id=path_id,
-        map=Markup(fn.leaflet_geojson(center, scat_features, transect_features)),
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": params["scat_color"],
+                    "transects": transect_features,
+                    "transects_color": params["transect_color"],
+                    "center": center,
+                }
+            )
+        ),
     )
 
 

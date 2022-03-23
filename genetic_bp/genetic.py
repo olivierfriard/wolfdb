@@ -143,9 +143,9 @@ def view_genotype(genotype_id):
         sum_lat += lat
 
         if row["sample_id"].startswith("E"):
-            color = "orange"
-        elif row["sample_id"].startswith("T"):
-            color = "purple"
+            color = params["scat_color"]
+        elif row["sample_id"].startswith("T") or row["sample_id"].startswith("M"):
+            color = params["dead_wolf_color"]
         else:
             color = "red"
 
@@ -413,9 +413,9 @@ def plot_all_wa():
         sum_lat += lat
 
         if row["sample_id"].startswith("E"):
-            color = "orange"
-        elif row["sample_id"].startswith("T"):
-            color = "purple"
+            color = params["scat_color"]
+        elif row["sample_id"][0] in "TM":
+            color = params["dead_wolf_color"]
         else:
             color = "red"
 

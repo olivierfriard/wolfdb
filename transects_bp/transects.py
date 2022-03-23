@@ -41,9 +41,9 @@ def view_transect(transect_id):
     Display transect data
     """
 
-    scats_color = "orange"
-    transects_color = "red"
-    tracks_color = "blue"
+    scats_color = params["scat_color"]
+    transects_color = params["transect_color"]
+    tracks_color = params["track_color"]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -173,7 +173,6 @@ def view_transect(transect_id):
                 "geometry": dict(track_geojson),
                 "type": "Feature",
                 "properties": {
-                    # "style": {"color": color, "fillColor": color },
                     "popupContent": (
                         f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
                     ),
@@ -190,7 +189,6 @@ def view_transect(transect_id):
         snowtracks=tracks,
         transect_id=transect_id,
         n_scats=n_scats,
-        # map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, fit=str(fit))),
         map=Markup(
             fn.leaflet_geojson2(
                 {
@@ -492,7 +490,7 @@ def plot_transects():
     """
     Plot all transects
     """
-    transects_color = "red"
+    transects_color = params["transect_color"]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)

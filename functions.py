@@ -725,10 +725,10 @@ def leaflet_geojson2(data: dict) -> str:
 
     # center, scat_features, transect_features, fit="", zoom=13
 
-    SCATS_COLOR_DEFAULT = "orange"
-    TRANSECTS_COLOR_DEFAULT = "red"
-    TRACKS_COLOR_DEFAULT = "blue"
-    DEAD_WOLVES_COLOR_DEFAULT = "purple"
+    SCATS_COLOR_DEFAULT = params["scat_color"]
+    TRANSECTS_COLOR_DEFAULT = params["transect_color"]
+    TRACKS_COLOR_DEFAULT = params["track_color"]
+    DEAD_WOLVES_COLOR_DEFAULT = params["dead_wolf_color"]
     CENTER_DEFAULT = "45, 7"
 
     map = Template(
@@ -786,24 +786,6 @@ function onEachFeature(feature, layer) {
     layer.bindPopup(popupContent);
 }
 
-L.geoJSON([scats], {
-
-    style: function (feature) { return feature.properties && feature.properties.style; },
-
-    onEachFeature: onEachFeature,
-
-    pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, {
-            color: '{{ scats_color }}',
-            fillcolor: '{{ scats_color }}',
-            radius: 8,
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 1
-        });
-    }
-}).addTo(map);
-
 
 L.geoJSON([dead_wolves], {
 
@@ -826,20 +808,30 @@ L.geoJSON([dead_wolves], {
 
 
 L.geoJSON(transects, {
-
     style: function(feature) { return { color: '{{ transects_color }}' } },
-
     onEachFeature: onEachFeature,
-
 }).addTo(map);
 
 
 L.geoJSON(tracks, {
-
     style: function(feature) { return { color: '{{ tracks_color }}' } },
-
     onEachFeature: onEachFeature,
+}).addTo(map);
 
+
+L.geoJSON([scats], {
+    style: function (feature) { return feature.properties && feature.properties.style; },
+    onEachFeature: onEachFeature,
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            color: '{{ scats_color }}',
+            fillcolor: '{{ scats_color }}',
+            radius: 8,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+        });
+    }
 }).addTo(map);
 
 

@@ -101,10 +101,7 @@ def view_dead_wolf_id(id):
         dw_feature = {
             "geometry": {"type": "Point", "coordinates": [lat_lon[1], lat_lon[0]]},
             "type": "Feature",
-            "properties": {
-                "style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
-                "popupContent": f"Dead wolf ID: {id}",
-            },
+            "properties": {"popupContent": f"Dead wolf ID: {id}"},
             "id": id,
         }
 
@@ -119,42 +116,15 @@ def view_dead_wolf_id(id):
         header_title=f"Dead wolf #{dead_wolf['ID']}",
         fields_list=fields_list,
         dead_wolf=dead_wolf,
-        map=Markup(fn.leaflet_geojson(center, dw_features, [])),
-    )
-
-
-@app.route("/plot_dead_wolves_old")
-@fn.check_login
-def plot_dead_wolves_old():
-    """
-    plot dead wolves
-    """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT tissue_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS dw_lonlat FROM dead_wolves")
-
-    scat_features = []
-    for row in cursor.fetchall():
-        scat_geojson = json.loads(row["dw_lonlat"])
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                "style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
-                "popupContent": f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a>""",
-            },
-            "id": row["tissue_id"],
-        }
-
-        scat_features.append(dict(scat_feature))
-
-    center = f"45 , 9"
-
-    transect_features = []
-
-    return render_template(
-        "plot_all_scats.html", map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=7))
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "dead_wolves": dw_features,
+                    "dead_wolves_color": params["dead_wolf_color"],
+                    "center": center,
+                }
+            )
+        ),
     )
 
 
@@ -182,13 +152,12 @@ def plot_dead_wolves():
             tot_min_lon = min([tot_min_lon, lon])
             tot_max_lon = max([tot_max_lon, lon])
 
-            scat_geojson = {"type": "Point", "coordinates": [lon, lat]}
+            dw_geojson = {"type": "Point", "coordinates": [lon, lat]}
 
-            scat_feature = {
-                "geometry": dict(scat_geojson),
+            dw_feature = {
+                "geometry": dict(dw_geojson),
                 "type": "Feature",
                 "properties": {
-                    "style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
                     "popupContent": (
                         f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>"""
                     )
@@ -201,7 +170,7 @@ def plot_dead_wolves():
                 },
                 "id": row["id"],
             }
-            dw_features.append(dict(scat_feature))
+            dw_features.append(dict(dw_feature))
 
         except Exception:
             pass
@@ -210,8 +179,12 @@ def plot_dead_wolves():
         "plot_dead_wolves.html",
         header_title="Plot of dead wolves",
         map=Markup(
-            fn.leaflet_geojson(
-                f"45 , 9", dw_features, [], zoom=7, fit=str([[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]])
+            fn.leaflet_geojson2(
+                {
+                    "dead_wolves": dw_features,
+                    "dead_wolves_color": params["dead_wolf_color"],
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                }
             )
         ),
     )
@@ -220,6 +193,10 @@ def plot_dead_wolves():
 @app.route("/new_dead_wolf", methods=("GET", "POST"))
 @fn.check_login
 def new_dead_wolf():
+    """
+    insert a new dead wolf
+    """
+
     def not_valid(form, msg):
         # default values
         default_values = {}
@@ -401,69 +378,6 @@ def del_dead_wolf(id):
     connection.commit()
 
     return redirect("/dead_wolves_list")
-
-
-'''
-@app.route("/view_dead_wolf/<tissue_id>")
-@fn.check_login
-def view_dead_wolf_old(tissue_id):
-    """
-    view dead wolf from OLD table
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        (
-            "SELECT *, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS dw_lonlat, "
-            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-            "FROM dead_wolves WHERE tissue_id = %s"
-        ),
-        [tissue_id],
-    )
-    dead_wolf = cursor.fetchone()
-
-    dw_geojson = json.loads(dead_wolf["dw_lonlat"])
-
-    dw_feature = {
-        "geometry": dict(dw_geojson),
-        "type": "Feature",
-        "properties": {
-            "style": {"color": "purple", "fillColor": "purple", "fillOpacity": 1},
-            "popupContent": f"Tissue ID: {tissue_id}",
-        },
-        "id": tissue_id,
-    }
-
-    dw_features = [dw_feature]
-
-    center = f"{dead_wolf['latitude']}, {dead_wolf['longitude']}"
-
-    return render_template(
-        "view_dead_wolf_old.html", dead_wolf=dead_wolf, map=Markup(fn.leaflet_geojson(center, dw_features, []))
-    )
-'''
-
-
-'''
-@app.route("/dead_wolves_list_old")
-@fn.check_login
-def dead_wolves_list_old():
-    """
-    get all dead_wolves
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT * FROM dead_wolves ORDER BY genotype_id ASC"))
-
-    results = cursor.fetchall()
-
-    return render_template("dead_wolves_list_old.html", header_title="OLD list of dead wolves", results=results)
-'''
 
 
 @app.route("/dead_wolves_list")

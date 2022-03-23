@@ -119,8 +119,8 @@ def view_scat(scat_id):
     Display scat info
     """
 
-    scat_color = "orange"
-    transect_color = "red"
+    scat_color = params["scat_color"]
+    transect_color = params["transect_color"]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -160,7 +160,6 @@ def view_scat(scat_id):
     }
 
     scat_features = [scat_feature]
-
     center = f"{results['latitude']}, {results['longitude']}"
 
     # transect
@@ -176,7 +175,6 @@ def view_scat(scat_id):
             [transect_id],
         )
         transect = cursor.fetchone()
-        print(f"{transect_id=}")
 
         if transect is not None:
 
@@ -205,7 +203,6 @@ def view_scat(scat_id):
         header_title=f"Scat ID: {scat_id}",
         results=results,
         transect_id=transect_id,
-        # map=Markup(fn.leaflet_geojson(center, scat_features, transect_features)),
         map=Markup(
             fn.leaflet_geojson2(
                 {
@@ -227,7 +224,7 @@ def plot_all_scats():
     plot all scats
     """
 
-    scats_color = "orange"
+    scats_color = params["scat_color"]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -283,7 +280,7 @@ def plot_all_scats_markerclusters():
     see https://github.com/Leaflet/Leaflet.markercluster#usage
     """
 
-    scats_color = "orange"
+    scats_color = params["scat_color"]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)

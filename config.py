@@ -29,4 +29,11 @@ def config():
     else:
         raise Exception("Section web_service not found")
 
+    if parser.has_section("view"):
+        params = parser.items("view")
+        for param in params:
+            db[param[0]] = param[1]
+    else:
+        raise Exception("Section web_service not found")
+
     return db
