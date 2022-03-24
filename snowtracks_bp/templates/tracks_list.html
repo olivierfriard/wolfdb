@@ -56,7 +56,7 @@
 {% for result in results %}
 <tr>
 
-    <td><a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
+    <td><a href="/view_track/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
 
     <td>{% if result["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
 
@@ -96,7 +96,7 @@
 </table>
 {% else %}
 
-<h2>No track found</h2>
+<h2>No tracks were found</h2>
 
 {% endif %}
 

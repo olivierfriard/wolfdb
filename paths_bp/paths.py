@@ -118,7 +118,6 @@ def view_path(path_id):
     )
 
     scats = cursor.fetchall()
-    print(len(scats))
     scat_features = []
     for scat in scats:
         scat_geojson = json.loads(scat["scat_lonlat"])

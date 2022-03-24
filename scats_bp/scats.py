@@ -214,6 +214,10 @@ def view_scat(scat_id):
                 }
             )
         ),
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 
@@ -269,6 +273,10 @@ def plot_all_scats():
                 }
             )
         ),
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 

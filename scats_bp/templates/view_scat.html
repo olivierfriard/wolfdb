@@ -68,8 +68,6 @@
 </td>
 </tr>
 
-
-
 <tr><td>Track ID</td><td>
 {% if results['snowtrack_id'] and results['snowtrack_id_verif'] %}
 <a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
@@ -102,6 +100,8 @@
 <div id="map" style="width: 800px; height: 800px;"></div>
 
 {{ map }}
+
+{% include 'legend.html' %}
 
 {% endblock %}
 

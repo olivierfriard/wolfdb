@@ -167,7 +167,16 @@ def view_genotype(genotype_id):
 
     if count:
         center = f"{sum_lat / count}, {sum_lon / count}"
-        map = Markup(fn.leaflet_geojson(center, samples_features, transect_features=[], zoom=8))
+        map = Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": samples_features,
+                    "scats_color": params["scat_color"],
+                    "center": center,
+                }
+            )
+        )
+
     else:
         map = ""
 
@@ -178,6 +187,10 @@ def view_genotype(genotype_id):
         n_recap=len(wa_codes),
         wa_codes=wa_codes,
         map=map,
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 
@@ -389,6 +402,9 @@ def view_wa(wa_code):
 @app.route("/plot_all_wa")
 @fn.check_login
 def plot_all_wa():
+    """
+    plot all WA codes (scats and dead wolves)
+    """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -442,11 +458,23 @@ def plot_all_wa():
     return render_template(
         "plot_all_wa.html",
         header_title="Plot of WA codes",
-        title=Markup(
-            f"<h3>Plot of {len(scat_features)} WA codes. orange: scats, purple: tissues, red: other sample</h3>"
+        title=Markup(f"<h3>Plot of {len(scat_features)} samples WA codes.</h3>"),
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": params["scat_color"],
+                    "transects": transect_features,
+                    "transects_color": params["transect_color"],
+                    "center": center,
+                }
+            )
         ),
-        map=Markup(fn.leaflet_geojson(center, scat_features, transect_features, zoom=8)),
         distance=0,
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 

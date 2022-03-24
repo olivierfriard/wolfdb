@@ -17,7 +17,7 @@
     {% endif %}
 {% endwith %}
 
-<h2>Genotype ID: {{ result["genotype_id"] }}</h2>
+<h2 style="padding-top:1em;">Genotype ID: {{ result["genotype_id"] }}</h2>
 
 <br>
 
@@ -40,7 +40,7 @@
 {% if wa_codes %}
 
 <hr>
-<h4>WA codes</h4>
+<h3>WA codes</h3>
 
 {% for wa_code in wa_codes %}
 
@@ -50,13 +50,14 @@
 {% endfor %}
 
 <hr>
-<h2>Localization of WA codes</h2>
+<h2 style="padding-top:1em;">Localization of WA codes</h2>
 
-<div id="map" style="width: 800px; height: 800px;"></div>
-
+<div id="map" style="width: 1200px; height: 800px;"></div>
 
 {{ map }}
 
+
+{% include 'legend.html' %}
 
 {% endif %}
 

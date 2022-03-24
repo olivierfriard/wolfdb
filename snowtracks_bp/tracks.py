@@ -68,9 +68,6 @@ def view_track(snowtrack_id):
     visualize the track
     """
 
-    tracks_color = "blue"
-    scats_color = "orange"
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -158,7 +155,6 @@ def view_track(snowtrack_id):
             "geometry": dict(scat_geojson),
             "type": "Feature",
             "properties": {
-                # "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                 "popupContent": (
                     f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
@@ -179,13 +175,17 @@ def view_track(snowtrack_id):
             fn.leaflet_geojson2(
                 {
                     "scats": scat_features,
-                    "scats_color": scats_color,
+                    "scats_color": params["scat_color"],
                     "tracks": track_features,
-                    "tracks_color": tracks_color,
+                    "tracks_color": params["track_color"],
                     "fit": [[min_lat, min_lon], [max_lat, max_lon]],
                 }
             )
         ),
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 
@@ -238,7 +238,6 @@ def plot_tracks():
     """
     Plot all tracks
     """
-    tracks_color = "blue"
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -276,16 +275,20 @@ def plot_tracks():
 
     return render_template(
         "plot_tracks.html",
-        header_title="Plot of transects",
+        header_title="Plot of tracks",
         map=Markup(
             fn.leaflet_geojson2(
                 {
                     "tracks": features,
-                    "tracks_color": tracks_color,
+                    "tracks_color": params["track_color"],
                     "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
                 }
             )
         ),
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 

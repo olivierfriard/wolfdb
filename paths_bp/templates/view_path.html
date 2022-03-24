@@ -36,7 +36,7 @@
 </table>
 
 {% if n_samples %}
-<h2 style="padding-top:1em;">Samples</h2>
+<h3 style="padding-top:1em;">Samples</h3>
 <table class="table table-striped">
 <tr><th>Scat ID</th><th>WA code</th></tr>
 {% for sample in samples %}
@@ -53,6 +53,7 @@
 <h2 style="padding-top:1em;">Map</h2>
 <div id="map" style="width: 1200px; height: 600px;"></div>
 {{ map }}
+{% include 'legend.html' %}
 {% endif %}
 
 {% else %}
