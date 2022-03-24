@@ -549,7 +549,7 @@ def edit_track(snowtrack_id):
                     if transect_id not in all_transects:
                         return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
 
-            if request.form["sampling_type"] == "Opportunistic":
+            else:
                 transects_id = ""
 
             # date
