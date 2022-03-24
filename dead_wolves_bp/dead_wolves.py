@@ -187,6 +187,10 @@ def plot_dead_wolves():
                 }
             )
         ),
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 

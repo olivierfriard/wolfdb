@@ -2,7 +2,6 @@ TO DO list
 ===================================
 
 
-* import paths from XLSX
 
 * region in dw_
 
