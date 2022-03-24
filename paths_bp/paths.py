@@ -62,17 +62,13 @@ def paths():
 @fn.check_login
 def view_path(path_id):
     """
-    Display path data
+    Display path data, samples and map
     """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(
-        (
-            "SELECT *, "
-            "(SELECT count(*) FROM scats WHERE scats.path_id=paths.path_id) AS n_scats "
-            "FROM paths WHERE path_id = %s"
-        ),
+        ("SELECT * FROM paths WHERE path_id = %s"),
         [path_id],
     )
     path = cursor.fetchone()
@@ -113,7 +109,7 @@ def view_path(path_id):
     # scats
     cursor.execute(
         (
-            "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+            "SELECT scat_id, wa_code, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
             "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
             "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
             "FROM scats WHERE path_id = %s"
@@ -122,11 +118,10 @@ def view_path(path_id):
     )
 
     scats = cursor.fetchall()
+    print(len(scats))
     scat_features = []
     for scat in scats:
-
         scat_geojson = json.loads(scat["scat_lonlat"])
-
         scat_feature = {
             "geometry": dict(scat_geojson),
             "type": "Feature",
@@ -137,7 +132,6 @@ def view_path(path_id):
         }
 
         scat_features.append(scat_feature)
-
         center = f"{scat['latitude']}, {scat['longitude']}"
 
     # n tracks
@@ -147,6 +141,8 @@ def view_path(path_id):
     return render_template(
         "view_path.html",
         header_title=f"path ID: {path_id}",
+        samples=scats,
+        n_samples=len(scats),
         path=path,
         n_tracks=n_tracks,
         path_id=path_id,

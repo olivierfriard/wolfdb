@@ -15,25 +15,9 @@ def config():
     parser.read(config_filename)
 
     db = {}
-    if parser.has_section("postgresql"):
-        params = parser.items("postgresql")
+    for section in parser.sections():
+        params = parser.items(section)
         for param in params:
             db[param[0]] = param[1]
-    else:
-        raise Exception("Section postgresql not found")
-
-    if parser.has_section("web_service"):
-        params = parser.items("web_service")
-        for param in params:
-            db[param[0]] = param[1]
-    else:
-        raise Exception("Section web_service not found")
-
-    if parser.has_section("view"):
-        params = parser.items("view")
-        for param in params:
-            db[param[0]] = param[1]
-    else:
-        raise Exception("Section web_service not found")
 
     return db

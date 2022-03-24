@@ -15,7 +15,7 @@
 
 {% if path['path_id'] %}
 
-<h2>path ID: {{ path['path_id'] }}</h2>
+<h2 style="padding-top:1em;">path ID: {{ path['path_id'] }}</h2>
 
 <a href="/edit_path/{{ path['path_id'] }}" class="btn btn-danger">Edit path</a>
 <a href="/del_path/{{ path["path_id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete path</a>
@@ -32,12 +32,25 @@
 <tr><td>Category</td><td>{{ path["category"] if path["category"] is not none else ""}}</td></tr>
 <tr><td>Notes</td><td>{{ path["notes"] }}</td></tr>
 <tr><td>Number of tracks</td><td>{{ n_tracks }}</td></tr>
-<tr><td>Number of samples</td><td>{{ path["n_scats"] }}</td></tr>
-
+<tr><td>Number of samples</td><td>{{ n_samples }}</td></tr>
 </table>
 
-{% if n_tracks or path["n_scats"] %}
-<h2>Map</h2>
+{% if n_samples %}
+<h2 style="padding-top:1em;">Samples</h2>
+<table class="table table-striped">
+<tr><th>Scat ID</th><th>WA code</th></tr>
+{% for sample in samples %}
+<tr>
+<td><a href="/view_scat/{{ sample["scat_id"] }}">{{ sample["scat_id"] }}</a></td>
+<td>{{ sample["wa_code"] }}</td>
+</tr>
+
+{% endfor %}
+</table>
+{% endif %}
+
+{% if n_tracks or n_samples %}
+<h2 style="padding-top:1em;">Map</h2>
 <div id="map" style="width: 1200px; height: 600px;"></div>
 {{ map }}
 {% endif %}
