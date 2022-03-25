@@ -11,3 +11,12 @@ replace province name by province code:
 -----------------------------------------------------
 
 update transects set province=(select province_code from geo_info where province_name=transects.province) WHERE province in (select province_name from geo_info);
+
+
+
+
+update region from province in dead_wolf_values
+-------------------------------------------------------
+
+update dead_wolves_values d set val = (select region from geo_info where province_code = (select val from dead_wolves_values where field_id = 20 and id = d.id)) where field_id = 200  ;
+

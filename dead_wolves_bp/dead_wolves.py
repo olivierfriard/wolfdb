@@ -240,6 +240,13 @@ def new_dead_wolf():
             row = cursor.fetchone()
             new_id = row["max_id"] + 1
 
+            # add region
+            if request.form["field20"]:
+                cursor.execute("SELECT region from geo_info WHERE province_code = %s", [request.form["field20"]])
+                region = cursor.fetchone()["region"]
+            else:
+                region = ""
+
             # fields list
             cursor.execute("SELECT * FROM dead_wolves_fields_definition order by position")
             fields_list = cursor.fetchall()
@@ -251,6 +258,14 @@ def new_dead_wolf():
             connection.commit()
 
             for field in fields_list:
+
+                # region
+                if field["field_id"] == 200:
+                    cursor.execute(
+                        "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
+                        [new_id, field["field_id"], region],
+                    )
+
                 if f"field{field['field_id']}" in request.form:
 
                     # check UTM coordinates
@@ -259,6 +274,13 @@ def new_dead_wolf():
                             "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
                             [new_id, field["field_id"], "0"],
                         )
+                    # date
+                    elif field["field_id"] in (8, 9) and request.form[f"field{field['field_id']}"] == "":
+                        cursor.execute(
+                            "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, NULL)",
+                            [new_id, field["field_id"]],
+                        )
+
                     else:
                         cursor.execute(
                             "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)",
@@ -275,6 +297,10 @@ def new_dead_wolf():
 @app.route("/edit_dead_wolf/<id>", methods=("GET", "POST"))
 @fn.check_login
 def edit_dead_wolf(id):
+    """
+    Edit an existing dead wolf
+    """
+
     def not_valid(form, msg):
         # default values
         default_values = {}
@@ -320,6 +346,7 @@ def edit_dead_wolf(id):
             field3=default_values["field3"],
             field12=default_values["field12"],
             field13=default_values["field13"],
+            field20=default_values["field20"],
             field26=default_values["field26"],
             field35=default_values["field34"],
             field43=default_values["field43"],
@@ -347,15 +374,24 @@ def edit_dead_wolf(id):
 
             for row in fields_list:
                 if f"field{row['field_id']}" in request.form:
-
-                    cursor.execute(
-                        (
-                            "INSERT INTO dead_wolves_values VALUES (%s, %s, %s) "
-                            "ON CONFLICT (id, field_id) DO UPDATE "
-                            "SET val = EXCLUDED.val"
-                        ),
-                        [id, row["field_id"], request.form[f"field{row['field_id']}"]],
-                    )
+                    # date
+                    if row["field_id"] in (8, 9) and request.form[f"field{row['field_id']}"] == "":
+                        cursor.execute(
+                            (
+                                "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, NULL)"
+                                "ON CONFLICT (id, field_id) DO UPDATE SET val = NULL"
+                            ),
+                            [id, row["field_id"]],
+                        )
+                    else:
+                        cursor.execute(
+                            (
+                                "INSERT INTO dead_wolves_values VALUES (%s, %s, %s) "
+                                "ON CONFLICT (id, field_id) DO UPDATE "
+                                "SET val = EXCLUDED.val"
+                            ),
+                            [id, row["field_id"], request.form[f"field{row['field_id']}"]],
+                        )
 
             connection.commit()
 
@@ -370,12 +406,11 @@ def del_dead_wolf(id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("UPDATE dead_wolves_values VALUES (%s, 107, NOW())", [id])
     cursor.execute(
         (
-            "INSERT INTO dead_wolves_values "
-            "SELECT 1, 107, NULL WHERE NOT EXISTS "
-            "(SELECT 1 FROM dead_wolves_values WHERE id = %s and field_id = 107);"
+            "INSERT INTO dead_wolves_values VALUES (%s, 107, NOW()) "
+            "ON CONFLICT (id, field_id) DO UPDATE "
+            "SET val = NOW()"
         ),
         [id],
     )
