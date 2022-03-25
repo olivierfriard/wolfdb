@@ -275,7 +275,7 @@ def new_dead_wolf():
                             [new_id, field["field_id"], "0"],
                         )
                     # date
-                    elif field["field_id"] in (8, 9) and request.form[f"field{field['field_id']}"] == "":
+                    elif field["field_id"] in (8, 9, 11) and request.form[f"field{field['field_id']}"] == "":
                         cursor.execute(
                             "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, NULL)",
                             [new_id, field["field_id"]],
@@ -339,7 +339,10 @@ def edit_dead_wolf(id):
             if row["val"] is None:
                 default_values[f"field{row['field_id']}"] = ""
             else:
-                default_values[f"field{row['field_id']}"] = row["val"]
+                if row["field_id"] in (8, 9, 11) and " " in row["val"]:
+                    default_values[f"field{row['field_id']}"] = row["val"].split(" ")[0]
+                else:
+                    default_values[f"field{row['field_id']}"] = row["val"]
 
         form = Dead_wolf(
             field2=default_values["field2"],  # for selectfield elements
@@ -375,7 +378,7 @@ def edit_dead_wolf(id):
             for row in fields_list:
                 if f"field{row['field_id']}" in request.form:
                     # date
-                    if row["field_id"] in (8, 9) and request.form[f"field{row['field_id']}"] == "":
+                    if row["field_id"] in (8, 9, 11) and request.form[f"field{row['field_id']}"] == "":
                         cursor.execute(
                             (
                                 "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, NULL)"
