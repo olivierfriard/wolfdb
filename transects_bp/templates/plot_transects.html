@@ -1,7 +1,6 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 {% block content %}
-
 
 <h1>WolfDB</h1>
 <hr>
@@ -11,20 +10,38 @@
 <a href="/transects" class="btn btn-primary">Transects</a>
 
 <br><br>
-<h2>Plot of all transects</h2>
+<h2>Location of transects</h2>
 
+<style>
+#map {
+position: relative;
+height: 1000px;
+width: 100%;
+}
+</style>
 
-<div id="map" style="width: 1200px; height: 800px;"></div>
-
+<div id="mapdiv" class="col-md-12"><div id="map"></div></div>
 
 {{ map }}
 
 {% include 'legend.html' %}
 
+
+
+
+<script>
+
+    function map_dec() {
+        document.getElementById("map").setAttribute("style","height:500px");
+    }
+
+    //map_dec();
+
+    </script>
+
+<!--
+<button onclick="map_dec()">Click me</button>
+-->
 {% endblock %}
-
-
-
-
 
 
