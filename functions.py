@@ -773,8 +773,9 @@ def reverse_geocoding(lon_lat: list) -> dict:
 
 
 def leaflet_geojson2(data: dict) -> str:
-
-    # center, scat_features, transect_features, fit="", zoom=13
+    """
+    plot geoJSON features on Leaflet map
+    """
 
     SCATS_COLOR_DEFAULT = params["scat_color"]
     TRANSECTS_COLOR_DEFAULT = params["transect_color"]
@@ -915,13 +916,14 @@ map.fitBounds(markerBounds);
 
 
 def leaflet_geojson3(data: dict) -> str:
+    """
+    plot geoJSON features  on Leaflet map using MarkerCluster
+    """
 
-    # center, scat_features, transect_features, fit="", zoom=13
-
-    SCATS_COLOR_DEFAULT = "orange"
-    TRANSECTS_COLOR_DEFAULT = "red"
-    TRACKS_COLOR_DEFAULT = "blue"
-    DEAD_WOLVES_COLOR_DEFAULT = "purple"
+    SCATS_COLOR_DEFAULT = params["scat_color"]
+    TRANSECTS_COLOR_DEFAULT = params["transect_color"]
+    TRACKS_COLOR_DEFAULT = params["track_color"]
+    DEAD_WOLVES_COLOR_DEFAULT = params["dead_wolf_color"]
     CENTER_DEFAULT = "45, 7"
 
     map = Template(

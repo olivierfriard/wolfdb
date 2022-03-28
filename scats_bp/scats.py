@@ -222,7 +222,7 @@ def view_scat(scat_id):
     )
 
 
-@app.route("/plot_all_scats")
+@app.route("/plot_all_scats_old")
 @fn.check_login
 def plot_all_scats():
     """
@@ -281,7 +281,7 @@ def plot_all_scats():
     )
 
 
-@app.route("/plot_all_scats_markerclusters")
+@app.route("/plot_all_scats")
 @fn.check_login
 def plot_all_scats_markerclusters():
     """
@@ -334,6 +334,10 @@ def plot_all_scats_markerclusters():
                 }
             )
         ),
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
     )
 
 
