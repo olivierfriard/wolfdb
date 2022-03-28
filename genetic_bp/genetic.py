@@ -419,14 +419,20 @@ def plot_all_wa():
     )
 
     scat_features = []
-    count, sum_lon, sum_lat = 0, 0, 0
+
+    tot_min_lat, tot_min_lon = 90, 90
+    tot_max_lat, tot_max_lon = -90, -90
+
     for row in cursor.fetchall():
 
         scat_geojson = json.loads(row["scat_lonlat"])
-        count += 1
+
         lon, lat = scat_geojson["coordinates"]
-        sum_lon += lon
-        sum_lat += lat
+
+        tot_min_lat = min([tot_min_lat, lat])
+        tot_max_lat = max([tot_max_lat, lat])
+        tot_min_lon = min([tot_min_lon, lon])
+        tot_max_lon = max([tot_max_lon, lon])
 
         if row["sample_id"].startswith("E"):
             color = params["scat_color"]
@@ -451,22 +457,16 @@ def plot_all_wa():
 
         scat_features.append(scat_feature)
 
-    center = f"{sum_lat / count}, {sum_lon / count}"
-
-    transect_features = []
-
     return render_template(
         "plot_all_wa.html",
-        header_title="Plot of WA codes",
-        title=Markup(f"<h3>Plot of {len(scat_features)} samples WA codes.</h3>"),
+        header_title="Locations of WA codes",
+        title=Markup(f"<h3>Locations of {len(scat_features)} samples WA codes.</h3>"),
         map=Markup(
             fn.leaflet_geojson2(
                 {
                     "scats": scat_features,
                     "scats_color": params["scat_color"],
-                    "transects": transect_features,
-                    "transects_color": params["transect_color"],
-                    "center": center,
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
                 }
             )
         ),

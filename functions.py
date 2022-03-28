@@ -16,7 +16,7 @@ import json
 
 from jinja2 import Template
 
-from italian_regions import regions, province_codes, prov_name2prov_code
+from italian_regions import regions, prov_name2prov_code
 
 params = config()
 
@@ -273,6 +273,9 @@ def province_code2region(province_code):
     """
     get region from province code
     """
+    if province_code is None:
+        return None
+
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 

@@ -1,4 +1,4 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 {% block content %}
 
@@ -13,12 +13,23 @@
 <br><br>
 <h2>Locations of dead wolves</h2>
 
+{% include 'legend.html' %}
 
-<div id="map" style="width: 1200px; height: 800px;"></div>
+<style>
+#map {
+  position: relative;
+  height: 1200px;
+  width: 100%;
+}
+</style>
+
+<div class="col-md-12">
+<div id="map" ></div>
+</div>
 
 {{ map }}
 
-{% include 'legend.html' %}
+
 
 {% endblock %}
 

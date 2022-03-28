@@ -1,4 +1,4 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 {% block content %}
 
@@ -12,13 +12,25 @@
 
 <br><br>
 
-<h2>Plot of all samples (scats)</h2>
+<h2>Locations of samples (scats)</h2>
 
-<div id="map" style="width: 1200px; height: 800px;"></div>
+{% include 'legend.html' %}
+
+<style>
+    #map {
+      position: relative;
+      height: 1200px;
+      width: 100%;
+    }
+    </style>
+
+    <div class="col-md-12">
+    <div id="map" ></div>
+    </div>
 
 {{ map }}
 
-{% include 'legend.html' %}
+
 
 {% endblock %}
 

@@ -801,6 +801,9 @@ def set_path_id(scat_id, path_id):
 )
 @fn.check_login
 def load_scats_xlsx():
+    """
+    Select a file for uploading scats from XLSX
+    """
 
     if request.method == "GET":
         return render_template("load_scats_xlsx.html", header_title="Load scats from XLSX/ODS file")
@@ -851,6 +854,9 @@ def load_scats_xlsx():
 @app.route("/confirm_load_xlsx/<filename>/<mode>")
 @fn.check_login
 def confirm_load_xlsx(filename, mode):
+    """
+    Confirm upload of scats from XLSX file
+    """
 
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))

@@ -86,7 +86,7 @@ def extract_data_from_xlsx(filename):
                     f'Row {index + 2}: the date ({date}) of the scat ID {data["scat_id"]} is not valid. Use the YYMMDD format'
                 )
         except Exception:
-            out += fn.alert_danger(f"The scat ID is not valid at row {index + 2}: {data['scat_id']}")
+            out += fn.alert_danger(f"Row {index + 2}: The scat ID is not valid: {data['scat_id']}")
 
         # check date
         try:
@@ -96,7 +96,7 @@ def extract_data_from_xlsx(filename):
 
         if date != date_from_file:
             out += fn.alert_danger(
-                f"Check the scat ID and the date at row {index + 2}: {data['scat_id']}  {date_from_file}"
+                f"Row {index + 2}: check the scat ID and the date: {data['scat_id']}  {date_from_file}"
             )
 
         data["date"] = date_from_file
@@ -111,7 +111,7 @@ def extract_data_from_xlsx(filename):
             # check province name
             province = fn.province_name2code(data["province"])
             if province is None:
-                out += fn.alert_danger(f"Row {index + 2}: The province {data['province']} was not found")
+                out += fn.alert_danger(f"Row {index + 2}: the province {data['province']} was not found")
         data["province"] = province
 
         # add region from province code
@@ -122,7 +122,7 @@ def extract_data_from_xlsx(filename):
         # check zone
         if data["coord_zone"].upper() != "32N":
             out += fn.alert_danger(
-                f"The UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted (row {index + 2}): found {data['coord_zone']}"
+                f"Row {index + 2}: the UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted: found {data['coord_zone']}"
             )
 
         # check if coordinates are OK
@@ -130,7 +130,7 @@ def extract_data_from_xlsx(filename):
             _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
         except Exception:
             out += fn.alert_danger(
-                f'Check the UTM coordinates at row {index + 2}: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'
+                f'Row {index + 2}: Check the UTM coordinates: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'
             )
 
         data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
@@ -139,7 +139,7 @@ def extract_data_from_xlsx(filename):
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
         if data["sampling_type"] not in ["Opportunistic", "Systematic"]:
             out += fn.alert_danger(
-                f'Sampling type must be <b>Opportunistic</b>, <b>Systematic</b>  at row {index + 2}: found {data["sampling_type"]}'
+                f'Row {index + 2}: Sampling type must be <b>Opportunistic</b>, <b>Systematic</b>: found {data["sampling_type"]}'
             )
 
         # no path ID if scat is opportunistc
