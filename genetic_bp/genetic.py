@@ -503,7 +503,7 @@ def plot_wa_clusters(distance):
     cmap = get_cmap(max_cid)
 
     scat_features = []
-    min_lon, min_lat, max_lon, max_lat = 180, 180, 0, 0
+    min_lon, min_lat, max_lon, max_lat = 90, 90, -90, -90
     for row in results:
 
         scat_geojson = json.loads(row["scat_lonlat"])
@@ -532,15 +532,19 @@ def plot_wa_clusters(distance):
 
         scat_features.append(scat_feature)
 
-    center = f"{(min_lat + max_lat) / 2}, {(min_lon + max_lon) / 2}"
-
     return render_template(
-        "plot_all_wa.html",
+        "plot_clusters.html",
         header_title=f"WA codes clusters ({distance} m)",
-        title=Markup(
-            f"<h3>Plot of {len(scat_features)} WA codes clusters</h3>DBSCAN: {distance} m<br>number of wa codes: {len(results)}"
+        title=Markup(f"<h3>Plot of {len(scat_features)} WA codes clusters</h3>DBSCAN: {distance} m"),
+        map=Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": scat_features,
+                    "scats_color": params["scat_color"],
+                    "fit": [[min_lat, min_lon], [max_lat, max_lon]],
+                }
+            )
         ),
-        map=Markup(fn.leaflet_geojson(center, scat_features, [], zoom=7)),
         distance=int(distance),
     )
 
