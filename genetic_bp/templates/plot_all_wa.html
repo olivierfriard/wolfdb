@@ -1,4 +1,4 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 
 {% block content %}
@@ -33,11 +33,23 @@
 
 {{ title }}
 
-<div id="map" style="width: 1200px; height: 800px;"></div>
+<style>
+#map {
+position: relative;
+height: 1200px;
+width: 100%;
+}
+</style>
+
+{% include 'legend.html' %}
+<div class="col-md-12">
+
+    <div id="map" ></div>
+</div>
 
 {{ map }}
 
-{% include 'legend.html' %}
+
 
 {% endblock %}
 
