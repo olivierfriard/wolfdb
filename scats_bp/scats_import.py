@@ -105,8 +105,17 @@ def extract_data_from_xlsx(filename):
         path_id = fn.get_path_id(data["transect_id"], date)
         data["path_id"] = path_id
 
-        # region
-        scat_region = fn.get_region(data["province"])
+        # check province code
+        province = fn.check_province_code(data["province"])
+        if province is None:
+            # check province name
+            province = fn.province_name2code(data["province"])
+            if province is None:
+                out += fn.alert_danger(f"Row {index + 2}: The province {data['province']} was not found")
+        data["province"] = province
+
+        # add region from province code
+        scat_region = fn.province_code2region(data["province"])
         data["region"] = scat_region
 
         # UTM coord conversion

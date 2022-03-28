@@ -39,7 +39,8 @@ def view_tissue(tissue_id):
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT id from dw_short2 WHERE tissue_id = %s", [tissue_id])
+
+    cursor.execute("SELECT id from dead_wolves WHERE tissue_id = %s", [tissue_id])
     row = cursor.fetchone()
 
     if row is not None:
@@ -132,11 +133,11 @@ def view_dead_wolf_id(id):
 @fn.check_login
 def plot_dead_wolves():
     """
-    plot dead wolves from dw_short2
+    plot dead wolves
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dw_short2 WHERE deleted is NULL AND utm_east != '0' AND utm_north != '0'")
+    cursor.execute("SELECT * FROM dead_wolves WHERE deleted is NULL AND utm_east != '0' AND utm_north != '0'")
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
@@ -426,15 +427,15 @@ def del_dead_wolf(id):
 @fn.check_login
 def dead_wolves_list():
     """
-    get list of all dead_wolves from dw_short2
+    get list of all dead_wolves
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(
         (
             "SELECT *,"
-            "(SELECT genotype_id FROM genotypes WHERE genotype_id=dw_short2.genotype_id) AS genotype_id_verif "
-            "FROM dw_short2 WHERE deleted is NULL ORDER BY id"
+            "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
+            "FROM dead_wolves WHERE deleted is NULL ORDER BY id"
         )
     )
 

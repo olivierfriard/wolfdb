@@ -23,6 +23,7 @@ import os
 import sys
 import subprocess
 import time
+import datetime
 from . import scats_export, scats_import
 
 
@@ -400,6 +401,10 @@ def export_scats():
 @app.route("/new_scat", methods=("GET", "POST"))
 @fn.check_login
 def new_scat():
+    """
+    let user insert a new scat
+    """
+
     def not_valid(msg):
         # default values
         default_values = {}
@@ -453,6 +458,11 @@ def new_scat():
                 month = int(request.form["scat_id"][3 : 4 + 1])
                 day = int(request.form["scat_id"][5 : 6 + 1])
                 date = f"{year:04}-{month:02}-{day:02}"
+                try:
+                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                except Exception:
+                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
+
             except Exception:
                 return not_valid("The scat ID value is not correct")
 
@@ -461,13 +471,19 @@ def new_scat():
             #    return not_valid("The path ID does not have a correct value (must be XX_NN YYYY-MM-DD)")
             path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
 
-            # region
+            # check province and add region
             if len(request.form["province"]) == 2:
-                province = request.form["province"].upper()
-                scat_region = fn.get_region(request.form["province"])
+                province = fn.check_province_code(request.form["province"])
+                if province is None:
+                    return not_valid(f"Province {request.form['province']} not found")
+
+                scat_region = fn.province_code2region(request.form["province"])
             else:
                 province = fn.province_name2code(request.form["province"])
-                scat_region = fn.get_region(province)
+                if province is None:
+                    return not_valid(f"Province {request.form['province']} not found")
+
+                scat_region = fn.province_code2region(province)
 
             # test the UTM to lat long conversion to validate the UTM coordiantes
             try:
@@ -515,7 +531,7 @@ def new_scat():
 
             connection.commit()
 
-            return redirect("/scats_list")
+            return redirect(f"/view_scat/{request.form['scat_id']}")
         else:
             return not_valid("Some values are not set or are wrong. Please check and submit again")
 
@@ -605,9 +621,6 @@ def edit_scat(scat_id):
 
     if request.method == "POST":
 
-        print("post")
-        print(f'{request.form["snowtrack_id"]}=')
-
         form = Scat(request.form)
 
         # get id of all paths
@@ -640,7 +653,11 @@ def edit_scat(scat_id):
             year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
             month = int(request.form["scat_id"][3 : 4 + 1])
             day = int(request.form["scat_id"][5 : 6 + 1])
-            date = f"{year}-{month:02}-{day:02}"
+            date = f"{year:04}-{month:02}-{day:02}"
+            try:
+                datetime.datetime.strptime(date, "%Y-%m-%d")
+            except Exception:
+                return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
         except Exception:
             return not_valid("The scat_id value is not correct")
 
@@ -651,13 +668,19 @@ def edit_scat(scat_id):
         else:
             path_id = ""
 
-        # region
+        # check province and add region
         if len(request.form["province"]) == 2:
-            province = request.form["province"].upper()
-            scat_region = fn.get_region(request.form["province"])
+            province = fn.check_province_code(request.form["province"])
+            if province is None:
+                return not_valid(f"Province {request.form['province']} not found")
+
+            scat_region = fn.province_code2region(request.form["province"])
         else:
             province = fn.province_name2code(request.form["province"])
-            scat_region = fn.get_region(province)
+            if province is None:
+                return not_valid(f"Province {request.form['province']} not found")
+
+            scat_region = fn.province_code2region(province)
 
         # check UTM coord conversion
         try:

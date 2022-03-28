@@ -205,6 +205,7 @@ def all_snow_tracks_id() -> list:
     """
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
     cursor.execute("SELECT snowtrack_id FROM snow_tracks ORDER BY snowtrack_id")
     return [x[0].strip() for x in cursor.fetchall()]
 
@@ -224,17 +225,64 @@ def sampling_season(date: str) -> str:
         return f"Error {date}"
 
 
+def check_province_code(province_code):
+    """
+    check if province code exists
+    using geo_info table
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        "SELECT UPPER(province_code) AS province_code FROM geo_info WHERE UPPER(province_code) = %s",
+        [province_code.upper()],
+    )
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        return result["province_code"]
+
+
 def province_name2code(province_name):
+    """
+    returns province code from province name
+    using geo_info table
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        "SELECT province_code FROM geo_info WHERE UPPER(province_name) = %s", [province_name.upper().strip()]
+    )
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        return result["province_code"]
+
+    """
     for code in province_codes:
         if province_name.upper() == province_codes[code]["nome"].upper():
             return code
     return ""
+    """
 
 
-def get_region(province_code):
+def province_code2region(province_code):
     """
-    get region by province code
+    get region from province code
     """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT region FROM geo_info WHERE UPPER(province_code) = %s", [province_code.upper().strip()])
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        return result["region"]
+
     region_out = ""
     if province_code:
         for region in regions:

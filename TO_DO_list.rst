@@ -3,7 +3,7 @@ TO DO list
 
 
 
-* region in dw_
+
 
 
 * add check for sampling type when scats are uploaded
@@ -12,6 +12,7 @@ TO DO list
 
 
 
+* region in dead_wolves [DONE]
 
 * insert snow_track coordinates [DONE]
 

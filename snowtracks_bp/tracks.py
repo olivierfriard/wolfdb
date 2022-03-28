@@ -402,8 +402,21 @@ def new_track():
             path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
             """
 
+            # check province code
+            province = fn.check_province_code(request.form["province"])
+            if province is None:
+                # check province name
+                province = fn.province_name2code(request.form["province"])
+                if province is None:
+                    return not_valid("The province was not found")
+
+            # add region from province code
+            track_region = fn.province_code2region(province)
+
+            """
             # region
             track_region = fn.get_region(request.form["province"])
+            """
 
             sql = (
                 "INSERT INTO snow_tracks (snowtrack_id, transect_id, date, sampling_season, "
@@ -426,7 +439,8 @@ def new_track():
                     fn.sampling_season(date),
                     request.form["location"].strip(),
                     request.form["municipality"].strip(),
-                    request.form["province"].strip().upper(),
+                    province,
+                    # request.form["province"].strip().upper(),
                     track_region,
                     request.form["observer"],
                     request.form["institution"],
@@ -566,8 +580,20 @@ def edit_track(snowtrack_id):
             except Exception:
                 return not_valid("The track ID value is not correct")
 
-            # region
+            # check province code
+            province = fn.check_province_code(request.form["province"])
+            if province is None:
+                # check province name
+                province = fn.province_name2code(request.form["province"])
+                if province is None:
+                    return not_valid("The province was not found")
+
+            # add region from province code
+            track_region = fn.province_code2region(province)
+
+            """# region
             track_region = fn.get_region(request.form["province"])
+            """
 
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -603,7 +629,8 @@ def edit_track(snowtrack_id):
                     fn.sampling_season(date),
                     request.form["location"],
                     request.form["municipality"],
-                    request.form["province"].strip().upper(),
+                    province,
+                    # request.form["province"].strip().upper(),
                     track_region,
                     request.form["observer"],
                     request.form["institution"],
