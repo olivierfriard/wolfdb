@@ -3,12 +3,16 @@ read shapefile with fiona module
 
 """
 
-
+import os
 import sys
 import fiona
 import psycopg2
 import psycopg2.extras
+
+
+sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import functions as fn
+
 
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
