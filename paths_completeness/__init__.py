@@ -119,6 +119,7 @@ def paths_completeness_shapefile(dir_path: str, log_file: str):
     # make a ZIP archive
     zip_file_name = shutil.make_archive(dir_path, "zip", dir_path)
 
+    # remove directory
     if pl.Path(dir_path).is_dir():
         shutil.rmtree(dir_path)
 
