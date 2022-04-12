@@ -1,0 +1,51 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/analysis" class="btn btn-primary">Analysis</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+<h2>Upload shapefile with grid</h2>
+
+<form id="upload_file" action="/cell_occupancy/{{ year_init }}/{{ year_end }}"  method="POST" enctype="multipart/form-data">
+<br>
+
+<div class="form-group">
+<label for="new_file">Select the shapefile archive (*.zip)</label><br>
+<br>
+<input type="file" id="new_file" placeholder="" name="new_file" >
+</div>
+<br>
+<button type="submit" class="btn btn-danger" id="upload-file-btn" type="button">Upload file</button>
+
+</form>
+
+
+
+
+
+
+
+{% endblock %}
+
