@@ -11,6 +11,7 @@ import shutil
 
 import psycopg2
 import psycopg2.extras
+import pathlib as pl
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import functions as fn
@@ -117,6 +118,9 @@ def paths_completeness_shapefile(dir_path: str, log_file: str):
 
     # make a ZIP archive
     zip_file_name = shutil.make_archive(dir_path, "zip", dir_path)
+
+    if pl.Path(dir_path).is_dir():
+        shutil.rmtree(dir_path)
 
     return zip_file_name
 

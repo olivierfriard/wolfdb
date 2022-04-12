@@ -7,17 +7,19 @@ flask blueprint for data analysis
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, session, make_response
+from flask import render_template, redirect, request, Markup, flash, session, make_response, send_file
 import psycopg2
 import psycopg2.extras
 from config import config
-import json
 import pathlib as pl
 import os
-import sys
-import uuid
 import functions as fn
 import paths_completeness
+import datetime as dt
+import copy
+import uuid
+import sys
+from . import cell_occupancy as cell_occupancy_module
 
 app = flask.Blueprint("analysis", __name__, template_folder="templates")
 
@@ -62,13 +64,310 @@ def path_completeness():
     create shapefile with paths completeness
     """
 
-    if pl.Path("static/paths_completeness.zip").is_file():
-        os.remove("static/paths_completeness.zip")
+    for path in pl.Path("static").glob("paths_completeness*.zip"):
+        os.remove(path)
 
-    zip_path = paths_completeness.paths_completeness_shapefile(
-        "static/paths_completeness", "/tmp/paths_completeness.log"
+    dir_name = f"static/paths_completeness_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
+
+    zip_path = paths_completeness.paths_completeness_shapefile(dir_name, "/tmp/paths_completeness.log")
+
+    return redirect(f"/static/{pl.Path(zip_path).name}")
+
+
+@app.route("/transects_n_samples/<year_init>/<year_end>")
+@fn.check_login
+def transects_n_samples(year_init, year_end):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    transects = cursor.fetchall()
+
+    out = {}
+    template = {}
+    header = "Transect ID\t"
+    # check max number of sampling by year
+    cursor.execute(
+        "select max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
     )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
 
-    zip_file_name = pl.Path(zip_path).name
+    for transect in transects:
 
-    return redirect(f"/static/{zip_file_name}")
+        row_out = copy.deepcopy(template)
+
+        cursor.execute(
+            (
+                "SELECT path_id FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
+
+        idx = 0
+        for path in paths:
+            cursor.execute(
+                ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
+                [path["path_id"]],
+            )
+            scats = cursor.fetchone()
+            row_out[idx] = str(scats["n_scats"])
+            idx += 1
+
+        out[transect["transect_id"]] = copy.deepcopy(row_out)
+
+    out_str = header[:-1] + "\n"
+    for transect in out:
+        out_str += transect + "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
+        out_str = out_str[:-1] + "\n"
+
+    response = make_response(out_str, 200)
+    response.headers["Content-type"] = "'text/tab-separated-values"
+    response.headers["Content-disposition"] = "attachment; filename=transects_n-samples.tsv"
+
+    return response
+
+
+@app.route("/transects_samples_presence/<year_init>/<year_end>")
+@fn.check_login
+def transects_samples_presence(year_init, year_end):
+    """
+    return presence of samples on transects
+    """
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    transects = cursor.fetchall()
+
+    out = {}
+    template = {}
+    header = "Transect ID\t"
+    # check max number of sampling
+    cursor.execute(
+        "select max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
+
+    for transect in transects:
+
+        row_out = copy.deepcopy(template)
+
+        cursor.execute(
+            (
+                "SELECT path_id FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
+
+        idx = 0
+        for path in paths:
+            cursor.execute(
+                ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
+                [path["path_id"]],
+            )
+            scats = cursor.fetchone()
+            row_out[idx] = str(1 if scats["n_scats"] > 0 else 0)
+            idx += 1
+
+        out[transect["transect_id"]] = copy.deepcopy(row_out)
+
+    out_str = header[:-1] + "\n"
+    for transect in out:
+        out_str += transect + "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
+        out_str = out_str[:-1] + "\n"
+
+    response = make_response(out_str, 200)
+    response.headers["Content-type"] = "'text/tab-separated-values"
+    response.headers["Content-disposition"] = "attachment; filename=transects_samples_presence.tsv"
+
+    return response
+
+
+@app.route("/transects_dates/<year_init>/<year_end>")
+@fn.check_login
+def transects_dates(year_init, year_end):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    transects = cursor.fetchall()
+
+    sampling_years = range(int(year_init), int(year_end) + 1)
+
+    out = {}
+    template = {}
+    header = "Transect ID\t"
+    # check max number of sampling
+    cursor.execute(
+        (
+            "select max(c) as n_paths from "
+            "      (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+        )
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
+
+    for transect in transects:
+
+        row_out = copy.deepcopy(template)
+
+        cursor.execute(
+            (
+                "SELECT path_id, date::date as date FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
+        idx = 0
+        for path in paths:
+            row_out[idx] = str(path["date"])
+            idx += 1
+
+        out[transect["transect_id"]] = copy.deepcopy(row_out)
+
+    out_str = header[:-1] + "\n"
+    for transect in out:
+        out_str += transect + "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
+        out_str = out_str[:-1] + "\n"
+
+    response = make_response(out_str, 200)
+    response.headers["Content-type"] = "'text/tab-separated-values"
+    response.headers["Content-disposition"] = "attachment; filename=transects_dates.tsv"
+
+    return response
+
+
+@app.route("/transects_completeness/<year_init>/<year_end>")
+@fn.check_login
+def transects_completeness(year_init, year_end):
+
+    connection = fn.get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # check if path based on transect exist
+    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+    transects = cursor.fetchall()
+
+    out = {}
+    template = {}
+    header = "Transect ID\t"
+    # check max number of sampling
+    cursor.execute(
+        "SELECT max(c) AS n_paths FROM (SELECT count(*) AS c from paths where transect_id != '' group by transect_id) x"
+    )
+    result = cursor.fetchone()
+    template = ["NA"] * result["n_paths"]
+    for i in range(result["n_paths"]):
+        header += f"{year_init}-{i + 1}\t"
+
+    for transect in transects:
+
+        row_out = copy.deepcopy(template)
+
+        cursor.execute(
+            (
+                "SELECT completeness FROM paths "
+                "WHERE transect_id = %s "
+                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "ORDER BY date"
+            ),
+            [transect["transect_id"], year_init, year_end],
+        )
+        paths = cursor.fetchall()
+        idx = 0
+        for path in paths:
+            row_out[idx] = str(path["completeness"])
+            idx += 1
+
+        out[transect["transect_id"]] = copy.deepcopy(row_out)
+
+    out_str = header[:-1] + "\n"
+    for transect in out:
+        out_str += transect + "\t"
+        out_str += "\t".join(out[transect])
+        out_str += "\t"
+        out_str = out_str[:-1] + "\n"
+
+    response = make_response(out_str, 200)
+    response.headers["Content-type"] = "'text/tab-separated-values"
+    response.headers["Content-disposition"] = "attachment; filename=transects_completeness.tsv"
+
+    return response
+
+
+@app.route("/cell_occupancy/<year_init>/<year_end>", methods=("GET", "POST"))
+@fn.check_login
+def cell_occupancy(year_init: str, year_end: str):
+    """
+    grid occupancy by cell (from shapefile) by path
+    """
+
+    if request.method == "GET":
+        return render_template("upload_shapefile.html", year_init=year_init, year_end=year_end)
+
+    if request.method == "POST":
+
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if pl.Path(new_file.filename).suffix.upper() not in [".ZIP"]:
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.zip</b>)"))
+            return redirect(f"/cell_occupancy/2020/2021")
+
+        try:
+            filename = pl.Path(params["upload_folder"]) / pl.Path(
+                str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix)
+            )
+            new_file.save(filename)
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file") + f"({error_info(sys.exc_info())})")
+            return redirect(f"/cell_occupancy/2020/2021")
+
+        result, zip_content = cell_occupancy_module.get_cell_occupancy(filename)
+        # print(zip_path)
+
+        """return redirect(f"/static/{pl.Path(zip_path).name}")"""
+
+        """
+        response = make_response(zip_content, 200)
+        response.headers["Content-type"] = "'application/zip"
+        response.headers["Content-disposition"] = f"attachment; filename=cell_occupancy.zip"
+
+        return response
+        """
+
+        zip_content.seek(0)
+        return send_file(
+            zip_content, as_attachment=True, attachment_filename="cell_occupancy.zip", mimetype="application/zip"
+        )

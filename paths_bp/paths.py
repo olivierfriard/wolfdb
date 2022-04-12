@@ -457,25 +457,6 @@ def del_path(path_id):
     return redirect("/paths_list")
 
 
-@app.route("/path_completeness")
-@fn.check_login
-def path_completeness():
-    """
-    create shapefile with paths completeness
-    """
-
-    if pl.Path("static/paths_completeness.zip").is_file():
-        os.remove("static/paths_completeness.zip")
-
-    zip_path = paths_completeness.paths_completeness_shapefile(
-        "static/paths_completeness", "/tmp/paths_completeness.log"
-    )
-
-    zip_file_name = pl.Path(zip_path).name
-
-    return redirect(f"/static/{zip_file_name}")
-
-
 @app.route(
     "/load_paths_xlsx",
     methods=(
