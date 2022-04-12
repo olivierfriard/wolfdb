@@ -1,0 +1,35 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+<h1>WolfDB - Paths</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>
+<br>
+<br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+<br>
+<hr>
+<h3>Paths completeness</h3>
+
+<!--
+<a href="/static/path_completeness.zip" class="btn btn-primary">Path completeness shapefile</a> Updated at {{ paths_completeness_creation_time }}<br>
+-->
+
+
+<a href="/path_completeness" class="btn btn-primary">Path completeness shapefile</a>
+
+
+{% endblock %}

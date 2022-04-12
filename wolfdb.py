@@ -24,6 +24,7 @@ from snowtracks_bp import tracks
 from genetic_bp import genetic
 from dead_wolves_bp import dead_wolves
 from admin_bp import admin
+from analysis_bp import analysis
 
 __version__ = "2022-02-22"
 
@@ -45,6 +46,7 @@ app.register_blueprint(tracks.app)
 app.register_blueprint(genetic.app)
 app.register_blueprint(dead_wolves.app)
 app.register_blueprint(admin.app)
+app.register_blueprint(analysis.app)
 
 params = config()
 app.debug = params["debug"]

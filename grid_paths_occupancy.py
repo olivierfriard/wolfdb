@@ -1,5 +1,5 @@
 """
-read shapefile with fiona module
+grid occupancy by cell (from shapefile) by path
 
 """
 
