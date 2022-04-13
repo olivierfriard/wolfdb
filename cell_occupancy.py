@@ -11,15 +11,16 @@ import fiona
 import psycopg2
 import psycopg2.extras
 import zipfile
-
 import pathlib as pl
 import shutil
 import datetime as dt
 import io
 import json
 
-
+from config import config
 import functions as fn
+
+params = config()
 
 
 def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, output_path: str):
@@ -29,14 +30,16 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
     # extract zip file
 
     with zipfile.ZipFile(zip_shapefile_path, "r") as zip_ref:
-        zip_ref.extractall(pl.Path("/tmp") / pl.Path(zip_shapefile_path).stem)
+        zip_ref.extractall(pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem)
 
     # remove uploaded file
     pl.Path(zip_shapefile_path).unlink()
 
-    if len(list((pl.Path("/tmp") / pl.Path(zip_shapefile_path).stem).glob("*.shp"))) != 1:
-        return 1, "shp not found"
-    shp_path = str(list((pl.Path("/tmp") / pl.Path(zip_shapefile_path).stem).glob("*.shp"))[0])
+    # check if zip contains .shp
+    if len(list((pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem).glob("*.shp"))) != 1:
+        return 1, ".shp file not found in ZIP archive"
+    # retrieve .shp file name
+    shp_path = str(list((pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem).glob("*.shp"))[0])
 
     shapes = fiona.open(shp_path)
 
@@ -93,7 +96,6 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
                 if path["completeness"]:
 
                     tot_dist = 0
-                    new_list = []
                     for idx, point in enumerate(transect_geojson["coordinates"][0]):
                         if idx == 0:
                             continue
@@ -160,5 +162,7 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
 if __name__ == "__main__":
     result, msg = get_cell_occupancy(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     if result:
-        with open(f"/tmp/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log", "w") as f_out:
+        with open(
+            pl.Path(params["temp_folder"]) / pl.Path(f"cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log"), "w"
+        ) as f_out:
             f_out.write(msg + "\n")
