@@ -354,7 +354,7 @@ def cell_occupancy(year_init: str, year_end: str):
             flash(fn.alert_danger("Error with the uploaded file") + f"({error_info(sys.exc_info())})")
             return redirect(f"/cell_occupancy/2020/2021")
 
-        result, zip_content = cell_occupancy_module.get_cell_occupancy(filename)
+        result, zip_content = cell_occupancy_module.get_cell_occupancy(filename, year_init, year_end)
         # print(zip_path)
 
         """return redirect(f"/static/{pl.Path(zip_path).name}")"""
