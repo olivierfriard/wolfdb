@@ -1,0 +1,39 @@
+{% extends "bootstrap.html" %}
+
+
+
+{% block content %}
+
+
+{{ autoreload }}
+
+<h1>WolfDB</h1>
+<hr>
+
+<a href="/" class="btn btn-primary">Home</a>&nbsp;
+
+<a href="/analysis" class="btn btn-primary">Analysis</a>
+
+<br><br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+<h2>Cell occupancy results</h2>
+
+{{ output_path }}
+
+
+
+
+{% endblock %}
+
