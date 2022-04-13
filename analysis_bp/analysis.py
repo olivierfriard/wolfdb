@@ -19,7 +19,10 @@ import datetime as dt
 import copy
 import uuid
 import sys
-from . import cell_occupancy as cell_occupancy_module
+import subprocess
+import time
+
+# from . import cell_occupancy as cell_occupancy_module
 
 app = flask.Blueprint("analysis", __name__, template_folder="templates")
 
@@ -64,8 +67,10 @@ def path_completeness():
     create shapefile with paths completeness
     """
 
+    # remove files older than 24h
     for path in pl.Path("static").glob("paths_completeness*.zip"):
-        os.remove(path)
+        if time.time() - os.path.getctime(path) > 86400:
+            os.remove(path)
 
     dir_name = f"static/paths_completeness_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
 
@@ -334,7 +339,15 @@ def cell_occupancy(year_init: str, year_end: str):
     """
 
     if request.method == "GET":
-        return render_template("upload_shapefile.html", year_init=year_init, year_end=year_end)
+
+        # remove files older than 24h
+        for path in pl.Path("static").glob("cell_occupancy_*.zip"):
+            if time.time() - os.path.getctime(path) > 86400:
+                os.remove(path)
+
+        return render_template(
+            "upload_shapefile.html", header_title="Cell occupancy", year_init=year_init, year_end=year_end
+        )
 
     if request.method == "POST":
 
@@ -354,20 +367,48 @@ def cell_occupancy(year_init: str, year_end: str):
             flash(fn.alert_danger("Error with the uploaded file") + f"({error_info(sys.exc_info())})")
             return redirect(f"/cell_occupancy/2020/2021")
 
+        # ouput_path
+        output_path = f"cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"
+
+        _ = subprocess.Popen(["python3", "cell_occupancy.py", filename, year_init, year_end, output_path])
+
+        return redirect(f"/cell_occupancy_check_results/{output_path}")
+
+        """
         result, zip_content = cell_occupancy_module.get_cell_occupancy(filename, year_init, year_end)
-        # print(zip_path)
-
-        """return redirect(f"/static/{pl.Path(zip_path).name}")"""
-
-        """
-        response = make_response(zip_content, 200)
-        response.headers["Content-type"] = "'application/zip"
-        response.headers["Content-disposition"] = f"attachment; filename=cell_occupancy.zip"
-
-        return response
         """
 
+        """
+        return redirect(f"/static/{pl.Path(zip_path).name}")
+        """
+
+        """
         zip_content.seek(0)
         return send_file(
             zip_content, as_attachment=True, attachment_filename="cell_occupancy.zip", mimetype="application/zip"
+        )
+        """
+
+
+@app.route("/cell_occupancy_check_results/<output_path>")
+@fn.check_login
+def cell_occupancy_check_results(output_path):
+
+    if (pl.Path("static") / pl.Path(output_path)).is_file():
+        return render_template(
+            "cell_occupancy_result.html",
+            header_title="Cell occupancy results",
+            output_path=Markup(
+                f'<p>The results are ready to be downloaded:<br><a href="/static/{output_path}">{output_path}</a></p>'
+            ),
+            autoreload="",
+        )
+    else:
+        return render_template(
+            "cell_occupancy_result.html",
+            header_title="Cell occupancy results",
+            output_path=Markup(
+                "<p><b>The results are not ready</b>.<br>Please wait, this page will reload automatically every 20 seconds...</p>"
+            ),
+            autoreload=Markup('<meta http-equiv="refresh" content="20">'),
         )

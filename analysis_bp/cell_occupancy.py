@@ -5,12 +5,13 @@ grid occupancy by cell (from shapefile) by path
 * presence of sample
 """
 
+import sys
 import math
 import fiona
 import psycopg2
 import psycopg2.extras
 import zipfile
-import functions as fn
+
 import pathlib as pl
 import shutil
 import datetime as dt
@@ -18,7 +19,10 @@ import io
 import json
 
 
-def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str):
+from . import functions as fn
+
+
+def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, output_path: str):
 
     sep = "\t"
 
@@ -125,8 +129,10 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str):
         out_dates += f"{id}{sep}{ f'{sep}'.join([date for date in sorted(data[id].keys())])}\t"
         out_dates += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
 
+    """
     max_paths_number2 = max([len(distances[id]) for id in distances])
-    # out_distances = f"Cell ID{sep}{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number2))+1}}' for x in range(1, max_paths_number2 + 1)])}\n"
+    out_distances = f"Cell ID{sep}{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number2))+1}}' for x in range(1, max_paths_number2 + 1)])}\n"
+    """
     out_distances = f"Cell ID{sep}Transects number{sep}Total distance (m)\n"
 
     for id in distances:
@@ -138,13 +144,19 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str):
         shutil.rmtree(pl.Path("/tmp") / pl.Path(zip_shapefile_path).stem)
 
     # zip results
-    '''zip_file_path = f"static/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"'''
+    '''zip_output = f"static/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"'''
 
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+    """zip_output = io.BytesIO()"""
+
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("cell_occupancy_samples_number.tsv", out_number)
         archive.writestr("cell_occupancy_samples_presence.tsv", out_presence)
         archive.writestr("cell_occupancy_dates.tsv", out_dates)
         archive.writestr("cell_distances.tsv", out_distances)
 
-    return (0, zip_buffer)
+    return (0, output_path)
+
+
+if __name__ == "__main__":
+    print("started")
+    get_cell_occupancy(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
