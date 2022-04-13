@@ -127,7 +127,7 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str):
 
     max_paths_number2 = max([len(distances[id]) for id in distances])
     # out_distances = f"Cell ID{sep}{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number2))+1}}' for x in range(1, max_paths_number2 + 1)])}\n"
-    out_distances = f"Cell ID{sep}Transects number{sep}Distances (m)\n"
+    out_distances = f"Cell ID{sep}Transects number{sep}Total distance (m)\n"
 
     for id in distances:
         tot_distance = round(sum([distances[id][date] for date in distances[id]]))
