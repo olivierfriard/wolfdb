@@ -115,13 +115,20 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str):
     out_number, out_presence, out_dates = header, header, header
 
     for id in data:
-        out_number += f"{id}{sep}{ f'{sep}'.join([str(data[id][date]) for date in sorted(data[id].keys())])}\n"
-        out_presence += (
-            f"{id}{sep}{ f'{sep}'.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}\n"
-        )
-        out_dates += f"{id}{sep}{ f'{sep}'.join([date for date in sorted(data[id].keys())])}\n"
+        out_number += f"{id}{sep}{ f'{sep}'.join([str(data[id][date]) for date in sorted(data[id].keys())])}\t"
+        out_number += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
 
-    out_distances = "Cell ID\tTransects number\tdistances (m)"
+        out_presence += (
+            f"{id}{sep}{ f'{sep}'.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}\t"
+        )
+        out_presence += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
+        out_dates += f"{id}{sep}{ f'{sep}'.join([date for date in sorted(data[id].keys())])}\t"
+        out_dates += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
+
+    max_paths_number2 = max([len(distances[id]) for id in distances])
+    # out_distances = f"Cell ID{sep}{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number2))+1}}' for x in range(1, max_paths_number2 + 1)])}\n"
+    out_distances = f"Cell ID{sep}Transects number{sep}Distances (m)\n"
+
     for id in distances:
         tot_distance = round(sum([distances[id][date] for date in distances[id]]))
         out_distances += f"{id}{sep}{n_transects[id]}{sep}{tot_distance}\n"
