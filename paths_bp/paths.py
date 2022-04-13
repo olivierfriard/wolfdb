@@ -20,7 +20,9 @@ from . import paths_import
 from .path_form import Path
 import functions as fn
 from . import paths_export
-import paths_completeness
+
+# import paths_completeness
+import datetime as dt
 
 app = flask.Blueprint("paths", __name__, template_folder="templates")
 
@@ -231,7 +233,7 @@ def export_paths():
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = "attachment; filename=paths.xlsx"
+    response.headers["Content-disposition"] = f"attachment; filename=paths_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
     return response
 

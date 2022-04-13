@@ -19,6 +19,7 @@ import redis
 import pathlib as pl
 import uuid
 import pandas as pd
+import datetime as dt
 
 import functions as fn
 from . import export
@@ -305,7 +306,9 @@ def genotypes_list(type, mode="web"):
         response.headers[
             "Content-type"
         ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = "attachment; filename=genotypes_list.xlsx"
+        response.headers[
+            "Content-disposition"
+        ] = f"attachment; filename=genotypes_list_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
         return response
 
@@ -628,7 +631,9 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         response.headers[
             "Content-type"
         ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = "attachment; filename=wa_genetic_samples.xlsx"
+        response.headers[
+            "Content-disposition"
+        ] = f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
         return response
 
@@ -706,7 +711,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         response.headers[
             "Content-type"
         ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = "attachment; filename=wa_analysis.xlsx"
+        response.headers[
+            "Content-disposition"
+        ] = f"attachment; filename=wa_analysis_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
         return response
 
@@ -803,7 +810,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         response.headers[
             "Content-type"
         ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = "attachment; filename=genotypes_matches.xlsx"
+        response.headers[
+            "Content-disposition"
+        ] = f"attachment; filename=genotypes_matches_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
         return response
 
     else:

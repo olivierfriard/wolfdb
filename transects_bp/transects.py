@@ -14,6 +14,7 @@ from config import config
 import json
 import calendar
 import copy
+import datetime as dt
 
 from .transect_form import Transect
 import functions as fn
@@ -242,7 +243,7 @@ def export_transects():
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = "attachment; filename=transects.xlsx"
+    response.headers["Content-disposition"] = f"attachment; filename=transects_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
     return response
 
@@ -698,6 +699,8 @@ def transects_n_samples_by_month(year_init, year_end):
 
     response = make_response(out_str, 200)
     response.headers["Content-type"] = "'text/tab-separated-values"
-    response.headers["Content-disposition"] = "attachment; filename=transects_n-samples.tsv"
+    response.headers[
+        "Content-disposition"
+    ] = f"attachment; filename=transects_n-samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.tsv"
 
     return response

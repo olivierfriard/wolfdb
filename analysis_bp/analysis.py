@@ -7,7 +7,7 @@ flask blueprint for data analysis
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, session, make_response, send_file
+from flask import render_template, redirect, request, Markup, flash, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -24,7 +24,7 @@ import time
 
 # from . import cell_occupancy as cell_occupancy_module
 
-app = flask.Blueprint("analysis", __name__, template_folder="templates")
+app = flask.Blueprint("analysis", __name__, template_folder="templates", static_url_path="/static")
 
 params = config()
 app.debug = params["debug"]
@@ -76,7 +76,7 @@ def path_completeness():
 
     zip_path = paths_completeness.paths_completeness_shapefile(dir_name, "/tmp/paths_completeness.log")
 
-    return redirect(f"/static/{pl.Path(zip_path).name}")
+    return redirect(f"{app.static_url_path}/{pl.Path(zip_path).name}")
 
 
 @app.route("/transects_n_samples/<year_init>/<year_end>")
@@ -399,7 +399,7 @@ def cell_occupancy_check_results(output_path):
             "cell_occupancy_result.html",
             header_title="Cell occupancy results",
             output_path=Markup(
-                f'<p>The results are ready to be downloaded:<br><a href="/static/{output_path}">{output_path}</a></p>'
+                f'<p>The results are ready to be downloaded:<br><a href="{app.static_url_path}/{output_path}">{output_path}</a></p>'
             ),
             autoreload="",
         )

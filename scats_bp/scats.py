@@ -7,7 +7,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, session, current_app, make_response
+from flask import render_template, redirect, request, Markup, flash, make_response
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -27,7 +27,7 @@ import datetime
 from . import scats_export, scats_import
 
 
-app = flask.Blueprint("scats", __name__, template_folder="templates")
+app = flask.Blueprint("scats", __name__, template_folder="templates", static_url_path="/static")
 
 params = config()
 
@@ -397,7 +397,7 @@ def export_scats():
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = "attachment; filename=scats.xlsx"
+    response.headers["Content-disposition"] = f"attachment; filename=scats_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
     return response
 
@@ -793,7 +793,7 @@ def set_path_id(scat_id, path_id):
     )
     connection.commit()
 
-    return redirect("/static/systematic_scats_transects_location.html")
+    return redirect(f"{app.static_url_path}/systematic_scats_transects_location.html")
 
 
 @app.route(

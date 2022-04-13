@@ -13,17 +13,16 @@ from config import config
 import sys
 import os
 import json
-import datetime
+import datetime as dt
 from . import tracks_import
 from . import tracks_export
 from .track_form import Track
 import functions as fn
 import uuid
 import pathlib as pl
-import shutil
 import time
 
-app = flask.Blueprint("tracks", __name__, template_folder="templates")
+app = flask.Blueprint("tracks", __name__, template_folder="templates", static_url_path="/static")
 
 params = config()
 app.debug = params["debug"]
@@ -391,7 +390,7 @@ def new_track():
                 day = int(request.form["snowtrack_id"][5 : 6 + 1])
                 date = f"{year}-{month:02}-{day:02}"
                 try:
-                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                    dt.datetime.strptime(date, "%Y-%m-%d")
                 except Exception:
                     return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
             except Exception:
@@ -573,7 +572,7 @@ def edit_track(snowtrack_id):
                 day = int(request.form["snowtrack_id"][5 : 6 + 1])
                 date = f"{year}-{month:02}-{day:02}"
                 try:
-                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                    dt.datetime.strptime(date, "%Y-%m-%d")
                 except Exception:
                     return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
 
@@ -884,7 +883,7 @@ def export_tracks():
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = "attachment; filename=tracks.xlsx"
+    response.headers["Content-disposition"] = f"attachment; filename=tracks_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
     return response
 
@@ -896,23 +895,20 @@ def export_tracks_shapefile():
     create shapefile with tracks
     """
 
-    if pl.Path("static/tmp/tracks").is_dir():
-        shutil.rmtree("static/tmp/tracks", ignore_errors=True)
-
-    # delete old files
-    for file_path in pl.Path("static").glob("tmp/tracks_*.zip"):
-        if time.time() - os.path.getmtime(file_path) > 3600:
+    # delete files older than 24h
+    for file_path in pl.Path("static").glob("tracks_*.zip"):
+        if time.time() - os.path.getmtime(file_path) > 86400:
             os.remove(file_path)
 
-    file_name = datetime.datetime.now().replace(microsecond=0).isoformat("_").replace(":", "")
+    time_stamp = f"{dt.datetime.now():%Y-%m-%d_%H%M%S}"
 
     zip_path = tracks_export.export_shapefile(
-        "static/tmp/tracks", f"static/tmp/tracks_{file_name}", "/tmp/tracks_shapefile.log"
+        f"{params['temp_folder']}/tracks_{time_stamp}", f"static/tracks_{time_stamp}", "/tmp/tracks_shapefile.log"
     )
 
     zip_file_name = pl.Path(zip_path).name
 
-    return redirect(f"/static/tmp/{zip_file_name}")
+    return redirect(f"{app.static_url_path}/{zip_file_name}")
 
 
 @app.route("/check_tracks_location")

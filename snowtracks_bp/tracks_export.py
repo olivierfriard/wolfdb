@@ -11,6 +11,7 @@ import fiona
 import shutil
 import functions as fn
 import json
+import pathlib as pl
 
 
 def export_tracks(tracks):
@@ -113,5 +114,9 @@ def export_shapefile(dir_path: str, file_name: str, log_file: str) -> str:
 
     # make a ZIP archive
     zip_file_name = shutil.make_archive(file_name, "zip", dir_path)
+
+    # remove directory containing shapefile
+    if pl.Path(dir_path).is_dir():
+        shutil.rmtree(pl.Path(dir_path))
 
     return zip_file_name

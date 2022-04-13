@@ -158,5 +158,7 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
 
 
 if __name__ == "__main__":
-    print("started")
-    get_cell_occupancy(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    result, msg = get_cell_occupancy(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    if result:
+        with open(f"/tmp/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log", "w") as f_out:
+            f_out.write(msg + "\n")
