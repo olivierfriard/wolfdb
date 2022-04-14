@@ -54,19 +54,9 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
     for shape in shapes:
 
         id = shape["id"]
-        print(id)
 
         data[id] = {}
         distances[id] = {}
-
-        # MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0), (0 0, 4 0, 4 4, 0 4, 0 0)))'
-
-        """
-        print()
-        print(shape["geometry"]["type"])
-        print(shape["geometry"]["coordinates"])
-        print()
-        """
 
         if shape["geometry"]["type"] == "Polygon":
             mp = MultiPolygon([Polygon(x) for x in shape["geometry"]["coordinates"]])
