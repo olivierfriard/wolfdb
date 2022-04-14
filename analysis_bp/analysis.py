@@ -21,6 +21,8 @@ import uuid
 import sys
 import subprocess
 import time
+import zipfile
+import fiona
 
 # from . import cell_occupancy as cell_occupancy_module
 
@@ -356,21 +358,57 @@ def cell_occupancy(year_init: str, year_end: str):
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in [".ZIP"]:
             flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.zip</b>)"))
-            return redirect(f"/cell_occupancy/2020/2021")
+            return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
+        # save uploaded file
         try:
             filename = pl.Path(params["upload_folder"]) / pl.Path(
                 str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix)
             )
             new_file.save(filename)
         except Exception:
-            flash(fn.alert_danger("Error with the uploaded file") + f"({error_info(sys.exc_info())})")
-            return redirect(f"/cell_occupancy/2020/2021")
+            flash(fn.alert_danger("Error saving the uploaded file") + f"({error_info(sys.exc_info())})")
+            return redirect(f"/cell_occupancy/{year_init}/{year_end}")
+
+        # extract zip file
+        try:
+            extracted_dir = pl.Path(params["temp_folder"]) / pl.Path(filename).stem
+            with zipfile.ZipFile(filename, "r") as zip_ref:
+                zip_ref.extractall(extracted_dir)
+        except Exception:
+            flash(fn.alert_danger("Error during zip extraction") + f"({error_info(sys.exc_info())})")
+            return redirect(f"/cell_occupancy/{year_init}/{year_end}")
+
+        # remove uploaded file
+        pl.Path(filename).unlink()
+
+        # check if zip contains .shp
+        if len(list(extracted_dir.glob("*.shp"))) != 1:
+            flash(fn.alert_danger(".shp file not found in ZIP archive"))
+            return redirect(f"/cell_occupancy/{year_init}/{year_end}")
+
+        # retrieve .shp file name
+        shp_file_path = str(list(extracted_dir.glob("*.shp"))[0])
+
+        # check shp file
+        shapes = fiona.open(shp_file_path)
+        # check CRS / SRID
+        try:
+            int(shapes.crs["init"].replace("epsg:", ""))
+        except Exception:
+            flash(fn.alert_danger(f"The CRS/SRID was not found: {shapes.crs['init']}"))
+            return redirect(f"/cell_occupancy/{year_init}/{year_end}")
+
+        # check geometry
+        for shape in shapes:
+            if shape["geometry"]["type"] not in ["Polygon", "MultiPolygon"]:
+                flash(fn.alert_danger("All elements must have a Polygon or MultiPolygon geometry"))
+                return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # ouput_path
         output_path = f"cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"
 
-        _ = subprocess.Popen(["python3", "cell_occupancy.py", filename, year_init, year_end, output_path])
+        _ = subprocess.Popen(["python3", "cell_occupancy.py", shp_file_path, year_init, year_end, output_path])
 
         return redirect(f"/cell_occupancy_check_results/{output_path}")
 
@@ -393,6 +431,10 @@ def cell_occupancy(year_init: str, year_end: str):
 @app.route("/cell_occupancy_check_results/<output_path>")
 @fn.check_login
 def cell_occupancy_check_results(output_path):
+    """
+    display page waiting fo results to be ready
+    the page autoreload every 20 seconds until results file is found
+    """
 
     if (pl.Path("static") / pl.Path(output_path)).is_file():
         return render_template(

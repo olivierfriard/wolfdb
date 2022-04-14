@@ -16,6 +16,7 @@ import shutil
 import datetime as dt
 import io
 import json
+from shapely.geometry import MultiPolygon, Polygon
 
 from config import config
 import functions as fn
@@ -23,12 +24,12 @@ import functions as fn
 params = config()
 
 
-def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, output_path: str):
+def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path: str):
 
     sep = "\t"
 
+    """
     # extract zip file
-
     with zipfile.ZipFile(zip_shapefile_path, "r") as zip_ref:
         zip_ref.extractall(pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem)
 
@@ -40,6 +41,7 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
         return 1, ".shp file not found in ZIP archive"
     # retrieve .shp file name
     shp_path = str(list((pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem).glob("*.shp"))[0])
+    """
 
     shapes = fiona.open(shp_path)
 
@@ -48,23 +50,38 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    crs = int(shapes.crs["init"].replace("epsg:", ""))
     for shape in shapes:
 
         id = shape["id"]
-        # print(f"cell ID: {id}", file=sys.stderr)
 
         data[id] = {}
         distances[id] = {}
 
-        coord_list = shape["geometry"]["coordinates"][0]
-        coord_str = ", ".join([f"{round(x[0])} {round(x[1])}" for x in coord_list])
+        # MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0), (0 0, 4 0, 4 4, 0 4, 0 0)))'
+
+        """
+        print()
+        print(shape["geometry"]["type"])
+        print(shape["geometry"]["coordinates"])
+        print()
+        """
+
+        if shape["geometry"]["type"] == "Polygon":
+            mp = MultiPolygon([Polygon(x) for x in shape["geometry"]["coordinates"]])
+        elif shape["geometry"]["type"] == "MultiPolygon":
+            mp = MultiPolygon([Polygon(x[0]) for x in shape["geometry"]["coordinates"]])
+        else:
+            return (0, "geometry not Polygon or Multipolygon")
 
         sql = (
             f"SELECT *, "
             "ST_AsGeoJSON(multilines) AS transect_geojson, "
             "ROUND(ST_Length(multilines)) AS transect_length "
             "FROM transects "
-            f"WHERE ST_INTERSECTS(ST_GeomFromText('POLYGON(({coord_str}))', 32632), multilines); "
+            # f"WHERE ST_INTERSECTS(ST_GeomFromText('{mp}', 32632), multilines); "
+            # f"WHERE ST_INTERSECTS(ST_Transform(ST_GeomFromText('{mp}', 3035), 32632), multilines); "
+            f"WHERE ST_INTERSECTS(ST_Buffer(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632),0), multilines); "
         )
 
         cursor.execute(sql)
@@ -87,7 +104,11 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
                     data[id][path_date] = 0
 
                 cursor.execute(
-                    f"SELECT count(scat_id) AS count FROM scats WHERE path_id = %s AND ST_CONTAINS(ST_GeomFromText('POLYGON(({coord_str}))', 32632), geometry_utm)",
+                    (
+                        "SELECT count(scat_id) AS count FROM scats "
+                        f"WHERE path_id = %s AND ST_CONTAINS(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632), geometry_utm)"
+                        # f"WHERE path_id = %s AND ST_CONTAINS(ST_GeomFromText('{mp}', 32632), geometry_utm)"
+                    ),
                     [path["path_id"]],
                 )
                 scat = cursor.fetchone()
@@ -148,8 +169,9 @@ def get_cell_occupancy(zip_shapefile_path: str, year_init: str, year_end: str, o
         out_distances += f"{sep.join(['NA'] * (max_paths_number - len(distances[id])) )}\n"
 
     # remove directory containing shapefile
-    if (pl.Path("/tmp") / pl.Path(zip_shapefile_path).stem).is_dir():
-        shutil.rmtree(pl.Path("/tmp") / pl.Path(zip_shapefile_path).stem)
+    pl.Path(shp_path).parent
+    if pl.Path(shp_path).parent.is_dir():
+        shutil.rmtree(pl.Path(shp_path).parent)
 
     # zip results
     '''zip_output = f"static/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"'''
