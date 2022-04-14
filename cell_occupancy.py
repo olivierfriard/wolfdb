@@ -28,21 +28,6 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
 
     sep = "\t"
 
-    """
-    # extract zip file
-    with zipfile.ZipFile(zip_shapefile_path, "r") as zip_ref:
-        zip_ref.extractall(pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem)
-
-    # remove uploaded file
-    pl.Path(zip_shapefile_path).unlink()
-
-    # check if zip contains .shp
-    if len(list((pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem).glob("*.shp"))) != 1:
-        return 1, ".shp file not found in ZIP archive"
-    # retrieve .shp file name
-    shp_path = str(list((pl.Path(params["temp_folder"]) / pl.Path(zip_shapefile_path).stem).glob("*.shp"))[0])
-    """
-
     shapes = fiona.open(shp_path)
 
     data, distances, n_transects = {}, {}, {}
@@ -71,8 +56,7 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
             "ROUND(ST_Length(multilines)) AS transect_length "
             "FROM transects "
             # f"WHERE ST_INTERSECTS(ST_GeomFromText('{mp}', 32632), multilines); "
-            # f"WHERE ST_INTERSECTS(ST_Transform(ST_GeomFromText('{mp}', 3035), 32632), multilines); "
-            f"WHERE ST_INTERSECTS(ST_Buffer(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632),0), multilines); "
+            f"WHERE ST_INTERSECTS(ST_Buffer(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632),0), multilines) "
         )
 
         cursor.execute(sql)
@@ -85,7 +69,12 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
             transect_geojson = json.loads(transect["transect_geojson"])
 
             cursor.execute(
-                "SELECT path_id, date::date, completeness FROM paths WHERE transect_id = %s", [transect["transect_id"]]
+                (
+                    "SELECT path_id, date::date, completeness FROM paths "
+                    "WHERE transect_id = %s "
+                    "AND EXTRACT(year FROM date) between %s AND %s"
+                ),
+                [transect["transect_id"], year_init, year_end],
             )
             paths = cursor.fetchall()
 
