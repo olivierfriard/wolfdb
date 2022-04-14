@@ -54,6 +54,7 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
     for shape in shapes:
 
         id = shape["id"]
+        print(id)
 
         data[id] = {}
         distances[id] = {}
@@ -135,35 +136,51 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
 
                 distances[id][path_date] += tot_dist
 
+    header = f"Cell index{sep}"
+
+    for property in shapes.schema["properties"]:
+        header += f"{property}\t"
+
     max_paths_number = max([len(data[id]) for id in data])
 
-    header = f"Cell ID{sep}{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number))+1}}' for x in range(1, max_paths_number + 1)])}\n"
+    header += f"{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number))+1}}' for x in range(1, max_paths_number + 1)])}\n"
 
     out_number, out_presence, out_dates, out_distances = header, header, header, header
 
     for id in data:
-        out_number += f"{id}{sep}{sep.join([str(data[id][date]) for date in sorted(data[id].keys())])}"
+        out_number += f"{id}{sep}"
+        # properties
+        for property in shapes[int(id)]["properties"]:
+            out_number += f"{shapes[int(id)]['properties'][property]}{sep}"
+        out_number += f"{sep.join([str(data[id][date]) for date in sorted(data[id].keys())])}"
         if len(data[id]):
             out_number += sep
         out_number += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
 
-        out_presence += f"{id}{sep}{sep.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}"
+        out_presence += f"{id}{sep}"
+        # properties
+        for property in shapes[int(id)]["properties"]:
+            out_presence += f"{shapes[int(id)]['properties'][property]}{sep}"
+        out_presence += f"{sep.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}"
         if len(data[id]):
             out_presence += sep
         out_presence += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
 
-        out_dates += f"{id}{sep}{sep.join([date for date in sorted(data[id].keys())])}"
+        out_dates += f"{id}{sep}"
+        # properties
+        for property in shapes[int(id)]["properties"]:
+            out_dates += f"{shapes[int(id)]['properties'][property]}{sep}"
+        out_dates += f"{sep.join([date for date in sorted(data[id].keys())])}"
         if len(data[id]):
             out_dates += sep
         out_dates += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
 
     for id in distances:
-        # tot_distance = round(sum([distances[id][date] for date in distances[id]]))
-        # out_distances += f"{id}{sep}{n_transects[id]}{sep}{tot_distance}\n"
-
-        out_distances += (
-            f"{id}{sep}{f'{sep}'.join([str(round(distances[id][date])) for date in sorted(distances[id].keys())])}"
-        )
+        out_distances += f"{id}{sep}"
+        # properties
+        for property in shapes[int(id)]["properties"]:
+            out_distances += f"{shapes[int(id)]['properties'][property]}{sep}"
+        out_distances += f"{sep.join([str(round(distances[id][date])) for date in sorted(distances[id].keys())])}"
         if len(distances[id]):
             out_distances += sep
         out_distances += f"{sep.join(['NA'] * (max_paths_number - len(distances[id])) )}\n"
