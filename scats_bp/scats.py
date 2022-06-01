@@ -397,7 +397,9 @@ def export_scats():
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = f"attachment; filename=scats_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    response.headers[
+        "Content-disposition"
+    ] = f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
     return response
 

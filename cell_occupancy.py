@@ -14,7 +14,6 @@ import zipfile
 import pathlib as pl
 import shutil
 import datetime as dt
-import io
 import json
 from shapely.geometry import MultiPolygon, Polygon
 
@@ -170,8 +169,13 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
         shutil.rmtree(pl.Path(shp_path).parent)
 
     # zip results
+
     '''zip_output = f"static/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"'''
-    """zip_output = io.BytesIO()"""
+
+    """
+    import io
+    zip_output = io.BytesIO()
+    """
 
     with zipfile.ZipFile("static/" + output_path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("cell_occupancy_samples_number.tsv", out_number)
