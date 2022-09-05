@@ -963,7 +963,7 @@ def confirm_load_xlsx(filename, mode):
                     "coord_zone": data["coord_zone"].strip(),
                     "operator": data["operator"],
                     "institution": data["institution"],
-                    "geo": data["coord_latlon"],
+                    #"geo": data["coord_latlon"],
                     "geometry_utm": data["geometry_utm"],
                     "notes": data["notes"],
                 },
