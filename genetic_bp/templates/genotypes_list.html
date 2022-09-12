@@ -3,20 +3,7 @@
 {% block content %}
 
 
-<h1>WolfDB</h1>
-<hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-<a href="/genotypes" class="btn btn-primary">Genotypes</a>&nbsp;
-
-<a href="/genotypes_list/all{{ short }}" class="btn btn-primary">All</a>&nbsp;
-
-<a href="/genotypes_list/definitive{{ short }}" class="btn btn-primary">Definitive</a>&nbsp;
-
-<a href="/genotypes_list/temp{{ short }}" class="btn btn-primary">Temporary</a>&nbsp;
-
-<br>
-<br>
 
 {% with messages = get_flashed_messages() %}
     {% if messages %}

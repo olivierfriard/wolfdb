@@ -195,7 +195,9 @@ def tracks_list():
     """
     list of tracks
     """
+    return render_template("tl.html")
 
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -229,6 +231,7 @@ def tracks_list():
     n_tracks = len(results)
 
     return render_template("tracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
+    """
 
 
 @app.route("/plot_tracks")

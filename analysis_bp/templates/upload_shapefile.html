@@ -5,14 +5,10 @@
 <script src="https://unpkg.com/htmx.org@1.6.0"></script>
 
 
-<h1>WolfDB - Cell occupancy</h1>
+<h1>Cell occupancy - {{ year_init }}-{{ year_end }}</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/analysis" class="btn btn-primary">Analysis</a>
-
-<br><br>
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
