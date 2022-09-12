@@ -21,41 +21,39 @@
 </style>
 
 <table class="table table-striped">
-    <tr>
-        <th style="background-color: white;">Region</th>
-        <th style="background-color: white;">Path ID</th>
-        <th style="background-color: white;">Transect ID</th>
-        <th style="background-color: white;">Date</th>
-        <th style="background-color: white;">Sampling year</th>
-        <th style="background-color: white;">Completeness (%)</th>
-        <th style="background-color: white;">Number of tracks</th>
-        <th style="background-color: white;">Number of samples</th>
-        <th style="background-color: white;">Operator</th>
-        <th style="background-color: white;">Institution</th>
-        <th style="background-color: white;">Category</th>
-        <th style="background-color: white;">Notes</th>
-    </tr>
-    {% for result in results %}
-    <tr>
-        <td>{{ result['region'] }}</td>
-        <td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
-        <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
-        <td>{{ result['date'] }}</td>
-        <td>{{ result['sampling_season'] }}</td>
-        <td>{{ result['completeness'] }}</td>
-        <td>{{ result['n_tracks'] }}</td>
-        <td>{{ result['n_samples'] }}</td>
-        <td>{% if result['observer'] %}{{ result['observer'] }}{% endif %}</td>
-        <td>{% if result['institution'] %}{{ result['institution'] }}{% endif %}</td>
-        <td>{% if result['category'] %}{{ result['category'] }}{% endif %}</td>
-        <td>{% if result['notes'] %}{{ result['notes'] }}{% endif %}</td>
-    </tr>
-    {% endfor %}
+<tr>
+<th style="background-color: white;">Region</th>
+<th style="background-color: white;">Path ID</th>
+<th style="background-color: white;">Transect ID</th>
+<th style="background-color: white;">Date</th>
+<th style="background-color: white;">Sampling year</th>
+<th style="background-color: white;">Completeness (%)</th>
+<th style="background-color: white;">Number of tracks</th>
+<th style="background-color: white;">Number of samples</th>
+<th style="background-color: white;">Operator</th>
+<th style="background-color: white;">Institution</th>
+<th style="background-color: white;">Category</th>
+<th style="background-color: white;">Notes</th>
+</tr>
+{% for result in results %}
+<tr>
+<td>{{ result['region'] }}</td>
+<td><a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a></td>
+<td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
+<td>{{ result['date'] }}</td>
+<td>{{ result['sampling_season'] }}</td>
+<td>{{ result['completeness'] }}</td>
+<td>{{ result['n_tracks'] }}</td>
+<td>{{ result['n_samples'] }}</td>
+<td>{% if result['observer'] %}{{ result['observer'] }}{% endif %}</td>
+<td>{% if result['institution'] %}{{ result['institution'] }}{% endif %}</td>
+<td>{% if result['category'] %}{{ result['category'] }}{% endif %}</td>
+<td>{% if result['notes'] %}{{ result['notes'] }}{% endif %}</td>
+</tr>
+{% endfor %}
 </table>
 {% else %}
-
 <h2>No path found</h2>
-
 {% endif %}
 
 {% endblock %}

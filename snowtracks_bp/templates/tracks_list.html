@@ -3,9 +3,6 @@
 {% block content %}
 
 
-
-
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {% for message in messages %}
@@ -46,57 +43,30 @@
 </tr>
 {% for result in results %}
 <tr>
-
-    <td><a href="/view_track/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
-
-    <td>{% if result["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
-
-    <td>
-    {% for tr in result['transect_id'] %}
-        <a href="/view_transect/{{ tr }}">{{ tr }}</a><br>
-    {% endfor %}
-
-    </td>
-
-    <td>{{ result['date'] }}</td>
-    <td>{{ result['sampling_season'] }}</td>
-    <td>{% if result["track_type"] %}{{ result['track_type'] }}{% endif %}</td>
-
-    <td>{% if result["multilines"] is not none %}Yes{% else %}No{%endif%}</td>
-
-    <td>{% if result["location"] %}{{ result['location'] }}{% endif %}</td>
-    <td>{{ result['municipality'] }}</td>
-    <td>{{ result['province'] }}</td>
-    <td>{{ result['region'] }}</td>
-    <td>{% if result["observer"] %}{{ result['observer'] }}{% endif %}</td>
-    <td>{% if result["institution"] %}{{ result['institution'] }}{% endif %}</td>
-    <td>{{ result['scalp_category'] }}</td>
-
-    <td>{% if result["days_after_snowfall"] %}{{ result['days_after_snowfall'] }}{% endif %}</td>
-    <td>{{ result['minimum_number_of_wolves'] if result['minimum_number_of_wolves'] is not none else ""}}</td>
-<!--
-    <td>{% if result["track_format"] %}{{ result['track_format'] }}{% endif %}</td>
--->
-
-    <td>{% if result['multilines'] is none %}No{% else %}Yes{% endif %}</td>
-
-    <td>{{ result['notes'] }}</td>
-
+<td><a href="/view_track/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a></td>
+<td>{% if result["sampling_type"] %}{{ result['sampling_type'] }}{% endif %}</td>
+<td>{% for tr in result['transect_id'] %}<a href="/view_transect/{{ tr }}">{{ tr }}</a><br>{% endfor %}</td>
+<td>{{ result['date'] }}</td>
+<td>{{ result['sampling_season'] }}</td>
+<td>{% if result["track_type"] %}{{ result['track_type'] }}{% endif %}</td>
+<td>{% if result["multilines"] is not none %}Yes{% else %}No{%endif%}</td>
+<td>{% if result["location"] %}{{ result['location'] }}{% endif %}</td>
+<td>{{ result['municipality'] }}</td>
+<td>{{ result['province'] }}</td>
+<td>{{ result['region'] }}</td>
+<td>{% if result["observer"] %}{{ result['observer'] }}{% endif %}</td>
+<td>{% if result["institution"] %}{{ result['institution'] }}{% endif %}</td>
+<td>{{ result['scalp_category'] }}</td>
+<td>{% if result["days_after_snowfall"] %}{{ result['days_after_snowfall'] }}{% endif %}</td>
+<td>{{ result['minimum_number_of_wolves'] if result['minimum_number_of_wolves'] is not none else ""}}</td>
+<!--<td>{% if result["track_format"] %}{{ result['track_format'] }}{% endif %}</td>-->
+<td>{% if result['multilines'] is none %}No{% else %}Yes{% endif %}</td>
+<td>{{ result['notes'] }}</td>
 </tr>
 {% endfor %}
 </table>
 {% else %}
-
 <h2>No tracks were found</h2>
-
 {% endif %}
 
-
 {% endblock %}
-
-
-
-
-
-
-
