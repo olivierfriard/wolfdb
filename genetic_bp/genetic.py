@@ -282,10 +282,16 @@ def genotypes_list(type, mode="web"):
         (
             "SELECT *, "
             "(SELECT count(sample_id) FROM wa_scat_dw WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-            "(SELECT 'Yes' FROM wa_scat_dw WHERE (sample_id like 'T%' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
-            f"FROM genotypes {filter} "
+            "(SELECT 'Yes' FROM wa_scat_dw WHERE (sample_id like 'T%%' OR sample_id like 'M%%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+            "FROM genotypes "
+            f"{filter} "
+            "AND date BETWEEN %s AND %s "
             "ORDER BY genotype_id"
-        )
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     results = cursor.fetchall()
@@ -417,8 +423,13 @@ def plot_all_wa():
             "SELECT wa_code, sample_id, genotype_id, "
             "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
             "FROM wa_scat_dw "
-            "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        )
+            "WHERE UPPER(mtdna) not like '%%POOR DNA%%' "
+            "AND date BETWEEN %s AND %s "
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     scat_features = []
@@ -494,8 +505,13 @@ def plot_wa_clusters(distance):
             "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
             f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
             "FROM wa_scat_dw "
-            "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        )
+            "WHERE UPPER(mtdna) not like '%%POOR DNA%%' "
+            "AND date BETWEEN %s AND %s "
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     max_cid = 0

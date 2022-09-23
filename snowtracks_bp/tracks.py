@@ -6,7 +6,7 @@ flask blueprint for tracks management
 """
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, make_response
+from flask import render_template, redirect, request, Markup, flash, make_response, session
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -195,7 +195,6 @@ def tracks_list():
     """
     list of tracks
     """
-    # return render_template("tl.html")
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -213,8 +212,13 @@ def tracks_list():
             "ELSE t.scalp_category "
             "END "
             "FROM snow_tracks t "
+            "WHERE date BETWEEN %s AND %s "
             "ORDER BY region ASC, province ASC, date DESC"
-        )
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     # split transects (more transects can be specified)
@@ -242,7 +246,17 @@ def plot_tracks():
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT snowtrack_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_lonlat FROM snow_tracks")
+    cursor.execute(
+        (
+            "SELECT snowtrack_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_lonlat "
+            "FROM snow_tracks "
+            "WHERE date BETWEEN %s AND %s "
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
+    )
 
     features = []
     tot_min_lat, tot_min_lon = 90, 90

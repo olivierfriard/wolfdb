@@ -3,18 +3,11 @@
 {% block content %}
 
 
-<h1>WolfDB</h1>
-<hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-<a href="/scats" class="btn btn-primary">Scats</a>
-
-<br><br>
 
 {{ title }}
 
-
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 
 <style>

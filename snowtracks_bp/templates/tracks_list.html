@@ -11,6 +11,7 @@
 {% endif %}
 {% endwith %}
 
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 {% if results %}
 <h2>List of {{ n_tracks }} tracks</h2>

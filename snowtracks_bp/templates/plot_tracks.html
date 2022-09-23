@@ -2,7 +2,9 @@
 
 {% block content %}
 
-<h1>Locations of tracks</h1>
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
+
+<h2>Locations of tracks</h2>
 
 <div id="map" style="width: 1200px; height: 800px;"></div>
 

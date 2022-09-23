@@ -2,14 +2,14 @@
 
 {% block content %}
 
-
-
-
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
+
+
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 {% if results %}
 <h2>{{ title }}</h2>

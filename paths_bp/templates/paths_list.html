@@ -2,23 +2,13 @@
 
 {% block content %}
 
-
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 {% if results %}
 <h2>List of {{ n_paths }} paths</h2>
 
 
-<br>
-<a href="/export_paths" class="btn btn-info">Export in XLSX format</a>
-<br>
-<br>
-
-<style>
-    th {
-        top: 0;
-        position: sticky;
-    }
-</style>
+<style>th {top: 0; position: sticky;}</style>
 
 <table class="table table-striped">
 <tr>

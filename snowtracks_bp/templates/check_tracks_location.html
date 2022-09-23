@@ -17,6 +17,8 @@
 
 <h2>Check tracks location (sampling type &ne; Opportunistic)</h2>
 
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
+
 <h3>List of {{ n_tracks }} tracks</h3>
 <br>
 
