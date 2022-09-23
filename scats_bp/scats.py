@@ -7,7 +7,7 @@ flask blueprint for scats management
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, make_response
+from flask import render_template, redirect, request, Markup, flash, make_response, session
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -83,8 +83,6 @@ def scats():
 @app.route("/wa_form", methods=("POST",))
 @fn.check_login
 def wa_form():
-
-    data = request.form
 
     return (
         f'<form action="/add_wa" method="POST" style="padding-top:30px; padding-bottom:30px">'
@@ -233,7 +231,17 @@ def plot_all_scats():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
+    cursor.execute(
+        (
+            "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+            "FROM scats "
+            "WHERE date BETWEEN %s AND %s "
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
+    )
 
     scat_features = []
 
@@ -293,7 +301,17 @@ def plot_all_scats_markerclusters():
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats")
+    cursor.execute(
+        (
+            "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+            "FROM scats "
+            "WHERE date BETWEEN %s AND %s "
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
+    )
 
     scat_features = []
 
@@ -345,13 +363,16 @@ def plot_all_scats_markerclusters():
 @fn.check_login
 def scats_list():
     """
-    Display all scats
+    Display list of scats
     """
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT COUNT(scat_id) AS n_scats FROM scats")
+    cursor.execute(
+        "SELECT COUNT(scat_id) AS n_scats FROM scats WHERE date BETWEEN %s AND %s",
+        (session["start_date"], session["end_date"]),
+    )
     n_scats = cursor.fetchone()["n_scats"]
 
     cursor.execute(
@@ -359,12 +380,17 @@ def scats_list():
             "SELECT *,"
             "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
             "CASE "
-            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%%wolf%%' THEN 'C1' "
             "ELSE scats.scalp_category "
             "END "
             "FROM scats "
+            "WHERE date BETWEEN %s AND %s "
             "ORDER BY scat_id"
-        )
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     return render_template("scats_list.html", header_title="List of scats", n_scats=n_scats, results=cursor.fetchall())
@@ -389,8 +415,13 @@ def export_scats():
             "ELSE scats.scalp_category "
             "END "
             "FROM scats "
+            "WHERE date BETWEEN %s AND %s "
             "ORDER BY scat_id"
-        )
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     file_content = scats_export.export_scats(cursor.fetchall())
@@ -963,7 +994,7 @@ def confirm_load_xlsx(filename, mode):
                     "coord_zone": data["coord_zone"].strip(),
                     "operator": data["operator"],
                     "institution": data["institution"],
-                    #"geo": data["coord_latlon"],
+                    # "geo": data["coord_latlon"],
                     "geometry_utm": data["geometry_utm"],
                     "notes": data["notes"],
                 },

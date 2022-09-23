@@ -2,7 +2,7 @@
 
 {% block content %}
 
-
+{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 
 {% if results %}
@@ -73,7 +73,7 @@
 </table>
 {% else %}
 
-<h2>No scats found</h2>
+<h2>List of scats: no scats found</h2>
 
 {% endif %}
 

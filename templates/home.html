@@ -22,8 +22,7 @@ Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
 {% endwith %}
 <br>
 
-
-
+{% if session['start_date'] and session['end_date'] %}Analysis date interval: <strong>{{ session['start_date']}}</strong> - <strong>{{session['end_date']}}</strong>{% endif %}
 <!--
 
 <a href="/scats" class="btn btn-primary">Scats</a>

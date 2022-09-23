@@ -13,6 +13,7 @@ import functions as fn
 import utm
 import logging
 import secrets
+import datetime
 
 # blueprints
 from auth import auth as auth_blueprint
@@ -71,12 +72,44 @@ app.db_log.setLevel(logging.INFO)
 @app.route("/")
 @fn.check_login
 def home():
+    if "start_date" not in session:
+        session["start_date"] = "1900-01-01"
+    if "end_date" not in session:
+        session["end_date"] = "2100-01-01"
+
     return render_template("home.html", header_title="Home", mode=params["mode"])
 
 
 @app.route("/version")
 def version():
     return __version__
+
+
+@app.route("/settings", methods=("GET", "POST"))
+def settings():
+    """
+    selection of the analysis time interval (start_date and end_date)
+    """
+
+    def iso_date_validator(s: str) -> bool:
+        try:
+            datetime.datetime.strptime(s, "%Y-%m-%d")
+            return True
+        except ValueError:
+            raise False
+
+    if request.method == "GET":
+        return render_template("settings.html", header_title="Settings")
+
+    if request.method == "POST":
+
+        if not iso_date_validator(request.form["start_date"]) or not iso_date_validator(request.form["end_date"]):
+            return render_template("settings.html", header_title="Settings")
+
+        session["start_date"] = request.form["start_date"]
+        session["end_date"] = request.form["end_date"]
+
+        return redirect("/")
 
 
 @app.route("/rev_geocoding/<east>/<north>/<zone>")

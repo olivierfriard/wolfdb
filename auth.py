@@ -1,8 +1,8 @@
-'''
+"""
 auth
 from:
 https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-your-app-with-flask-login
-'''
+"""
 
 
 from flask import Blueprint, render_template, request, redirect, flash, session, Markup, current_app
@@ -13,26 +13,24 @@ import psycopg2.extras
 from config import config
 import functions as fn
 
-#params = config()
 
-auth = Blueprint('auth', __name__)
+auth = Blueprint("auth", __name__)
 
-@auth.route('/login')
+
+@auth.route("/login")
 def login():
-    return render_template('login.html')
+    return render_template("login.html")
 
 
-@auth.route('/login_post', methods=['POST'])
+@auth.route("/login_post", methods=["POST"])
 def login_post():
 
-    email = request.form.get('email')
-    password = request.form.get('password')
+    email = request.form.get("email")
+    password = request.form.get("password")
 
     if not email or not password:
         flash(f"Input email and password")
         return redirect("/login")
-
-    # password_sha256 = generate_password_hash(password, method='sha256')
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -40,10 +38,10 @@ def login_post():
     result = cursor.fetchone()
 
     if check_password_hash(result["password"], password):
-        session['user_id'] = result["id"]
-        session['firstname'] = result["firstname"]
-        session['lastname'] = result["lastname"]
-        session['email'] = result["email"]
+        session["user_id"] = result["id"]
+        session["firstname"] = result["firstname"]
+        session["lastname"] = result["lastname"]
+        session["email"] = result["email"]
 
         current_app.db_log.info(f"Login of {session['firstname']} {session['lastname']} ({session['email']})")
 
@@ -54,7 +52,7 @@ def login_post():
         return redirect("/login")
 
 
-@auth.route('/logout')
+@auth.route("/logout")
 @fn.check_login
 def logout():
 
@@ -64,10 +62,10 @@ def logout():
         pass
 
     try:
-        session.pop('user_id', None)
-        session.pop('firstname', None)
-        session.pop('lastname', None)
-        session.pop('email', None)
+        session.pop("user_id", None)
+        session.pop("firstname", None)
+        session.pop("lastname", None)
+        session.pop("email", None)
     except:
         pass
 

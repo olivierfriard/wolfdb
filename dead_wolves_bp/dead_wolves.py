@@ -40,7 +40,7 @@ def view_tissue(tissue_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT id from dead_wolves WHERE tissue_id = %s", [tissue_id])
+    cursor.execute("SELECT id FROM dead_wolves WHERE tissue_id = %s", [tissue_id])
     row = cursor.fetchone()
 
     if row is not None:
@@ -137,7 +137,18 @@ def plot_dead_wolves():
     """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM dead_wolves WHERE deleted is NULL AND utm_east != '0' AND utm_north != '0'")
+    cursor.execute(
+        (
+            "SELECT * FROM dead_wolves "
+            "WHERE deleted is NULL "
+            "AND utm_east != '0' AND utm_north != '0' "
+            "AND discovery_date BETWEEN %s AND %s "
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
+    )
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
@@ -435,8 +446,16 @@ def dead_wolves_list():
         (
             "SELECT *,"
             "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
-            "FROM dead_wolves WHERE deleted is NULL ORDER BY id"
-        )
+            "FROM dead_wolves "
+            "WHERE "
+            "deleted is NULL "
+            "AND discovery_date BETWEEN %s AND %s "
+            "ORDER BY id"
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     results = cursor.fetchall()

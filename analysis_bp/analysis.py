@@ -97,7 +97,7 @@ def transects_n_samples(year_init, year_end):
     header = "Transect ID\t"
     # check max number of sampling by year
     cursor.execute(
-        "select max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+        "SELECT MAX(c) AS n_paths FROM (SELECT COUNT(*) AS c FROM paths WHERE transect_id != '' GROUP BY transect_id) x"
     )
     result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
@@ -231,8 +231,8 @@ def transects_dates(year_init, year_end):
     # check max number of sampling
     cursor.execute(
         (
-            "select max(c) as n_paths from "
-            "      (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+            "SELECT max(c) AS n_paths FROM "
+            "      (SELECT count(*) AS c FROM paths WHERE transect_id != '' GROUP BY transect_id) x"
         )
     )
     result = cursor.fetchone()

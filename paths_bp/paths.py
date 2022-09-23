@@ -164,7 +164,9 @@ def view_path(path_id):
 @app.route("/paths_list")
 @fn.check_login
 def paths_list():
-    # get all paths
+    """
+    get list of paths
+    """
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -176,10 +178,15 @@ def paths_list():
             "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
             "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
             "FROM paths "
+            "WHERE date BETWEEN %s AND %s "
             "ORDER BY region ASC, "
             # "province ASC, "
             "path_id, date DESC "
-        )
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     """
@@ -223,10 +230,15 @@ def export_paths():
             "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
             "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
             "FROM paths "
+            "WHERE date BETWEEN %s AND %s "
             "ORDER BY region ASC, "
             "province ASC, "
             "path_id, date DESC "
-        )
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
 
     file_content = paths_export.export_paths(cursor.fetchall())
