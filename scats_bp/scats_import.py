@@ -13,7 +13,7 @@ import functions as fn
 params = config()
 
 
-def extract_data_from_xlsx(filename):
+def extract_data_from_xlsx(filename: str) -> bool:
     """
     Extract and check data from a XLSX file
     """
@@ -26,15 +26,15 @@ def extract_data_from_xlsx(filename):
     out = ""
 
     try:
-        df = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=None, engine=engine)
+        scats_df = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=0, engine=engine)
     except Exception:
-        raise
         return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
 
+    """
     if "Scats" not in df.keys():
         return True, fn.alert_danger(f"Scats sheet not found in workbook"), {}, {}, {}
-
     scats_df = df["Scats"]
+    """
 
     # check columns
     for column in [
@@ -137,9 +137,9 @@ def extract_data_from_xlsx(filename):
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
-        if data["sampling_type"] not in ["Opportunistic", "Systematic"]:
+        if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
             out += fn.alert_danger(
-                f'Row {index + 2}: Sampling type must be <b>Opportunistic</b>, <b>Systematic</b>: found {data["sampling_type"]}'
+                f'Row {index + 2}: Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty: found "{data["sampling_type"]}"'
             )
 
         # no path ID if scat is opportunistc
