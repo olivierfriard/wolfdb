@@ -120,17 +120,18 @@ def extract_data_from_xlsx(filename: str) -> bool:
 
         # UTM coord conversion
         # check zone
-        if data["coord_zone"].upper() != "32N":
+        if data["coord_zone"].upper().replace(" ", "") != "32N":
             out += fn.alert_danger(
-                f"Row {index + 2}: the UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted: found {data['coord_zone']}"
+                f"Row {index + 2}: the UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted. File contains: '{data['coord_zone']}'"
             )
+        data["coord_zone"] = "32N"
 
         # check if coordinates are OK
         try:
             _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
         except Exception:
             out += fn.alert_danger(
-                f'Row {index + 2}: Check the UTM coordinates: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'
+                f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]}"'
             )
 
         data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
