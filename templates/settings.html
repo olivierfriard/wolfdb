@@ -1,0 +1,31 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+
+
+<h2>Settings</h2>
+
+<form id="settings" action="/settings"  method="POST" enctype="multipart/form-data">
+
+<br>
+<div class="form-group">
+
+<h4>Analysis date interval</h4>
+
+<label for="start_date">Start date</label>
+<input type="text" id="start_date" placeholder="YYYY-MM-DD" name="start_date" value="{{session['start_date']}}">
+<br>
+
+<label for="end_date">End date</label>
+<input type="text" id="end_date" placeholder="YYYY-MM-DD" name="end_date" value="{{session['end_date']}}">
+</div>
+<br>
+
+<button type="submit" class="btn btn-danger" id="submit-btn" type="button">Save</button>
+
+</form>
+
+
+{% endblock %}
+
