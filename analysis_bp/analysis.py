@@ -7,7 +7,7 @@ flask blueprint for data analysis
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, make_response
+from flask import render_template, redirect, request, Markup, flash, make_response, current_app
 import psycopg2
 import psycopg2.extras
 from config import config

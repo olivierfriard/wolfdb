@@ -66,6 +66,7 @@ def extract_data_from_xlsx(filename: str) -> bool:
 
     scats_data = {}
     for index, row in scats_df.iterrows():
+        print(f"{index=}")
         data = {}
         for column in list(scats_df.columns):
             data[column] = row[column]
@@ -111,7 +112,7 @@ def extract_data_from_xlsx(filename: str) -> bool:
             # check province name
             province = fn.province_name2code(data["province"])
             if province is None:
-                out += fn.alert_danger(f"Row {index + 2}: the province {data['province']} was not found")
+                out += fn.alert_danger(f"Row {index + 2}: the province '{data['province']}' was not found")
         data["province"] = province
 
         # add region from province code
@@ -211,6 +212,7 @@ def extract_data_from_xlsx(filename: str) -> bool:
 
     # extract paths
     all_paths = {}
+    """
     if "Paths" in df.keys():
         paths_df = df["Paths"]
         for index, row in paths_df.iterrows():
@@ -244,9 +246,11 @@ def extract_data_from_xlsx(filename: str) -> bool:
 
             all_paths[index] = dict(data)
             index += 1
+    """
 
     # extract tracks
     all_tracks = {}
+    """
     if "Tracks" in df.keys():
         tracks_df = df["Tracks"]
         for index, row in tracks_df.iterrows():
@@ -258,5 +262,6 @@ def extract_data_from_xlsx(filename: str) -> bool:
                     data[column] = row[column]
 
             all_tracks[index] = dict(data)
+    """
 
     return False, "", scats_data, all_paths, all_tracks
