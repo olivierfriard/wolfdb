@@ -64,60 +64,68 @@ def extract_data_from_xlsx(filename: str) -> bool:
         if column not in list(scats_df.columns):
             return True, fn.alert_danger(f"Column {column} is missing"), {}, {}, {}
 
+    columns_list = list(scats_df.columns)
+
+    province_code_list = fn.province_code_list()
+    prov_name2prov_code = fn.province_name2code_dict()
+    prov_code2region = fn.province_code2region_dict()
+
     scats_data = {}
-    for index, row in scats_df.iterrows():
+    index = 0
+    for row in scats_df.itertuples(index=False):
+
         print(f"{index=}")
         data = {}
-        for column in list(scats_df.columns):
-            data[column] = row[column]
+
+        for idx, column in enumerate(columns_list):
+            data[column] = row[idx]
             if isinstance(data[column], float) and str(data[column]) == "nan":
                 data[column] = ""
 
         # date
         try:
-            year = int(data["scat_id"][1 : 2 + 1]) + 2000
-            month = int(data["scat_id"][3 : 4 + 1])
-            day = int(data["scat_id"][5 : 6 + 1])
+            year = int(row.scat_id[1 : 2 + 1]) + 2000
+            month = int(row.scat_id[3 : 4 + 1])
+            day = int(row.scat_id[5 : 6 + 1])
             date = f"{year}-{month:02}-{day:02}"
 
             try:
                 datetime.datetime.strptime(date, "%Y-%m-%d")
             except Exception:
                 out += fn.alert_danger(
-                    f'Row {index + 2}: the date ({date}) of the scat ID {data["scat_id"]} is not valid. Use the YYMMDD format'
+                    f"Row {index + 2}: the date ({date}) of the scat ID {row.scat_id} is not valid. Use the YYMMDD format"
                 )
         except Exception:
-            out += fn.alert_danger(f"Row {index + 2}: The scat ID is not valid: {data['scat_id']}")
+            out += fn.alert_danger(f"Row {index + 2}: The scat ID is not valid: {row.scat_id}")
 
         # check date
         try:
-            date_from_file = str(data["date"]).split(" ")[0].strip()
+            date_from_file = str(row.date).split(" ")[0].strip()
         except Exception:
             date_from_file = ""
 
         if date != date_from_file:
             out += fn.alert_danger(
-                f"Row {index + 2}: check the scat ID and the date: {data['scat_id']}  {date_from_file}"
+                f"Row {index + 2}: the scat ID {row.scat_id} and the date {date_from_file} are not compatible"
             )
 
         data["date"] = date_from_file
 
         # path_id
-        path_id = fn.get_path_id(data["transect_id"], date)
+        path_id = fn.get_path_id(row.transect_id, date)
         data["path_id"] = path_id
 
         # check province code
-        province = fn.check_province_code(data["province"])
-        if province is None:
-            # check province name
-            province = fn.province_name2code(data["province"])
+        if row.province.upper() in province_code_list:
+            province = row.province.upper()
+        else:
+            province = prov_name2prov_code.get(row.province.upper(), None)
             if province is None:
-                out += fn.alert_danger(f"Row {index + 2}: the province '{data['province']}' was not found")
+                out += fn.alert_danger(f"Row {index + 2}: the province '{row.province}' was not found")
         data["province"] = province
 
         # add region from province code
-        scat_region = fn.province_code2region(data["province"])
-        data["region"] = scat_region
+        data["region"] = prov_code2region.get(data["province"], "")
 
         # UTM coord conversion
         # check zone
@@ -206,6 +214,9 @@ def extract_data_from_xlsx(filename: str) -> bool:
         data["institution"] = str(data["institution"]).strip()
 
         scats_data[index] = dict(data)
+        print(scats_data[index])
+
+        index += 1
 
     if out:
         return True, out, {}, {}, {}

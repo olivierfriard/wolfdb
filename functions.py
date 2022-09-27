@@ -225,6 +225,19 @@ def sampling_season(date: str) -> str:
         return f"Error {date}"
 
 
+def province_code_list() -> list:
+    """
+    return list of upper case province code
+    (using geo_info table)
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT UPPER(province_code) AS province_code FROM geo_info")
+
+    return [row["province_code"] for row in cursor.fetchall()]
+
+
 def check_province_code(province_code):
     """
     check if province code exists
@@ -244,6 +257,18 @@ def check_province_code(province_code):
         return result["province_code"]
 
 
+def province_name2code_dict() -> dict:
+    """
+    returns dict of upper case province code for upper case province name
+    (using geo_info table)
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info")
+    return dict([(row["province_name"], row["province_code"]) for row in cursor.fetchall()])
+
+
 def province_name2code(province_name):
     """
     returns province code from province name
@@ -261,12 +286,13 @@ def province_name2code(province_name):
     else:
         return result["province_code"]
 
-    """
-    for code in province_codes:
-        if province_name.upper() == province_codes[code]["nome"].upper():
-            return code
-    return ""
-    """
+
+def province_code2region_dict() -> dict:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT UPPER(province_code) as province_code, region FROM geo_info")
+    return dict([(row["province_code"], row["region"]) for row in cursor.fetchall()])
 
 
 def province_code2region(province_code):
@@ -285,15 +311,6 @@ def province_code2region(province_code):
         return None
     else:
         return result["region"]
-
-    region_out = ""
-    if province_code:
-        for region in regions:
-            if province_code.upper() in region["province"]:
-                region_out = region["nome"]
-                break
-
-    return region_out
 
 
 def province_name2region(province_name):
