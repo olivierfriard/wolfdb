@@ -71,20 +71,27 @@ def path_completeness():
     """
 
     # remove files older than 24h
-    for path in pl.Path("static").glob("paths_completeness*.zip"):
+    for path in pl.Path(f"{pl.Path(app.static_url_path).name}/results").glob("paths_completeness*.zip"):
         if time.time() - os.path.getctime(path) > 86400:
             os.remove(path)
 
-    dir_name = f"static/paths_completeness_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
+    # dir_name = f"static/paths_completeness_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
 
-    zip_path = paths_completeness.paths_completeness_shapefile(
-        dir_path=dir_name,
+    dir_path = (
+        f"{pl.Path(app.static_url_path).name}/results/"
+        f"paths_completeness_"
+        f'from_{session["start_date"]}_to_{session["end_date"]}_'
+        f"{dt.datetime.now():%Y-%m-%d_%H%M%S}"
+    )  # w/o initial /
+
+    zip_file_name = paths_completeness.paths_completeness_shapefile(
+        dir_path=dir_path,
         log_file="/tmp/paths_completeness.log",
         start_date=session["start_date"],
         end_date=session["end_date"],
     )
 
-    return redirect(f"{app.static_url_path}/{pl.Path(zip_path).name}")
+    return redirect(f"{app.static_url_path}/results/{zip_file_name}")
 
 
 @app.route("/transects_n_samples/<mode>")
@@ -182,75 +189,6 @@ def transects_samples(mode: str):
     response.headers["Content-disposition"] = f"attachment; filename={file_name}.{extension}"
 
     return response
-
-
-'''
-@app.route("/transects_samples_presence")
-@fn.check_login
-def transects_samples_presence():
-    """
-    return presence of samples on transects
-    """
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    # check if path based on transect exist
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
-    transects = cursor.fetchall()
-
-    out = {}
-    template = {}
-    header = "Transect ID\t"
-    # check max number of sampling
-    cursor.execute(
-        "SELECT max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
-    )
-    result = cursor.fetchone()
-    template = ["NA"] * result["n_paths"]
-    for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}\t"
-
-    for transect in transects:
-
-        row_out = copy.deepcopy(template)
-
-        cursor.execute(
-            (
-                "SELECT path_id FROM paths "
-                "WHERE transect_id = %s "
-                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
-                "ORDER BY date"
-            ),
-            [transect["transect_id"], year_init, year_end],
-        )
-        paths = cursor.fetchall()
-
-        idx = 0
-        for path in paths:
-            cursor.execute(
-                ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
-                [path["path_id"]],
-            )
-            scats = cursor.fetchone()
-            row_out[idx] = str(1 if scats["n_scats"] > 0 else 0)
-            idx += 1
-
-        out[transect["transect_id"]] = copy.deepcopy(row_out)
-
-    out_str = header[:-1] + "\n"
-    for transect in out:
-        out_str += transect + "\t"
-        out_str += "\t".join(out[transect])
-        out_str += "\t"
-        out_str = out_str[:-1] + "\n"
-
-    response = make_response(out_str, 200)
-    response.headers["Content-type"] = "'text/tab-separated-values"
-    response.headers["Content-disposition"] = "attachment; filename=transects_samples_presence.tsv"
-
-    return response
-'''
 
 
 @app.route("/transects_dates")
@@ -488,8 +426,6 @@ def cell_occupancy():
         # ouput_path
         output_path = f"{pl.Path(app.static_url_path).name}/results/"
         output_path += f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
-
-        print(output_path)
 
         _ = subprocess.Popen(
             ["python3", "cell_occupancy.py", shp_file_path, session["start_date"], session["end_date"], output_path]

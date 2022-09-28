@@ -125,13 +125,13 @@ def paths_completeness_shapefile(
     log.close()
 
     # make a ZIP archive
-    zip_file_name: str = shutil.make_archive(dir_path, "zip", dir_path)
+    zip_file_path: str = shutil.make_archive(dir_path, "zip", dir_path)
 
     # remove directory
     if pl.Path(dir_path).is_dir():
         shutil.rmtree(dir_path)
 
-    return zip_file_name
+    return pl.Path(zip_file_path).name
 
 
 # print(paths_completeness_shapefile("/tmp/8", "/tmp/log8.txt"))
