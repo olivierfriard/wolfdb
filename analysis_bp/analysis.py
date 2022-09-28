@@ -70,19 +70,22 @@ def path_completeness():
     require paths_completeness module
     """
 
-    # remove files older than 24h
-    for path in pl.Path(f"{pl.Path(app.static_url_path).name}/results").glob("paths_completeness*.zip"):
-        if time.time() - os.path.getctime(path) > 86400:
+    dir_prefix = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
+    # create dir if not exists
+    dir_prefix.mkdir(exist_ok=True)
+
+    # remove files older than 48 hours
+    for path in dir_prefix.glob("paths_completeness*.zip"):
+        if time.time() - os.path.getctime(path) > 86400 * 2:
             os.remove(path)
 
-    # dir_name = f"static/paths_completeness_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
-
-    dir_path = (
-        f"{pl.Path(app.static_url_path).name}/results/"
-        f"paths_completeness_"
-        f'from_{session["start_date"]}_to_{session["end_date"]}_'
-        f"{dt.datetime.now():%Y-%m-%d_%H%M%S}"
-    )  # w/o initial /
+    dir_path = dir_prefix / pl.Path(
+        (
+            f"paths_completeness_"
+            f'from_{session["start_date"]}_to_{session["end_date"]}_'
+            f"{dt.datetime.now():%Y-%m-%d_%H%M%S}"
+        )
+    )
 
     zip_file_name = paths_completeness.paths_completeness_shapefile(
         dir_path=dir_path,
@@ -91,7 +94,7 @@ def path_completeness():
         end_date=session["end_date"],
     )
 
-    return redirect(f"{app.static_url_path}/results/{zip_file_name}")
+    return redirect(str(pl.Path("/") / dir_path.parent / pl.Path(zip_file_name)))
 
 
 @app.route("/transects_n_samples/<mode>")
@@ -424,14 +427,33 @@ def cell_occupancy():
                 return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # ouput_path
-        output_path = f"{pl.Path(app.static_url_path).name}/results/"
-        output_path += f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
+        output_path_prefix = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
+        # create dir if not exists
+        output_path_prefix.mkdir(exist_ok=True)
 
-        _ = subprocess.Popen(
-            ["python3", "cell_occupancy.py", shp_file_path, session["start_date"], session["end_date"], output_path]
+        # remove files older than 48 hours
+        for path in output_path_prefix.glob("cell_occupancy*.zip"):
+            if time.time() - os.path.getctime(path) > 86400 * 2:
+                os.remove(path)
+
+        output_path = output_path_prefix / pl.Path(
+            f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
         )
 
-        return redirect(f"/cell_occupancy_check_results/{output_path.replace('/', '@')}")
+        _ = subprocess.Popen(
+            [
+                "python3",
+                "cell_occupancy.py",
+                shp_file_path,
+                session["start_date"],
+                session["end_date"],
+                str(output_path),
+            ]
+        )
+
+        print(f"{output_path=}")
+
+        return redirect(f"/cell_occupancy_check_results/{str(output_path).replace('/', '@@@')}")
 
 
 @app.route("/cell_occupancy_check_results/<output_path>")
@@ -443,7 +465,9 @@ def cell_occupancy_check_results(output_path):
     """
 
     # @ is used to encode the slash in url parameter
-    output_path = output_path.replace("@", "/")
+    output_path = output_path.replace("@@@", "/")
+
+    print(f"{output_path=}")
 
     if (pl.Path(output_path)).is_file():
         return render_template(
@@ -453,6 +477,8 @@ def cell_occupancy_check_results(output_path):
                 f'<p>The results are ready to be downloaded:<br><a href="/{output_path}">{pl.Path(output_path).name}</a></p>'
             ),
             autoreload="",
+            start_date=session["start_date"],
+            end_date=session["end_date"],
         )
     else:
         return render_template(

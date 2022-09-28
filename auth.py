@@ -6,7 +6,7 @@ https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-yo
 
 
 from flask import Blueprint, render_template, request, redirect, flash, session, Markup, current_app
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 import psycopg2
 import psycopg2.extras
 
