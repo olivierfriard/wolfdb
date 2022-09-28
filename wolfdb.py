@@ -27,7 +27,7 @@ from dead_wolves_bp import dead_wolves
 from admin_bp import admin
 from analysis_bp import analysis
 
-__version__ = "2022-09-05"
+__version__ = "2022-09-28"
 
 app = Flask(__name__)
 

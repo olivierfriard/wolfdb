@@ -23,19 +23,19 @@ import functions as fn
 params = config()
 
 
-def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path: str):
+def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_path: str):
     """
-    calculate the cell occupancy from a shapefile as input.
+    calculate the cell occupancy from a shapefile as input from start date to end date.
     The files produced are:
     sample number
     sample presence
     dates
     cell distances
-
-
     """
 
     sep = ";"
+    extension = "csv"
+    year_init = start_date[:4]
 
     shapes = fiona.open(shp_path)
 
@@ -64,7 +64,6 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
             "ST_AsGeoJSON(multilines) AS transect_geojson, "
             "ROUND(ST_Length(multilines)) AS transect_length "
             "FROM transects "
-            # f"WHERE ST_INTERSECTS(ST_GeomFromText('{mp}', 32632), multilines); "
             f"WHERE ST_INTERSECTS(ST_Buffer(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632),0), multilines) "
         )
 
@@ -81,9 +80,9 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
                 (
                     "SELECT path_id, date::date, completeness FROM paths "
                     "WHERE transect_id = %s "
-                    "AND EXTRACT(year FROM date) between %s AND %s"
+                    "      AND date BETWEEN %s AND %s "
                 ),
-                [transect["transect_id"], year_init, year_end],
+                [transect["transect_id"], start_date, end_date],
             )
             paths = cursor.fetchall()
 
@@ -94,9 +93,9 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
 
                 cursor.execute(
                     (
-                        "SELECT count(scat_id) AS count FROM scats "
-                        f"WHERE path_id = %s AND ST_CONTAINS(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632), geometry_utm)"
-                        # f"WHERE path_id = %s AND ST_CONTAINS(ST_GeomFromText('{mp}', 32632), geometry_utm)"
+                        "SELECT COUNT(scat_id) AS count FROM scats "
+                        "WHERE path_id = %s "
+                        f"       AND ST_CONTAINS(ST_Transform(ST_GeomFromText('{mp}', {crs}), 32632), geometry_utm)"
                     ),
                     [path["path_id"]],
                 )
@@ -127,7 +126,7 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
     header = f"Cell index{sep}"
 
     for property in shapes.schema["properties"]:
-        header += f"{property}\t"
+        header += f"{property}{sep}"
 
     max_paths_number = max([len(data[id]) for id in data])
 
@@ -179,21 +178,23 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
         shutil.rmtree(pl.Path(shp_path).parent)
 
     # zip results
-    with zipfile.ZipFile("static/" + output_path, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("cell_occupancy_samples_number.csv", out_number)
-        archive.writestr("cell_occupancy_samples_presence.csv", out_presence)
-        archive.writestr("cell_occupancy_dates.csv", out_dates)
-        archive.writestr("cell_distances.csv", out_distances)
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(f"cell_occupancy_samples_number.{extension}", out_number)
+        archive.writestr(f"cell_occupancy_samples_presence.{extension}", out_presence)
+        archive.writestr(f"cell_occupancy_dates.{extension}", out_dates)
+        archive.writestr(f"cell_distances.{extension}", out_distances)
 
     return (0, output_path)
 
 
 if __name__ == "__main__":
     result, msg = get_cell_occupancy(
-        shp_path=sys.argv[1], year_init=sys.argv[2], year_end=sys.argv[3], output_path=sys.argv[4]
+        shp_path=sys.argv[1], start_date=sys.argv[2], end_date=sys.argv[3], output_path=sys.argv[4]
     )
     if result:
         with open(
-            pl.Path(params["temp_folder"]) / pl.Path(f"cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log"), "w"
+            pl.Path(params["temp_folder"])
+            / pl.Path(f"cell_occupancy__from_{sys.argv[2]}_to_{sys.argv[3]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log"),
+            "w",
         ) as f_out:
             f_out.write(msg + "\n")

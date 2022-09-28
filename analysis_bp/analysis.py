@@ -407,12 +407,15 @@ def transects_completeness():
     return response
 
 
-@app.route("/cell_occupancy/<year_init>/<year_end>", methods=("GET", "POST"))
+@app.route("/cell_occupancy", methods=("GET", "POST"))
 @fn.check_login
-def cell_occupancy(year_init: str, year_end: str):
+def cell_occupancy():
     """
     grid occupancy by cell (from shapefile) by path
     """
+
+    year_init = session["start_date"][:4]
+    year_end = session["end_date"][:4]
 
     if request.method == "GET":
 
@@ -422,7 +425,10 @@ def cell_occupancy(year_init: str, year_end: str):
                 os.remove(path)
 
         return render_template(
-            "upload_shapefile.html", header_title="Cell occupancy", year_init=year_init, year_end=year_end
+            "upload_shapefile.html",
+            header_title="Cell occupancy",
+            start_date=session["start_date"],
+            end_date=session["end_date"],
         )
 
     if request.method == "POST":
@@ -480,11 +486,16 @@ def cell_occupancy(year_init: str, year_end: str):
                 return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # ouput_path
-        output_path = f"cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"
+        output_path = f"{pl.Path(app.static_url_path).name}/results/"
+        output_path += f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
 
-        _ = subprocess.Popen(["python3", "cell_occupancy.py", shp_file_path, year_init, year_end, output_path])
+        print(output_path)
 
-        return redirect(f"/cell_occupancy_check_results/{output_path}")
+        _ = subprocess.Popen(
+            ["python3", "cell_occupancy.py", shp_file_path, session["start_date"], session["end_date"], output_path]
+        )
+
+        return redirect(f"/cell_occupancy_check_results/{output_path.replace('/', '@')}")
 
 
 @app.route("/cell_occupancy_check_results/<output_path>")
@@ -495,12 +506,15 @@ def cell_occupancy_check_results(output_path):
     the page autoreload every 20 seconds until results file is found
     """
 
-    if (pl.Path("static") / pl.Path(output_path)).is_file():
+    # @ is used to encode the slash in url parameter
+    output_path = output_path.replace("@", "/")
+
+    if (pl.Path(output_path)).is_file():
         return render_template(
             "cell_occupancy_result.html",
             header_title="Cell occupancy results",
             output_path=Markup(
-                f'<p>The results are ready to be downloaded:<br><a href="{app.static_url_path}/{output_path}">{output_path}</a></p>'
+                f'<p>The results are ready to be downloaded:<br><a href="/{output_path}">{pl.Path(output_path).name}</a></p>'
             ),
             autoreload="",
         )
@@ -512,4 +526,6 @@ def cell_occupancy_check_results(output_path):
                 "<p><b>The results are not ready</b>.<br>Please wait, this page will reload automatically every 20 seconds...</p>"
             ),
             autoreload=Markup('<meta http-equiv="refresh" content="20">'),
+            start_date=session["start_date"],
+            end_date=session["end_date"],
         )
