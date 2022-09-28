@@ -3,7 +3,6 @@
 {% block content %}
 
 
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
   <ul class=flashes>
@@ -15,46 +14,6 @@
 {% endwith %}
 {% block body %}{% endblock %}
 
-
 <h2>Analysis</h2>
-
-<!--
-<a href="/static/path_completeness.zip" class="btn btn-primary">Path completeness shapefile</a> Updated at {{ paths_completeness_creation_time }}<br>
--->
-
-
-<a href="/path_completeness" class="btn btn-primary">Shapefile with path completeness</a>
-
-
-
-
-
-
-<br><br>
-<div class="dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-    Transects occupancy
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-    <li><a class="dropdown-item" href="/transects_n_samples">Transects samples number</a></li>
-    <li><a class="dropdown-item" href="/transects_samples_presence">Transects samples presence</a></li>
-    <li><a class="dropdown-item" href="/transects_dates">Transects paths dates</a></li>
-    <li><a class="dropdown-item" href="/transects_completeness">Transects paths completeness</a></li>
-    </ul>
-</div>
-
-
-<br>
-
-
-<a href="/cell_occupancy/2020/2021" class="btn btn-primary">Cell occupancy (2020-2021)</a>
-
-
-
-
-
-
-
-
 
 {% endblock %}

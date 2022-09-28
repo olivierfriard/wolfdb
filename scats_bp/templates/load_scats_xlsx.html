@@ -2,7 +2,6 @@
 
 {% block content %}
 
-<script src="https://unpkg.com/htmx.org@1.6.0"></script>
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -36,13 +35,11 @@
 <h3>Template and example</h3>
 
 <br>
-<a href="/static/scats_template.xltx">Download Excel 2007-365 Spreadsheet template (XLTX)</a><br>
+<a href="{{ url_for('static', filename='scats_template.xltx') }}">Download Excel 2007-365 Spreadsheet template (XLTX)</a><br>
 
 
 <br>
-<a href="/static/scats_upload_example.xlsx">XLSX example for uploading scats</a><br>
-
-
+<a href="{{ url_for('static', filename='scats_upload_example.xlsx') }}">XLSX example for uploading scats</a><br>
 
 
 {% endblock %}
