@@ -451,8 +451,6 @@ def cell_occupancy():
             ]
         )
 
-        print(f"{output_path=}")
-
         return redirect(f"/cell_occupancy_check_results/{str(output_path).replace('/', '@@@')}")
 
 
@@ -466,8 +464,6 @@ def cell_occupancy_check_results(output_path):
 
     # @ is used to encode the slash in url parameter
     output_path = output_path.replace("@@@", "/")
-
-    print(f"{output_path=}")
 
     if (pl.Path(output_path)).is_file():
         return render_template(

@@ -14,6 +14,7 @@ import utm
 import logging
 import secrets
 import datetime
+import pathlib as pl
 
 # blueprints
 from auth import auth as auth_blueprint
@@ -145,6 +146,22 @@ def view_sample(sample_id):
 
     flash(Markup("Sample not found"))
     return redirect("/")
+
+
+@app.route("/my_results")
+@fn.check_login
+def my_results():
+    """
+    display all result files
+    """
+
+    results_path = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
+    results_path.mkdir(parents=True, exist_ok=True)
+    out = "<h1>Analysis results</a>"
+    out += '<table class="table table-striped">'
+    for f in results_path.glob("*"):
+        out += f'<tr><td><a href="{f}">{f.name}</a></td></tr>'
+    return out
 
 
 if __name__ == "__main__":
