@@ -67,6 +67,7 @@ def analysis():
 def path_completeness():
     """
     create shapefile with paths completeness
+    require paths_completeness module
     """
 
     # remove files older than 24h
@@ -86,9 +87,20 @@ def path_completeness():
     return redirect(f"{app.static_url_path}/{pl.Path(zip_path).name}")
 
 
-@app.route("/transects_n_samples/<year_init>/<year_end>")
+@app.route("/transects_n_samples/<mode>")
 @fn.check_login
-def transects_n_samples(year_init, year_end):
+def transects_samples(mode: str):
+    """
+    return the number of samples on transects
+
+    Args:
+        mode (str): "number": number of samples
+                    "presence": presence of samples (1/0)
+    """
+
+    sep = ";"
+
+    year_init = session["start_date"][:4]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -97,30 +109,37 @@ def transects_n_samples(year_init, year_end):
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
     transects = cursor.fetchall()
 
-    out = {}
-    template = {}
-    header = "Transect ID\t"
+    out: dict = {}
+    template: dict = {}
+    header = f"Transect ID{sep}"
     # check max number of sampling by year
     cursor.execute(
-        "SELECT MAX(c) AS n_paths FROM (SELECT COUNT(*) AS c FROM paths WHERE transect_id != '' GROUP BY transect_id) x"
+        (
+            "SELECT MAX(c) AS n_paths "
+            "FROM "
+            "(SELECT COUNT(*) AS c FROM paths "
+            "      WHERE transect_id != '' "
+            "            AND date BETWEEN %s AND %s "
+            "      GROUP BY transect_id "
+            ") x"
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
     result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
     for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}\t"
+        header += f"{year_init}-{i + 1}{sep}"
 
     for transect in transects:
 
         row_out = copy.deepcopy(template)
 
         cursor.execute(
-            (
-                "SELECT path_id FROM paths "
-                "WHERE transect_id = %s "
-                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
-                "ORDER BY date"
-            ),
-            [transect["transect_id"], year_init, year_end],
+            ("SELECT path_id FROM paths WHERE transect_id = %s AND date BETWEEN %s AND %s ORDER BY date"),
+            (transect["transect_id"], session["start_date"], session["end_date"]),
         )
         paths = cursor.fetchall()
 
@@ -131,28 +150,44 @@ def transects_n_samples(year_init, year_end):
                 [path["path_id"]],
             )
             scats = cursor.fetchone()
-            row_out[idx] = str(scats["n_scats"])
+            if mode == "number":
+                row_out[idx] = str(scats["n_scats"])
+            if mode == "presence":
+                row_out[idx] = str(1 if scats["n_scats"] > 0 else 0)
             idx += 1
 
         out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:
-        out_str += transect + "\t"
-        out_str += "\t".join(out[transect])
-        out_str += "\t"
+        out_str += transect + sep
+        out_str += sep.join(out[transect])
+        out_str += sep
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
-    response.headers["Content-type"] = "'text/tab-separated-values"
-    response.headers["Content-disposition"] = "attachment; filename=transects_n-samples.tsv"
+
+    if mode == "number":
+        file_name = "transects_n-samples"
+    if mode == "presence":
+        file_name = "transects_samples_presence-samples"
+
+    if sep == "\t":
+        response.headers["Content-type"] = "text/tab-separated-values"
+        extension = "tsv"
+    if sep in (",", ";"):
+        response.headers["Content-type"] = "text/csv"
+        extension = "csv"
+
+    response.headers["Content-disposition"] = f"attachment; filename={file_name}.{extension}"
 
     return response
 
 
-@app.route("/transects_samples_presence/<year_init>/<year_end>")
+'''
+@app.route("/transects_samples_presence")
 @fn.check_login
-def transects_samples_presence(year_init, year_end):
+def transects_samples_presence():
     """
     return presence of samples on transects
     """
@@ -169,7 +204,7 @@ def transects_samples_presence(year_init, year_end):
     header = "Transect ID\t"
     # check max number of sampling
     cursor.execute(
-        "select max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
+        "SELECT max(c) as n_paths from (select count(*) as c from paths where transect_id != '' group by transect_id) x"
     )
     result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
@@ -215,11 +250,16 @@ def transects_samples_presence(year_init, year_end):
     response.headers["Content-disposition"] = "attachment; filename=transects_samples_presence.tsv"
 
     return response
+'''
 
 
-@app.route("/transects_dates/<year_init>/<year_end>")
+@app.route("/transects_dates")
 @fn.check_login
-def transects_dates(year_init, year_end):
+def transects_dates():
+
+    sep = ";"
+
+    year_init = session["start_date"][:4]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -228,22 +268,29 @@ def transects_dates(year_init, year_end):
     cursor.execute("SELECT * FROM transects ORDER BY transect_id")
     transects = cursor.fetchall()
 
-    sampling_years = range(int(year_init), int(year_end) + 1)
-
-    out = {}
-    template = {}
-    header = "Transect ID\t"
+    out: dict = {}
+    template: dict = {}
+    header = f"Transect ID{sep}"
     # check max number of sampling
     cursor.execute(
         (
-            "SELECT max(c) AS n_paths FROM "
-            "      (SELECT count(*) AS c FROM paths WHERE transect_id != '' GROUP BY transect_id) x"
-        )
+            "SELECT MAX(c) AS n_paths "
+            "FROM "
+            "(SELECT COUNT(*) AS c FROM paths "
+            "      WHERE transect_id != '' "
+            "            AND date BETWEEN %s AND %s "
+            "      GROUP BY transect_id "
+            ") x"
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
     result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
     for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}\t"
+        header += f"{year_init}-{i + 1}{sep}"
 
     for transect in transects:
 
@@ -253,10 +300,10 @@ def transects_dates(year_init, year_end):
             (
                 "SELECT path_id, date::date as date FROM paths "
                 "WHERE transect_id = %s "
-                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
+                "AND date BETWEEN %s AND %s "
                 "ORDER BY date"
             ),
-            [transect["transect_id"], year_init, year_end],
+            (transect["transect_id"], session["start_date"], session["end_date"]),
         )
         paths = cursor.fetchall()
         idx = 0
@@ -268,21 +315,29 @@ def transects_dates(year_init, year_end):
 
     out_str = header[:-1] + "\n"
     for transect in out:
-        out_str += transect + "\t"
-        out_str += "\t".join(out[transect])
-        out_str += "\t"
+        out_str += transect + sep
+        out_str += sep.join(out[transect])
+        out_str += sep
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
-    response.headers["Content-type"] = "'text/tab-separated-values"
-    response.headers["Content-disposition"] = "attachment; filename=transects_dates.tsv"
+    if sep == "\t":
+        response.headers["Content-type"] = "text/tab-separated-values"
+        response.headers["Content-disposition"] = "attachment; filename=transects_dates.tsv"
+
+    if sep in (",", ";"):
+        response.headers["Content-type"] = "text/csv"
+        response.headers["Content-disposition"] = "attachment; filename=transects_dates.csv"
 
     return response
 
 
-@app.route("/transects_completeness/<year_init>/<year_end>")
+@app.route("/transects_completeness")
 @fn.check_login
-def transects_completeness(year_init, year_end):
+def transects_completeness():
+
+    sep = ";"
+    year_init = session["start_date"][:4]
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -293,28 +348,36 @@ def transects_completeness(year_init, year_end):
 
     out = {}
     template = {}
-    header = "Transect ID\t"
+    header = f"Transect ID{sep}"
     # check max number of sampling
     cursor.execute(
-        "SELECT max(c) AS n_paths FROM (SELECT count(*) AS c from paths where transect_id != '' group by transect_id) x"
+        (
+            "SELECT MAX(c) AS n_paths "
+            "FROM "
+            "(SELECT COUNT(*) AS c FROM paths "
+            "      WHERE transect_id != '' "
+            "            AND date BETWEEN %s AND %s "
+            "      GROUP BY transect_id "
+            ") x"
+        ),
+        (
+            session["start_date"],
+            session["end_date"],
+        ),
     )
+
     result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
     for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}\t"
+        header += f"{year_init}-{i + 1}{sep}"
 
     for transect in transects:
 
         row_out = copy.deepcopy(template)
 
         cursor.execute(
-            (
-                "SELECT completeness FROM paths "
-                "WHERE transect_id = %s "
-                "AND EXTRACT(YEAR FROM date) BETWEEN %s AND %s "
-                "ORDER BY date"
-            ),
-            [transect["transect_id"], year_init, year_end],
+            ("SELECT completeness FROM paths " "WHERE transect_id = %s " "AND date BETWEEN %s AND %s " "ORDER BY date"),
+            [transect["transect_id"], session["start_date"], session["end_date"]],
         )
         paths = cursor.fetchall()
         idx = 0
@@ -326,14 +389,20 @@ def transects_completeness(year_init, year_end):
 
     out_str = header[:-1] + "\n"
     for transect in out:
-        out_str += transect + "\t"
-        out_str += "\t".join(out[transect])
-        out_str += "\t"
+        out_str += transect + sep
+        out_str += sep.join(out[transect])
+        out_str += sep
         out_str = out_str[:-1] + "\n"
 
     response = make_response(out_str, 200)
-    response.headers["Content-type"] = "'text/tab-separated-values"
-    response.headers["Content-disposition"] = "attachment; filename=transects_completeness.tsv"
+
+    if sep == "\t":
+        response.headers["Content-type"] = "text/tab-separated-values"
+        extension = "tsv"
+    if sep in (",", ";"):
+        response.headers["Content-type"] = "text/csv"
+        extension = "csv"
+    response.headers["Content-disposition"] = f"attachment; filename=transects_completeness.{extension}"
 
     return response
 

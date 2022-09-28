@@ -19,7 +19,7 @@ import functions as fn
 
 def paths_completeness_shapefile(
     dir_path: str, log_file: str, start_date: str = "1900-01-01", end_date: str = "2100-01-01"
-):
+) -> str:
 
     log = open(log_file, "w")
 
@@ -125,7 +125,7 @@ def paths_completeness_shapefile(
     log.close()
 
     # make a ZIP archive
-    zip_file_name = shutil.make_archive(dir_path, "zip", dir_path)
+    zip_file_name: str = shutil.make_archive(dir_path, "zip", dir_path)
 
     # remove directory
     if pl.Path(dir_path).is_dir():
