@@ -17,14 +17,22 @@ sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import functions as fn
 
 
-def paths_completeness_shapefile(dir_path: str, log_file: str):
+def paths_completeness_shapefile(
+    dir_path: str, log_file: str, start_date: str = "1900-01-01", end_date: str = "2100-01-01"
+):
 
     log = open(log_file, "w")
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT * FROM paths")
+    cursor.execute(
+        "SELECT * FROM paths WHERE date BETWEEN %s AND %s ",
+        (
+            start_date,
+            end_date,
+        ),
+    )
     paths = cursor.fetchall()
 
     schema = {

@@ -7,7 +7,7 @@ flask blueprint for data analysis
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, make_response, current_app
+from flask import render_template, redirect, request, Markup, flash, make_response, session
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -76,7 +76,12 @@ def path_completeness():
 
     dir_name = f"static/paths_completeness_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
 
-    zip_path = paths_completeness.paths_completeness_shapefile(dir_name, "/tmp/paths_completeness.log")
+    zip_path = paths_completeness.paths_completeness_shapefile(
+        dir_path=dir_name,
+        log_file="/tmp/paths_completeness.log",
+        start_date=session["start_date"],
+        end_date=session["end_date"],
+    )
 
     return redirect(f"{app.static_url_path}/{pl.Path(zip_path).name}")
 
@@ -411,21 +416,6 @@ def cell_occupancy(year_init: str, year_end: str):
         _ = subprocess.Popen(["python3", "cell_occupancy.py", shp_file_path, year_init, year_end, output_path])
 
         return redirect(f"/cell_occupancy_check_results/{output_path}")
-
-        """
-        result, zip_content = cell_occupancy_module.get_cell_occupancy(filename, year_init, year_end)
-        """
-
-        """
-        return redirect(f"/static/{pl.Path(zip_path).name}")
-        """
-
-        """
-        zip_content.seek(0)
-        return send_file(
-            zip_content, as_attachment=True, attachment_filename="cell_occupancy.zip", mimetype="application/zip"
-        )
-        """
 
 
 @app.route("/cell_occupancy_check_results/<output_path>")
