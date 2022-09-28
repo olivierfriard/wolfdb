@@ -73,7 +73,7 @@ for shape in shapes:
 # print(data)
 tot_scats_nb = 0
 
-sep = "\t"
+sep = ";"
 for id in data:
     tot_scats_nb += sum([data[id][date] for date in data[id]])
     if mode == "number":

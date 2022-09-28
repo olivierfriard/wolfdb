@@ -24,8 +24,18 @@ params = config()
 
 
 def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path: str):
+    """
+    calculate the cell occupancy from a shapefile as input.
+    The files produced are:
+    sample number
+    sample presence
+    dates
+    cell distances
 
-    sep = "\t"
+
+    """
+
+    sep = ";"
 
     shapes = fiona.open(shp_path)
 
@@ -169,25 +179,19 @@ def get_cell_occupancy(shp_path: str, year_init: str, year_end: str, output_path
         shutil.rmtree(pl.Path(shp_path).parent)
 
     # zip results
-
-    '''zip_output = f"static/cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"'''
-
-    """
-    import io
-    zip_output = io.BytesIO()
-    """
-
     with zipfile.ZipFile("static/" + output_path, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("cell_occupancy_samples_number.tsv", out_number)
-        archive.writestr("cell_occupancy_samples_presence.tsv", out_presence)
-        archive.writestr("cell_occupancy_dates.tsv", out_dates)
-        archive.writestr("cell_distances.tsv", out_distances)
+        archive.writestr("cell_occupancy_samples_number.csv", out_number)
+        archive.writestr("cell_occupancy_samples_presence.csv", out_presence)
+        archive.writestr("cell_occupancy_dates.csv", out_dates)
+        archive.writestr("cell_distances.csv", out_distances)
 
     return (0, output_path)
 
 
 if __name__ == "__main__":
-    result, msg = get_cell_occupancy(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    result, msg = get_cell_occupancy(
+        shp_path=sys.argv[1], year_init=sys.argv[2], year_end=sys.argv[3], output_path=sys.argv[4]
+    )
     if result:
         with open(
             pl.Path(params["temp_folder"]) / pl.Path(f"cell_occupancy_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log"), "w"
