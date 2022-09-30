@@ -13,10 +13,7 @@ var clusterize = new Clusterize({
 </script>
 
 
-
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
-
-
 
 {% if results %}
 <h2>List of {{ n_scats }} scats</h2>
@@ -24,6 +21,7 @@ var clusterize = new Clusterize({
 <!--<style>th {top: 0;  position: sticky;}</style>-->
 
 <div class="clusterize">
+    <div id="scrollArea" class="clusterize-scroll"></div>
 <table class="table">
 <thead>
 <tr>
@@ -52,7 +50,7 @@ var clusterize = new Clusterize({
 </thead>
 </table>
 
-<div id="scrollArea" class="clusterize-scroll">
+
 <table class="table table-striped">
 <tbody id="contentArea" class="clusterize-content">
 {% for result in results %}
