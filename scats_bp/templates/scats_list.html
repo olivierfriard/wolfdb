@@ -2,16 +2,8 @@
 
 {% block content %}
 
-<link href="{{ url_for('static', filename='css/clusterize.css') }}" rel="stylesheet">
-<script src="{{ url_for('static', filename='js/clusterize.min.js.css') }}"></script>
-<script>
-// JavaScript
-var clusterize = new Clusterize({
-    scrollId: 'scrollArea',
-    contentId: 'contentArea'
-});
-</script>
 
+<link href="{{ url_for('static', filename='css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
 
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
@@ -20,9 +12,7 @@ var clusterize = new Clusterize({
 
 <!--<style>th {top: 0;  position: sticky;}</style>-->
 
-<div class="clusterize">
-    <div id="scrollArea" class="clusterize-scroll"></div>
-<table class="table">
+<table id="scats_list" class="table table-striped" style="width:100%">
 <thead>
 <tr>
 <th style="background-color: white;">Scat ID</th>
@@ -48,11 +38,7 @@ var clusterize = new Clusterize({
 <th style="background-color: white;">Notes</th>
 </tr>
 </thead>
-</table>
-
-
-<table class="table table-striped">
-<tbody id="contentArea" class="clusterize-content">
+<tbody>
 {% for result in results %}
 <tr>
 <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td><td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td><td>{{ result['sampling_type'] }}</td><td>{% if result['sampling_type'] == "Systematic" %}{% if result['path_id'] != "" %}<a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>{% else %}{{ result['path_id'] }}{% endif %}{% endif %}</td><td>{% if result['snowtrack_id'] %}<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>{% endif %}</td>
@@ -64,7 +50,27 @@ var clusterize = new Clusterize({
 {% endfor %}
 </tbody>
 </table>
-</div></div>
+
+
+<script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/dataTables.bootstrap5.min.js') }}"></script>
+
+<script>
+    $(document).ready(function () {
+    $('#scats_list').DataTable({
+        ordering: false,
+        lengthMenu: [
+            [10, 20, 50, -1],
+            [10, 20, 50, 'All'],
+        ],
+    });
+});
+</script>
+
+
+
 {% else %}
 
 <h2>List of scats: no scats found</h2>
