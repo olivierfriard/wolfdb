@@ -826,7 +826,11 @@ def set_path_id(scat_id, path_id):
     )
     connection.commit()
 
-    return redirect(f"{app.static_url_path}/systematic_scats_transects_location.html")
+    # return redirect(f"{app.static_url_path}/systematic_scats_transects_location.html")
+
+    flash(fn.alert_danger(f"The path ID was updated. "))
+
+    return redirect("/")
 
 
 @app.route(
@@ -1105,10 +1109,29 @@ def systematic_scats_transect_location():
     !require the check_systematic_scats_transect_location.py script
     """
 
-    _ = subprocess.Popen(["python3", "check_systematic_scats_transect_location.py"])
+    _ = subprocess.Popen(
+        [
+            "python3",
+            "check_systematic_scats_transect_location.py",
+            session["start_date"],
+            session["end_date"],
+            str(
+                pl.Path(pl.Path(app.static_url_path).name)
+                / pl.Path("results")
+                / pl.Path(session["email"])
+                / pl.Path(
+                    f'systematic_scats_transects_location_from_{session["start_date"]}_to_{session["end_date"]}_.html'
+                )
+            ),
+        ]
+    )
 
     time.sleep(2)
 
-    flash(fn.alert_danger(f"The Check location for scats results will be available soon.<br>Please wait for 5 min"))
+    flash(
+        fn.alert_danger(
+            f'The results will be available soon on <a href="/my_results">your results page</a>.<br>Please wait for 5 min'
+        )
+    )
 
-    return redirect("/scats")
+    return redirect("/")

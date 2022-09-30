@@ -1,9 +1,12 @@
-
+import sys
 import psycopg2
 import psycopg2.extras
 import functions as fn
-
 import datetime
+
+start_date = sys.arg[1]
+end_date = sys.arg[2]
+output_file_path = sys.arg[3]
 
 out = '<html lang="en" class="h-100"><body>'
 
@@ -50,7 +53,18 @@ WHERE st_distance(ST_GeomFromText('POINT(XXX YYY)',32632), multilines) < 50;
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-cursor.execute("SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y FROM scats WHERE sampling_type = 'Systematic'")
+cursor.execute(
+    (
+        "SELECT scat_id, sampling_type, path_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y "
+        "FROM scats "
+        "WHERE sampling_type = 'Systematic' "
+        "AND date between %s AND %s "
+    ),
+    (
+        start_date,
+        end_date,
+    ),
+)
 scats = cursor.fetchall()
 for row in scats:
 
@@ -70,15 +84,15 @@ for row in scats:
     for tr in transects_list:
         if path_id.startswith(tr + "_"):
             match = "OK"
-            out += '<tr>'
+            out += "<tr>"
             break
     else:
         match = "NO"
         out += '<tr class="table-danger">'
 
-    #if match == "NO":
+    # if match == "NO":
     td = ""
-    for t,d in zip(transects_list, distances_list):
+    for t, d in zip(transects_list, distances_list):
         td += f"{t} ({d} m); "
     out += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{td}</td><td>{match}</td></tr>\n'
 
@@ -89,5 +103,3 @@ out += "</body></html>"
 
 with open("static/systematic_scats_transects_location_50.html", "w") as f_out:
     f_out.write(out)
-
-

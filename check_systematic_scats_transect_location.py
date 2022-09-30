@@ -17,6 +17,10 @@ import datetime
 import os
 import sys
 
+start_date = sys.argv[1]
+end_date = sys.argv[2]
+output_file_path = sys.argv[3]
+
 
 LOCK_FILE_NAME_PATH = "check_location.lock"
 
@@ -40,7 +44,7 @@ out += """
 <meta name="author" content="Olivier Friard">
 <title>Check systematic scats locations - WolfDB</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
 
 <style>main > .container {  padding: 60px 15px 0;}</style>
 
@@ -61,7 +65,12 @@ cursor.execute(
         "SELECT scat_id, sampling_type, path_id, snowtrack_id, st_x(geometry_utm)::integer AS x, st_y(geometry_utm)::integer AS y "
         "FROM scats "
         "WHERE sampling_type != 'Opportunistic' "
-    )
+        "AND date between %s AND %s "
+    ),
+    (
+        start_date,
+        end_date,
+    ),
 )
 scats = cursor.fetchall()
 
@@ -168,12 +177,12 @@ out += "<h1>Location of scats on transects and tracks</h1>\n"
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
 
 
-out += '<a href="/systematic_scats_transect_location" class="btn btn-primary">Update data</a><br><br>'
+# out += '<a href="/systematic_scats_transect_location" class="btn btn-primary">Update data</a><br><br>'
 
 
 out += f"{len(scats)} scats (sampling type &ne; Opportunistic).<br>\n"
 
-out += f"{c} scat positions that do not match the transect ID.<br>\n"
+out += f"{c} scat positions that do not match the transect ID.<br><br>\n"
 
 out += '<table class="table table-striped">\n'
 
@@ -186,7 +195,7 @@ out += "</table>\n"
 
 out += "</body></html>"
 
-with open("static/systematic_scats_transects_location.html", "w") as f_out:
+with open(f"{output_file_path}", "w") as f_out:
     f_out.write(out)
 
 if os.path.exists(LOCK_FILE_NAME_PATH):
