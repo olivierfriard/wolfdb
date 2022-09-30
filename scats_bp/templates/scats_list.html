@@ -39,31 +39,10 @@
 {% for result in results %}
 <tr>
 <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
-<td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td><td>{{ result['sampling_type'] }}</td>
-<td>{% if result['sampling_type'] == "Systematic" %}
-{% if result['path_id'] != "" %}
-<a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>
-{% else %}
-{{ result['path_id'] }}
-{% endif %}
-{% endif %}
-</td>
-<td>
-{% if result['snowtrack_id'] %}
-<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>
-{% endif %}
-</td>
+<td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td><td>{{ result['sampling_type'] }}</td><td>{% if result['sampling_type'] == "Systematic" %}{% if result['path_id'] != "" %}<a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>{% else %}{{ result['path_id'] }}{% endif %}{% endif %}</td><td>{% if result['snowtrack_id'] %}<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>{% endif %}</td>
 <td>{% if result['wa_code'] %}<a href="/view_genotype/{{result['wa_code'] }}">{{ result['wa_code'] }}</a>{% endif %}</td>
-<td>
-{% if result['genotype_id'] %}<a href="/view_genotype/{{result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
-{% if result['genotype_id2'] %}<a href="/view_genotype/{{result['genotype_id2'] }}">{{ result['genotype_id2'] }}</a>{% endif %}
-</td>
-<td>{{ result['location'] if result['location'] is not none else ""}}</td>
-<td>{{ result['municipality'] if result['municipality'] is not none else ""}}</td>
-<td>{{ result['province'] if result['province'] is not none else ""}}</td>
-<td>{{ result['region'] if result['region'] is not none else ""}}</td>
-<td>{{ result['deposition'] }}</td><td>{{ result['matrix'] }}</td><td>{{ result['collected_scat'] }}</td><td>{{ result['scalp_category'] }}</td><td>{% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}</td>
-<td>{{ result['coord_east'] }}, {{ result['coord_north'] }} {{ result['coord_zone'] }}</td>
+<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}{% if result['genotype_id2'] %}<a href="/view_genotype/{{result['genotype_id2'] }}">{{ result['genotype_id2'] }}</a>{% endif %}</td>
+<td>{{ result['location'] if result['location'] is not none else ""}}</td><td>{{ result['municipality'] if result['municipality'] is not none else ""}}</td><td>{{ result['province'] if result['province'] is not none else ""}}</td><td>{{ result['region'] if result['region'] is not none else ""}}</td><td>{{ result['deposition'] }}</td><td>{{ result['matrix'] }}</td><td>{{ result['collected_scat'] }}</td><td>{{ result['scalp_category'] }}</td><td>{% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}</td><td>{{ result['coord_east'] }}, {{ result['coord_north'] }} {{ result['coord_zone'] }}</td>
 <td>{{ result['observer'] }}</td><td>{{ result['institution'] }}</td><td><small>{{ result['notes'] if result['notes'] is not none else ""}}</small></td>
 </tr>
 {% endfor %}
