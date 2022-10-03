@@ -311,7 +311,7 @@ def plot_tracks():
 @fn.check_login
 def new_track():
     """
-    insert a new track
+    insert a new track manually
     """
 
     def not_valid(msg):
@@ -417,15 +417,15 @@ def new_track():
             """
 
             # check province code
-            province = fn.check_province_code(request.form["province"])
-            if province is None:
+            province_code = fn.check_province_code(request.form["province"])
+            if province_code is None:
                 # check province name
-                province = fn.province_name2code(request.form["province"])
-                if province is None:
+                province_code = fn.province_name2code(request.form["province"])
+                if province_code is None:
                     return not_valid("The province was not found")
 
             # add region from province code
-            track_region = fn.province_code2region(province)
+            track_region = fn.province_code2region(province_code)
 
             """
             # region
@@ -453,7 +453,7 @@ def new_track():
                     fn.sampling_season(date),
                     request.form["location"].strip(),
                     request.form["municipality"].strip(),
-                    province,
+                    province_code,
                     # request.form["province"].strip().upper(),
                     track_region,
                     request.form["observer"],

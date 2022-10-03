@@ -19,7 +19,7 @@ import datetime as dt
 from .transect_form import Transect
 import functions as fn
 from . import transects_export
-from italian_regions import regions, province_codes
+from italian_regions import province_codes
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 
@@ -300,13 +300,15 @@ def new_transect():
             if len(rows):
                 return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-            # convert province code in province name
-            if request.form["province"].upper() in province_codes:
-                transect_province_name = province_codes[request.form["province"].upper()]["nome"]
-                transect_region = province_codes[request.form["province"].upper()]["regione"]
-            else:
-                transect_province_name = request.form["province"].strip().upper()
-                transect_region = fn.province_name2region(request.form["province"])
+            # check province code
+            transect_province_code = fn.check_province_code(request.form["province"])
+            if transect_province_code is None:
+                # check province name
+                transect_province_code = fn.province_name2code(request.form["province"])
+                if transect_province_code is None:
+                    return not_valid("The province was not found")
+
+            transect_region = fn.province_code2region(transect_province_code)
 
             if request.form["multilines"]:
                 sql = (
@@ -322,7 +324,7 @@ def new_transect():
                             request.form["sector"].strip(),
                             request.form["location"].strip(),
                             request.form["municipality"].strip(),
-                            transect_province_name,
+                            transect_province_code,
                             transect_region,
                             request.form["multilines"].strip(),
                         ],
@@ -345,7 +347,7 @@ def new_transect():
                         request.form["sector"].strip(),
                         request.form["location"].strip(),
                         request.form["municipality"].strip(),
-                        transect_province_name,
+                        transect_province_code,
                         transect_region,
                     ],
                 )

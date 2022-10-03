@@ -16,6 +16,9 @@ import functions as fn
 import datetime
 import os
 import sys
+import time
+from flask import render_template, Markup
+from jinja2 import Environment, FileSystemLoader
 
 start_date = sys.argv[1]
 end_date = sys.argv[2]
@@ -24,8 +27,8 @@ output_file_path = sys.argv[3]
 
 LOCK_FILE_NAME_PATH = "check_location.lock"
 
-# verify if lock exist
-if os.path.exists(LOCK_FILE_NAME_PATH):
+# verify if lock exist and age of lock file
+if os.path.exists(LOCK_FILE_NAME_PATH) and (time.time() - os.path.getctime(LOCK_FILE_NAME_PATH) < 1800):
     print("Check systematic locations already running. Exiting")
     sys.exit()
 
@@ -33,29 +36,7 @@ if os.path.exists(LOCK_FILE_NAME_PATH):
 with open(LOCK_FILE_NAME_PATH, "w") as f_out:
     f_out.write(datetime.datetime.now().isoformat())
 
-out = '<html lang="en" class="h-100"><body>'
-
-out += """
-<head>
-<meta charset="utf-8">
-<link rel="shortcut icon" href="https://www.unito.it/sites/default/files/favicon.png" type="image/png" />
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="WolfDB">
-<meta name="author" content="Olivier Friard">
-<title>Check systematic scats locations - WolfDB</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
-
-<style>main > .container {  padding: 60px 15px 0;}</style>
-
-</head>
-"""
-
-try:
-    with open("templates/dev_style.html", "r") as f_in:
-        out += f"<style>{f_in.read()}</style>"
-except Exception:
-    pass
+output = ""
 
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -172,31 +153,36 @@ for row in scats:
         out2 += f"""<td>{track['snowtrack_id']}</td>""" f"<td>{track['distance']}</td>"
 
 
-out += "<h1>Location of scats on transects and tracks</h1>\n"
-
-out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
+output += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
 
 
-# out += '<a href="/systematic_scats_transect_location" class="btn btn-primary">Update data</a><br><br>'
+output += f"{len(scats)} scats (sampling type &ne; Opportunistic).<br>\n"
+
+output += f"{c} scat positions that do not match the transect ID.<br><br>\n"
+
+output += '<table class="table table-striped">\n'
+
+output += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Action</th><th>Current track ID</th><th>Closer Track ID</th><th>Distance to closer track ID</th></tr>"
+
+output += out2
 
 
-out += f"{len(scats)} scats (sampling type &ne; Opportunistic).<br>\n"
-
-out += f"{c} scat positions that do not match the transect ID.<br><br>\n"
-
-out += '<table class="table table-striped">\n'
-
-out += "<tr><th>Scat ID</th><th>Sampling type</th><th>Path ID</th><th>Current transect ID</th><th>Closer Transect ID</th><th>Distance (m)</th><th>Action</th><th>Current track ID</th><th>Closer Track ID</th><th>Distance to closer track ID</th></tr>"
-
-out += out2
+output += "</table>\n"
 
 
-out += "</table>\n"
-
-out += "</body></html>"
+env = Environment(
+    loader=FileSystemLoader("templates/"),
+)
+template = env.get_template("page.html")
 
 with open(f"{output_file_path}", "w") as f_out:
-    f_out.write(out)
+    f_out.write(
+        template.render(
+            header_title="Location of scats on transects and tracks",
+            title="Location of scats on transects and tracks",
+            content=Markup(output),
+        )
+    )
 
 if os.path.exists(LOCK_FILE_NAME_PATH):
     os.remove(LOCK_FILE_NAME_PATH)

@@ -95,7 +95,6 @@ def path_completeness():
     )
 
     return redirect("/my_results")
-    """return redirect(str(pl.Path("/") / dir_path.parent / pl.Path(zip_file_name)))"""
 
 
 @app.route("/transects_n_samples/<mode>")

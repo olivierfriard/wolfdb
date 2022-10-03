@@ -263,14 +263,3 @@ def prov_name2prov_code(prov_name):
         if province_codes[code]["nome"].upper() == prov_name.upper():
             return code
     return ""
-
-
-"""
-for code in province_codes:
-    region = province_codes[code]["regione"].replace("'", "''")
-    province_name = province_codes[code]["nome"].replace("'", "''")
-    print(
-        f"INSERT INTO geo_info (province_code, province_name, region, country) VALUES ('{code}', '{province_name}', '{region}', 'Italy');"
-    )
-
-"""

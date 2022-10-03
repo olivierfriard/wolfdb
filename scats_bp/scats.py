@@ -17,6 +17,7 @@ import functions as fn
 import utm
 import json
 import pathlib as pl
+import datetime as dt
 
 import uuid
 import os
@@ -439,7 +440,7 @@ def export_scats():
 @fn.check_login
 def new_scat():
     """
-    let user insert a new scat
+    let user insert a new scat manually
     """
 
     def not_valid(msg):
@@ -508,19 +509,15 @@ def new_scat():
             #    return not_valid("The path ID does not have a correct value (must be XX_NN YYYY-MM-DD)")
             path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
 
-            # check province and add region
-            if len(request.form["province"]) == 2:
-                province = fn.check_province_code(request.form["province"])
-                if province is None:
-                    return not_valid(f"Province {request.form['province']} not found")
+            # check province code
+            province_code = fn.check_province_code(request.form["province"])
+            if province_code is None:
+                # check province name
+                province_code = fn.province_name2code(request.form["province"])
+                if province_code is None:
+                    return not_valid("The province was not found")
 
-                scat_region = fn.province_code2region(request.form["province"])
-            else:
-                province = fn.province_name2code(request.form["province"])
-                if province is None:
-                    return not_valid(f"Province {request.form['province']} not found")
-
-                scat_region = fn.province_code2region(province)
+            scat_region = fn.province_code2region(province_code)
 
             # test the UTM to lat long conversion to validate the UTM coordiantes
             try:
@@ -551,7 +548,7 @@ def new_scat():
                     request.form["snowtrack_id"],
                     request.form["location"],
                     request.form["municipality"],
-                    province,
+                    province_code,
                     scat_region,
                     request.form["deposition"],
                     request.form["matrix"],
@@ -705,19 +702,26 @@ def edit_scat(scat_id):
         else:
             path_id = ""
 
-        # check province and add region
-        if len(request.form["province"]) == 2:
-            province = fn.check_province_code(request.form["province"])
-            if province is None:
-                return not_valid(f"Province {request.form['province']} not found")
-
-            scat_region = fn.province_code2region(request.form["province"])
+        """
+        # check if province code exists
+        if request.form["province"].upper().strip() in fn.province_code_list():
+            province_code = request.form["province"].upper().strip()
+        elif request.form["province"].strip().upper() in fn.province_name_list():
+            province_code = fn.province_name2code(request.form["province"])
         else:
-            province = fn.province_name2code(request.form["province"])
-            if province is None:
-                return not_valid(f"Province {request.form['province']} not found")
+            return not_valid(f"Province {request.form['province']} not found")
+        """
 
-            scat_region = fn.province_code2region(province)
+        # check province code
+        province_code = fn.check_province_code(request.form["province"])
+        if province_code is None:
+            # check province name
+            province_code = fn.province_name2code(request.form["province"])
+            if province_code is None:
+                return not_valid("The province was not found")
+
+        # add region from province code
+        scat_region = fn.province_code2region(province_code)
 
         # check UTM coord conversion
         try:
@@ -778,7 +782,7 @@ def edit_scat(scat_id):
                 request.form["snowtrack_id"],
                 request.form["location"],
                 request.form["municipality"],
-                province,
+                province_code,
                 scat_region,
                 request.form["deposition"],
                 request.form["matrix"],
@@ -1120,18 +1124,14 @@ def systematic_scats_transect_location():
                 / pl.Path("results")
                 / pl.Path(session["email"])
                 / pl.Path(
-                    f'systematic_scats_transects_location_from_{session["start_date"]}_to_{session["end_date"]}_.html'
+                    (
+                        f"location_of_systematic_scats_on_transects_and_tracks"
+                        f'_from_{session["start_date"]}_to_{session["end_date"]}'
+                        f"_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}.html"
+                    )
                 )
             ),
         ]
     )
 
-    time.sleep(2)
-
-    flash(
-        fn.alert_danger(
-            f'The results will be available soon on <a href="/my_results">your results page</a>.<br>Please wait for 5 min'
-        )
-    )
-
-    return redirect("/")
+    return redirect("/my_results")

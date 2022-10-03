@@ -7,12 +7,13 @@ functions module
 """
 
 from functools import wraps
-from flask import Flask, request, Markup, redirect, session
+from flask import Flask, Markup, redirect, session
 import psycopg2
 import psycopg2.extras
 from config import config
 import urllib.request
 import json
+from typing import Union
 
 from jinja2 import Template
 
@@ -238,9 +239,10 @@ def province_code_list() -> list:
     return [row["province_code"] for row in cursor.fetchall()]
 
 
-def check_province_code(province_code):
+def check_province_code(province_code) -> Union[None, str]:
     """
-    check if province code exists
+    check if province code exists.
+    Returns province code or None if not found
     using geo_info table
     """
     connection = get_connection()
@@ -257,42 +259,30 @@ def check_province_code(province_code):
         return result["province_code"]
 
 
-def province_name2code_dict() -> dict:
+def prov_code2prov_name(province_code: str) -> str:
     """
-    returns dict of upper case province code for upper case province name
-    (using geo_info table)
-    """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info")
-    return dict([(row["province_name"], row["province_code"]) for row in cursor.fetchall()])
-
-
-def province_name2code(province_name):
-    """
-    returns province code from province name
-    using geo_info table
+    returns the province name for the province code provided (None if not found)
     """
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cursor.execute(
-        "SELECT province_code FROM geo_info WHERE UPPER(province_name) = %s", [province_name.upper().strip()]
+        "SELECT province_name FROM geo_info WHERE UPPER(province_code) = %s",
+        [province_code.upper().strip()],
     )
     result = cursor.fetchone()
     if result is None:
         return None
     else:
-        return result["province_code"]
+        return result["province_name"]
 
 
 def province_code2region_dict() -> dict:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("SELECT UPPER(province_code) as province_code, region FROM geo_info")
-    return dict([(row["province_code"], row["region"]) for row in cursor.fetchall()])
+    cursor.execute("SELECT province_code, region FROM geo_info")
+    return dict([(row["province_code"].upper(), row["region"]) for row in cursor.fetchall()])
 
 
 def province_code2region(province_code):
@@ -313,7 +303,50 @@ def province_code2region(province_code):
         return result["region"]
 
 
-def province_name2region(province_name):
+def province_name_list() -> list:
+    """
+    return list of upper case province name
+    (using geo_info table)
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT province_name FROM geo_info")
+
+    return [row["province_name"].upper() for row in cursor.fetchall()]
+
+
+def province_name2code(province_name: str) -> str:
+    """
+    returns province code from province name
+    using geo_info table
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute(
+        "SELECT province_code FROM geo_info WHERE UPPER(province_name) = %s", [province_name.upper().strip()]
+    )
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    else:
+        return result["province_code"]
+
+
+def province_name2code_dict() -> dict:
+    """
+    returns dict of upper case province code for upper case province name
+    (using geo_info table)
+    """
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info")
+    return dict([(row["province_name"], row["province_code"]) for row in cursor.fetchall()])
+
+
+def province_name2region(province_name) -> str:
     """
     get region by province name
     """
@@ -327,7 +360,10 @@ def province_name2region(province_name):
     return region_out
 
 
-def get_regions(provinces):
+def get_regions(provinces: list) -> str:
+    """
+    returns list of regions (as str) corresponding to the list of provinces
+    """
 
     transect_region = []
     if provinces:
