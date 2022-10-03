@@ -1,0 +1,16 @@
+{% extends "bootstrap.html" %}
+
+<meta http-equiv="refresh" content="30">
+
+{% block content %}
+
+<h2>{{ title }}</h2>
+
+<small>If the requested file is not present, please wait a while (this page will reload automatically every 30 seconds)</small>
+
+<h3>List of files</h3>
+
+{{ content }}
+
+{% endblock %}
+
