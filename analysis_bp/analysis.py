@@ -82,8 +82,8 @@ def path_completeness():
     dir_path = dir_prefix / pl.Path(
         (
             f"paths_completeness_"
-            f'from_{session["start_date"]}_to_{session["end_date"]}_'
-            f"{dt.datetime.now():%Y-%m-%d_%H%M%S}"
+            f'from_{session["start_date"]}_to_{session["end_date"]}'
+            f"_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
         )
     )
 
@@ -94,7 +94,8 @@ def path_completeness():
         end_date=session["end_date"],
     )
 
-    return redirect(str(pl.Path("/") / dir_path.parent / pl.Path(zip_file_name)))
+    return redirect("/my_results")
+    """return redirect(str(pl.Path("/") / dir_path.parent / pl.Path(zip_file_name)))"""
 
 
 @app.route("/transects_n_samples/<mode>")
@@ -437,7 +438,7 @@ def cell_occupancy():
                 os.remove(path)
 
         output_path = output_path_prefix / pl.Path(
-            f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
+            f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
         )
 
         _ = subprocess.Popen(
@@ -451,9 +452,11 @@ def cell_occupancy():
             ]
         )
 
-        return redirect(f"/cell_occupancy_check_results/{str(output_path).replace('/', '@@@')}")
+        return redirect("/my_results")
+        """return redirect(f"/cell_occupancy_check_results/{str(output_path).replace('/', '@@@')}")"""
 
 
+'''
 @app.route("/cell_occupancy_check_results/<output_path>")
 @fn.check_login
 def cell_occupancy_check_results(output_path):
@@ -487,3 +490,4 @@ def cell_occupancy_check_results(output_path):
             start_date=session["start_date"],
             end_date=session["end_date"],
         )
+'''

@@ -158,10 +158,15 @@ def my_results():
     results_path = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
     results_path.mkdir(parents=True, exist_ok=True)
     out = '<table class="table table-striped">'
-    for f in results_path.glob("*"):
+    for f in sorted(list(results_path.glob("*"))):
         out += f'<tr><td><a href="{f}">{f.name}</a></td></tr>'
 
-    return render_template("page.html", header_title="Analysis results", title="Analysis results", content=Markup(out))
+    return render_template(
+        "results.html",
+        header_title="Analysis results",
+        title="Analysis results",
+        content=Markup(out),
+    )
 
 
 if __name__ == "__main__":
