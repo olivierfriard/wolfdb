@@ -17,7 +17,7 @@ import datetime
 import os
 import sys
 import time
-from flask import render_template, Markup
+from flask import Markup
 from jinja2 import Environment, FileSystemLoader
 
 start_date = sys.argv[1]
