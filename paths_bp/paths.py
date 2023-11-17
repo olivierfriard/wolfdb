@@ -7,7 +7,8 @@ flask blueprint for paths management
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, session, make_response
+from flask import render_template, redirect, request, flash, session, make_response
+from markupsafe import Markup
 import psycopg2
 import psycopg2.extras
 from config import config

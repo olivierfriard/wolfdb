@@ -4,11 +4,11 @@ WolfDB web service
 """
 
 
-from flask import Markup
+from markupsafe import Markup
 import datetime
 from wtforms import Form, StringField, TextAreaField, SelectField
 
-from wtforms.validators import Required, ValidationError
+from wtforms.validators import DataRequired, ValidationError
 
 
 class Path(Form):
@@ -36,7 +36,7 @@ class Path(Form):
         try:
             int(field.data)
             return
-        except:
+        except Exception:
             raise ValidationError(
                 Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
             )
@@ -44,11 +44,11 @@ class Path(Form):
     transect_id = SelectField(
         "Transect ID *",
         validators=[
-            Required(),
+            DataRequired(),
         ],
     )
 
-    date = StringField("Date *", validators=[Required(), iso_date_validator])
+    date = StringField("Date *", validators=[DataRequired(), iso_date_validator])
 
     completeness = StringField(
         "% of completeness *",

@@ -5,12 +5,12 @@ https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-yo
 """
 
 
-from flask import Blueprint, render_template, request, redirect, flash, session, Markup, current_app
+from flask import Blueprint, render_template, request, redirect, flash, session, current_app
+from markupsafe import Markup
 from werkzeug.security import check_password_hash
 import psycopg2
 import psycopg2.extras
 
-from config import config
 import functions as fn
 
 
@@ -29,7 +29,7 @@ def login_post():
     password = request.form.get("password")
 
     if not email or not password:
-        flash(f"Input email and password")
+        flash("Input email and password")
         return redirect("/login")
 
     connection = fn.get_connection()
@@ -37,7 +37,7 @@ def login_post():
     cursor.execute("SELECT * FROM users WHERE email = %s", [email])
     result = cursor.fetchone()
 
-    if check_password_hash(result["password"], password):
+    if check_password_hash(result["password"], password, method='pbkdf2:sha256'):
         session["user_id"] = result["id"]
         session["firstname"] = result["firstname"]
         session["lastname"] = result["lastname"]
@@ -48,7 +48,7 @@ def login_post():
         flash(Markup(f"<h2>Welcome {session['firstname']} {session['lastname']}</h2>"))
         return redirect("/")
     else:
-        flash(f"Please retry")
+        flash("Please retry")
         return redirect("/login")
 
 
@@ -58,7 +58,7 @@ def logout():
 
     try:
         current_app.db_log.info(f"Logout of {session['firstname']} {session['lastname']} ({session['email']})")
-    except:
+    except Exception:
         pass
 
     try:
@@ -66,7 +66,7 @@ def logout():
         session.pop("firstname", None)
         session.pop("lastname", None)
         session.pop("email", None)
-    except:
+    except Exception:
         pass
 
     return redirect("/")

@@ -8,14 +8,7 @@ flask blueprint for packs management
 
 import flask
 from flask import (
-    Flask,
     render_template,
-    redirect,
-    request,
-    Markup,
-    flash,
-    session,
-    make_response,
 )
 import psycopg2
 import psycopg2.extras

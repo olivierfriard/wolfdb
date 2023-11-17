@@ -3,21 +3,28 @@ WolfDB
 Read configuration file (config.ini)
 """
 
+from pathlib import Path
 from configparser import ConfigParser
-
 
 def config():
 
-    config_filename = "config.ini"
+    config_filename = Path.home() / ".config" / "wolfdb" / "config.ini"
+
+    if not config_filename.is_file():
+        print("config.ini not found")
+        return {}
 
     parser = ConfigParser()
-    # read config file
     parser.read(config_filename)
-
-    db = {}
+    db: str = {}
     for section in parser.sections():
         params = parser.items(section)
         for param in params:
             db[param[0]] = param[1]
 
+    # add config dir
+    db["config_dir"] = config_filename.parent
+
     return db
+
+

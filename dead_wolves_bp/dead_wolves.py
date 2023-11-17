@@ -7,10 +7,10 @@ flask blueprint for scats management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+from flask import render_template, redirect, request, flash, session
+from markupsafe import Markup
 import psycopg2
 import psycopg2.extras
-import json
 import utm
 from config import config
 

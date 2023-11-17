@@ -2,12 +2,11 @@
 WolfDB web service
 (c) Olivier Friard
 """
-from functools import wraps
-from flask import Flask, render_template, redirect, request, Markup, flash, session
+
+from flask import Flask, render_template, redirect, request, flash, session
+from markupsafe import Markup
 from flask_session import Session
 
-import psycopg2
-import psycopg2.extras
 from config import config
 import functions as fn
 import utm
@@ -17,7 +16,8 @@ import datetime
 import pathlib as pl
 
 # blueprints
-from auth import auth as auth_blueprint
+import google_auth_bp
+#from auth import auth as auth_blueprint
 from scats_bp import scats
 from paths_bp import paths
 from packs_bp import packs
@@ -28,7 +28,7 @@ from dead_wolves_bp import dead_wolves
 from admin_bp import admin
 from analysis_bp import analysis
 
-__version__ = "2022-09-28"
+__version__ = "2023-11-17"
 
 app = Flask(__name__)
 
@@ -38,8 +38,9 @@ SESSION_TYPE = "filesystem"
 app.config.from_object(__name__)
 Session(app)
 
-app.register_blueprint(auth_blueprint)
+#app.register_blueprint(auth_blueprint)
 
+app.register_blueprint(google_auth_bp.app)
 app.register_blueprint(scats.app)
 app.register_blueprint(paths.app)
 app.register_blueprint(packs.app)
@@ -73,6 +74,9 @@ app.db_log.setLevel(logging.INFO)
 @app.route("/")
 @fn.check_login
 def home():
+    """
+    home page
+    """
     if "start_date" not in session:
         session["start_date"] = "1900-01-01"
     if "end_date" not in session:
@@ -87,6 +91,7 @@ def version():
 
 
 @app.route("/settings", methods=("GET", "POST"))
+@fn.check_login
 def settings():
     """
     selection of the analysis time interval (start_date and end_date)

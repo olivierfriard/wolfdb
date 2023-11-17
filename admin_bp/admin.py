@@ -7,11 +7,9 @@ flask blueprint for service administration
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session, current_app
-import psycopg2
-import psycopg2.extras
+from flask import render_template, session, current_app
+
 from config import config
-import json
 
 import functions as fn
 

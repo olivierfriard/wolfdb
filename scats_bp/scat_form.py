@@ -4,13 +4,13 @@ WolfDB web service
 """
 
 
-from flask import Markup
+from markupsafe import Markup
 import datetime
 import re
 
 from wtforms import Form, StringField, SelectField, TextAreaField
 
-from wtforms.validators import Required, ValidationError
+from wtforms.validators import DataRequired, ValidationError
 
 
 class Scat(Form):
@@ -20,7 +20,7 @@ class Scat(Form):
         try:
             int(field.data)
             return
-        except:
+        except Exception:
             raise ValidationError(
                 Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
             )
@@ -57,7 +57,7 @@ class Scat(Form):
     scat_id = StringField(
         "Scat ID",
         validators=[
-            Required(),
+            DataRequired(),
         ],
     )
 
@@ -80,8 +80,8 @@ class Scat(Form):
     collected_scat = SelectField("Collected scat", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
     scalp_category = SelectField("SCALP category", choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")], default="C2")
     genetic_sample = SelectField("Genetic sample", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
-    coord_east = StringField("Coordinate East", validators=[Required(), integer_validator])
-    coord_north = StringField("Coordinate North", validators=[Required(), integer_validator])
+    coord_east = StringField("Coordinate East", validators=[DataRequired(), integer_validator])
+    coord_north = StringField("Coordinate North", validators=[DataRequired(), integer_validator])
     coord_zone = SelectField("Zone", choices=[("32N", "32N"), ("33N", "33N")], default="32N")
 
     observer = StringField("Operator", [])

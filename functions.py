@@ -7,7 +7,8 @@ functions module
 """
 
 from functools import wraps
-from flask import Flask, Markup, redirect, session
+from flask import redirect, session
+from markupsafe import Markup
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -25,7 +26,7 @@ params = config()
 def check_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
+        if "google_id" not in session:
             return redirect("/login")
         return f(*args, **kwargs)
 

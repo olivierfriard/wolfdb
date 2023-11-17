@@ -7,13 +7,13 @@ flask blueprint for transects management
 
 
 import flask
-from flask import Flask, render_template, redirect, request, Markup, flash, session, make_response
+from flask import render_template, redirect, request, flash, make_response
+from markupsafe import Markup
 import psycopg2
 import psycopg2.extras
 from config import config
 import json
 import calendar
-import copy
 import datetime as dt
 
 from .transect_form import Transect

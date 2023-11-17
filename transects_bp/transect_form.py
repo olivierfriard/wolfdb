@@ -9,10 +9,10 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-from flask import Markup
+from markupsafe import Markup
 from wtforms import Form, StringField, TextAreaField
 
-from wtforms.validators import Required, ValidationError
+from wtforms.validators import DataRequired, ValidationError
 
 
 class Transect(Form):
@@ -22,7 +22,7 @@ class Transect(Form):
         try:
             int(field.data)
             return
-        except:
+        except Exception:
             raise ValidationError(
                 Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
             )
@@ -30,7 +30,7 @@ class Transect(Form):
     transect_id = StringField(
         "Transect ID",
         validators=[
-            Required(),
+            DataRequired(),
         ],
     )
     sector = StringField("Sector", validators=[integer_validator])

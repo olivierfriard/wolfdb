@@ -2,12 +2,13 @@
 WolfDB web service
 (c) Olivier Friard
 
-flask blueprint for scats management
+flask blueprint for genetic data management
 """
 
 
 import flask
-from flask import render_template, redirect, request, Markup, flash, session, make_response
+from flask import render_template, redirect, request, flash, session, make_response
+from markupsafe import Markup
 import psycopg2
 import psycopg2.extras
 from config import config

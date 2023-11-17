@@ -4,12 +4,12 @@ WolfDB web service
 """
 
 
-from flask import Markup
+from markupsafe import Markup
 import datetime
 import re
 
 from wtforms import Form, StringField, SelectField
-from wtforms.validators import Required, ValidationError
+from wtforms.validators import ValidationError
 
 
 class Dead_wolf(Form):
@@ -19,7 +19,7 @@ class Dead_wolf(Form):
         try:
             int(field.data)
             return
-        except:
+        except Exception:
             raise ValidationError(
                 Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
             )
