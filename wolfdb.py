@@ -17,7 +17,6 @@ import pathlib as pl
 
 # blueprints
 import google_auth_bp
-#from auth import auth as auth_blueprint
 from scats_bp import scats
 from paths_bp import paths
 from packs_bp import packs
@@ -37,8 +36,6 @@ app.secret_key = secrets.token_hex(16)
 SESSION_TYPE = "filesystem"
 app.config.from_object(__name__)
 Session(app)
-
-#app.register_blueprint(auth_blueprint)
 
 app.register_blueprint(google_auth_bp.app)
 app.register_blueprint(scats.app)

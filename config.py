@@ -8,7 +8,12 @@ from configparser import ConfigParser
 
 def config():
 
-    config_filename = Path.home() / ".config" / "wolfdb" / "config.ini"
+    if (Path(__file__).parent / "DEV").is_file():
+        service_name = "wolfdb_dev"
+    else:
+        service_name = "wolfdb"
+
+    config_filename = Path.home() / ".config" / service_name / "config.ini"
 
     if not config_filename.is_file():
         print("config.ini not found")
