@@ -5,15 +5,7 @@
 <h1>WolfDB {% if mode == 'dev' %} - TEST{%endif%}</h1>
 <hr>
 
-{% if mode == 'dev' %}
-<h2>USE THIS INTERFACE ONLY FOR TESTING PURPOSE.<br>
-DO NOT USE IT FOR PRODUCTIVE WORK!
-</h2>
-<h4>
-Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
-</h4>
 
-{%endif%}
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -22,7 +14,26 @@ Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
 {% endwith %}
 <br>
 
-{% if session['start_date'] and session['end_date'] %}Analysis date interval: <strong>{{ session['start_date']}}</strong> - <strong>{{session['end_date']}}</strong>{% endif %}
+{% if mode == 'dev' %}
+<h2>USE THIS INTERFACE ONLY FOR TESTING PURPOSE.<br>
+DO NOT USE IT FOR PRODUCTIVE WORK!
+</h2>
+<h4>
+Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
+</h4>
+{%endif%}
+
+{% if not session["email"] %}
+<a href="/login" class="btn btn-primary">Login with Google</a>
+
+{% else %}
+
+{% if session['start_date'] and session['end_date'] %}
+Analysis date interval: <strong>{{ session['start_date']}}</strong> - <strong>{{session['end_date']}}</strong>
+{% endif %}
+{% endif %}
+
+
 <!--
 
 <a href="/scats" class="btn btn-primary">Scats</a>

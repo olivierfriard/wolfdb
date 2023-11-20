@@ -15,7 +15,7 @@ from config import config
 import urllib.request
 import json
 from typing import Union
-
+from sqlalchemy import create_engine
 from jinja2 import Template
 
 from italian_regions import regions, prov_name2prov_code
@@ -43,8 +43,21 @@ def get_connection():
     )
 
 
-def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
+def get_cursor():
+    return psycopg2.connect(
+        user=params["user"],
+        password=params["password"],
+        host=params["host"],
+        # port="5432",
+        database=params["database"],
+    ).cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+
+def conn_alchemy():
+    return create_engine(f'postgresql+psycopg://{params["user"]}:{params["password"]}@{params["host"]}:5432/{params["database"]}')
+
+
+def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -57,9 +70,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
         loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
 
     for locus in loci_list:
-
         for allele in ["a", "b"][: loci_list[locus]]:
-
             cursor.execute(
                 (
                     "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
@@ -115,7 +126,6 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
         loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
 
     for locus in loci_list:
-
         """
         cursor.execute(
             (
@@ -190,14 +200,7 @@ def all_path_id() -> list:
     """
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(
-        (
-            "SELECT CONCAT(transect_id, ' ',  date) "
-            "FROM paths "
-            "WHERE transect_id != '' "
-            "ORDER BY transect_id, date DESC"
-        )
-    )
+    cursor.execute(("SELECT CONCAT(transect_id, ' ',  date) " "FROM paths " "WHERE transect_id != '' " "ORDER BY transect_id, date DESC"))
     return [x[0].strip() for x in cursor.fetchall()]
 
 
@@ -325,9 +328,7 @@ def province_name2code(province_name: str) -> str:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute(
-        "SELECT province_code FROM geo_info WHERE UPPER(province_name) = %s", [province_name.upper().strip()]
-    )
+    cursor.execute("SELECT province_code FROM geo_info WHERE UPPER(province_name) = %s", [province_name.upper().strip()])
     result = cursor.fetchone()
     if result is None:
         return None
@@ -377,7 +378,6 @@ def get_regions(provinces: list) -> str:
 
 
 def leaflet_geojson(center, scat_features, transect_features, fit="", zoom=13) -> str:
-
     map = (
         """
 
@@ -464,9 +464,7 @@ map.fitBounds(markerBounds);
 
 </script>
 
-    """.replace(
-            "###SCAT_FEATURES###", str(scat_features)
-        )
+    """.replace("###SCAT_FEATURES###", str(scat_features))
         .replace("###CENTER###", center)
         .replace("###TRANSECT_FEATURES###", str(transect_features))
         .replace("###ZOOM###", str(zoom))

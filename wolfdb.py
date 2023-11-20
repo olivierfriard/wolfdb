@@ -69,15 +69,15 @@ app.db_log.setLevel(logging.INFO)
 
 
 @app.route("/")
-@fn.check_login
+# @fn.check_login
 def home():
     """
     home page
     """
     if "start_date" not in session:
-        session["start_date"] = "1900-01-01"
+        session["start_date"] = "2000-01-01"
     if "end_date" not in session:
-        session["end_date"] = "2100-01-01"
+        session["end_date"] = "2025-01-01"
 
     return render_template("home.html", header_title="Home", mode=params["mode"])
 
@@ -105,7 +105,6 @@ def settings():
         return render_template("settings.html", header_title="Settings")
 
     if request.method == "POST":
-
         if not iso_date_validator(request.form["start_date"]) or not iso_date_validator(request.form["end_date"]):
             return render_template("settings.html", header_title="Settings")
 
