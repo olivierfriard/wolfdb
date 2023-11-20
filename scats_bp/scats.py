@@ -492,85 +492,85 @@ def new_scat():
         # get id of all snow tracks
         form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
-        if form.validate():
-            # date
+        if not form.validate():
+            return not_valid("Some values are not set or are wrong. Please check and submit again")
+        # date
+        try:
+            year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
+            month = int(request.form["scat_id"][3 : 4 + 1])
+            day = int(request.form["scat_id"][5 : 6 + 1])
+            date = f"{year:04}-{month:02}-{day:02}"
             try:
-                year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
-                month = int(request.form["scat_id"][3 : 4 + 1])
-                day = int(request.form["scat_id"][5 : 6 + 1])
-                date = f"{year:04}-{month:02}-{day:02}"
-                try:
-                    datetime.datetime.strptime(date, "%Y-%m-%d")
-                except Exception:
-                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
-
+                datetime.datetime.strptime(date, "%Y-%m-%d")
             except Exception:
-                return not_valid("The scat ID value is not correct")
+                return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
 
-            # path id
-            # if "|" not in request.form["path_id"]:
-            #    return not_valid("The path ID does not have a correct value (must be XX_NN YYYY-MM-DD)")
-            path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+        except Exception:
+            return not_valid("The scat ID value is not correct")
 
-            # check province code
-            province_code = fn.check_province_code(request.form["province"])
+        # path id
+        # if "|" not in request.form["path_id"]:
+        #    return not_valid("The path ID does not have a correct value (must be XX_NN YYYY-MM-DD)")
+        path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+
+        # check province code
+        province_code = fn.check_province_code(request.form["province"])
+        if province_code is None:
+            # check province name
+            province_code = fn.province_name2code(request.form["province"])
             if province_code is None:
-                # check province name
-                province_code = fn.province_name2code(request.form["province"])
-                if province_code is None:
-                    return not_valid("The province was not found")
+                return not_valid("The province was not found")
 
-            scat_region = fn.province_code2region(province_code)
+        scat_region = fn.province_code2region(province_code)
 
-            # test the UTM to lat long conversion to validate the UTM coordiantes
-            try:
-                _ = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
-            except Exception:
-                return not_valid("Error in UTM coordinates")
+        # test the UTM to lat long conversion to validate the UTM coordiantes
+        try:
+            _ = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+        except Exception:
+            return not_valid("Error in UTM coordinates")
 
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-            sql = (
+        with fn.conn_alchemy().connect() as con:
+            sql = text(
                 "INSERT INTO scats (scat_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "
                 "location, municipality, province, region, "
                 "deposition, matrix, collected_scat, scalp_category, "
                 "coord_east, coord_north, coord_zone, "
                 "observer, institution,"
                 "geometry_utm) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                "VALUES (:scat_id, :date, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
+                ":location, :municipality, :province, :region, "
+                ":deposition, :matrix, :collected_scat, :scalp_category, "
+                ":coord_east, :coord_north, :coord_zone, "
+                ":observer, :institution, "
+                ":geometry_utm)"
             )
-            cursor.execute(
+            con.execute(
                 sql,
-                [
-                    request.form["scat_id"],
-                    date,
-                    fn.sampling_season(date),
-                    request.form["sampling_type"],
-                    path_id,
-                    request.form["snowtrack_id"],
-                    request.form["location"],
-                    request.form["municipality"],
-                    province_code,
-                    scat_region,
-                    request.form["deposition"],
-                    request.form["matrix"],
-                    request.form["collected_scat"],
-                    request.form["scalp_category"],
-                    request.form["coord_east"],
-                    request.form["coord_north"],
-                    "32N",
-                    request.form["observer"],
-                    request.form["institution"],
-                    f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
-                ],
+                {
+                    "scat_id": request.form["scat_id"],
+                    "date": date,
+                    "sampling_season": fn.sampling_season(date),
+                    "sampling_type": request.form["sampling_type"],
+                    "path_id": path_id,
+                    "snowtrack_id": request.form["snowtrack_id"],
+                    "location": request.form["location"],
+                    "municipality": request.form["municipality"],
+                    "province": province_code,
+                    "region": scat_region,
+                    "deposition": request.form["deposition"],
+                    "matrix": request.form["matrix"],
+                    "collected_scat": request.form["collected_scat"],
+                    "scalp_category": request.form["scalp_category"],
+                    "coord_east": request.form["coord_east"],
+                    "coord_north": request.form["coord_north"],
+                    "coord_zone": "32N",
+                    "observer": request.form["observer"],
+                    "institution": request.form["institution"],
+                    "geometry_utm": f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
+                },
             )
 
-            connection.commit()
-
-            return redirect(f"/view_scat/{request.form['scat_id']}")
-        else:
-            return not_valid("Some values are not set or are wrong. Please check and submit again")
+        return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
 @app.route("/edit_scat/<scat_id>", methods=("GET", "POST"))
@@ -580,8 +580,7 @@ def edit_scat(scat_id):
     Let user edit a scat
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     def not_valid(form, msg):
         # default values
@@ -601,8 +600,7 @@ def edit_scat(scat_id):
         )
 
     if request.method == "GET":
-        cursor.execute("SELECT * FROM scats WHERE scat_id = %s", [scat_id])
-        default_values = cursor.fetchone()
+        default_values = con.execute("SELECT * FROM scats WHERE scat_id = :scat_id", {"scat_id": scat_id}).mappings().fetchone()
         if default_values["notes"] is None:
             default_values["notes"] = ""
 
@@ -673,8 +671,11 @@ def edit_scat(scat_id):
 
         # check if scat id already exists
         if scat_id != request.form["scat_id"]:
-            cursor.execute("SELECT scat_id FROM scats WHERE scat_id = %s", [request.form["scat_id"]])
-            if len(cursor.fetchall()):
+            if len(
+                con.execute(text("SELECT scat_id FROM scats WHERE scat_id = :scat_id"), {"scat_id": request.form["scat_id"]})
+                .mappings()
+                .all()
+            ):
                 return not_valid(
                     form,
                     (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). " "Please check and submit again"),
@@ -723,77 +724,77 @@ def edit_scat(scat_id):
 
         # check UTM coord conversion
         try:
-            coord_latlon = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+            utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
         except Exception:
             return not_valid(form, "The UTM coordinates are not valid. Please check and submit again")
 
         # check if WA code exists for another sample
         if request.form["wa_code"]:
-            cursor.execute(
-                ("SELECT sample_id FROM wa_scat_dw WHERE sample_id != %s AND wa_code = %s"),
-                [scat_id, request.form["wa_code"]],
-            )
-            if len(cursor.fetchall()):
+            if len(
+                con.execute(
+                    text("SELECT sample_id FROM wa_scat_dw WHERE sample_id !=:scat_id AND wa_code = :wa_code"),
+                    {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
+                )
+                .mappings()
+                .all()
+            ):
                 return not_valid(
                     form,
                     (f"Another sample has the same WA code ({request.form['wa_code']}). " "Please check and submit again"),
                 )
 
-        sql = (
+        sql = text(
             "UPDATE scats SET "
-            " scat_id = %s, "
-            " wa_code = %s,"
-            " date = %s,"
-            " sampling_season = %s,"
-            " sampling_type = %s,"
-            " path_id = %s, "
-            " snowtrack_id = %s, "
-            " location = %s, "
-            " municipality = %s, "
-            " province = %s, "
-            " region = %s, "
-            " deposition = %s, "
-            " matrix = %s, "
-            " collected_scat = %s, "
-            " scalp_category = %s, "
-            " coord_east = %s, "
-            " coord_north = %s, "
+            " scat_id = :scat_id, "
+            " wa_code = :wa_code,"
+            " date = :date,"
+            " sampling_season = :sampling_season,"
+            " sampling_type = :sampling_type,"
+            " path_id = :path_id, "
+            " snowtrack_id = :snow_track, "
+            " location = :location, "
+            " municipality = :municipality, "
+            " province = :province, "
+            " region = :region, "
+            " deposition = :deposition, "
+            " matrix = :matrix, "
+            " collected_scat = :collected_scat, "
+            " scalp_category = :scalp_category, "
+            " coord_east = :coord_east, "
+            " coord_north = :coord_north, "
             #  coord_zone = %s, "
-            " observer = %s, "
-            " institution = %s, "
-            " notes = %s, "
-            " geometry_utm = %s "
-            "WHERE scat_id = %s"
+            " observer = :observer, "
+            " institution = :institution, "
+            " notes = :notes, "
+            " geometry_utm = :geometry_utm "
+            "WHERE scat_id = :scat_id"
         )
-        cursor.execute(
+        con.execute(
             sql,
-            [
-                request.form["scat_id"],
-                request.form["wa_code"],
-                date,
-                fn.sampling_season(date),
-                request.form["sampling_type"],
-                path_id,
-                request.form["snowtrack_id"],
-                request.form["location"],
-                request.form["municipality"],
-                province_code,
-                scat_region,
-                request.form["deposition"],
-                request.form["matrix"],
-                request.form["collected_scat"],
-                request.form["scalp_category"],
-                request.form["coord_east"],
-                request.form["coord_north"],  # request.form["coord_zone"],
-                request.form["observer"],
-                request.form["institution"],
-                request.form["notes"],
-                f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
-                scat_id,
-            ],
+            {
+                "scat_id": request.form["scat_id"],
+                "wa_code": request.form["wa_code"],
+                "date": date,
+                "sampling_season": fn.sampling_season(date),
+                "sampling_type": request.form["sampling_type"],
+                "path_id": path_id,
+                "snowtrack_id": request.form["snowtrack_id"],
+                "location": request.form["location"],
+                "municipality": request.form["municipality"],
+                "province_code": province_code,
+                "scat_region": scat_region,
+                "deposition": request.form["deposition"],
+                "matrix": request.form["matrix"],
+                "collected_scat": request.form["collected_scat"],
+                "scalp_category": request.form["scalp_category"],
+                "coord_east": request.form["coord_east"],
+                "coord_north": request.form["coord_north"],  # request.form["coord_zone"],
+                "observer": request.form["observer"],
+                "institution": request.form["institution"],
+                "notes": request.form["notes"],
+                "geometry_utm": f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
+            },
         )
-
-        connection.commit()
 
         return redirect(f"/view_scat/{request.form['scat_id']}")
 
@@ -825,7 +826,7 @@ def set_path_id(scat_id, path_id):
 
     # return redirect(f"{app.static_url_path}/systematic_scats_transects_location.html")
 
-    flash(fn.alert_danger(f"The path ID was updated. "))
+    flash(fn.alert_danger("The path ID was updated. "))
 
     return redirect("/")
 
