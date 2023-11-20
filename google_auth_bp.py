@@ -14,8 +14,6 @@ from pip._vendor import cachecontrol
 import google.auth.transport.requests
 from sqlalchemy import text
 
-from pathlib import Path
-
 from config import config
 import functions as fn
 

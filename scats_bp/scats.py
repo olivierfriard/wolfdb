@@ -11,7 +11,8 @@ from flask import render_template, redirect, request, flash, make_response, sess
 from markupsafe import Markup
 import psycopg2
 import psycopg2.extras
-from config import config
+from sqlalchemy import text
+
 
 from .scat_form import Scat
 import functions as fn
@@ -27,6 +28,8 @@ import subprocess
 import time
 import datetime
 from . import scats_export, scats_import
+
+from config import config
 
 
 app = flask.Blueprint("scats", __name__, template_folder="templates", static_url_path="/static")
@@ -71,21 +74,16 @@ def scats():
         check_location_creation_time = "Check location is running. Please wait."
     else:
         if os.path.exists("static/systematic_scats_transects_location.html"):
-            check_location_creation_time = time.ctime(
-                os.path.getctime("static/systematic_scats_transects_location.html")
-            )
+            check_location_creation_time = time.ctime(os.path.getctime("static/systematic_scats_transects_location.html"))
         else:
             check_location_creation_time = "File not found"
 
-    return render_template(
-        "scats.html", header_title="Scats", check_location_creation_time=check_location_creation_time
-    )
+    return render_template("scats.html", header_title="Scats", check_location_creation_time=check_location_creation_time)
 
 
 @app.route("/wa_form", methods=("POST",))
 @fn.check_login
 def wa_form():
-
     return (
         f'<form action="/add_wa" method="POST" style="padding-top:30px; padding-bottom:30px">'
         f'<input type="hidden" id="scat_id" name="scat_id" value="{request.form["scat_id"]}">'
@@ -101,15 +99,12 @@ def wa_form():
 @app.route("/add_wa", methods=("POST",))
 @fn.check_login
 def add_wa():
+    with fn.conn_alchemy().connect() as con:
+        con.execute(
+            text("UPDATE scats SET wa_code = :wa_code WHERE scat_id = :scat_id"),
+            {"wa_code": request.form["wa"].upper(), "scat_id": request.form["scat_id"]},
+        )
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        "UPDATE scats SET wa_code = %s WHERE scat_id = %s", [request.form["wa"].upper(), request.form["scat_id"]]
-    )
-
-    connection.commit()
     return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
@@ -123,29 +118,30 @@ def view_scat(scat_id):
     scat_color = params["scat_color"]
     transect_color = params["transect_color"]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        results = (
+            con.execute(
+                text(
+                    "SELECT *, "
+                    "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "(SELECT path_id FROM paths WHERE path_id = scats.path_id) AS path_id_verif, "
+                    "(SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = scats.snowtrack_id) AS snowtrack_id_verif, "
+                    "CASE "
+                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+                    "ELSE scats.scalp_category "
+                    "END, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    "FROM scats "
+                    "WHERE scat_id = :scat_id"
+                ),
+                {"scat_id": scat_id},
+            )
+            .mappings()
+            .fetchone()
+        )
 
-    cursor.execute(
-        (
-            "SELECT *, "
-            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "(SELECT path_id FROM paths WHERE path_id = scats.path_id) AS path_id_verif, "
-            "(SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = scats.snowtrack_id) AS snowtrack_id_verif, "
-            "CASE "
-            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%%wolf%%' THEN 'C1' "
-            "ELSE scats.scalp_category "
-            "END, "
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-            "FROM scats "
-            "WHERE scat_id = %s"
-        ),
-        [scat_id],
-    )
-
-    results = cursor.fetchone()
     if results is None:
         return f"Scat {scat_id} not found"
     else:
@@ -167,26 +163,26 @@ def view_scat(scat_id):
     if results["path_id"]:
         # Systematic sampling
         transect_id = results["path_id"].split("|")[0]
-
-        cursor.execute(
-            (
-                "SELECT ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson "
-                "FROM transects WHERE transect_id = %s"
-            ),
-            [transect_id],
-        )
-        transect = cursor.fetchone()
+        with fn.conn_alchemy().connect() as con:
+            transect = (
+                con.execute(
+                    text(
+                        "SELECT ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson "
+                        "FROM transects WHERE transect_id = :transect_id"
+                    ),
+                    {"transect_id": transect_id},
+                )
+                .mappings()
+                .fetchone()
+            )
 
         if transect is not None:
-
             transect_geojson = json.loads(transect["transect_geojson"])
 
             transect_feature = {
                 "type": "Feature",
                 "geometry": dict(transect_geojson),
-                "properties": {
-                    "popupContent": f"""Transect ID: <a href="/view_transect/{transect_id}">{transect_id}</a>"""
-                },
+                "properties": {"popupContent": f"""Transect ID: <a href="/view_transect/{transect_id}">{transect_id}</a>"""},
                 "id": 1,
             }
             transect_features = [transect_feature]
@@ -231,64 +227,65 @@ def plot_all_scats():
 
     scats_color = params["scat_color"]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(
-        (
-            "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-            "FROM scats "
-            "WHERE date BETWEEN %s AND %s "
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
-    )
+    with fn.conn_alchemy().connect() as con:
+        scat_features: list = []
 
-    scat_features = []
+        tot_min_lat, tot_min_lon = 90, 90
+        tot_max_lat, tot_max_lon = -90, -90
 
-    tot_min_lat, tot_min_lon = 90, 90
-    tot_max_lat, tot_max_lon = -90, -90
-
-    for row in cursor.fetchall():
-        scat_geojson = json.loads(row["scat_lonlat"])
-
-        # bounding box
-        lon, lat = scat_geojson["coordinates"]
-
-        tot_min_lat = min([tot_min_lat, lat])
-        tot_max_lat = max([tot_max_lat, lat])
-        tot_min_lon = min([tot_min_lon, lon])
-        tot_max_lon = max([tot_max_lon, lon])
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
-            },
-            "id": row["scat_id"],
-        }
-
-        scat_features.append(dict(scat_feature))
-
-    return render_template(
-        "plot_all_scats.html",
-        header_title="Plot of scats",
-        map=Markup(
-            fn.leaflet_geojson2(
+        for row in (
+            con.execute(
+                text(
+                    "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "FROM scats "
+                    "WHERE date BETWEEN :start_date AND :end_date"
+                ),
                 {
-                    "scats": scat_features,
-                    "scats_color": scats_color,
-                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
-                }
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
             )
-        ),
-        scat_color=params["scat_color"],
-        dead_wolf_color=params["dead_wolf_color"],
-        transect_color=params["transect_color"],
-        track_color=params["track_color"],
-    )
+            .mappings()
+            .all()
+        ):
+            scat_geojson = json.loads(row["scat_lonlat"])
+
+            # bounding box
+            lon, lat = scat_geojson["coordinates"]
+
+            tot_min_lat = min([tot_min_lat, lat])
+            tot_max_lat = max([tot_max_lat, lat])
+            tot_min_lon = min([tot_min_lon, lon])
+            tot_max_lon = max([tot_max_lon, lon])
+
+            scat_feature = {
+                "geometry": dict(scat_geojson),
+                "type": "Feature",
+                "properties": {
+                    "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
+                },
+                "id": row["scat_id"],
+            }
+
+            scat_features.append(dict(scat_feature))
+
+        return render_template(
+            "plot_all_scats.html",
+            header_title="Plot of scats",
+            map=Markup(
+                fn.leaflet_geojson2(
+                    {
+                        "scats": scat_features,
+                        "scats_color": scats_color,
+                        "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                    }
+                )
+            ),
+            scat_color=params["scat_color"],
+            dead_wolf_color=params["dead_wolf_color"],
+            transect_color=params["transect_color"],
+            track_color=params["track_color"],
+        )
 
 
 @app.route("/plot_all_scats")
@@ -301,64 +298,74 @@ def plot_all_scats_markerclusters():
 
     scats_color = params["scat_color"]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(
-        (
-            "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-            "FROM scats "
-            "WHERE date BETWEEN %s AND %s "
-        ),
+    with fn.conn_alchemy().connect() as con:
+        """
+        cursor.execute(
+        ("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat " "FROM scats " "WHERE date BETWEEN %s AND %s "),
         (
             session["start_date"],
             session["end_date"],
         ),
     )
+    """
+        scat_features: list = []
 
-    scat_features = []
+        tot_min_lat, tot_min_lon = 90, 90
+        tot_max_lat, tot_max_lon = -90, -90
 
-    tot_min_lat, tot_min_lon = 90, 90
-    tot_max_lat, tot_max_lon = -90, -90
-
-    for row in cursor.fetchall():
-        scat_geojson = json.loads(row["scat_lonlat"])
-
-        # bounding box
-        lon, lat = scat_geojson["coordinates"]
-
-        tot_min_lat = min([tot_min_lat, lat])
-        tot_max_lat = max([tot_max_lat, lat])
-        tot_min_lon = min([tot_min_lon, lon])
-        tot_max_lon = max([tot_max_lon, lon])
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
-            },
-            "id": row["scat_id"],
-        }
-
-        scat_features.append(dict(scat_feature))
-
-    return render_template(
-        "plot_all_scats.html",
-        header_title="Plot of scats",
-        map=Markup(
-            fn.leaflet_geojson3(
+        for row in (
+            con.execute(
+                text(
+                    "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "FROM scats "
+                    "WHERE date BETWEEN :start_date AND :end_date"
+                ),
                 {
-                    "scats": scat_features,
-                    "scats_color": scats_color,
-                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
-                }
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
             )
-        ),
-        scat_color=params["scat_color"],
-        dead_wolf_color=params["dead_wolf_color"],
-        transect_color=params["transect_color"],
-        track_color=params["track_color"],
-    )
+            .mappings()
+            .all()
+        ):
+            scat_geojson = json.loads(row["scat_lonlat"])
+
+            # bounding box
+            lon, lat = scat_geojson["coordinates"]
+
+            tot_min_lat = min([tot_min_lat, lat])
+            tot_max_lat = max([tot_max_lat, lat])
+            tot_min_lon = min([tot_min_lon, lon])
+            tot_max_lon = max([tot_max_lon, lon])
+
+            scat_feature = {
+                "geometry": dict(scat_geojson),
+                "type": "Feature",
+                "properties": {
+                    "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
+                },
+                "id": row["scat_id"],
+            }
+
+            scat_features.append(dict(scat_feature))
+
+        return render_template(
+            "plot_all_scats.html",
+            header_title="Plot of scats",
+            map=Markup(
+                fn.leaflet_geojson3(
+                    {
+                        "scats": scat_features,
+                        "scats_color": scats_color,
+                        "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                    }
+                )
+            ),
+            scat_color=params["scat_color"],
+            dead_wolf_color=params["dead_wolf_color"],
+            transect_color=params["transect_color"],
+            track_color=params["track_color"],
+        )
 
 
 @app.route("/scats_list")
@@ -368,34 +375,37 @@ def scats_list():
     Display list of scats
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        n_scats = (
+            con.execute(
+                text("SELECT COUNT(scat_id) AS n_scats FROM scats WHERE date BETWEEN :start_date AND :end_date"),
+                {"start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .fetchone()["n_scats"]
+        )
 
-    cursor.execute(
-        "SELECT COUNT(scat_id) AS n_scats FROM scats WHERE date BETWEEN %s AND %s",
-        (session["start_date"], session["end_date"]),
-    )
-    n_scats = cursor.fetchone()["n_scats"]
-
-    cursor.execute(
-        (
-            "SELECT *,"
-            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "CASE "
-            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%%wolf%%' THEN 'C1' "
-            "ELSE scats.scalp_category "
-            "END "
-            "FROM scats "
-            "WHERE date BETWEEN %s AND %s "
-            "ORDER BY scat_id"
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
-    )
-
-    return render_template("scats_list.html", header_title="List of scats", n_scats=n_scats, results=cursor.fetchall())
+        return render_template(
+            "scats_list.html",
+            header_title="List of scats",
+            n_scats=n_scats,
+            results=con.execute(
+                text(
+                    "SELECT *,"
+                    "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "CASE "
+                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+                    "ELSE scats.scalp_category "
+                    "END "
+                    "FROM scats "
+                    "WHERE date BETWEEN :start_date AND :end_date "
+                    "ORDER BY scat_id"
+                ),
+                {"start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all(),
+        )
 
 
 @app.route("/export_scats")
@@ -430,9 +440,7 @@ def export_scats():
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers[
-        "Content-disposition"
-    ] = f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    response.headers["Content-disposition"] = f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
     return response
 
@@ -462,7 +470,6 @@ def new_scat():
         )
 
     if request.method == "GET":
-
         form = Scat()
 
         # get id of all paths
@@ -480,7 +487,6 @@ def new_scat():
         )
 
     if request.method == "POST":
-
         form = Scat(request.form)
 
         # get id of all transects
@@ -490,7 +496,6 @@ def new_scat():
         form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
 
         if form.validate():
-
             # date
             try:
                 year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
@@ -599,7 +604,6 @@ def edit_scat(scat_id):
         )
 
     if request.method == "GET":
-
         cursor.execute("SELECT * FROM scats WHERE scat_id = %s", [scat_id])
         default_values = cursor.fetchone()
         if default_values["notes"] is None:
@@ -655,7 +659,6 @@ def edit_scat(scat_id):
         )
 
     if request.method == "POST":
-
         form = Scat(request.form)
 
         # get id of all paths
@@ -677,10 +680,7 @@ def edit_scat(scat_id):
             if len(cursor.fetchall()):
                 return not_valid(
                     form,
-                    (
-                        f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). "
-                        "Please check and submit again"
-                    ),
+                    (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). " "Please check and submit again"),
                 )
 
         # date
@@ -739,10 +739,7 @@ def edit_scat(scat_id):
             if len(cursor.fetchall()):
                 return not_valid(
                     form,
-                    (
-                        f"Another sample has the same WA code ({request.form['wa_code']}). "
-                        "Please check and submit again"
-                    ),
+                    (f"Another sample has the same WA code ({request.form['wa_code']}). " "Please check and submit again"),
                 )
 
         sql = (
@@ -826,9 +823,7 @@ def set_path_id(scat_id, path_id):
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute(
-        "UPDATE scats SET path_id = %(path_id)s WHERE scat_id = %(scat_id)s", {"path_id": path_id, "scat_id": scat_id}
-    )
+    cursor.execute("UPDATE scats SET path_id = %(path_id)s WHERE scat_id = %(scat_id)s", {"path_id": path_id, "scat_id": scat_id})
     connection.commit()
 
     # return redirect(f"{app.static_url_path}/systematic_scats_transects_location.html")
@@ -855,16 +850,11 @@ def load_scats_xlsx():
         return render_template("load_scats_xlsx.html", header_title="Load scats from XLSX/ODS file")
 
     if request.method == "POST":
-
         new_file = request.files["new_file"]
 
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(
-                fn.alert_danger(
-                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
-                )
-            )
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
             return redirect(f"/load_scats_xlsx")
 
         try:
@@ -1009,9 +999,7 @@ def confirm_load_xlsx(filename, mode):
                 },
             )
         except Exception:
-            return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(
-                sys.exc_info()
-            )
+            return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
     connection.commit()
 
@@ -1051,9 +1039,7 @@ def confirm_load_xlsx(filename, mode):
                     },
                 )
             except Exception:
-                return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(
-                    sys.exc_info()
-                )
+                return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
 
         connection.commit()
 
@@ -1093,9 +1079,7 @@ def confirm_load_xlsx(filename, mode):
                     },
                 )
             except Exception:
-                return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(
-                    sys.exc_info()
-                )
+                return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
 
         connection.commit()
 
