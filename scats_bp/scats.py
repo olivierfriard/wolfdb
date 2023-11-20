@@ -299,15 +299,6 @@ def plot_all_scats_markerclusters():
     scats_color = params["scat_color"]
 
     with fn.conn_alchemy().connect() as con:
-        """
-        cursor.execute(
-        ("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat " "FROM scats " "WHERE date BETWEEN %s AND %s "),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
-    )
-    """
         scat_features: list = []
 
         tot_min_lat, tot_min_lon = 90, 90
@@ -805,10 +796,9 @@ def del_scat(scat_id):
     """
     Delete scat
     """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("DELETE FROM scats WHERE scat_id = %(scat_id)s", {"scat_id": scat_id})
-    connection.commit()
+    with fn.conn_alchemy().connect() as con:
+        con.execute(text("DELETE FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id})
+
     return redirect("/scats_list")
 
 
@@ -818,16 +808,11 @@ def set_path_id(scat_id, path_id):
     """
     Set path_id for scat
     """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    cursor.execute("UPDATE scats SET path_id = %(path_id)s WHERE scat_id = %(scat_id)s", {"path_id": path_id, "scat_id": scat_id})
-    connection.commit()
-
-    # return redirect(f"{app.static_url_path}/systematic_scats_transects_location.html")
+    with fn.conn_alchemy().connect() as con:
+        con.execute(text("UPDATE scats SET path_id = :path_id WHERE scat_id = :scat_id"), {"path_id": path_id, "scat_id": scat_id})
 
     flash(fn.alert_danger("The path ID was updated. "))
-
     return redirect("/")
 
 
@@ -853,19 +838,19 @@ def load_scats_xlsx():
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
             flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
-            return redirect(f"/load_scats_xlsx")
+            return redirect("/load_scats_xlsx")
 
         try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file") + f"({error_info(sys.exc_info())})")
-            return redirect(f"/load_scats_xlsx")
+            return redirect("/load_scats_xlsx")
 
         r, msg, all_data, _, _ = scats_import.extract_data_from_xlsx(filename)
         if r:
             flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
-            return redirect(f"/load_scats_xlsx")
+            return redirect("/load_scats_xlsx")
 
         else:
             # check if scat_id already in DB
@@ -894,49 +879,48 @@ def confirm_load_xlsx(filename, mode):
 
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect(f"/load_scats_xlsx")
+        return redirect("/load_scats_xlsx")
 
     r, msg, all_data, all_paths, all_tracks = scats_import.extract_data_from_xlsx(filename)
     if r:
         flash(msg)
-        return redirect(f"/load_scats_xlsx")
+        return redirect("/load_scats_xlsx")
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     # check if scat_id already in DB
     scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
-    sql = f"select scat_id from scats where scat_id in ('{scats_list}')"
-    cursor.execute(sql)
-    scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
+    sql = text(f"select scat_id from scats where scat_id in ('{scats_list}')")
 
-    sql = (
-        "UPDATE scats SET scat_id = %(scat_id)s, "
-        "                date = %(date)s,"
-        "                wa_code = %(wa_code)s,"
-        "                genotype_id = %(genotype_id)s,"
-        "                sampling_season = %(sampling_season)s,"
-        "                sampling_type = %(sampling_type)s,"
-        "                path_id = %(path_id)s, "
-        "                snowtrack_id = %(snowtrack_id)s, "
-        "                location = %(location)s, "
-        "                municipality = %(municipality)s, "
-        "                province = %(province)s, "
-        "                region = %(region)s, "
-        "                deposition = %(deposition)s, "
-        "                matrix = %(matrix)s, "
-        "                collected_scat = %(collected_scat)s, "
-        "                scalp_category = %(scalp_category)s, "
-        "                genetic_sample = %(genetic_sample)s, "
-        "                coord_east = %(coord_east)s, "
-        "                coord_north = %(coord_north)s, "
-        "                coord_zone = %(coord_zone)s, "
-        "                observer = %(operator)s, "
-        "                institution = %(institution)s, "
+    scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
+
+    sql = text(
+        "UPDATE scats SET scat_id = :scat_id, "
+        "                date = :date,"
+        "                wa_code = :wa_code,"
+        "                genotype_id = :genotype_id,"
+        "                sampling_season = :sampling_season,"
+        "                sampling_type = :sampling_type,"
+        "                path_id = :path_id, "
+        "                snowtrack_id = :snowtrack_id, "
+        "                location = :location, "
+        "                municipality = :municipality, "
+        "                province = :province, "
+        "                region = :region, "
+        "                deposition = :deposition, "
+        "                matrix = :matrix, "
+        "                collected_scat = :collected_scat, "
+        "                scalp_category = :scalp_category, "
+        "                genetic_sample = :genetic_sample, "
+        "                coord_east = :coord_east, "
+        "                coord_north = :coord_north, "
+        "                coord_zone = :coord_zone, "
+        "                observer = :operator, "
+        "                institution = :institution, "
         # "                geo = %(geo)s, "
-        "                geometry_utm = %(geometry_utm)s, "
-        "                notes = %(notes)s "
-        "WHERE scat_id = %(scat_id)s;"
+        "                geometry_utm = :geometry_utm, "
+        "                notes = :notes "
+        "WHERE scat_id = :scat_id;"
         "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
         "location, municipality, province, region, "
         "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
@@ -944,8 +928,8 @@ def confirm_load_xlsx(filename, mode):
         "observer, institution,"
         # "geo, "
         "geometry_utm, notes) "
-        "SELECT %(scat_id)s, %(date)s, %(wa_code)s, %(genotype_id)s, "
-        " %(sampling_season)s, %(sampling_type)s, %(path_id)s, %(snowtrack_id)s, "
+        "SELECT :scat_id, :date, :wa_code, :genotype_id, "
+        ":sampling_season, :sampling_type, :path_id, :snowtrack_id, "
         "%(location)s, %(municipality)s, %(province)s, %(region)s, "
         "%(deposition)s, %(matrix)s, %(collected_scat)s, %(scalp_category)s, %(genetic_sample)s,"
         " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, "
@@ -966,7 +950,7 @@ def confirm_load_xlsx(filename, mode):
             count_added += 1
 
         try:
-            cursor.execute(
+            con.execute(
                 sql,
                 {
                     "scat_id": data["scat_id"].strip(),
@@ -998,8 +982,6 @@ def confirm_load_xlsx(filename, mode):
             )
         except Exception:
             return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
-
-    connection.commit()
 
     # paths
     if all_paths:
@@ -1084,7 +1066,7 @@ def confirm_load_xlsx(filename, mode):
     msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
     flash(fn.alert_success(msg))
 
-    return redirect(f"/scats")
+    return redirect("/scats")
 
 
 @app.route("/systematic_scats_transect_location")
