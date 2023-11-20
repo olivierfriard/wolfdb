@@ -415,28 +415,25 @@ def export_scats():
     export all scats in XLSX
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        (
-            "SELECT *,"
-            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-            "CASE "
-            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
-            "ELSE scats.scalp_category "
-            "END "
-            "FROM scats "
-            "WHERE date BETWEEN %s AND %s "
-            "ORDER BY scat_id"
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
-    )
-
-    file_content = scats_export.export_scats(cursor.fetchall())
+    with fn.conn_alchemy().connect() as con:
+        file_content = scats_export.export_scats(
+            con.execute(
+                text(
+                    "SELECT *,"
+                    "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "CASE "
+                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+                    "ELSE scats.scalp_category "
+                    "END "
+                    "FROM scats "
+                    "WHERE date BETWEEN :start_date AND :end_date "
+                    "ORDER BY scat_id"
+                ),
+                {"start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all()
+        )
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -464,7 +461,7 @@ def new_scat():
             "new_scat.html",
             header_title="New scat",
             title="New scat",
-            action=f"/new_scat",
+            action="/new_scat",
             form=form,
             default_values=default_values,
         )
@@ -481,7 +478,7 @@ def new_scat():
             "new_scat.html",
             header_title="New scat",
             title="New scat",
-            action=f"/new_scat",
+            action="/new_scat",
             form=form,
             default_values={"coord_zone": "32N"},
         )
