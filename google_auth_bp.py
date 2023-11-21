@@ -57,7 +57,10 @@ def login():
 
 @app.route("/login/callback")  # this is the page that will handle the callback process meaning process after the authorization
 def callback():
-    flow.fetch_token(authorization_response=request.url)
+    try:
+        flow.fetch_token(authorization_response=request.url)
+    except Exception:
+        redirect("/")
 
     if not session.get("state", False) == request.args["state"]:
         abort(500)  # state does not match!
