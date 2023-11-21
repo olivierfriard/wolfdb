@@ -28,6 +28,7 @@ app = flask.Blueprint("tracks", __name__, template_folder="templates", static_ur
 params = config()
 app.debug = params["debug"]
 
+
 def error_info(exc_info: tuple) -> tuple:
     """
     return details about error
@@ -701,7 +702,7 @@ def load_tracks_xlsx():
             flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
             return redirect("/load_tracks_xlsx")
 
-        try
+        try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
