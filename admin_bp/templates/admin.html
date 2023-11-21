@@ -12,6 +12,8 @@
 
 Mode: <b>{{mode}}</b><br>
 
+Debug: <b>{{ debug }}</b>
+
 
 
 {% with messages = get_flashed_messages() %}
@@ -34,11 +36,27 @@ Mode: <b>{{mode}}</b><br>
 
 {% if mode == 'dev' %}
 
+<br><br>
 
-<a href="/delete_scats" class="btn btn-primary">Empty scats table</a>
-<br>
 
-<a href="/delete_paths" class="btn btn-primary">Empty paths table</a>
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+      <h5 class="card-title">Dev mode</h5>
+      <p class="card-text">
+
+
+
+        <a href="/delete_scats" class="btn btn-primary">Empty scats table</a>
+        <br>
+        <br>
+        <a href="/delete_paths" class="btn btn-primary">Empty paths table</a>
+        
+
+      </p>
+      
+    </div>
+  </div>
+
 
 {% endif %}
 

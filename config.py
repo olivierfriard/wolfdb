@@ -3,20 +3,20 @@ WolfDB
 Read configuration file (config.ini)
 """
 
+import os
 import json
 from pathlib import Path
 from configparser import ConfigParser
 
 
-def config():
-    if (Path(__file__).parent / "DEV").is_file():
-        service_name = "wolfdb_dev"
-    else:
-        service_name = "wolfdb"
+def config() -> dict:
+    config_filename = os.environ.get("WOLFDB_CONFIG_PATH")
 
-    config_filename = Path.home() / ".config" / service_name / "config.ini"
+    if config_filename is None:
+        print("environment variable WOLFDB_CONFIG_PATH not set")
+        return {}
 
-    if not config_filename.is_file():
+    if not Path(config_filename).is_file():
         print("config.ini not found")
         return {}
 
@@ -32,6 +32,6 @@ def config():
     db["excel_allowed_extensions"] = json.loads(db["excel_allowed_extensions"])
 
     # add config dir
-    db["config_dir"] = config_filename.parent
+    db["config_dir"] = Path(config_filename).parent
 
     return db
