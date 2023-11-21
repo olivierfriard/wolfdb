@@ -27,7 +27,8 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = params["oauthlib_insecure_transport"
 
 GOOGLE_CLIENT_ID = params["google_client_id"]
 
-flow = Flow.from_client_secrets_file(  # Flow is OAuth 2.0 a class that stores all the information on how we want to authorize our users
+# client_secret.json file must be in the same directory than configuration file
+flow = Flow.from_client_secrets_file(
     client_secrets_file=str(params["config_dir"] / "client_secret.json"),
     scopes=[
         "https://www.googleapis.com/auth/userinfo.profile",

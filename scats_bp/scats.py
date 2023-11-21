@@ -372,22 +372,26 @@ def scats_list():
             .fetchone()["n_scats"]
         )
 
+        sql = text(
+            "SELECT *,"
+            "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+            "CASE "
+            "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+            "ELSE scats.scalp_category "
+            "END "
+            "FROM scats "
+            "WHERE date BETWEEN :start_date AND :end_date "
+            "ORDER BY scat_id"
+        )
+
+        sql = text("SELECT * FROM scats_list WHERE date BETWEEN :start_date AND :end_date ORDER BY scat_id")
+
         return render_template(
             "scats_list.html",
             header_title="List of scats",
             n_scats=n_scats,
             results=con.execute(
-                text(
-                    "SELECT *,"
-                    "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-                    "CASE "
-                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
-                    "ELSE scats.scalp_category "
-                    "END "
-                    "FROM scats "
-                    "WHERE date BETWEEN :start_date AND :end_date "
-                    "ORDER BY scat_id"
-                ),
+                sql,
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
