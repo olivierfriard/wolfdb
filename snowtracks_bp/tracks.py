@@ -28,9 +28,6 @@ app = flask.Blueprint("tracks", __name__, template_folder="templates", static_ur
 params = config()
 app.debug = params["debug"]
 
-params["excel_allowed_extensions"] = json.loads(params["excel_allowed_extensions"])
-
-
 def error_info(exc_info: tuple) -> tuple:
     """
     return details about error

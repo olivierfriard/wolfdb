@@ -30,9 +30,6 @@ app = flask.Blueprint("genetic", __name__, template_folder="templates")
 params = config()
 app.debug = params["debug"]
 
-params["excel_allowed_extensions"] = json.loads(params["excel_allowed_extensions"])
-
-
 # db wolf -> db 0
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
@@ -137,7 +134,6 @@ def view_genotype(genotype_id):
     samples_features = []
     count, sum_lon, sum_lat = 0, 0, 0
     for row in wa_codes:
-
         sample_geojson = json.loads(row["sample_lonlat"])
         count += 1
         lon, lat = sample_geojson["coordinates"]
@@ -199,7 +195,6 @@ def view_genotype(genotype_id):
 @app.route("/genotypes")
 @fn.check_login
 def genotypes():
-
     return render_template("genotypes.html", header_title="Genotypes")
 
 
@@ -306,21 +301,15 @@ def genotypes_list(type, mode="web"):
             loci_values[row["genotype_id"]] = fn.get_loci_value(row["genotype_id"], loci_list)
 
     if mode == "export":
-
         file_content = export.export_genotypes_list(loci_list, results, loci_values)
 
         response = make_response(file_content, 200)
-        response.headers[
-            "Content-type"
-        ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers[
-            "Content-disposition"
-        ] = f"attachment; filename=genotypes_list_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = f"attachment; filename=genotypes_list_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
         return response
 
     else:
-
         return render_template(
             "genotypes_list.html",
             header_title=header_title,
@@ -336,7 +325,6 @@ def genotypes_list(type, mode="web"):
 @app.route("/view_wa/<wa_code>")
 @fn.check_login
 def view_wa(wa_code):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -353,7 +341,6 @@ def view_wa(wa_code):
     result = cursor.fetchone()
 
     if result is not None:
-
         if result["sample_id"].startswith("E"):
             return redirect(f"/view_scat/{result['sample_id']}")
 
@@ -387,7 +374,6 @@ def view_wa(wa_code):
         """
 
     else:
-
         cursor.execute(
             (
                 "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
@@ -404,7 +390,6 @@ def view_wa(wa_code):
             return redirect(f"/view_tissue/{result['tissue_id']}")
 
         else:
-
             flash(fn.alert_danger(f"WA code not found: {wa_code}"))
             return redirect(request.referrer)
 
@@ -439,7 +424,6 @@ def plot_all_wa():
     tot_max_lat, tot_max_lon = -90, -90
 
     for row in cursor.fetchall():
-
         scat_geojson = json.loads(row["scat_lonlat"])
 
         lon, lat = scat_geojson["coordinates"]
@@ -496,7 +480,6 @@ def plot_all_wa():
 @app.route("/plot_wa_clusters/<distance>")
 @fn.check_login
 def plot_wa_clusters(distance):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -525,7 +508,6 @@ def plot_wa_clusters(distance):
     scat_features = []
     min_lon, min_lat, max_lon, max_lat = 90, 90, -90, -90
     for row in results:
-
         scat_geojson = json.loads(row["scat_lonlat"])
         lon, lat = scat_geojson["coordinates"]
         min_lon = min(min_lon, lon)
@@ -616,7 +598,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     out = []
     loci_values = {}
     for row in wa_scats:
-
         has_notes = False
         # genotype working notes
         if row["notes"] is not None and row["notes"]:
@@ -628,11 +609,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
             # check if loci have notes
             has_loci_notes = set(
-                [
-                    loci_values[row["wa_code"]][x][allele]["notes"]
-                    for x in loci_values[row["wa_code"]]
-                    for allele in ["a", "b"]
-                ]
+                [loci_values[row["wa_code"]][x][allele]["notes"] for x in loci_values[row["wa_code"]] for allele in ["a", "b"]]
             ) != {""}
 
         else:
@@ -645,17 +622,12 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, with_notes)
 
         response = make_response(file_content, 200)
-        response.headers[
-            "Content-type"
-        ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers[
-            "Content-disposition"
-        ] = f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
         return response
 
     else:
-
         session["go_back_url"] = f"/wa_genetic_samples"
 
         return render_template(
@@ -673,7 +645,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 @app.route("/wa_analysis/<distance>/<cluster_id>/<mode>")
 @fn.check_login
 def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -721,21 +692,15 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
     if mode == "export":
-
         file_content = export.export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id)
 
         response = make_response(file_content, 200)
-        response.headers[
-            "Content-type"
-        ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers[
-            "Content-disposition"
-        ] = f"attachment; filename=wa_analysis_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = f"attachment; filename=wa_analysis_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
         return response
 
     else:
-
         session["go_back_url"] = f"/wa_analysis/{distance}/{cluster_id}"
 
         return render_template(
@@ -753,7 +718,6 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 @app.route("/wa_analysis_group/<mode>/<distance>/<cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -795,7 +759,6 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     loci_values = {}
     data = {}
     for row in genotype_id:
-
         if row["genotype_id"] is None:
             continue
 
@@ -821,15 +784,10 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             loci_values[row["genotype_id"]] = fn.get_loci_value(row["genotype_id"], loci_list)
 
     if mode == "export":
-
         file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
         response = make_response(file_content, 200)
-        response.headers[
-            "Content-type"
-        ] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers[
-            "Content-disposition"
-        ] = f"attachment; filename=genotypes_matches_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = f"attachment; filename=genotypes_matches_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
         return response
 
     else:
@@ -849,7 +807,6 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 @app.route("/view_genetic_data/<wa_code>")
 @fn.check_login
 def view_genetic_data(wa_code):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -914,7 +871,6 @@ def add_genetic_data(wa_code):
         loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
     if request.method == "GET":
-
         return render_template(
             "add_genetic_data.html",
             header_title=f"Add genetic data for {wa_code}",
@@ -926,7 +882,6 @@ def add_genetic_data(wa_code):
         )
 
     if request.method == "POST":
-
         # set sex
         cursor.execute("UPDATE wa_results SET sex_id = %s WHERE wa_code = %s", [request.form["sex"], wa_code])
         connection.commit()
@@ -957,12 +912,8 @@ def add_genetic_data(wa_code):
                             wa_code,
                             locus["name"],
                             allele,
-                            int(request.form[locus["name"] + f"_{allele}"])
-                            if request.form[locus["name"] + f"_{allele}"]
-                            else None,
-                            request.form[locus["name"] + f"_{allele}_notes"]
-                            if request.form[locus["name"] + f"_{allele}_notes"]
-                            else None,
+                            int(request.form[locus["name"] + f"_{allele}"]) if request.form[locus["name"] + f"_{allele}"] else None,
+                            request.form[locus["name"] + f"_{allele}_notes"] if request.form[locus["name"] + f"_{allele}_notes"] else None,
                             "OK|" + session["email"],
                         ],
                     )
@@ -981,7 +932,6 @@ def add_genetic_data(wa_code):
         for locus in loci:
             for allele in ["a", "b"]:
                 if locus["name"] + f"_{allele}" in request.form and request.form[locus["name"] + f"_{allele}"]:
-
                     sql = (
                         "SELECT DISTINCT (SELECT val FROM wa_locus WHERE locus = %(locus)s AND allele = %(allele)s AND wa_code =wa_scat_dw.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
                         "FROM wa_scat_dw "
@@ -992,7 +942,6 @@ def add_genetic_data(wa_code):
                     rows = cursor.fetchall()
 
                     if len(rows) == 1:  # all wa code have the same value
-
                         sql = (
                             "SELECT distinct (SELECT id FROM genotype_locus where locus = %(locus)s AND allele = %(allele)s AND genotype_id =wa_scat_dw.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
                             "FROM wa_scat_dw "
@@ -1004,7 +953,6 @@ def add_genetic_data(wa_code):
                         rows2 = cursor.fetchall()
 
                         for row2 in rows2:
-
                             cursor.execute(
                                 (
                                     "UPDATE genotype_locus "
@@ -1041,7 +989,6 @@ def add_genetic_data(wa_code):
 @app.route("/view_genetic_data_history/<wa_code>/<locus>")
 @fn.check_login
 def view_genetic_data_history(wa_code, locus):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -1088,7 +1035,6 @@ def locus_note(wa_code, locus, allele, timestamp):
     data = {"wa_code": wa_code, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
 
     if request.method == "GET":
-
         cursor.execute(
             (
                 "SELECT * FROM wa_locus "
@@ -1117,7 +1063,6 @@ def locus_note(wa_code, locus, allele, timestamp):
         )
 
     if request.method == "POST":
-
         sql = (
             "UPDATE wa_locus SET notes = %(notes)s, "
             "user_id = %(user_id)s "
@@ -1172,7 +1117,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
     data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
 
     if request.method == "GET":
-
         return render_template(
             "add_genotype_locus_note.html",
             header_title=f"Add note on {genotype_id} {locus} {allele}",
@@ -1181,7 +1125,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         )
 
     if request.method == "POST":
-
         sql = (
             "UPDATE genotype_locus "
             "SET notes = %(notes)s, "
@@ -1216,7 +1159,6 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         cursor.execute(sql, {"genotype_id": genotype_id, "locus": locus, "allele": allele, "value": data["value"]})
         rows = cursor.fetchall()
         for row in rows:
-
             cursor.execute(
                 ("UPDATE wa_locus " "SET notes = %(notes)s, " "user_id = %(user_id)s " "WHERE id = %(id)s "),
                 {"notes": data["notes"], "id": row["id"], "user_id": session["email"]},
@@ -1257,7 +1199,6 @@ def genotype_note(genotype_id):
         return render_template("add_genotype_note.html", header_title=f"Add note to genotype {genotype_id}", data=data)
 
     if request.method == "POST":
-
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -1304,17 +1245,12 @@ def set_wa_genotype(wa_code):
         )
 
     if request.method == "POST":
-
         sql = "UPDATE wa_results SET genotype_id = %(genotype_id)s " "WHERE wa_code = %(wa_code)s "
 
         cursor.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
         connection.commit()
 
-        flash(
-            fn.alert_danger(
-                f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"
-            )
-        )
+        flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
 
         return redirect(request.form["return_url"])
 
@@ -1336,7 +1272,6 @@ def set_status(genotype_id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(("SELECT status FROM genotypes WHERE genotype_id = %s"), [genotype_id])
         result = cursor.fetchone()
 
@@ -1355,7 +1290,6 @@ def set_status(genotype_id):
         )
 
     if request.method == "POST":
-
         sql = "UPDATE genotypes SET status = %(status)s " "WHERE genotype_id = %(genotype_id)s "
 
         cursor.execute(sql, {"status": request.form["status"].strip().lower(), "genotype_id": genotype_id})
@@ -1382,7 +1316,6 @@ def set_pack(genotype_id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(("SELECT pack FROM genotypes WHERE genotype_id = %s  "), [genotype_id])
         result = cursor.fetchone()
 
@@ -1401,7 +1334,6 @@ def set_pack(genotype_id):
         )
 
     if request.method == "POST":
-
         sql = "UPDATE genotypes SET pack = %(pack)s " "WHERE genotype_id = %(genotype_id)s "
 
         cursor.execute(sql, {"pack": request.form["pack"].lower().strip(), "genotype_id": genotype_id})
@@ -1428,7 +1360,6 @@ def set_sex(genotype_id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(("SELECT sex FROM genotypes " "WHERE genotype_id = %s  "), [genotype_id])
         result = cursor.fetchone()
 
@@ -1447,7 +1378,6 @@ def set_sex(genotype_id):
         )
 
     if request.method == "POST":
-
         sql = "UPDATE genotypes SET sex = %(sex)s " "WHERE genotype_id = %(genotype_id)s "
 
         cursor.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
@@ -1481,7 +1411,6 @@ def set_status_1st_recap(genotype_id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(("SELECT status_first_capture FROM genotypes " "WHERE genotype_id = %s  "), [genotype_id])
         result = cursor.fetchone()
 
@@ -1500,11 +1429,7 @@ def set_status_1st_recap(genotype_id):
         )
 
     if request.method == "POST":
-
-        sql = (
-            "UPDATE genotypes SET status_first_capture = %(status_first_capture)s "
-            "WHERE genotype_id = %(genotype_id)s "
-        )
+        sql = "UPDATE genotypes SET status_first_capture = %(status_first_capture)s " "WHERE genotype_id = %(genotype_id)s "
 
         cursor.execute(sql, {"status_first_capture": request.form["status_first_capture"], "genotype_id": genotype_id})
 
@@ -1530,7 +1455,6 @@ def set_dispersal(genotype_id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(("SELECT dispersal FROM genotypes " "WHERE genotype_id = %s  "), [genotype_id])
         result = cursor.fetchone()
 
@@ -1549,7 +1473,6 @@ def set_dispersal(genotype_id):
         )
 
     if request.method == "POST":
-
         sql = "UPDATE genotypes SET dispersal = %(dispersal)s " "WHERE genotype_id = %(genotype_id)s "
 
         cursor.execute(sql, {"dispersal": request.form["dispersal"].strip(), "genotype_id": genotype_id})
@@ -1576,7 +1499,6 @@ def set_hybrid(genotype_id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(("SELECT hybrid FROM genotypes " "WHERE genotype_id = %s  "), [genotype_id])
         result = cursor.fetchone()
 
@@ -1595,7 +1517,6 @@ def set_hybrid(genotype_id):
         )
 
     if request.method == "POST":
-
         sql = "UPDATE genotypes SET hybrid = %(hybrid)s " "WHERE genotype_id = %(genotype_id)s "
 
         cursor.execute(sql, {"hybrid": request.form["hybrid"].strip(), "genotype_id": genotype_id})
@@ -1620,21 +1541,14 @@ def load_definitive_genotypes_xlsx():
     """
 
     if request.method == "GET":
-        return render_template(
-            "load_definitive_genotypes_xlsx.html", header_title="Load genetic data for genotypes from XLSX/ODS file"
-        )
+        return render_template("load_definitive_genotypes_xlsx.html", header_title="Load genetic data for genotypes from XLSX/ODS file")
 
     if request.method == "POST":
-
         new_file = request.files["new_file"]
 
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(
-                fn.alert_danger(
-                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
-                )
-            )
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
             return redirect(f"/load_definitive_genotypes_xlsx")
 
         try:
@@ -1758,10 +1672,7 @@ def confirm_load_definitive_genotypes_xlsx(filename):
 
         # insert loci
         for locus in loci_list:
-            sql_loci = (
-                "INSERT INTO genotype_locus (genotype_id, locus, allele, val, timestamp) VALUES "
-                "(%s, %s, %s, %s, NOW())"
-            )
+            sql_loci = "INSERT INTO genotype_locus (genotype_id, locus, allele, val, timestamp) VALUES " "(%s, %s, %s, %s, NOW())"
 
             if "a" in d[locus]:
                 cursor.execute(sql_loci, [d["genotype_id"], locus, "a", d[locus]["a"]])

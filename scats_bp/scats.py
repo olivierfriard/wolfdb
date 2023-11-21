@@ -34,8 +34,6 @@ app = flask.Blueprint("scats", __name__, template_folder="templates", static_url
 
 params = config()
 
-params["excel_allowed_extensions"] = json.loads(params["excel_allowed_extensions"])
-
 app.debug = params["debug"]
 
 LOCK_FILE_NAME_PATH = "check_location.lock"

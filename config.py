@@ -3,11 +3,12 @@ WolfDB
 Read configuration file (config.ini)
 """
 
+import json
 from pathlib import Path
 from configparser import ConfigParser
 
-def config():
 
+def config():
     if (Path(__file__).parent / "DEV").is_file():
         service_name = "wolfdb_dev"
     else:
@@ -27,9 +28,10 @@ def config():
         for param in params:
             db[param[0]] = param[1]
 
+    # convert from str to list
+    db["excel_allowed_extensions"] = json.loads(db["excel_allowed_extensions"])
+
     # add config dir
     db["config_dir"] = config_filename.parent
 
     return db
-
-

@@ -8,6 +8,7 @@ flask blueprint for data analysis
 
 import flask
 from flask import render_template, redirect, request, flash, make_response, session
+from sqlalchemy import text
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -112,54 +113,54 @@ def transects_samples(mode: str):
 
     year_init = session["start_date"][:4]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     # check if path based on transect exist
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
-    transects = cursor.fetchall()
+    transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
     out: dict = {}
     template: dict = {}
     header = f"Transect ID{sep}"
     # check max number of sampling by year
-    cursor.execute(
-        (
-            "SELECT MAX(c) AS n_paths "
-            "FROM "
-            "(SELECT COUNT(*) AS c FROM paths "
-            "      WHERE transect_id != '' "
-            "            AND date BETWEEN %s AND %s "
-            "      GROUP BY transect_id "
-            ") x"
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
+    result = (
+        con.execute(
+            text(
+                "SELECT MAX(c) AS n_paths "
+                "FROM "
+                "(SELECT COUNT(*) AS c FROM paths "
+                "      WHERE transect_id != '' "
+                "            AND date BETWEEN :start_date AND :end_date "
+                "      GROUP BY transect_id "
+                ") x"
+            ),
+            {"start_date": session["start_date"], "end_date": session["end_date"]},
+        )
+        .mappings()
+        .fetchone()
     )
-    result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
     for i in range(result["n_paths"]):
         header += f"{year_init}-{i + 1}{sep}"
 
     for transect in transects:
-
         row_out = copy.deepcopy(template)
 
-        cursor.execute(
-            ("SELECT path_id FROM paths WHERE transect_id = %s AND date BETWEEN %s AND %s ORDER BY date"),
-            (transect["transect_id"], session["start_date"], session["end_date"]),
+        paths = (
+            con.execute(
+                text("SELECT path_id FROM paths WHERE transect_id = :transect_id AND date BETWEEN :start_date AND :end_date ORDER BY date"),
+                {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all()
         )
-        paths = cursor.fetchall()
 
         idx = 0
         for path in paths:
-            cursor.execute(
-                ("SELECT count(*) AS n_scats FROM scats WHERE path_id = %s "),
-                [path["path_id"]],
+            scats = (
+                con.execute(text("SELECT count(*) AS n_scats FROM scats WHERE path_id = :path_id"), {"path_id": path["path_id"]})
+                .mappings()
+                .fetchone()
             )
-            scats = cursor.fetchone()
             if mode == "number":
                 row_out[idx] = str(scats["n_scats"])
             if mode == "presence":
@@ -197,7 +198,6 @@ def transects_samples(mode: str):
 @app.route("/transects_dates")
 @fn.check_login
 def transects_dates():
-
     sep = ";"
 
     year_init = session["start_date"][:4]
@@ -234,16 +234,10 @@ def transects_dates():
         header += f"{year_init}-{i + 1}{sep}"
 
     for transect in transects:
-
         row_out = copy.deepcopy(template)
 
         cursor.execute(
-            (
-                "SELECT path_id, date::date as date FROM paths "
-                "WHERE transect_id = %s "
-                "AND date BETWEEN %s AND %s "
-                "ORDER BY date"
-            ),
+            ("SELECT path_id, date::date as date FROM paths " "WHERE transect_id = %s " "AND date BETWEEN %s AND %s " "ORDER BY date"),
             (transect["transect_id"], session["start_date"], session["end_date"]),
         )
         paths = cursor.fetchall()
@@ -276,7 +270,6 @@ def transects_dates():
 @app.route("/transects_completeness")
 @fn.check_login
 def transects_completeness():
-
     sep = ";"
     year_init = session["start_date"][:4]
 
@@ -313,7 +306,6 @@ def transects_completeness():
         header += f"{year_init}-{i + 1}{sep}"
 
     for transect in transects:
-
         row_out = copy.deepcopy(template)
 
         cursor.execute(
@@ -359,7 +351,6 @@ def cell_occupancy():
     year_end = session["end_date"][:4]
 
     if request.method == "GET":
-
         # remove files older than 24h
         for path in pl.Path("static").glob("cell_occupancy_*.zip"):
             if time.time() - os.path.getctime(path) > 86400:
@@ -373,7 +364,6 @@ def cell_occupancy():
         )
 
     if request.method == "POST":
-
         new_file = request.files["new_file"]
 
         # check file extension
@@ -383,9 +373,7 @@ def cell_occupancy():
 
         # save uploaded file
         try:
-            filename = pl.Path(params["upload_folder"]) / pl.Path(
-                str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix)
-            )
+            filename = pl.Path(params["upload_folder"]) / pl.Path(str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix))
             new_file.save(filename)
         except Exception:
             flash(fn.alert_danger("Error saving the uploaded file") + f"({error_info(sys.exc_info())})")
