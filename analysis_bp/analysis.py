@@ -9,8 +9,6 @@ flask blueprint for data analysis
 import flask
 from flask import render_template, redirect, request, flash, make_response, session
 from sqlalchemy import text
-import psycopg2
-import psycopg2.extras
 from config import config
 import pathlib as pl
 import os
@@ -202,33 +200,34 @@ def transects_dates():
 
     year_init = session["start_date"][:4]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     # check if path based on transect exist
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
-    transects = cursor.fetchall()
+    transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
     out: dict = {}
     template: dict = {}
     header = f"Transect ID{sep}"
     # check max number of sampling
-    cursor.execute(
-        (
-            "SELECT MAX(c) AS n_paths "
-            "FROM "
-            "(SELECT COUNT(*) AS c FROM paths "
-            "      WHERE transect_id != '' "
-            "            AND date BETWEEN %s AND %s "
-            "      GROUP BY transect_id "
-            ") x"
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
+    result = (
+        con.execute(
+            text(
+                "SELECT MAX(c) AS n_paths "
+                "FROM "
+                "(SELECT COUNT(*) AS c FROM paths "
+                "      WHERE transect_id != '' "
+                "            AND date BETWEEN :start_date AND :end_date "
+                "      GROUP BY transect_id "
+                ") x"
+            ),
+            {
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
+        )
+        .mappings()
+        .fetchone()
     )
-    result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
     for i in range(result["n_paths"]):
         header += f"{year_init}-{i + 1}{sep}"
@@ -236,11 +235,19 @@ def transects_dates():
     for transect in transects:
         row_out = copy.deepcopy(template)
 
-        cursor.execute(
-            ("SELECT path_id, date::date as date FROM paths " "WHERE transect_id = %s " "AND date BETWEEN %s AND %s " "ORDER BY date"),
-            (transect["transect_id"], session["start_date"], session["end_date"]),
+        paths = (
+            con.execute(
+                text(
+                    "SELECT path_id, date::date as date FROM paths "
+                    "WHERE transect_id = :transect_id "
+                    "AND date BETWEEN :start_date AND :end_date "
+                    "ORDER BY date"
+                ),
+                {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all()
         )
-        paths = cursor.fetchall()
         idx = 0
         for path in paths:
             row_out[idx] = str(path["date"])
@@ -273,34 +280,28 @@ def transects_completeness():
     sep = ";"
     year_init = session["start_date"][:4]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     # check if path based on transect exist
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
-    transects = cursor.fetchall()
+    transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
-    out = {}
-    template = {}
+    out: dict = {}
+    template: dict = {}
     header = f"Transect ID{sep}"
     # check max number of sampling
-    cursor.execute(
-        (
+    result = con.execute(
+        text(
             "SELECT MAX(c) AS n_paths "
             "FROM "
             "(SELECT COUNT(*) AS c FROM paths "
             "      WHERE transect_id != '' "
-            "            AND date BETWEEN %s AND %s "
+            "            AND date BETWEEN :start_date AND :end_date "
             "      GROUP BY transect_id "
             ") x"
         ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
+        {"start_date": session["start_date"], "end_date": session["end_date"]},
     )
 
-    result = cursor.fetchone()
     template = ["NA"] * result["n_paths"]
     for i in range(result["n_paths"]):
         header += f"{year_init}-{i + 1}{sep}"
@@ -308,11 +309,18 @@ def transects_completeness():
     for transect in transects:
         row_out = copy.deepcopy(template)
 
-        cursor.execute(
-            ("SELECT completeness FROM paths " "WHERE transect_id = %s " "AND date BETWEEN %s AND %s " "ORDER BY date"),
-            [transect["transect_id"], session["start_date"], session["end_date"]],
+        paths = (
+            con.execute(
+                text(
+                    "SELECT completeness FROM paths "
+                    "WHERE transect_id = :transect_id "
+                    "AND date BETWEEN :start_date AND :end_date ORDER BY date"
+                ),
+                {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all()
         )
-        paths = cursor.fetchall()
         idx = 0
         for path in paths:
             row_out[idx] = str(path["completeness"])
