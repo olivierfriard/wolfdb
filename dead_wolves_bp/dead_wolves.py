@@ -29,7 +29,7 @@ app.debug = params["debug"]
 @app.route("/dead_wolves")
 @fn.check_login
 def dead_wolves():
-    return render_template("dead_wolves.html", header_title=f"Dead wolves")
+    return render_template("dead_wolves.html", header_title="Dead wolves")
 
 
 @app.route("/view_tissue/<tissue_id>")
@@ -98,7 +98,6 @@ def view_dead_wolf_id(id):
         lat_lon = []
 
     if lat_lon:
-
         dw_feature = {
             "geometry": {"type": "Point", "coordinates": [lat_lon[1], lat_lon[0]]},
             "type": "Feature",
@@ -155,7 +154,6 @@ def plot_dead_wolves():
 
     dw_features = []
     for row in cursor.fetchall():
-
         try:
             lat, lon = utm.to_latlon(int(float(row["utm_east"])), int(float(row["utm_north"])), 32, "N")
 
@@ -170,14 +168,11 @@ def plot_dead_wolves():
                 "geometry": dict(dw_geojson),
                 "type": "Feature",
                 "properties": {
-                    "popupContent": (
-                        f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>"""
-                    )
+                    "popupContent": (f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>""")
                     + (
                         f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>"""
                         if row["genotype_id"]
-                        else ""
-                        f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>"""
+                        else "" f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>"""
                     ),
                 },
                 "id": row["id"],
@@ -224,7 +219,7 @@ def new_dead_wolf():
         return render_template(
             "new_dead_wolf.html",
             title="New dead wolf",
-            action=f"/new_dead_wolf",
+            action="/new_dead_wolf",
             form=form,
             default_values=default_values,
         )
@@ -235,7 +230,7 @@ def new_dead_wolf():
             "new_dead_wolf.html",
             header_title="New dead wolf",
             title="New dead wolf",
-            action=f"/new_dead_wolf",
+            action="/new_dead_wolf",
             form=form,
             default_values={},
         )
@@ -244,7 +239,6 @@ def new_dead_wolf():
         form = Dead_wolf(request.form)
 
         if form.validate():
-
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -264,13 +258,10 @@ def new_dead_wolf():
             fields_list = cursor.fetchall()
 
             # insert ID
-            cursor.execute(
-                "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)", [new_id, 1, new_id]
-            )
+            cursor.execute("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (%s, %s, %s)", [new_id, 1, new_id])
             connection.commit()
 
             for field in fields_list:
-
                 # region
                 if field["field_id"] == 200:
                     cursor.execute(
@@ -279,7 +270,6 @@ def new_dead_wolf():
                     )
 
                 if f"field{field['field_id']}" in request.form:
-
                     # check UTM coordinates
                     if field["field_id"] in (23, 24) and request.form[f"field{field['field_id']}"] == "":
                         cursor.execute(
@@ -334,7 +324,6 @@ def edit_dead_wolf(id):
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute(
             (
                 "SELECT id, dead_wolves_values.field_id AS field_id, name, val "
@@ -379,11 +368,9 @@ def edit_dead_wolf(id):
         )
 
     if request.method == "POST":
-
         form = Dead_wolf(request.form)
 
         if form.validate():
-
             cursor.execute("SELECT * FROM dead_wolves_fields_definition ORDER BY position")
             fields_list = cursor.fetchall()
 
@@ -417,16 +404,11 @@ def edit_dead_wolf(id):
 
 @app.route("/del_dead_wolf/<id>")
 def del_dead_wolf(id):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cursor.execute(
-        (
-            "INSERT INTO dead_wolves_values VALUES (%s, 107, NOW()) "
-            "ON CONFLICT (id, field_id) DO UPDATE "
-            "SET val = NOW()"
-        ),
+        ("INSERT INTO dead_wolves_values VALUES (%s, 107, NOW()) " "ON CONFLICT (id, field_id) DO UPDATE " "SET val = NOW()"),
         [id],
     )
     connection.commit()
