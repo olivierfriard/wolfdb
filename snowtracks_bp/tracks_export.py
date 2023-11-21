@@ -6,7 +6,7 @@ from openpyxl import Workbook
 from tempfile import NamedTemporaryFile
 import psycopg2
 import psycopg2.extras
-from config import config
+from sqlalchemy import text
 import fiona
 import shutil
 import functions as fn
@@ -15,11 +15,10 @@ import pathlib as pl
 
 
 def export_tracks(tracks):
-
     wb = Workbook()
 
     ws1 = wb.active
-    ws1.title = f"Tracks"
+    ws1.title = "Tracks"
 
     header = [
         "snowtrack_id",
@@ -82,11 +81,8 @@ def export_shapefile(dir_path: str, file_name: str, log_file: str) -> str:
 
     log = open(log_file, "w")
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT snowtrack_id, ST_AsGeoJSON(multilines) AS track_geojson FROM snow_tracks")
-    tracks = cursor.fetchall()
+    with fn.conn_alchemy().connect() as con:
+        tracks = con.execute(text("SELECT snowtrack_id, ST_AsGeoJSON(multilines) AS track_geojson FROM snow_tracks")).mappings().all()
 
     schema = {
         "geometry": "MultiLineString",
@@ -94,9 +90,7 @@ def export_shapefile(dir_path: str, file_name: str, log_file: str) -> str:
     }
 
     with fiona.open(dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632") as layer:
-
         for track in tracks:
-
             print(file=log)
             print(track, file=log)
 

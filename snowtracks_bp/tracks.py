@@ -129,11 +129,7 @@ def view_track(snowtrack_id):
 
     # number of scats
     cursor.execute(
-        (
-            "SELECT *,"
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-            "FROM scats WHERE snowtrack_id LIKE %s"
-        ),
+        ("SELECT *," "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat " "FROM scats WHERE snowtrack_id LIKE %s"),
         [snowtrack_id],
     )
 
@@ -268,7 +264,6 @@ def plot_tracks():
             geojson = json.loads(row["track_lonlat"])
 
             for line in geojson["coordinates"]:
-
                 # bounding box
                 latitudes = [lat for _, lat in line]
                 longitudes = [lon for lon, _ in line]
@@ -316,7 +311,6 @@ def new_track():
     """
 
     def not_valid(msg):
-
         # default values
         default_values = {}
         for k in request.form:
@@ -369,7 +363,6 @@ def new_track():
         """
 
         if form.validate():
-
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -384,12 +377,12 @@ def new_track():
 
             # check sampling type
             if request.form["sampling_type"] == "":
-                return not_valid(f"You must select a sampling type (Systematic or Opportunistic)")
+                return not_valid("You must select a sampling type (Systematic or Opportunistic)")
 
             # check transect ID
             if request.form["sampling_type"] == "Systematic":
                 if request.form["transect_id"] == "":
-                    return not_valid(f"You must specify a transect ID for a systematic sampling")
+                    return not_valid("You must specify a transect ID for a systematic sampling")
                 all_transects = fn.all_transect_id()
                 transects_id = request.form["transect_id"].upper().replace(" ", "")
                 for transect_id in transects_id.split(";"):
@@ -499,7 +492,6 @@ def edit_track(snowtrack_id):
         )
 
     if request.method == "GET":
-
         connection = fn.get_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -554,7 +546,6 @@ def edit_track(snowtrack_id):
         """
 
         if form.validate():
-
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -571,7 +562,7 @@ def edit_track(snowtrack_id):
             # check transect ID
             if request.form["sampling_type"] == "Systematic":
                 if request.form["transect_id"] == "":
-                    return not_valid(f"You must specify a transect ID for a systematic sampling")
+                    return not_valid("You must specify a transect ID for a systematic sampling")
                 all_transects = fn.all_transect_id()
                 transects_id = request.form["transect_id"].upper().replace(" ", "")
                 for transect_id in transects_id.split(";"):
@@ -673,7 +664,7 @@ def edit_track(snowtrack_id):
                     connection.commit()
 
                 except Exception:
-                    return not_valid(f"Check the MultiLineString field")
+                    return not_valid("Check the MultiLineString field")
 
             return redirect(f"/view_snowtrack/{snowtrack_id}")
         else:
@@ -702,29 +693,23 @@ def del_snowtrack(snowtrack_id):
 )
 @fn.check_login
 def load_tracks_xlsx():
-
     if request.method == "GET":
         return render_template("load_tracks_xlsx.html", header_title="Load tracks from XLSX/ODS")
 
     if request.method == "POST":
-
         new_file = request.files["new_file"]
 
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(
-                fn.alert_danger(
-                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
-                )
-            )
-            return redirect(f"/load_tracks_xlsx")
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+            return redirect("/load_tracks_xlsx")
 
-        try:
+        try
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
-            return redirect(f"/load_tracks_xlsx")
+            return redirect("/load_tracks_xlsx")
 
         r, msg, tracks_data = tracks_import.extract_data_from_tracks_xlsx(filename)
         if r:
@@ -752,15 +737,14 @@ def load_tracks_xlsx():
 @app.route("/confirm_load_tracks_xlsx/<filename>/<mode>")
 @fn.check_login
 def confirm_load_tracks_xlsx(filename, mode):
-
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect(f"/load_tracks_xlsx")
+        return redirect("/load_tracks_xlsx")
 
     r, msg, all_data = tracks_import.extract_data_from_tracks_xlsx(filename)
     if r:
         flash(Markup(f"File name: <b>{filename}</b>") + Markup("<hr><br>") + msg)
-        return redirect(f"/load_tracks_xlsx")
+        return redirect("/load_tracks_xlsx")
 
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -862,9 +846,7 @@ def confirm_load_tracks_xlsx(filename, mode):
                 },
             )
         except Exception:
-            return "An error occured during the import of tracks. Contact the administrator.<br>" + error_info(
-                sys.exc_info()
-            )
+            return "An error occured during the import of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
 
     connection.commit()
 

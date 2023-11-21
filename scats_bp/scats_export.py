@@ -15,7 +15,7 @@ def export_scats(scats):
     ws1 = wb.active
     ws1.title = f"Scats"
 
-    header = [
+    header:list = [
         "Scat ID",
         "Date",
         "Sampling season",

@@ -13,7 +13,7 @@ import functions as fn
 params = config()
 
 
-def extract_data_from_xlsx(filename: str) -> bool:
+def extract_data_from_xlsx(filename: str):
     """
     Extract and check data from a XLSX file
     """
@@ -23,12 +23,12 @@ def extract_data_from_xlsx(filename: str) -> bool:
     if pl.Path(filename).suffix == ".ODS":
         engine = "odf"
 
-    out = ""
+    out: str = ""
 
     try:
         scats_df = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=0, engine=engine)
     except Exception:
-        return True, fn.alert_danger(f"Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
+        return True, fn.alert_danger("Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
 
     """
     if "Scats" not in df.keys():
@@ -60,7 +60,6 @@ def extract_data_from_xlsx(filename: str) -> bool:
         "institution",
         "notes",
     ]:
-
         if column not in list(scats_df.columns):
             return True, fn.alert_danger(f"Column {column} is missing"), {}, {}, {}
 
@@ -73,9 +72,7 @@ def extract_data_from_xlsx(filename: str) -> bool:
     scats_data = {}
     index = 0
     for row in scats_df.itertuples(index=False):
-
-        print(f"{index=}")
-        data = {}
+        data: dict = {}
 
         for idx, column in enumerate(columns_list):
             data[column] = row[idx]
@@ -105,9 +102,7 @@ def extract_data_from_xlsx(filename: str) -> bool:
             date_from_file = ""
 
         if date != date_from_file:
-            out += fn.alert_danger(
-                f"Row {index + 2}: the scat ID {row.scat_id} and the date {date_from_file} are not compatible"
-            )
+            out += fn.alert_danger(f"Row {index + 2}: the scat ID {row.scat_id} and the date {date_from_file} are not compatible")
 
         data["date"] = date_from_file
 
@@ -174,9 +169,7 @@ def extract_data_from_xlsx(filename: str) -> bool:
         if data["matrix"] == "No":
             data["matrix"] = "No"
         if data["matrix"] not in ["Yes", "No", ""]:
-            out += fn.alert_danger(
-                f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["matrix"]}'
-            )
+            out += fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["matrix"]}')
 
         # collected_scat
         data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()

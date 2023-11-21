@@ -9,8 +9,6 @@ flask blueprint for scats management
 import flask
 from flask import render_template, redirect, request, flash, make_response, session
 from markupsafe import Markup
-import psycopg2
-import psycopg2.extras
 from sqlalchemy import text
 
 
@@ -854,12 +852,10 @@ def load_scats_xlsx():
 
         else:
             # check if scat_id already in DB
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
-            sql = f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
-            cursor.execute(sql)
-            scats_to_update = [row["scat_id"] for row in cursor.fetchall()]
+            with fn.conn_alchemy().connect() as con:
+                scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
+                sql = text(f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')")
+                scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
 
             return render_template(
                 "confirm_load_scats_xlsx.html",
@@ -930,12 +926,12 @@ def confirm_load_xlsx(filename, mode):
         "geometry_utm, notes) "
         "SELECT :scat_id, :date, :wa_code, :genotype_id, "
         ":sampling_season, :sampling_type, :path_id, :snowtrack_id, "
-        "%(location)s, %(municipality)s, %(province)s, %(region)s, "
-        "%(deposition)s, %(matrix)s, %(collected_scat)s, %(scalp_category)s, %(genetic_sample)s,"
-        " %(coord_east)s, %(coord_north)s, %(coord_zone)s, %(operator)s, %(institution)s, "
+        ":location, :municipality, :province, :region, "
+        ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
+        ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
         # "%(geo)s, "
-        "%(geometry_utm)s, %(notes)s "
-        "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = %(scat_id)s)"
+        ":geometry_utm, :notes "
+        "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = :scat_id)"
     )
     count_added = 0
     count_updated = 0
@@ -985,27 +981,27 @@ def confirm_load_xlsx(filename, mode):
 
     # paths
     if all_paths:
-        sql = (
-            "UPDATE paths SET path_id = %(path_id)s, "
-            "                 transect_id = %(transect_id)s, "
-            "                date = %(date)s, "
-            "                sampling_season = %(sampling_season)s,"
-            "                completeness = %(completeness)s, "
-            "                observer = %(operator)s, "
-            "                institution = %(institution)s, "
-            "                notes = %(notes)s "
-            "WHERE path_id = %(path_id)s;"
+        sql = text(
+            "UPDATE paths SET path_id = :path_id, "
+            "                 transect_id = :transect_id, "
+            "                date = :date,"
+            "                sampling_season = :sampling_season,"
+            "                completeness = :completeness,"
+            "                observer = :operator,"
+            "                institution = :institution,"
+            "                notes = :notes "
+            "WHERE path_id = :path_id;"
             "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
             "observer, institution, notes) "
-            "SELECT %(path_id)s, %(transect_id)s, %(date)s, "
-            " %(sampling_season)s, %(completeness)s, "
-            " %(operator)s, %(institution)s, %(notes)s "
-            "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
+            "SELECT :path_id, :transect_id, :date,"
+            ":sampling_season, :completeness, "
+            ":operator, :institution, :notes "
+            "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
         )
         for idx in all_paths:
             data = dict(all_paths[idx])
             try:
-                cursor.execute(
+                con.execute(
                     sql,
                     {
                         "path_id": data["path_id"],
@@ -1021,32 +1017,30 @@ def confirm_load_xlsx(filename, mode):
             except Exception:
                 return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
 
-        connection.commit()
-
     # snow tracks
     if all_tracks:
-        sql = (
-            "UPDATE snow_tracks SET snowtrack_id = %(snowtrack_id)s, "
-            "                 path_id = %(path_id)s, "
-            "                date = %(date)s, "
-            "                sampling_season = %(sampling_season)s,"
-            "                observer = %(operator)s, "
-            "                institution = %(institution)s, "
-            "                notes = %(notes)s "
-            "WHERE snow_tracks = %(snow_tracks)s;"
+        sql = text(
+            "UPDATE snow_tracks SET snowtrack_id = :snowtrack_id, "
+            "                 path_id = :path_id, "
+            "                date = :date, "
+            "                sampling_season = :sampling_season,"
+            "                observer = :operator,"
+            "                institution = :institution,"
+            "                notes = :notes "
+            "WHERE snow_tracks = :snow_tracks;"
             "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
             "sampling_season,  "
             "observer, institution, notes) "
-            "SELECT %(snowtrack_id)s, %(path_id)s, %(date)s, "
-            "       %(sampling_season)s, "
-            "       %(operator)s, %(institution)s, %(notes)s "
-            "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = %(snowtrack_id)s)"
+            "SELECT :snowtrack_id, :path_id, :date, "
+            "       :sampling_season, "
+            "       :operator, :institution, :notes "
+            "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = :snowtrack_id)"
         )
         for idx in all_tracks:
             data = dict(all_paths[idx])
 
             try:
-                cursor.execute(
+                con.execute(
                     sql,
                     {
                         "path_id": data["path_id"],
@@ -1060,8 +1054,6 @@ def confirm_load_xlsx(filename, mode):
                 )
             except Exception:
                 return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
-
-        connection.commit()
 
     msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
     flash(fn.alert_success(msg))
