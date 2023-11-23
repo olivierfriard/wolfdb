@@ -2,7 +2,7 @@
 WolfDB web service
 (c) Olivier Friard
 
-flask blueprint for scats management
+flask blueprint for dead wolves management
 """
 
 
