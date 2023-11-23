@@ -8,23 +8,18 @@ import os
 import json
 import fiona
 import shutil
-
-import psycopg2
-import psycopg2.extras
+from sqlalchemy import text
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import functions as fn
 
 
 def create_shapefile(dir_path: str, log_file: str):
-
     log = open(log_file, "w")
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
-    cursor.execute("SELECT * FROM paths")
-    paths = cursor.fetchall()
+    paths = con.execute("SELECT * FROM paths").mappings().all()
 
     schema = {
         "geometry": "LineString",
@@ -44,33 +39,32 @@ def create_shapefile(dir_path: str, log_file: str):
     pointShp = fiona.open(dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632")
 
     for path in paths:
-
         print(file=log)
         print(path, file=log)
         if path["transect_id"] is None or path["transect_id"] == "":
-            print(f"No transect in path", file=log)
+            print("No transect in path", file=log)
             continue
 
-        cursor.execute(
-            (
-                "SELECT *, "
-                "ST_AsGeoJSON(multilines) AS transect_geojson, "
-                "ROUND(ST_Length(multilines)) AS transect_length "
-                "FROM transects "
-                "WHERE transect_id = %s"
-            ),
-            [path["transect_id"]],
+        transect = (
+            con.execute(
+                text(
+                    "SELECT *, "
+                    "ST_AsGeoJSON(multilines) AS transect_geojson, "
+                    "ROUND(ST_Length(multilines)) AS transect_length "
+                    "FROM transects "
+                    "WHERE transect_id = :transect_id"
+                ),
+                {"transect_id": path["transect_id"]},
+            )
+            .mappings()
+            .fetchone()
         )
 
-        transect = cursor.fetchone()
-        # print(transect)
-
         if transect is None:
-            print(f"path['transect_id'] NOT FOUND", file=log)
+            print("path['transect_id'] NOT FOUND", file=log)
             continue
 
         if path["completeness"]:
-
             print(transect["transect_length"], file=log)
 
             transect_geojson = json.loads(transect["transect_geojson"])

@@ -3,37 +3,33 @@ create shapefile (using fiona)
 with all paths based on the completeness
 """
 
-import sys
-import os
 import json
 import fiona
 import shutil
+from sqlalchemy import text
 
-import psycopg2
-import psycopg2.extras
 import pathlib as pl
 
-sys.path.insert(1, os.path.join(sys.path[0], ".."))
+# sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import functions as fn
 
 
-def paths_completeness_shapefile(
-    dir_path: str, log_file: str, start_date: str = "1900-01-01", end_date: str = "2100-01-01"
-) -> str:
-
+def paths_completeness_shapefile(dir_path: str, log_file: str, start_date: str = "1900-01-01", end_date: str = "2100-01-01") -> str:
     log = open(log_file, "w")
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
-    cursor.execute(
-        "SELECT * FROM paths WHERE date BETWEEN %s AND %s ",
-        (
-            start_date,
-            end_date,
-        ),
+    paths = (
+        con.execute(
+            text("SELECT * FROM paths WHERE date BETWEEN :start_date AND :end_date"),
+            {
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+        )
+        .mappings()
+        .all()
     )
-    paths = cursor.fetchall()
 
     schema = {
         "geometry": "LineString",
@@ -51,40 +47,37 @@ def paths_completeness_shapefile(
     }
 
     with fiona.open(dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632") as layer:
-
         for path in paths:
-
             print(file=log)
             print(path, file=log)
             if path["transect_id"] is None or path["transect_id"] == "":
-                print(f"No transect in path", file=log)
+                print("No transect in path", file=log)
                 continue
 
-            cursor.execute(
-                (
-                    "SELECT *, "
-                    "ST_AsGeoJSON(multilines) AS transect_geojson, "
-                    "ROUND(ST_Length(multilines)) AS transect_length "
-                    "FROM transects "
-                    "WHERE transect_id = %s"
-                ),
-                [path["transect_id"]],
+            transect = (
+                con.execute(
+                    text(
+                        "SELECT *, "
+                        "ST_AsGeoJSON(multilines) AS transect_geojson, "
+                        "ROUND(ST_Length(multilines)) AS transect_length "
+                        "FROM transects "
+                        "WHERE transect_id = :transect_id"
+                    ),
+                    {"transect_id": path["transect_id"]},
+                )
+                .mappings()
+                .fetchone()
             )
 
-            transect = cursor.fetchone()
-            # print(transect)
-
             if transect is None:
-                print(f"path['transect_id'] NOT FOUND", file=log)
+                print("path['transect_id'] NOT FOUND", file=log)
                 continue
 
             if path["completeness"]:
-
                 print(transect["transect_length"], file=log)
 
                 transect_geojson = json.loads(transect["transect_geojson"])
                 if len(transect_geojson["coordinates"]) == 1:
-
                     tot_dist = 0
                     new_list = []
                     for idx, point in enumerate(transect_geojson["coordinates"][0]):
@@ -132,6 +125,3 @@ def paths_completeness_shapefile(
         shutil.rmtree(dir_path)
 
     return pl.Path(zip_file_path).name
-
-
-# print(paths_completeness_shapefile("/tmp/8", "/tmp/log8.txt"))
