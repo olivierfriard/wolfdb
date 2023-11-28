@@ -218,29 +218,30 @@ def export_paths():
     export tracks in XLSX file
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
-    cursor.execute(
-        (
-            "SELECT *, "
-            "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
-            "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
-            "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
-            "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
-            "FROM paths "
-            "WHERE date BETWEEN %s AND %s "
-            "ORDER BY region ASC, "
-            "province ASC, "
-            "path_id, date DESC "
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
+    file_content = paths_export.export_paths(
+        con.execute(
+            text(
+                "SELECT *, "
+                "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
+                "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
+                "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
+                "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
+                "FROM paths "
+                "WHERE date BETWEEN :start_date AND :end_date "
+                "ORDER BY region ASC, "
+                "province ASC, "
+                "path_id, date DESC "
+            ),
+            {
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
+        )
+        .mappings()
+        .all()
     )
-
-    file_content = paths_export.export_paths(cursor.fetchall())
 
     response = make_response(file_content, 200)
     response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -264,7 +265,7 @@ def new_path():
             "new_path.html",
             header_title="Insert a new path",
             title="New path",
-            action=f"/new_path",
+            action="/new_path",
             form=form,
             default_values=default_values,
         )
@@ -279,7 +280,7 @@ def new_path():
             "new_path.html",
             header_title="Insert a new path",
             title="New path",
-            action=f"/new_path",
+            action="/new_path",
             form=form,
             default_values={},
         )
@@ -291,41 +292,43 @@ def new_path():
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            con = fn.conn_alchemy().connect()
 
             # path_id
             path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
 
             # check if path_id already exists
-            cursor.execute("SELECT path_id FROM paths WHERE path_id = %s", [path_id])
-            if cursor.fetchone() is not None:
+
+            if (
+                con.execute(text("SELECT path_id FROM paths WHERE path_id = :path_id"), {"path_id": path_id}).mappings().fetchone()
+                is not None
+            ):
                 return not_valid(f"The path ID {path_id} already exists")
 
             # check if 0 < completeness <= 100
             if not (0 < int(request.form["completeness"]) <= 100):
-                return not_valid(f"Completeness must be an integer like 0 < completeness <= 100")
+                return not_valid("Completeness must be an integer like 0 < completeness <= 100")
 
-            sql = (
+            sql = text(
                 "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
                 "observer, institution, notes, created, category) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)"
+                "VALUES (:path_id, :transect_id, :date, :sampling_season, :completeness, "
+                ":observer, :institution, :notes, NOW(), :category)"
             )
-            cursor.execute(
+            con.execute(
                 sql,
-                [
-                    path_id,
-                    request.form["transect_id"],
-                    request.form["date"],
-                    fn.sampling_season(request.form["date"]),
-                    request.form["completeness"] if request.form["completeness"] else None,
-                    request.form["observer"],
-                    request.form["institution"],
-                    request.form["notes"],
-                    request.form["category"],
-                ],
+                {
+                    "path_id": path_id,
+                    "transect_id": request.form["transect_id"],
+                    "date": request.form["date"],
+                    "sampling_season": fn.sampling_season(request.form["date"]),
+                    "completeness": request.form["completeness"] if request.form["completeness"] else None,
+                    "observer": request.form["observer"],
+                    "institution": request.form["institution"],
+                    "notes": request.form["notes"],
+                    "category": request.form["category"],
+                },
             )
-            connection.commit()
 
             return redirect("/paths_list")
 
@@ -336,12 +339,10 @@ def new_path():
 @app.route("/edit_path/<path_id>", methods=("GET", "POST"))
 @fn.check_login
 def edit_path(path_id):
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     if request.method == "GET":
-        cursor.execute("SELECT * FROM paths WHERE path_id = %s", [path_id])
-        default_values = cursor.fetchone()
+        default_values = con.execute(text("SELECT * FROM paths WHERE path_id = :path_id"), {"path_id": path_id}).mappings().fetchone()
 
         if default_values["category"] is None:
             default_values["category"] = ""
@@ -376,8 +377,7 @@ def edit_path(path_id):
 
             # check if path_id already exists
             if new_path_id != path_id:
-                cursor.execute("SELECT path_id FROM paths WHERE path_id = %s", [new_path_id])
-                rows = cursor.fetchall()
+                rows = con.execute(text("SELECT path_id FROM paths WHERE path_id = :path_id"), {"path_id": new_path_id}).mappings().all()
 
                 if rows is not None and len(rows):
                     default_values = {}
@@ -398,47 +398,46 @@ def edit_path(path_id):
                         default_values=default_values,
                     )
 
-            sql = (
+            sql = text(
                 "UPDATE paths SET "
-                "path_id = %s,"
-                "transect_id = %s, "
-                "date = %s, "
-                "sampling_season = %s, "
-                "completeness = %s, "
-                "observer = %s, "
-                "institution = %s, "
-                "category = %s, "
-                "notes = %s "
-                "WHERE path_id = %s"
+                "path_id = :new_path_id,"
+                "transect_id = :transect_id, "
+                "date = :date, "
+                "sampling_season = :sampling_season, "
+                "completeness = :completeness, "
+                "observer = :observer, "
+                "institution = :institution, "
+                "category = :category, "
+                "notes = :notes "
+                "WHERE path_id = :path_id"
             )
 
-            cursor.execute(
+            con.execute(
                 sql,
-                [
-                    new_path_id,
-                    request.form["transect_id"],
-                    request.form["date"],
-                    fn.sampling_season(request.form["date"]),
-                    request.form["completeness"] if request.form["completeness"] else None,
-                    request.form["observer"],
-                    request.form["institution"],
-                    request.form["category"],
-                    request.form["notes"],
-                    path_id,
-                ],
+                {
+                    "new_path_id": new_path_id,
+                    "transect_id": request.form["transect_id"],
+                    "date": request.form["date"],
+                    "sampling_season": fn.sampling_season(request.form["date"]),
+                    "completeness": request.form["completeness"] if request.form["completeness"] else None,
+                    "observer": request.form["observer"],
+                    "institution": request.form["institution"],
+                    "category": request.form["category"],
+                    "notes": request.form["notes"],
+                    "path_id": path_id,
+                },
             )
-            connection.commit()
 
             return redirect(f"/view_path/{new_path_id}")
         else:
             # default values
-            default_values = {}
+            default_values: dict = {}
             for k in request.form:
                 default_values[k] = request.form[k]
 
             flash(
                 Markup(
-                    f'<div class="alert alert-danger" role="alert"><b>Some values are not set or are wrong. Please check and submit again</b></div>'
+                    '<div class="alert alert-danger" role="alert"><b>Some values are not set or are wrong. Please check and submit again</b></div>'
                 )
             )
             return render_template(
@@ -457,10 +456,9 @@ def del_path(path_id):
     """
     delate a path
     """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("DELETE FROM paths WHERE path_id = %s", [path_id])
-    connection.commit()
+
+    with fn.conn_alchemy().connect() as con:
+        con.execute("DELETE FROM paths WHERE path_id = :path_id", {"path_id": path_id})
     return redirect("/paths_list")
 
 
@@ -482,7 +480,7 @@ def load_paths_xlsx():
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
             flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
-            return redirect(f"/load_paths_xlsx")
+            return redirect("/load_paths_xlsx")
 
         try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
