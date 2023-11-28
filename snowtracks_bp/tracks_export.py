@@ -4,8 +4,6 @@ export tracks from XLSX file
 
 from openpyxl import Workbook
 from tempfile import NamedTemporaryFile
-import psycopg2
-import psycopg2.extras
 from sqlalchemy import text
 import fiona
 import shutil

@@ -9,6 +9,7 @@ flask blueprint for paths management
 import flask
 from flask import render_template, redirect, request, flash, session, make_response
 from markupsafe import Markup
+from sqlalchemy import text
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -68,32 +69,27 @@ def view_path(path_id):
     Display path data, samples and map
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(
-        ("SELECT * FROM paths WHERE path_id = %s"),
-        [path_id],
-    )
-    path = cursor.fetchone()
+    con = fn.conn_alchemy().connect()
+    path = con.execute(text("SELECT * FROM paths WHERE path_id = :path_id"), {"path_id": path_id}).mappings().fetchone()
     if path is None:
-        return render_template(
-            "view_path.html", header_title=f"{path_id} not found", path={"path_id": ""}, path_id=path_id
-        )
+        return render_template("view_path.html", header_title=f"{path_id} not found", path={"path_id": ""}, path_id=path_id)
 
     # relative transect
     transect_id = path["transect_id"]
-    cursor.execute(
-        (
-            "SELECT *, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
-            "ROUND(ST_Length(multilines)) AS transect_length "
-            "FROM transects "
-            "WHERE transect_id = %s"
-        ),
-        [transect_id],
+    transect = (
+        con.execute(
+            text(
+                "SELECT *, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
+                "ROUND(ST_Length(multilines)) AS transect_length "
+                "FROM transects "
+                "WHERE transect_id = :transect_id"
+            ),
+            {"transect_id": transect_id},
+        )
+        .mappings()
+        .fetchone()
     )
-    transect = cursor.fetchone()
     if transect is not None:
-
         transect_geojson = json.loads(transect["transect_geojson"])
 
         transect_feature = {
@@ -110,26 +106,27 @@ def view_path(path_id):
         center = ""
 
     # scats
-    cursor.execute(
-        (
-            "SELECT scat_id, wa_code, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-            "FROM scats WHERE path_id = %s"
-        ),
-        [path_id],
+    scats = (
+        con.execute(
+            text(
+                "SELECT scat_id, wa_code, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                "FROM scats WHERE path_id = :path_id"
+            ),
+            {"path_id": path_id},
+        )
+        .mappings()
+        .all()
     )
 
-    scats = cursor.fetchall()
-    scat_features = []
+    scat_features: list = []
     for scat in scats:
         scat_geojson = json.loads(scat["scat_lonlat"])
         scat_feature = {
             "geometry": dict(scat_geojson),
             "type": "Feature",
-            "properties": {
-                "popupContent": f"""Scat ID: <a href="/view_scat/{scat['scat_id']}" target="_blank">{scat['scat_id']}</a>"""
-            },
+            "properties": {"popupContent": f"""Scat ID: <a href="/view_scat/{scat['scat_id']}" target="_blank">{scat['scat_id']}</a>"""},
             "id": scat["scat_id"],
         }
 
@@ -137,8 +134,11 @@ def view_path(path_id):
         center = f"{scat['latitude']}, {scat['longitude']}"
 
     # n tracks
-    cursor.execute("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = %s", [path_id])
-    n_tracks = cursor.fetchone()["n_tracks"]
+    n_tracks = (
+        con.execute(text("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = :transect_id"), {"transect_id": path_id})
+        .mappings()
+        .fetchone()["n_tracks"]
+    )
 
     return render_template(
         "view_path.html",
@@ -168,26 +168,29 @@ def paths_list():
     """
     get list of paths
     """
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
-    cursor.execute(
-        (
-            "SELECT *, "
-            # "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
-            "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
-            "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
-            "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
-            "FROM paths "
-            "WHERE date BETWEEN %s AND %s "
-            "ORDER BY region ASC, "
-            # "province ASC, "
-            "path_id, date DESC "
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
+    results = (
+        con.execute(
+            text(
+                "SELECT *, "
+                # "(SELECT province FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS province, "
+                "(SELECT region FROM transects WHERE transects.transect_id = paths.transect_id LIMIT 1) AS region, "
+                "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
+                "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
+                "FROM paths "
+                "WHERE date BETWEEN :start_date AND :end_date "
+                "ORDER BY region ASC, "
+                # "province ASC, "
+                "path_id, date DESC "
+            ),
+            {
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
+        )
+        .mappings()
+        .all()
     )
 
     """
@@ -200,15 +203,10 @@ def paths_list():
     )
     """
 
-    results = cursor.fetchall()
-
-    # count paths
-    n_paths = len(results)
-
     return render_template(
         "paths_list.html",
         header_title="List of paths",
-        n_paths=n_paths,
+        n_paths=len(results),
         results=results,
     )
 
@@ -287,14 +285,12 @@ def new_path():
         )
 
     if request.method == "POST":
-
         form = Path(request.form)
 
         # get id of all transects
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
-
             connection = fn.get_connection()
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -334,19 +330,16 @@ def new_path():
             return redirect("/paths_list")
 
         else:
-
             return not_valid("Some values are not set or are wrong. Please check and submit again")
 
 
 @app.route("/edit_path/<path_id>", methods=("GET", "POST"))
 @fn.check_login
 def edit_path(path_id):
-
     connection = fn.get_connection()
     cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     if request.method == "GET":
-
         cursor.execute("SELECT * FROM paths WHERE path_id = %s", [path_id])
         default_values = cursor.fetchone()
 
@@ -378,7 +371,6 @@ def edit_path(path_id):
         form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
 
         if form.validate():
-
             # path_id
             new_path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
 
@@ -481,21 +473,15 @@ def del_path(path_id):
 )
 @fn.check_login
 def load_paths_xlsx():
-
     if request.method == "GET":
         return render_template("load_paths_xlsx.html", header_title="Import paths from XLSX/ODS")
 
     if request.method == "POST":
-
         new_file = request.files["new_file"]
 
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(
-                fn.alert_danger(
-                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
-                )
-            )
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
             return redirect(f"/load_paths_xlsx")
 
         try:
@@ -531,7 +517,6 @@ def load_paths_xlsx():
 @app.route("/confirm_load_paths_xlsx/<filename>/<mode>")
 @fn.check_login
 def confirm_load_paths_xlsx(filename, mode):
-
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect(f"/load_paths_xlsx")
@@ -609,9 +594,7 @@ def confirm_load_paths_xlsx(filename, mode):
                 },
             )
         except Exception:
-            return "An error occured during the import of paths. Contact the administrator.<br>" + error_info(
-                sys.exc_info()
-            )
+            return "An error occured during the import of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
 
     connection.commit()
 

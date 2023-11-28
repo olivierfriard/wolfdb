@@ -10,8 +10,7 @@ import flask
 from flask import (
     render_template,
 )
-import psycopg2
-import psycopg2.extras
+from sqlalchemy import text
 from config import config
 
 import functions as fn
@@ -25,12 +24,12 @@ app.debug = params["debug"]
 @app.route("/packs")
 @fn.check_login
 def packs():
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT pack FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack")
-    packs_list = cursor.fetchall()
+    with fn.conn_alchemy().connect() as con:
+        packs_list = (
+            con.execute(text("SELECT pack FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack"))
+            .mappings()
+            .all()
+        )
 
     return render_template(
         "packs_list.html",
@@ -43,21 +42,20 @@ def packs():
 @app.route("/view_pack/<name>")
 @fn.check_login
 def view_pack(name):
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        (
-            "SELECT *, "
-            "(SELECT date FROM wa_scat_dw where wa_code = "
-            "(SELECT wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) AS date "
-            "FROM genotypes WHERE pack = %s"
-        ),
-        [name],
-    )
-
-    results = cursor.fetchall()
+    with fn.conn_alchemy().connect() as con:
+        results = (
+            con.execute(
+                text(
+                    "SELECT *, "
+                    "(SELECT date FROM wa_scat_dw where wa_code = "
+                    "(SELECT wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) AS date "
+                    "FROM genotypes WHERE pack = :pack"
+                ),
+                {"pack": name},
+            )
+            .mappings()
+            .all()
+        )
 
     return render_template(
         "view_pack.html",
