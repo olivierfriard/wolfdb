@@ -487,12 +487,12 @@ def load_paths_xlsx():
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
-            return redirect(f"/load_paths_xlsx")
+            return redirect("/load_paths_xlsx")
 
         r, msg, paths_data = paths_import.extract_data_from_paths_xlsx(filename)
         if r:
             flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
-            return redirect(f"/load_paths_xlsx")
+            return redirect("/load_paths_xlsx")
 
         # check if path_id already in DB
         connection = fn.get_connection()
@@ -517,12 +517,12 @@ def load_paths_xlsx():
 def confirm_load_paths_xlsx(filename, mode):
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect(f"/load_paths_xlsx")
+        return redirect("/load_paths_xlsx")
 
     r, msg, all_data = paths_import.extract_data_from_paths_xlsx(filename)
     if r:
         flash(Markup(f"File name: <b>{filename}</b>") + Markup("<hr><br>") + msg)
-        return redirect(f"/load_paths_xlsx")
+        return redirect("/load_paths_xlsx")
 
     # check if path_id already in DB
     connection = fn.get_connection()
