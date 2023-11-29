@@ -384,7 +384,7 @@ def scats_list():
             "ORDER BY scat_id"
         )
 
-        sql = text("SELECT * FROM scats_list WHERE date BETWEEN :start_date AND :end_date ORDER BY scat_id")
+        """sql = text("SELECT * FROM scats_list WHERE date BETWEEN :start_date AND :end_date ORDER BY scat_id")"""
 
         return render_template(
             "scats_list.html",

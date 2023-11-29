@@ -1,6 +1,11 @@
 """
 WolfDB web service
 (c) Olivier Friard
+
+
+launch with:
+export WOLFDB_CONFIG_PATH=PATH_TO/config.ini; python wolfdb.py
+
 """
 
 from flask import Flask, render_template, redirect, request, flash, session
