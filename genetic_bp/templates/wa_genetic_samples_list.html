@@ -21,8 +21,7 @@
 <br>
 
 <style>
-th {top: 0; position: sticky;}
-td:nth-child(1) {top: 0; position: sticky;}
+th {top: 0; position: sticky; left: 0}
 </style>
 
 <div class="condensed">
@@ -57,7 +56,7 @@ td:nth-child(1) {top: 0; position: sticky;}
     {% for result in wa_scats %}
 
     <tr>
-        <td><a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a></td>
+        <th><a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a></th>
 
         <td><a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a></td>
 
