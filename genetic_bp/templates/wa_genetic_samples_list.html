@@ -2,14 +2,14 @@
 
 {% block content %}
 
-
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {{ messages[0] }}
 {% endif %}
 {% endwith %}
-
 
 {% if wa_scats %}
 
@@ -20,14 +20,12 @@
 <br>
 <br>
 
-
 <style>
-    th {
-        top: 0;
-        position: sticky;
-    }
+th {top: 0; position: sticky;}
+td:nth-child(1) {top: 0; position: sticky;}
 </style>
 
+<div class="condensed">
 <table class="table table-striped">
     <tr>
         <th style="background-color: white;"></th>
@@ -119,6 +117,7 @@
     {% endfor %}
 
 </table>
+</div><!-- condensed -->
 
 {% else %}
 
