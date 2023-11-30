@@ -482,39 +482,51 @@ def plot_all_wa():
     )
 
 
-@app.route("/plot_wa_clusters/<distance>")
+@app.route("/plot_wa_clusters/<int:distance>")
 @fn.check_login
-def plot_wa_clusters(distance):
-    con = fn.conn_alchemy().connect()
-
-    results = (
-        con.execute(
-            text(
-                "SELECT wa_code, sample_id, municipality, genotype_id, "
-                "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
-                "FROM wa_scat_dw "
-                "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-                "AND date BETWEEN :start_date AND :end_date"
-            ),
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+def plot_wa_clusters(distance: int):
+    with fn.conn_alchemy().connect() as con:
+        results = (
+            con.execute(
+                text(
+                    "SELECT wa_code, sample_id, genotype_id, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
+                    "FROM wa_scat_dw "
+                    "WHERE mtdna != 'Poor DNA' "
+                    "AND date BETWEEN :start_date AND :end_date"
+                ),
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
         )
-        .mappings()
-        .all()
-    )
 
-    max_cid = 0
-    for row in results:
-        max_cid = max(max_cid, row["cid"])
+    # max cluster id
+    max_cluster_id = max([row["cid"] for row in results])
+    cmap = get_cmap(max_cluster_id)
 
-    cmap = get_cmap(max_cid)
-
-    scat_features = []
+    scat_features: list = []
     min_lon, min_lat, max_lon, max_lat = 90, 90, -90, -90
     for row in results:
+        # skip loci with value  0 or -
+        loci_val = rdis.get(row["wa_code"])
+        if loci_val is not None:
+            flag_ok = False
+            d = json.loads(loci_val)
+            for locus in d:
+                for allele in d[locus]:
+                    if d[locus][allele]["value"] not in ("-", 0):
+                        flag_ok = True
+                        break
+                if flag_ok:
+                    break
+            else:  # not broken
+                continue
+
         scat_geojson = json.loads(row["scat_lonlat"])
         lon, lat = scat_geojson["coordinates"]
         min_lon = min(min_lon, lon)
