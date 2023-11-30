@@ -591,19 +591,25 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
         loci_list[row["name"]] = row["n_alleles"]
 
+    """
+    sql = text(
+        "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
+        "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
+        "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
+        "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
+        "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+        "FROM wa_scat_dw "
+        "WHERE UPPER(mtdna) not like '%POOR DNA%' "
+        "AND date BETWEEN :start_date AND :end_date "
+        "ORDER BY wa_code"
+    )
+    """
+
+    sql = text("SELECT * FROM wa_genetic_samples WHERE date BETWEEN :start_date AND :end_date ORDER BY wa_code")
+
     wa_scats = (
         con.execute(
-            text(
-                "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
-                "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
-                "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
-                "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
-                "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
-                "FROM wa_scat_dw "
-                "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-                "AND date BETWEEN :start_date AND :end_date "
-                "ORDER BY wa_code"
-            ),
+            sql,
             {
                 "start_date": session["start_date"],
                 "end_date": session["end_date"],
