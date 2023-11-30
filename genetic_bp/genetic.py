@@ -279,17 +279,21 @@ def genotypes_list(type, mode="web"):
     for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
         loci_list[row["name"]] = row["n_alleles"]
 
-    results = (
-        con.execute(
-            text(
-                "SELECT *, "
+    """
+    sql = text("SELECT *, "
                 "(SELECT count(sample_id) FROM wa_scat_dw WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
                 "(SELECT 'Yes' FROM wa_scat_dw WHERE (sample_id like 'T%' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                 "FROM genotypes "
                 f"{filter} "
                 "AND date BETWEEN :start_date AND :end_date "
-                "ORDER BY genotype_id"
-            ),
+                "ORDER BY genotype_id")
+    """
+
+    sql = text(f"SELECT * FROM genotypes_list {filter} AND date BETWEEN :start_date AND :end_date ORDER BY genotype_id")
+
+    results = (
+        con.execute(
+            sql,
             {
                 "start_date": session["start_date"],
                 "end_date": session["end_date"],
