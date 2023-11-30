@@ -372,7 +372,7 @@ def scats_list():
             .fetchone()["n_scats"]
         )
 
-        sql = text(
+        """sql = text(
             "SELECT *,"
             "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
             "CASE "
@@ -383,8 +383,9 @@ def scats_list():
             "WHERE date BETWEEN :start_date AND :end_date "
             "ORDER BY scat_id"
         )
+        """
 
-        """sql = text("SELECT * FROM scats_list WHERE date BETWEEN :start_date AND :end_date ORDER BY scat_id")"""
+        sql = text("SELECT * FROM scats_list WHERE date BETWEEN :start_date AND :end_date ORDER BY scat_id")
 
         return render_template(
             "scats_list.html",
