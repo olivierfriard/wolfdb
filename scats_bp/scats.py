@@ -592,7 +592,7 @@ def edit_scat(scat_id):
         )
 
     if request.method == "GET":
-        default_values = con.execute("SELECT * FROM scats WHERE scat_id = :scat_id", {"scat_id": scat_id}).mappings().fetchone()
+        default_values = con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}).mappings().fetchone()
         if default_values["notes"] is None:
             default_values["notes"] = ""
 
@@ -600,10 +600,12 @@ def edit_scat(scat_id):
         if "|" in default_values["path_id"]:
             transect_id, date = default_values["path_id"].split("|")
             date = f"20{date[:2]}-{date[2:4]}-{date[4:]}"
-            default_values["path_id"] = f"{transect_id} {date}"
+            default_path_id = f"{transect_id} {date}"
+        else:
+            default_path_id = default_values["path_id"]
 
         form = Scat(
-            path_id=default_values["path_id"],
+            path_id=default_path_id,
             snowtrack_id=default_values["snowtrack_id"],
             sampling_type=default_values["sampling_type"],
             deposition=default_values["deposition"],
@@ -743,7 +745,7 @@ def edit_scat(scat_id):
             " sampling_season = :sampling_season,"
             " sampling_type = :sampling_type,"
             " path_id = :path_id, "
-            " snowtrack_id = :snow_track, "
+            " snowtrack_id = :snowtrack_id, "
             " location = :location, "
             " municipality = :municipality, "
             " province = :province, "
@@ -773,8 +775,8 @@ def edit_scat(scat_id):
                 "snowtrack_id": request.form["snowtrack_id"],
                 "location": request.form["location"],
                 "municipality": request.form["municipality"],
-                "province_code": province_code,
-                "scat_region": scat_region,
+                "province": province_code,
+                "region": scat_region,
                 "deposition": request.form["deposition"],
                 "matrix": request.form["matrix"],
                 "collected_scat": request.form["collected_scat"],

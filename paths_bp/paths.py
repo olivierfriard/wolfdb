@@ -193,16 +193,6 @@ def paths_list():
         .all()
     )
 
-    """
-    cursor.execute(("SELECT *, "
-                    "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
-                    "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
-
-                    "FROM paths, transects "
-                    "WHERE paths.transect_id = transects.transect_id ORDER by region ASC, province ASC, date DESC")
-    )
-    """
-
     return render_template(
         "paths_list.html",
         header_title="List of paths",
@@ -454,11 +444,11 @@ def edit_path(path_id):
 @fn.check_login
 def del_path(path_id):
     """
-    delate a path
+    delete a path
     """
 
     with fn.conn_alchemy().connect() as con:
-        con.execute("DELETE FROM paths WHERE path_id = :path_id", {"path_id": path_id})
+        con.execute(text("DELETE FROM paths WHERE path_id = :path_id"), {"path_id": path_id})
     return redirect("/paths_list")
 
 
@@ -471,6 +461,10 @@ def del_path(path_id):
 )
 @fn.check_login
 def load_paths_xlsx():
+    """
+    import paths from a XLSX file
+
+    """
     if request.method == "GET":
         return render_template("load_paths_xlsx.html", header_title="Import paths from XLSX/ODS")
 
@@ -495,21 +489,18 @@ def load_paths_xlsx():
             return redirect("/load_paths_xlsx")
 
         # check if path_id already in DB
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        with fn.conn_alchemy().connect() as con:
+            paths_list = "','".join([paths_data[idx]["path_id"] for idx in paths_data])
+            sql = text(f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')")
+            paths_to_update = [row["path_id"] for row in con.execute(sql).mappings().all()]
 
-        paths_list = "','".join([paths_data[idx]["path_id"] for idx in paths_data])
-        sql = f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')"
-        cursor.execute(sql)
-        paths_to_update = [row["path_id"] for row in cursor.fetchall()]
-
-        return render_template(
-            "confirm_load_paths_xlsx.html",
-            n_paths=len(paths_data),
-            n_paths_to_update=paths_to_update,
-            all_data=paths_data,
-            filename=filename,
-        )
+            return render_template(
+                "confirm_load_paths_xlsx.html",
+                n_paths=len(paths_data),
+                n_paths_to_update=paths_to_update,
+                all_data=paths_data,
+                filename=filename,
+            )
 
 
 @app.route("/confirm_load_paths_xlsx/<filename>/<mode>")
@@ -525,25 +516,23 @@ def confirm_load_paths_xlsx(filename, mode):
         return redirect("/load_paths_xlsx")
 
     # check if path_id already in DB
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     paths_list = "','".join([all_data[idx]["path_id"] for idx in all_data])
-    sql = f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')"
-    cursor.execute(sql)
-    paths_to_update = [row["path_id"] for row in cursor.fetchall()]
+    sql = text(f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')")
+    paths_to_update = [row["path_id"] for row in con.execute(sql).mappings().all()]
 
-    sql = (
+    sql = text(
         "UPDATE paths SET "
-        "path_id = %(path_id)s, "
-        "transect_id = %(transect_id)s,"
-        "date = %(date)s,"
-        "sampling_season = %(sampling_season)s,"
-        "completeness = %(completeness)s,"
-        "observer = %(operator)s, "
-        "institution = %(institution)s, "
-        "notes = %(notes)s "
-        "WHERE path_id = %(path_id)s;"
+        "path_id = :path_id, "
+        "transect_id = :transect_id,"
+        "date = :date,"
+        "sampling_season = :sampling_season,"
+        "completeness = :completeness,"
+        "observer = :operator, "
+        "institution = :institution, "
+        "notes = :notes "
+        "WHERE path_id = :path_id;"
         "INSERT INTO paths ("
         "path_id,"
         "transect_id,"
@@ -555,15 +544,15 @@ def confirm_load_paths_xlsx(filename, mode):
         "notes "
         ") "
         "SELECT "
-        "%(path_id)s,"
-        "%(transect_id)s,"
-        "%(date)s,"
-        "%(sampling_season)s,"
-        "%(completeness)s, "
-        "%(operator)s,"
-        "%(institution)s,"
-        "%(notes)s "
-        "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = %(path_id)s)"
+        ":path_id,"
+        ":transect_id,"
+        ":date,"
+        ":sampling_season,"
+        ":completeness, "
+        ":operator,"
+        ":institution,"
+        ":notes "
+        "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
     )
     count_added = 0
     count_updated = 0
@@ -576,9 +565,11 @@ def confirm_load_paths_xlsx(filename, mode):
             count_updated += 1
         else:
             count_added += 1
-        print(f"{data=}")
+
+        # print(f"{data=}")
+
         try:
-            cursor.execute(
+            con.execute(
                 sql,
                 {
                     "path_id": data["path_id"],
@@ -594,9 +585,7 @@ def confirm_load_paths_xlsx(filename, mode):
         except Exception:
             return "An error occured during the import of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
 
-    connection.commit()
-
     msg = f"XLSX/ODS file successfully loaded. {count_added} paths added, {count_updated} paths updated."
     flash(fn.alert_success(msg))
 
-    return redirect(f"/paths")
+    return redirect("/paths")

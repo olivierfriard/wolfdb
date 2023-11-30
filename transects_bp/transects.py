@@ -9,6 +9,7 @@ flask blueprint for transects management
 import flask
 from flask import render_template, redirect, request, flash, make_response
 from markupsafe import Markup
+from sqlalchemy import text
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -46,21 +47,22 @@ def view_transect(transect_id):
     transects_color = params["transect_color"]
     tracks_color = params["track_color"]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
-    cursor.execute(
-        (
-            "SELECT *, "
-            "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
-            "ROUND(ST_Length(multilines)) AS transect_length "
-            "FROM transects "
-            "WHERE transect_id = %s"
-        ),
-        [transect_id],
+    transect = (
+        con.execute(
+            text(
+                "SELECT *, "
+                "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
+                "ROUND(ST_Length(multilines)) AS transect_length "
+                "FROM transects "
+                "WHERE transect_id = :transect_id"
+            ),
+            {"transect_id": transect_id},
+        )
+        .mappings()
+        .fetchone()
     )
-
-    transect = cursor.fetchone()
 
     if transect is None:
         flash(fn.alert_danger(f"<b>Transect {transect_id} not found</b>"))
@@ -91,33 +93,35 @@ def view_transect(transect_id):
         transect_features = [transect_feature]
 
     # path
-    cursor.execute(
-        (
-            "SELECT *,"
-            "(SELECT count(*) FROM scats WHERE scats.path_id = paths.path_id) AS n_scats "
-            "FROM paths "
-            "WHERE transect_id = %s ORDER BY date ASC"
-        ),
-        [transect_id],
+    results_paths = (
+        con.execute(
+            text(
+                "SELECT *,"
+                "(SELECT count(*) FROM scats WHERE scats.path_id = paths.path_id) AS n_scats "
+                "FROM paths "
+                "WHERE transect_id = :transect_id ORDER BY date ASC"
+            ),
+            {"transect_id": transect_id},
+        )
+        .mappings()
+        .all()
     )
-    results_paths = cursor.fetchall()
 
     # scats
 
     # number of scats
-    cursor.execute(
-        (
-            "SELECT *,"
-            "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-            "FROM scats WHERE path_id LIKE %s"
-        ),
-        [f"{transect_id}|%"],
+    scats = (
+        con.execute(
+            text("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats WHERE path_id LIKE :path_id"),
+            {"path_id": f"{transect_id}|%"},
+        )
+        .mappings()
+        .all()
     )
 
-    scats = cursor.fetchall()
     n_scats = len(scats)
 
-    scat_features = []
+    scat_features: list = []
     for row in scats:
         scat_geojson = json.loads(row["scat_lonlat"])
 
@@ -143,19 +147,21 @@ def view_transect(transect_id):
         }
         scat_features.append(scat_feature)
 
-    # snow tracks
-
-    cursor.execute(
-        (
-            "SELECT *, "
-            "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson "
-            "FROM snow_tracks WHERE (transect_id = %s OR transect_id LIKE %s) ORDER BY date DESC"
-        ),
-        [transect_id, f"%{transect_id};%"],
+    # tracks
+    tracks = (
+        con.execute(
+            text(
+                "SELECT *, "
+                "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson "
+                "FROM snow_tracks WHERE (transect_id = :transect_id OR transect_id LIKE :transect_id2) ORDER BY date DESC"
+            ),
+            {"transect_id": transect_id, "transect_id2": f"%{transect_id};%"},
+        )
+        .mappings()
+        .all()
     )
-    tracks = cursor.fetchall()
 
-    track_features = []
+    track_features: list = []
     for row in tracks:
         if row["track_geojson"] is not None:
             track_geojson = json.loads(row["track_geojson"])
@@ -214,17 +220,10 @@ def view_transect(transect_id):
 @fn.check_login
 def transects_list():
     # get all transects
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
-    cursor.execute("SELECT count(*) as n_transects FROM transects")
-    n_transects = cursor.fetchone()["n_transects"]
-
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
-
-    return render_template(
-        "transects_list.html", header_title="List of transects", n_transects=n_transects, results=cursor.fetchall()
-    )
+        return render_template("transects_list.html", header_title="List of transects", n_transects=len(transects), results=transects)
 
 
 @app.route("/export_transects")
@@ -234,18 +233,14 @@ def export_transects():
     export all transects in XLSX
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        file_content = transects_export.export_transects(con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all())
 
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = f"attachment; filename=transects_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
 
-    file_content = transects_export.export_transects(cursor.fetchall())
-
-    response = make_response(file_content, 200)
-    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = f"attachment; filename=transects_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
-
-    return response
+        return response
 
 
 @app.route("/new_transect", methods=("GET", "POST"))
@@ -267,7 +262,7 @@ def new_transect():
             "new_transect.html",
             header_title="Insert a new transect",
             title="New transect",
-            action=f"/new_transect",
+            action="/new_transect",
             form=form,
             default_values=default_values,
         )
@@ -278,82 +273,80 @@ def new_transect():
             "new_transect.html",
             header_title="Insert a new transect",
             title="New transect",
-            action=f"/new_transect",
+            action="/new_transect",
             form=form,
             default_values={},
         )
 
     if request.method == "POST":
-
         form = Transect(request.form)
 
         if form.validate():
-
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-            # check if transect_id already exists
-            cursor.execute(
-                "SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(%s)", [request.form["transect_id"]]
-            )
-            rows = cursor.fetchall()
-            if len(rows):
-                return not_valid(f"The transect ID {request.form['transect_id']} already exists")
-
-            # check province code
-            transect_province_code = fn.check_province_code(request.form["province"])
-            if transect_province_code is None:
-                # check province name
-                transect_province_code = fn.province_name2code(request.form["province"])
-                if transect_province_code is None:
-                    return not_valid("The province was not found")
-
-            transect_region = fn.province_code2region(transect_province_code)
-
-            if request.form["multilines"]:
-                sql = (
-                    "INSERT INTO transects (transect_id, sector, location, municipality, province, region, multilines) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, ST_GeomFromText(%s , 32632))"
-                )
-
-                try:
-                    cursor.execute(
-                        sql,
-                        [
-                            request.form["transect_id"].upper().strip(),
-                            request.form["sector"].strip(),
-                            request.form["location"].strip(),
-                            request.form["municipality"].strip(),
-                            transect_province_code,
-                            transect_region,
-                            request.form["multilines"].strip(),
-                        ],
+            with fn.conn_alchemy().connect() as con:
+                # check if transect_id already exists
+                rows = (
+                    con.execute(
+                        text("SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(:transect_id)"),
+                        {"transect_id": request.form["transect_id"]},
                     )
-                    connection.commit()
-
-                except Exception:
-                    return not_valid(f"Check the MultiLineString field")
-
-            else:
-                sql = (
-                    "INSERT INTO transects (transect_id, sector, location, municipality, province, region) "
-                    "VALUES (%s, %s, %s, %s, %s, %s)"
+                    .mappings()
+                    .all()
                 )
+                if len(rows):
+                    return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-                cursor.execute(
-                    sql,
-                    [
-                        request.form["transect_id"].upper().strip(),
-                        request.form["sector"].strip(),
-                        request.form["location"].strip(),
-                        request.form["municipality"].strip(),
-                        transect_province_code,
-                        transect_region,
-                    ],
-                )
-                connection.commit()
+                # check province code
+                transect_province_code = fn.check_province_code(request.form["province"])
+                if transect_province_code is None:
+                    # check province name
+                    transect_province_code = fn.province_name2code(request.form["province"])
+                    if transect_province_code is None:
+                        return not_valid("The province was not found")
 
-            return redirect("/transects_list")
+                transect_region = fn.province_code2region(transect_province_code)
+
+                if request.form["multilines"]:
+                    sql = text(
+                        "INSERT INTO transects (transect_id, sector, location, municipality, province, region, multilines) "
+                        "VALUES (:transect_id, :sector, :location, :municipality, :province, :region, ST_GeomFromText(:multilines , 32632))"
+                    )
+
+                    try:
+                        con.execute(
+                            sql,
+                            {
+                                "transect_id": request.form["transect_id"].upper().strip(),
+                                "sector": request.form["sector"].strip(),
+                                "location": request.form["location"].strip(),
+                                "municipality": request.form["municipality"].strip(),
+                                "province": transect_province_code,
+                                "region": transect_region,
+                                "multilines": request.form["multilines"].strip(),
+                            },
+                        )
+
+                    except Exception:
+                        return not_valid("Check the MultiLineString field")
+
+                else:
+                    sql = text(
+                        "INSERT INTO transects (transect_id, sector, location, municipality, province, region) "
+                        "VALUES (:transect_id, :sector, :location, :municipality, :province, :region)"
+                    )
+
+                    con.execute(
+                        sql,
+                        {
+                            "transect_id": request.form["transect_id"].upper().strip(),
+                            "sector": request.form["sector"].strip(),
+                            "location": request.form["location"].strip(),
+                            "municipality": request.form["municipality"].strip(),
+                            "province": transect_province_code,
+                            "region": transect_region,
+                        },
+                    )
+
+                return redirect("/transects_list")
         else:
             return not_valid("Transect form NOT validated")
 
@@ -378,97 +371,98 @@ def edit_transect(transect_id):
         )
 
     if request.method == "GET":
+        with fn.conn_alchemy().connect() as con:
+            default_values = (
+                con.execute(
+                    text(
+                        "SELECT transect_id, "
+                        "CASE WHEN sector IS NULL THEN '' ELSE sector END, "
+                        "location, municipality, province, "
+                        "ST_AsText(multilines) AS multilines "
+                        "FROM transects "
+                        "WHERE transect_id = :transect_id"
+                    ),
+                    {"transect_id": transect_id},
+                )
+                .mappings()
+                .fetchone()
+            )
 
-        connection = fn.get_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            """default_values["sector"] = "" if default_values["sector"] is None else default_values["sector"]"""
 
-        cursor.execute(
-            (
-                "SELECT transect_id, sector, location, municipality, province, "
-                "ST_AsText(multilines) AS multilines "
-                "FROM transects "
-                "WHERE transect_id = %s"
-            ),
-            [transect_id],
-        )
-        default_values = cursor.fetchone()
+            form = Transect()
 
-        default_values["sector"] = "" if default_values["sector"] is None else default_values["sector"]
+            form.multilines.data = default_values["multilines"]
 
-        form = Transect()
-
-        form.multilines.data = default_values["multilines"]
-
-        return render_template(
-            "new_transect.html",
-            header_title=f"Edit transect {transect_id}",
-            title="Edit transect",
-            action=f"/edit_transect/{transect_id}",
-            form=form,
-            default_values=default_values,
-        )
+            return render_template(
+                "new_transect.html",
+                header_title=f"Edit transect {transect_id}",
+                title="Edit transect",
+                action=f"/edit_transect/{transect_id}",
+                form=form,
+                default_values=default_values,
+            )
 
     if request.method == "POST":
-
         form = Transect(request.form)
         if form.validate():
+            with fn.conn_alchemy().connect() as con:
+                # check if transect_id already exists
+                if request.form["transect_id"] != transect_id:
+                    if len(
+                        con.execute(
+                            text("SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(:transect_id)"),
+                            {"transect_id": request.form["transect_id"]},
+                        )
+                        .mappings()
+                        .all()
+                    ):
+                        return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                # convert province code in province name
+                if request.form["province"].upper() in province_codes:
+                    transect_province_name = province_codes[request.form["province"].upper()]["nome"]
+                    transect_region = province_codes[request.form["province"].upper()]["regione"]
+                else:
+                    transect_province_name = request.form["province"].strip().upper()
+                    transect_region = fn.province_name2region(request.form["province"])
 
-            # check if transect_id already exists
-            if request.form["transect_id"] != transect_id:
-                cursor.execute(
-                    "SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(%s)",
-                    [request.form["transect_id"]],
+                sql = text(
+                    "UPDATE transects SET transect_id = :_new_transect_id, sector = :sector, location = :location, "
+                    "   municipality = :municipality, province = :province, region = :region "
+                    "WHERE transect_id = :transect_id"
                 )
-                rows = cursor.fetchall()
-                if len(rows):
-                    return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-            # convert province code in province name
-            if request.form["province"].upper() in province_codes:
-                transect_province_name = province_codes[request.form["province"].upper()]["nome"]
-                transect_region = province_codes[request.form["province"].upper()]["regione"]
-            else:
-                transect_province_name = request.form["province"].strip().upper()
-                transect_region = fn.province_name2region(request.form["province"])
+                con.execute(
+                    sql,
+                    {
+                        "_new_transect_id": request.form["transect_id"].strip(),
+                        "sector": request.form["sector"] if request.form["sector"] else None,
+                        "location": request.form["location"].strip(),
+                        "municipality": request.form["municipality"].strip(),
+                        "province": transect_province_name,
+                        "region": transect_region,
+                        "transect_id": transect_id,
+                    },
+                )
 
-            sql = (
-                "UPDATE transects SET transect_id = %s, sector =%s, location = %s, municipality = %s, province = %s, region = %s "
-                "WHERE transect_id = %s"
-            )
+                if request.form["multilines"].strip():
+                    try:
+                        sql = text(
+                            "UPDATE transects SET multilines = ST_GeomFromText(:multilines , 32632) WHERE transect_id = :transect_id"
+                        )
+                        con.execute(
+                            sql,
+                            {
+                                "multilines": request.form["multilines"].strip(),
+                                "transect_id": transect_id,
+                            },
+                        )
 
-            cursor.execute(
-                sql,
-                [
-                    request.form["transect_id"].strip(),
-                    request.form["sector"] if request.form["sector"] else None,
-                    request.form["location"].strip(),
-                    request.form["municipality"].strip(),
-                    transect_province_name,
-                    transect_region,
-                    transect_id,
-                ],
-            )
-            connection.commit()
+                    except Exception:
+                        return not_valid("Check the MultiLineString field")
 
-            if request.form["multilines"].strip():
-                try:
-                    sql = "UPDATE transects SET multilines = ST_GeomFromText(%s , 32632) WHERE transect_id = %s"
-                    cursor.execute(
-                        sql,
-                        [
-                            request.form["multilines"].strip(),
-                            transect_id,
-                        ],
-                    )
-                    connection.commit()
-
-                except Exception:
-                    return not_valid(f"Check the MultiLineString field")
-
-            return redirect(f"/view_transect/{transect_id}")
+                return redirect(f"/view_transect/{transect_id}")
         else:
             return not_valid("Transect form NOT validated")
 
@@ -476,19 +470,18 @@ def edit_transect(transect_id):
 @app.route("/del_transect/<transect_id>")
 @fn.check_login
 def del_transect(transect_id):
+    with fn.conn_alchemy().connect() as con:
+        # check if path based on transect exist
+        result = (
+            con.execute(text("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = :transect_id"), {"transect_id": transect_id})
+            .mappings()
+            .all()
+        )
+        if result["n_paths"] > 0:
+            return "Some paths are based on this transect. Please remove them before"
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    # check if path based on transect exist
-    cursor.execute("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = %s", [transect_id])
-    result = cursor.fetchone()
-    if result["n_paths"] > 0:
-        return "Some paths are based on this transect. Please remove them before"
-
-    cursor.execute("DELETE FROM transects WHERE transect_id = %s", [transect_id])
-    connection.commit()
-    return redirect("/transects_list")
+        con.execute("DELETE FROM transects WHERE transect_id = :transect_id", {"transect_id": transect_id})
+        return redirect("/transects_list")
 
 
 @app.route("/plot_transects")
@@ -499,42 +492,41 @@ def plot_transects():
     """
     transects_color = params["transect_color"]
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        transects_features: list = []
+        tot_min_lat, tot_min_lon = 90, 90
+        tot_max_lat, tot_max_lon = -90, -90
 
-    cursor.execute("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects")
+        for row in (
+            con.execute(text("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects"))
+            .mappings()
+            .all()
+        ):
+            if row["transect_lonlat"] is not None:
+                transect_geojson = json.loads(row["transect_lonlat"])
 
-    transects_features = []
-    tot_min_lat, tot_min_lon = 90, 90
-    tot_max_lat, tot_max_lon = -90, -90
+                for line in transect_geojson["coordinates"]:
+                    # bounding box
+                    latitudes = [lat for _, lat in line]
+                    longitudes = [lon for lon, _ in line]
+                    tot_min_lat = min([tot_min_lat, min(latitudes)])
+                    tot_max_lat = max([tot_max_lat, max(latitudes)])
+                    tot_min_lon = min([tot_min_lon, min(longitudes)])
+                    tot_max_lon = max([tot_max_lon, max(longitudes)])
 
-    for row in cursor.fetchall():
-        if row["transect_lonlat"] is not None:
-            transect_geojson = json.loads(row["transect_lonlat"])
+                transect_feature = {
+                    "geometry": dict(transect_geojson),
+                    "type": "Feature",
+                    "properties": {
+                        "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
+                    },
+                    "id": row["transect_id"],
+                }
 
-            for line in transect_geojson["coordinates"]:
+                transects_features.append(dict(transect_feature))
 
-                # bounding box
-                latitudes = [lat for _, lat in line]
-                longitudes = [lon for lon, _ in line]
-                tot_min_lat = min([tot_min_lat, min(latitudes)])
-                tot_max_lat = max([tot_max_lat, max(latitudes)])
-                tot_min_lon = min([tot_min_lon, min(longitudes)])
-                tot_max_lon = max([tot_max_lon, max(longitudes)])
-
-            transect_feature = {
-                "geometry": dict(transect_geojson),
-                "type": "Feature",
-                "properties": {
-                    "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
-                },
-                "id": row["transect_id"],
-            }
-
-            transects_features.append(dict(transect_feature))
-
-        else:
-            print(f"{row['transect_id']} WITHOUT coordinates")
+            else:
+                print(f"{row['transect_id']} WITHOUT coordinates")
 
     return render_template(
         "plot_transects.html",
@@ -558,13 +550,10 @@ def plot_transects():
 @app.route("/transects_analysis")
 @fn.check_login
 def transects_analysis():
-
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    con = fn.conn_alchemy().connect()
 
     # check if path based on transect exist
-    cursor.execute("SELECT * FROM transects ORDER BY region, province, transect_id")
-    transects = cursor.fetchall()
+    transects = con.execute(text("SELECT * FROM transects ORDER BY region, province, transect_id")).mappings().all()
 
     out = """<style>    table{    border-width: 0 0 1px 1px;    border-style: solid;} td{    border-width: 1px 1px 0 0;    border-style: solid;    margin: 0;    }</style>    """
 
@@ -585,10 +574,9 @@ def transects_analysis():
         dates_list = {}
         completeness_list = {}
 
-        cursor.execute("SELECT * FROM paths WHERE transect_id = %s ", [transect_id])
-        paths = cursor.fetchall()
-        for row_path in paths:
-
+        for row_path in (
+            con.execute(text("SELECT * FROM paths WHERE transect_id = :transect_id"), {"transect_id": transect_id}).mappings().all()
+        ):
             # add date of path
             path_date = str(row_path["date"])
             path_month = int(path_date.split("-")[1])
@@ -603,13 +591,10 @@ def transects_analysis():
                 completeness_list[path_month] = []
             completeness_list[path_month].append(path_completeness)
 
-            cursor.execute("SELECT * FROM scats WHERE path_id = %s ", [row_path["path_id"]])
-            scats = cursor.fetchall()
-
-            for row_scat in scats:
+            for row_scat in (
+                con.execute(text("SELECT * FROM scats WHERE path_id = :path_id "), {"path_id": row_path["path_id"]}).mappings().all()
+            ):
                 month = int(str(row_scat["date"]).split("-")[1])
-
-                # print(f"{month=}")
 
                 if month not in transect_month:
                     transect_month[month] = {"samples": 0}
@@ -628,16 +613,15 @@ def transects_analysis():
                 out += "<td>"
 
             if month in completeness_list:
-
                 out += f"{', '.join(completeness_list[month])}<br>"
 
             if month in transect_month:
                 out += f"{transect_month[month]['samples']}<br>"
             else:
                 if flag_path:
-                    out += f"0<br>"
+                    out += "0<br>"
                 else:
-                    out += f"<br>"
+                    out += "<br>"
 
             out += "</td>"
         out += "</tr>"
@@ -649,60 +633,64 @@ def transects_analysis():
 @app.route("/transects_n_samples_by_month/<year_init>/<year_end>")
 @fn.check_login
 def transects_n_samples_by_month(year_init, year_end):
+    with fn.conn_alchemy().connect() as con:
+        # check if path based on transect exist
+        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        sampling_years = range(int(year_init), int(year_end) + 1)
+        season_months: list = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
 
-    # check if path based on transect exist
-    cursor.execute("SELECT * FROM transects ORDER BY transect_id")
-    transects = cursor.fetchall()
+        out: list = []
 
-    sampling_years = range(int(year_init), int(year_end) + 1)
-    season_months = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
-
-    out = []
-
-    # header
-    row = ["path_id"]
-    for year in sampling_years:
-        for month in season_months:
-            row.append(f"{year}-{month:02}")
-    out.append(row)
-
-    for transect in transects:
-
-        transect_id = transect["transect_id"]
-        row = [transect_id]
-
+        # header
+        row = ["path_id"]
         for year in sampling_years:
             for month in season_months:
-                cursor.execute(
-                    (
-                        "SELECT path_id FROM paths "
-                        "WHERE transect_id = %s "
-                        "AND EXTRACT(YEAR FROM date) = %s"
-                        "AND EXTRACT(MONTH FROM date) = %s"
-                    ),
-                    [transect_id, year, month],
-                )
-                paths = cursor.fetchall()
-                if len(paths):
-                    cursor.execute(
-                        "SELECT count(*) AS n_scats FROM scats where path_id IN (SELECT path_id FROM paths WHERE transect_id = %s AND EXTRACT(YEAR FROM date) = %s AND EXTRACT(MONTH FROM date) = %s)",
-                        [transect_id, year, month],
-                    )
-                    scats = cursor.fetchone()
-                    row.append(str(scats["n_scats"]))
-                else:
-                    row.append("NA")
+                row.append(f"{year}-{month:02}")
         out.append(row)
 
-    out_str = "\n".join([z for z in ["\t".join(x) for x in out]])
+        for transect in transects:
+            transect_id = transect["transect_id"]
+            row = [transect_id]
 
-    response = make_response(out_str, 200)
-    response.headers["Content-type"] = "'text/tab-separated-values"
-    response.headers[
-        "Content-disposition"
-    ] = f"attachment; filename=transects_n-samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.tsv"
+            for year in sampling_years:
+                for month in season_months:
+                    paths = (
+                        con.execute(
+                            text(
+                                "SELECT path_id FROM paths "
+                                "WHERE transect_id = :transect_id "
+                                "AND EXTRACT(YEAR FROM date) = :year"
+                                "AND EXTRACT(MONTH FROM date) = :month"
+                            ),
+                            {"transect_id": transect_id, "year": year, "month": month},
+                        )
+                        .mappings()
+                        .all()
+                    )
+                    if len(paths):
+                        scats = (
+                            con.execute(
+                                text(
+                                    (
+                                        "SELECT count(*) AS n_scats FROM scats "
+                                        "WHERE path_id IN (SELECT path_id FROM paths WHERE transect_id = :transect_id AND EXTRACT(YEAR FROM date) = :year AND EXTRACT(MONTH FROM date) = :month)"
+                                    )
+                                ),
+                                {"transect_id": transect_id, "year": year, "month": month},
+                            )
+                            .mappings()
+                            .fetchone()
+                        )
+                        row.append(str(scats["n_scats"]))
+                    else:
+                        row.append("NA")
+            out.append(row)
 
-    return response
+        out_str = "\n".join([z for z in ["\t".join(x) for x in out]])
+
+        response = make_response(out_str, 200)
+        response.headers["Content-type"] = "'text/tab-separated-values"
+        response.headers["Content-disposition"] = f"attachment; filename=transects_n-samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.tsv"
+
+        return response

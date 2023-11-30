@@ -33,7 +33,7 @@
 {% for sample in samples %}
 <tr>
 <td><a href="/view_scat/{{ sample["scat_id"] }}">{{ sample["scat_id"] }}</a></td>
-<td>{{ sample["wa_code"] }}</td>
+<td>{% if sample["wa_code"] %}<a href="/view_wa/{{ sample["wa_code"] }}">{{ sample["wa_code"] }}</a>{% endif %}</td>
 </tr>
 
 {% endfor %}

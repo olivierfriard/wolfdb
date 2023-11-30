@@ -42,14 +42,6 @@ def get_cmap(n, name="viridis"):
     return plt.cm.get_cmap(name, n)
 
 
-def get_loci_list() -> dict:
-    with fn.conn_alchemy().connect() as con:
-        loci_list: dict = {}
-        for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
-            loci_list[row["name"]] = row["n_alleles"]
-    return loci_list
-
-
 @app.route("/del_genotype/<genotype_id>")
 @fn.check_login
 def del_genotype(genotype_id):
@@ -275,9 +267,7 @@ def genotypes_list(type, mode="web"):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list: dict = {}
-    for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
-        loci_list[row["name"]] = row["n_alleles"]
+    loci_list: dict = fn.get_loci_list()
 
     """
     sql = text("SELECT *, "
@@ -591,9 +581,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list = {}
-    for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
-        loci_list[row["name"]] = row["n_alleles"]
+    loci_list: dict = fn.get_loci_list()
 
     """
     sql = text(
@@ -676,7 +664,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list = get_loci_list()
+    loci_list = fn.get_loci_list()
 
     # DBScan
     wa_list: list = []
@@ -759,12 +747,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list: dict = {}
-    for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
-        loci_list[row["name"]] = row["n_alleles"]
+    loci_list: dict = fn.get_loci_list()
 
     # DBScan
-
     wa_list: list = []
     for row in (
         con.execute(
@@ -772,7 +757,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
                 "SELECT wa_code, "
                 f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
                 "FROM wa_scat_dw "
-                "WHERE UPPER(mtdna) not like '%POOR DNA%' "
+                "WHERE mtdna != 'Poor DNA' "
                 "AND date BETWEEN :start_date AND :end_date "
             ),
             {
@@ -862,7 +847,7 @@ def view_genetic_data(wa_code):
     sex = con.execute(text("SELECT sex_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().fetchone()["sex_id"]
 
     # loci list
-    loci_list = get_loci_list()
+    loci_list = fn.get_loci_list()
 
     loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
@@ -897,7 +882,7 @@ def add_genetic_data(wa_code):
     loci = con.execute(text("SELECT * FROM loci ORDER BY position ASC")).mappings().all()
 
     # loci list
-    loci_list = get_loci_list()
+    loci_list = fn.get_loci_list()
 
     loci_val = rdis.get(wa_code)
     if loci_val is not None:
@@ -966,9 +951,7 @@ def add_genetic_data(wa_code):
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, loci_list)[0]))
 
         # update genotype_locus
-        loci_list = {}
-        for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
-            loci_list[row["name"]] = row["n_alleles"]
+        loci_list: dict = fn.get_loci_list()
 
         for locus in loci:
             for allele in ["a", "b"]:
@@ -1179,9 +1162,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         con.execute(sql, data)
 
         # update cache
-        loci_list = {}
-        for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
-            loci_list[row["name"]] = row["n_alleles"]
+        loci_list: dict = fn.get_loci_list()
 
         rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
 
@@ -1194,8 +1175,9 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             "AND allele = :allele "
             "AND val = :value "
         )
-        rows = con.execute(sql, {"genotype_id": genotype_id, "locus": locus, "allele": allele, "value": data["value"]}).mappings().all()
-        for row in rows:
+        for row in (
+            con.execute(sql, {"genotype_id": genotype_id, "locus": locus, "allele": allele, "value": data["value"]}).mappings().all()
+        ):
             con.execute(
                 text("UPDATE wa_locus SET notes = :notes, user_id = :user_id WHERE id = :id "),
                 {"notes": data["notes"], "id": row["id"], "user_id": session["email"]},
@@ -1579,7 +1561,7 @@ def load_definitive_genotypes_xlsx():
         con = fn.conn_alchemy().connect()
 
         # loci list
-        loci_list = get_loci_list()
+        loci_list = fn.get_loci_list()
 
         r, msg, data = extract_genotypes_data_from_xlsx(filename, loci_list)
 
@@ -1617,7 +1599,7 @@ def confirm_load_definitive_genotypes_xlsx(filename):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list = get_loci_list()
+    loci_list = fn.get_loci_list()
 
     _, _, data = extract_genotypes_data_from_xlsx(filename, loci_list)
 

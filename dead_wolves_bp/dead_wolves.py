@@ -37,8 +37,6 @@ def view_tissue(tissue_id):
     show dead wolf corresponding to tissue ID
     """
 
-    print(f"{tissue_id=}")
-
     with fn.conn_alchemy().connect() as con:
         row = con.execute(text("SELECT id FROM dead_wolves WHERE tissue_id = :tissue_id"), {"tissue_id": tissue_id}).mappings().fetchone()
         if row is not None:

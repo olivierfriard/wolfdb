@@ -9,6 +9,7 @@ functions module
 from functools import wraps
 from flask import redirect, session
 from markupsafe import Markup
+from sqlalchemy import text
 import psycopg2
 import psycopg2.extras
 from config import config
@@ -54,7 +55,18 @@ def get_cursor():
 
 
 def conn_alchemy():
-    return create_engine(f'postgresql+psycopg://{params["user"]}:{params["password"]}@{params["host"]}:5432/{params["database"]}')
+    return create_engine(
+        f'postgresql+psycopg://{params["user"]}:{params["password"]}@{params["host"]}:5432/{params["database"]}',
+        isolation_level="AUTOCOMMIT",
+    )
+
+
+def get_loci_list() -> dict:
+    with conn_alchemy().connect() as con:
+        loci_list: dict = {}
+        for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
+            loci_list[row["name"]] = row["n_alleles"]
+    return loci_list
 
 
 def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
