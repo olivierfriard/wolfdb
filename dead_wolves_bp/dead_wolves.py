@@ -31,11 +31,14 @@ def dead_wolves():
     return render_template("dead_wolves.html", header_title="Dead wolves")
 
 
-@app.route("/view_tissue/<tissue_id>")
+@app.route("/view_tissue/<path:tissue_id>")
 def view_tissue(tissue_id):
     """
     show dead wolf corresponding to tissue ID
     """
+
+    print(f"{tissue_id=}")
+
     with fn.conn_alchemy().connect() as con:
         row = con.execute(text("SELECT id FROM dead_wolves WHERE tissue_id = :tissue_id"), {"tissue_id": tissue_id}).mappings().fetchone()
         if row is not None:
@@ -56,14 +59,18 @@ def view_dead_wolf_id(id):
             con.execute(text("SELECT * FROM dead_wolves_fields_definition WHERE visible = 'Y' ORDER BY position")).mappings().all()
         )
 
-        rows = con.execute(
-            text(
-                "SELECT id, name, val "
-                "FROM dead_wolves_values, dead_wolves_fields_definition "
-                "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id "
-                "AND id = :id"
-            ),
-            {"id": id},
+        rows = (
+            con.execute(
+                text(
+                    "SELECT id, name, val "
+                    "FROM dead_wolves_values, dead_wolves_fields_definition "
+                    "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id "
+                    "AND id = :id"
+                ),
+                {"id": id},
+            )
+            .mappings()
+            .all()
         )
 
     dead_wolf: dict = {}
