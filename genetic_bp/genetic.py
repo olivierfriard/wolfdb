@@ -609,7 +609,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
     )
     """
 
-    sql = text("SELECT * FROM wa_genetic_samples WHERE date BETWEEN :start_date AND :end_date ORDER BY wa_code")
+    sql = text("SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date ")
 
     wa_scats = (
         con.execute(
@@ -631,6 +631,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         if row["notes"] is not None and row["notes"]:
             has_notes = True
 
+        print(row["wa_code"])
         loci_val = rdis.get(row["wa_code"])
         if loci_val is not None:
             loci_values[row["wa_code"]] = json.loads(loci_val)
@@ -641,6 +642,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             ) != {""}
 
         else:
+            print("loci from db")
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
         if (with_notes == "all") or (with_notes == "with_notes" and (has_notes or has_loci_notes)):
