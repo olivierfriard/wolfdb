@@ -7,7 +7,11 @@
 <meta name="description" content="WolfAlps DB">
 <meta name="author" content="Olivier Friard">
 
+{% if header_title %}
+<title>{{ header_title }} - WolfDB</title>
+{% else %}
 <title>WolfDB</title>
+{% endif %}
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
 
@@ -19,5 +23,8 @@ padding-bottom: 50px;
 
 {% include "dev_style.html" %}
 </style>
+
+<style>body {background-color: #f7e98e;}</style>
+
 </head>
 

@@ -362,6 +362,7 @@ def scats_list():
     Display list of scats
     """
 
+    t0 = time.time()
     with fn.conn_alchemy().connect() as con:
         n_scats = (
             con.execute(
@@ -388,9 +389,10 @@ def scats_list():
         sql = text("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date ")
 
         return render_template(
-            "scats_list.html",
+            "scats_list_raw.html",
             header_title="List of scats",
             n_scats=n_scats,
+            execution_time=round(time.time() - t0, 3),
             results=con.execute(
                 sql,
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
@@ -410,17 +412,7 @@ def export_scats():
     with fn.conn_alchemy().connect() as con:
         file_content = scats_export.export_scats(
             con.execute(
-                text(
-                    "SELECT *,"
-                    "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
-                    "CASE "
-                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
-                    "ELSE scats.scalp_category "
-                    "END "
-                    "FROM scats "
-                    "WHERE date BETWEEN :start_date AND :end_date "
-                    "ORDER BY scat_id"
-                ),
+                text("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date"),
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()

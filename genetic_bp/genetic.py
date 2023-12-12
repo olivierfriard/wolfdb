@@ -631,7 +631,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         if row["notes"] is not None and row["notes"]:
             has_notes = True
 
-        print(row["wa_code"])
         loci_val = rdis.get(row["wa_code"])
         if loci_val is not None:
             loci_values[row["wa_code"]] = json.loads(loci_val)
@@ -642,7 +641,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             ) != {""}
 
         else:
-            print("loci from db")
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
         if (with_notes == "all") or (with_notes == "with_notes" and (has_notes or has_loci_notes)):
@@ -884,7 +882,7 @@ def view_genetic_data(wa_code):
     ),
 )
 @fn.check_login
-def add_genetic_data(wa_code):
+def add_genetic_data(wa_code: str):
     """
     Let user add loci values for WA code
     """
@@ -1051,21 +1049,21 @@ def view_genetic_data_history(wa_code, locus):
 
 
 @app.route(
-    "/locus_note/<wa_code>/<locus>/<allele>/<timestamp>",
+    "/locus_note/<wa_code>/<locus>/<allele>/<int:timestamp>",
     methods=(
         "GET",
         "POST",
     ),
 )
 @fn.check_login
-def locus_note(wa_code, locus, allele, timestamp):
+def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
     """
     let user add a note on wa_code locus_name allele timestamp
     """
 
     con = fn.conn_alchemy().connect()
 
-    data = {"wa_code": wa_code, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
+    data = {"wa_code": wa_code, "locus": locus, "allele": allele, "timestamp": timestamp}
 
     if request.method == "GET":
         wa_locus = (

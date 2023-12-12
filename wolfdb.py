@@ -54,6 +54,7 @@ app.register_blueprint(admin.app)
 app.register_blueprint(analysis.app)
 
 params = config()
+
 app.debug = params["debug"]
 
 app.db_log = logging.getLogger("db_activity")
@@ -83,6 +84,8 @@ def home():
         session["start_date"] = "2000-01-01"
     if "end_date" not in session:
         session["end_date"] = "2025-01-01"
+
+    session["background_color"] = params["background_color"]
 
     return render_template("home.html", header_title="Home", mode=params["mode"])
 
