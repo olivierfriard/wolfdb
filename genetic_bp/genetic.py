@@ -97,7 +97,7 @@ def view_genotype(genotype_id):
         con.execute(
             text(
                 "SELECT *, "
-                "(SELECT 'Yes' FROM wa_scat_dw "
+                "(SELECT 'Yes' FROM wa_scat_dw_mat "
                 "       WHERE (sample_id LIKE 'T%' OR sample_id like 'M%') "
                 "             AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                 "FROM genotypes WHERE genotype_id = :genotype_id"
@@ -118,7 +118,7 @@ def view_genotype(genotype_id):
             text(
                 "SELECT wa_code, sample_id, "
                 "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
-                "FROM wa_scat_dw "
+                "FROM wa_scat_dw_mat "
                 "WHERE genotype_id = :genotype_id "
                 "ORDER BY wa_code"
             ),
@@ -279,7 +279,7 @@ def genotypes_list(type, mode="web"):
                 "ORDER BY genotype_id")
     """
 
-    sql = text(f"SELECT * FROM genotypes_list {filter} AND date BETWEEN :start_date AND :end_date ORDER BY genotype_id")
+    sql = text(f"SELECT * FROM genotypes_list_mat {filter} AND date BETWEEN :start_date AND :end_date")
 
     results = (
         con.execute(
@@ -334,7 +334,7 @@ def view_wa(wa_code):
                 "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
                 "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
                 "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                " FROM wa_scat_dw WHERE wa_code = :wa_code"
+                " FROM wa_scat_dw_mat WHERE wa_code = :wa_code"
             ),
             {"wa_code": wa_code},
         )
@@ -417,8 +417,8 @@ def plot_all_wa():
             text(
                 "SELECT wa_code, sample_id, genotype_id, "
                 "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-                "FROM wa_scat_dw "
-                "WHERE UPPER(mtdna) not like '%POOR DNA%' "
+                "FROM wa_scat_dw_mat "
+                "WHERE mtdna != 'Poor DNA' "
                 "AND date BETWEEN :start_date AND :end_date "
             ),
             {
@@ -492,7 +492,7 @@ def plot_wa_clusters(distance: int):
                     "SELECT wa_code, sample_id, genotype_id, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
-                    "FROM wa_scat_dw "
+                    "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
                     "AND date BETWEEN :start_date AND :end_date"
                 ),
@@ -625,12 +625,14 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
     out: list = []
     loci_values: list = {}
+    locus_notes: dict = {}
     for row in wa_scats:
-        has_notes = False
+        has_genotype_notes = False
         # genotype working notes
         if row["notes"] is not None and row["notes"]:
-            has_notes = True
+            has_genotype_notes = True
 
+        # get loci values from redis cache
         loci_val = rdis.get(row["wa_code"])
         if loci_val is not None:
             loci_values[row["wa_code"]] = json.loads(loci_val)
@@ -643,8 +645,9 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         else:
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
-        if (with_notes == "all") or (with_notes == "with_notes" and (has_notes or has_loci_notes)):
+        if (with_notes == "all") or (with_notes == "with_notes" and (has_genotype_notes or has_loci_notes)):
             out.append(dict(row))
+        locus_notes[row["wa_code"]] = has_loci_notes
 
     if mode == "export":
         file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, with_notes)
@@ -665,6 +668,7 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             loci_list=loci_list,
             wa_scats=out,
             loci_values=loci_values,
+            locus_notes=locus_notes,
             with_notes=with_notes,
         )
 
@@ -686,8 +690,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 "SELECT wa_code, sample_id, municipality, "
                 "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                 f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                "FROM wa_scat_dw "
-                "WHERE UPPER(mtdna) not like '%POOR DNA%' "
+                "FROM wa_scat_dw_mat "
+                "WHERE mtdna != 'Poor DNA' "
                 "AND date BETWEEN :start_date AND :end_date "
             ),
             {
@@ -707,12 +711,12 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             text(
                 "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, "
                 "mtdna, genotype_id, tmp_id, sex_id, "
-                "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
-                "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
-                "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
+                "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS notes, "
+                "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS status, "
+                "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS pack, "
                 "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
-                "FROM wa_scat_dw "
-                f"WHERE wa_code in ('{wa_list_str}') "
+                "FROM wa_scat_dw_mat "
+                f"WHERE wa_code IN ('{wa_list_str}') "
                 "AND date BETWEEN :start_date AND :end_date "
                 "ORDER BY wa_code ASC"
             ),
@@ -768,7 +772,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             text(
                 "SELECT wa_code, "
                 f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                "FROM wa_scat_dw "
+                "FROM wa_scat_dw_mat "
                 "WHERE mtdna != 'Poor DNA' "
                 "AND date BETWEEN :start_date AND :end_date "
             ),
@@ -789,7 +793,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         con.execute(
             text(
                 "SELECT genotype_id, count(wa_code) AS n_recap "
-                "FROM wa_scat_dw "
+                "FROM wa_scat_dw_mat "
                 f"WHERE wa_code in ('{wa_list_str}') "
                 "GROUP BY genotype_id "
                 "ORDER BY genotype_id ASC"
@@ -809,7 +813,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             con.execute(
                 text(
                     "SELECT *, "
-                    "(SELECT 'Yes' FROM wa_scat_dw WHERE (sample_id like 'T%' OR sample_id like 'M%')AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                    "(SELECT 'Yes' FROM wa_scat_dw_mat WHERE (sample_id like 'T%' OR sample_id like 'M%')AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                     "FROM genotypes WHERE genotype_id = :genotype_id"
                 ),
                 {"genotype_id": row["genotype_id"]},
@@ -937,7 +941,7 @@ def add_genetic_data(wa_code: str):
                 {"sex": rows[0]["sex_id"], "wa_code": wa_code},
             )
 
-        # 'OK|' is inserted before the email in the user_id field to demonstrate that allele value has changed (or not) -> green
+        # 'OK|' is inserted before the user_id field to demonstrate that allele value has changed (or not) -> green
         for locus in loci:
             for allele in ["a", "b"]:
                 if locus["name"] + f"_{allele}" in request.form and request.form[locus["name"] + f"_{allele}"]:
@@ -955,7 +959,7 @@ def add_genetic_data(wa_code: str):
                             "notes": request.form[locus["name"] + f"_{allele}_notes"]
                             if request.form[locus["name"] + f"_{allele}_notes"]
                             else None,
-                            "user_id": "OK|" + session["email"],
+                            "user_id": "OK|" + session.get("user_name", session["email"]),
                         },
                     )
 
@@ -969,21 +973,22 @@ def add_genetic_data(wa_code: str):
             for allele in ["a", "b"]:
                 if locus["name"] + f"_{allele}" in request.form and request.form[locus["name"] + f"_{allele}"]:
                     sql = text(
-                        "SELECT DISTINCT (SELECT val FROM wa_locus WHERE locus = :locus AND allele = :allele AND wa_code =wa_scat_dw.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
-                        "FROM wa_scat_dw "
+                        "SELECT DISTINCT (SELECT val FROM wa_locus WHERE locus = :locus AND allele = :allele AND wa_code = wa_scat_dw_mat.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
+                        "FROM wa_scat_dw_mat "
                         "WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code)"
                     )
                     rows = con.execute(sql, {"locus": locus["name"], "allele": allele, "wa_code": wa_code}).mappings().all()
 
                     if len(rows) == 1:  # all wa code have the same value
                         sql = text(
-                            "SELECT distinct (SELECT id FROM genotype_locus where locus = :locus AND allele = :allele AND genotype_id =wa_scat_dw.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
-                            "FROM wa_scat_dw "
+                            "SELECT distinct (SELECT id FROM genotype_locus where locus = :locus AND allele = :allele AND genotype_id = wa_scat_dw_mat.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
+                            "FROM wa_scat_dw_mat "
                             "WHERE genotype_id = (SELECT genotype_id FROM wa_results where wa_code = :wa_code)"
                         )
 
                         rows2 = con.execute(sql, {"locus": locus["name"], "allele": allele, "wa_code": wa_code}).mappings().all()
 
+                        # 'OK|' is inserted before the user_id field to demonstrate that allele value has changed (or not) -> green
                         for row2 in rows2:
                             con.execute(
                                 text(
@@ -1002,7 +1007,7 @@ def add_genetic_data(wa_code: str):
                                     "val": int(request.form[locus["name"] + f"_{allele}"])
                                     if request.form[locus["name"] + f"_{allele}"]
                                     else None,
-                                    "user_id": "OK|" + session["email"],
+                                    "user_id": "OK|" + session.get("user_name", session["email"]),
                                 },
                             )
 
@@ -1092,7 +1097,10 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
         wa_locus_history = (
             con.execute(
                 text(
-                    "SELECT * FROM wa_locus "
+                    "SELECT val, "
+                    "CASE WHEN notes IS NULL THEN '-' ELSE notes END, "
+                    "user_id, "
+                    "date_trunc('second', timestamp) AS timestamp FROM wa_locus "
                     "WHERE wa_code = :wa_code "
                     "AND locus = :locus "
                     "AND allele = :allele "
@@ -1125,6 +1133,8 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
         data["user_id"] = session.get("user_name", session["email"])
 
         con.execute(sql, data)
+
+        rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
 
         return redirect(request.form["return_url"])
 
@@ -1168,10 +1178,30 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
     data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
 
     if request.method == "GET":
+        locus_history = (
+            con.execute(
+                text(
+                    "SELECT val, "
+                    "CASE WHEN notes IS NULL THEN '-' ELSE notes END, "
+                    "user_id, "
+                    "date_trunc('second', timestamp) AS timestamp "
+                    "FROM genotype_locus "
+                    "WHERE genotype_id = :genotype_id "
+                    "AND locus = :locus "
+                    "AND allele = :allele "
+                    "ORDER BY timestamp ASC "
+                ),
+                data,
+            )
+            .mappings()
+            .all()
+        )
+
         return render_template(
             "add_genotype_locus_note.html",
-            header_title=f"Add note on {genotype_id} {locus} {allele}",
+            header_title="Add note on genotype id",
             data=data,
+            history=locus_history,
             return_url=request.referrer,
         )
 
@@ -1185,7 +1215,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         )
 
         data["notes"] = request.form["notes"]
-        data["user_id"] = session["email"]
+        data["user_id"] = session.get("user_name", session["email"])
 
         con.execute(sql, data)
 
@@ -1196,7 +1226,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
 
         # update wa_code
         sql = text(
-            "SELECT id FROM wa_locus, wa_results "
+            "SELECT id, wa_locus.wa_code AS wa_code FROM wa_locus, wa_results "
             "WHERE wa_locus.wa_code = wa_results.wa_code "
             "AND wa_results.genotype_id = :genotype_id "
             "AND wa_locus.locus = :locus "
@@ -1208,8 +1238,12 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
         ):
             con.execute(
                 text("UPDATE wa_locus SET notes = :notes, user_id = :user_id WHERE id = :id "),
-                {"notes": data["notes"], "id": row["id"], "user_id": session["email"]},
+                {"notes": data["notes"], "id": row["id"], "user_id": session.get("user_name", session["email"])},
             )
+
+            # update wa loci
+            # [0] for accessing values
+            rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
 
         return redirect(request.form["return_url"])
 

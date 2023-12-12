@@ -27,27 +27,25 @@ th {top: 0; position: sticky; left: 0}
 <div class="condensed">
 <table class="table table-striped">
     <tr>
-        <th style="background-color: white;"></th>
-        <th style="background-color: white;"></th>
-        <th style="background-color: white;">WA code</th>
-        <th style="background-color: white;">Sample ID</th>
-        <th style="background-color: white;">Date</th>
-        <th style="background-color: white;">Municipality</th>
-        <th style="background-color: white;">Coordinates WGS84 UTM zone 32N</th>
-        <th style="background-color: white;">mtDNA result</th>
-        <th style="background-color: white;">Genotype ID</th>
-        <th style="background-color: white;">Temp ID</th>
-        <th style="background-color: white;">Sex</th>
-        <th style="background-color: white;">Status</th>
-        <th style="background-color: white;">Pack</th>
-        <th style="background-color: white;">Dead recovery</th>
+        <th style="background-color: {{ session['background_color'] }};">WA code</th>
+        <th style="background-color: {{ session['background_color'] }};">Sample ID</th>
+        <th style="background-color: {{ session['background_color'] }};">Date</th>
+        <th style="background-color: {{ session['background_color'] }};">Municipality</th>
+        <th style="background-color: {{ session['background_color'] }};">Coordinates WGS84 UTM zone 32N</th>
+        <th style="background-color: {{ session['background_color'] }};">mtDNA result</th>
+        <th style="background-color: {{ session['background_color'] }};">Genotype ID</th>
+        <th style="background-color: {{ session['background_color'] }};">Temp ID</th>
+        <th style="background-color: {{ session['background_color'] }};">Sex</th>
+        <th style="background-color: {{ session['background_color'] }};">Status</th>
+        <th style="background-color: {{ session['background_color'] }};">Pack</th>
+        <th style="background-color: {{ session['background_color'] }};">Dead recovery</th>
         {% for locus in loci_list %}
         {% if loci_list[locus] == 2%}
-        <th style="background-color: white; border-left: 1px solid black;">{{ locus }} a</th>
-        <th style="background-color: white;">{{ locus }} b</th>
+        <th style="background-color: {{ session['background_color'] }}; border-left: 1px solid black;">{{ locus }} a</th>
+        <th style="background-color: {{ session['background_color'] }};">{{ locus }} b</th>
         {% else %}
-        <th style="background-color: white; border-left: 1px solid black;">{{ locus }}</th>
-        <th style="background-color: white;"></th>
+        <th style="background-color: {{ session['background_color'] }}; border-left: 1px solid black;">{{ locus }}</th>
+        <th style="background-color: {{ session['background_color'] }};"></th>
         {% endif %}
 
         {% endfor %}
@@ -56,11 +54,26 @@ th {top: 0; position: sticky; left: 0}
     {% for result in wa_scats %}
 
     <tr>
-        <th><a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a></th>
+        <th>
+           <nobr>
+            
+            
+            
 
-        <td><a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a></td>
 
-        <td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
+
+                <a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a>
+                <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
+                <a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
+        
+
+                {% if locus_notes[result['wa_code']] %}
+            <span style='font-size:24px;color:red' >&#128947;</span>
+            {% endif %}
+            
+            </nobr>
+    </th>
+       
 
         <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{%
             endif %}</td>

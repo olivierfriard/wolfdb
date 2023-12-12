@@ -31,16 +31,23 @@ Note:<br>
 <input type="hidden" name="return_url" value="{{ return_url }}">
 </form>
 
+<p style="margin-bottom:2em;"><h3>Allele history</h3></p>
 
-<h3>Allele history</h3>
+
 
 <table class="table table-striped">
+<thead>
+<th>Timestamp</th>
+<th>Value</th>
+<th>Notes</th>
+<th>User</th>
+</thead>
 {% for row in history %}
 
 <tr>
-<td>{{ row['value'] }}</td>
-<td>{{ row['notes'] }}</td>
 <td>{{ row['timestamp'] }}</td>
+<td>{{ row['val'] }}</td>
+<td>{{ row['notes'] }}</td>
 <td>{{ row['user_id'] }}</td>
 </tr>
 
