@@ -80,6 +80,7 @@ def callback():
             session["firstname"] = id_info.get("given_name")
             session["lastname"] = id_info.get("family_name")
             session["email"] = id_info.get("email")
+            session["user_name"] = f'{id_info.get("given_name")} {id_info.get("family_name")}'
         else:
             session.clear()
             return redirect("/")

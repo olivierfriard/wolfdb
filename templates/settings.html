@@ -4,14 +4,16 @@
 
 
 
-<h2>Settings</h2>
+<h2>Settings for {{ session['user_name'] }}</h2>
+
+
 
 <form id="settings" action="/settings"  method="POST" enctype="multipart/form-data">
 
 <br>
 <div class="form-group">
 
-<h4>Analysis date interval</h4>
+<h4>Date interval for samples</h4>
 
 <label for="start_date">Start date</label>
 <input type="text" id="start_date" placeholder="YYYY-MM-DD" name="start_date" value="{{session['start_date']}}">

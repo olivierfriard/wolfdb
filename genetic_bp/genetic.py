@@ -1089,10 +1089,26 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
         data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
         data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
 
+        wa_locus_history = (
+            con.execute(
+                text(
+                    "SELECT * FROM wa_locus "
+                    "WHERE wa_code = :wa_code "
+                    "AND locus = :locus "
+                    "AND allele = :allele "
+                    "ORDER BY timestamp ASC "
+                ),
+                data,
+            )
+            .mappings()
+            .all()
+        )
+
         return render_template(
             "add_wa_locus_note.html",
-            header_title=f"Add note on {wa_code} {locus} {allele}",
+            header_title="Add note",
             data=data,
+            history=wa_locus_history,
             return_url=request.referrer,
         )
 
@@ -1106,7 +1122,7 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
         )
 
         data["notes"] = request.form["notes"]
-        data["user_id"] = session["email"]
+        data["user_id"] = session.get("user_name", session["email"])
 
         con.execute(sql, data)
 

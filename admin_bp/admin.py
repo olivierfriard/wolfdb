@@ -23,8 +23,6 @@ app.debug = params["debug"]
 @app.route("/admin")
 @fn.check_login
 def admin():
-    print(params["debug"])
-    if "email" in session:
-        current_app.db_log.info(f"{session['email']} accessed to admin page")
+    current_app.db_log.info(f"{session.get('user_name', session['email'])} accessed to admin page")
 
     return render_template("admin.html", header_title="Administration page", mode=params["mode"], debug=params["debug"])

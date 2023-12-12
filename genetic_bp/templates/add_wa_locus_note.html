@@ -3,7 +3,7 @@
 
 {% block content %}
 
-{{ header_title }}
+<h2>{{ header_title }}</h2>
 
 
 <a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
@@ -30,5 +30,21 @@ Note:<br>
 
 <input type="hidden" name="return_url" value="{{ return_url }}">
 </form>
+
+
+<h3>Allele history</h3>
+
+<table class="table table-striped">
+{% for row in history %}
+
+<tr>
+<td>{{ row['value'] }}</td>
+<td>{{ row['notes'] }}</td>
+<td>{{ row['timestamp'] }}</td>
+<td>{{ row['user_id'] }}</td>
+</tr>
+
+{% endfor %}
+</table>
 
 {% endblock %}
