@@ -4,12 +4,11 @@
 
 
 
-<h1>WolfDB</h1>
+<h1>View genetic data history</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/genetic_samples" class="btn btn-primary">Genetic samples</a>&nbsp;
+
 <a href="/view_genetic_data/{{ wa_code }}" class="btn btn-primary">View {{ wa_code  }}</a>&nbsp;
 
 <br>
@@ -17,6 +16,10 @@
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
 <br>
+<span style="font-size: larger;">Genotype id: <b>{{ genotype_id }}</b><br>Sex: <b>{{ sex }}</b></span>
+<br>
+<br>
+
 <h3>History of <b>{{ locus }}</b> locus values</h3>
 
 <table class="table table-striped">

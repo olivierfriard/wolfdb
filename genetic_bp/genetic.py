@@ -634,19 +634,34 @@ def wa_genetic_samples(with_notes="all", mode="web"):
 
         # get loci values from redis cache
         loci_val = rdis.get(row["wa_code"])
+        has_loci_notes = False
         if loci_val is not None:
             loci_values[row["wa_code"]] = json.loads(loci_val)
 
             # check if loci have notes
+            if row["wa_code"] == "WA2857":
+                print(f'{loci_values[row["wa_code"]]=}')
+
+            for x in loci_values[row["wa_code"]]:
+                for allele in ["a", "b"]:
+                    if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
+                        "OK|"
+                    ):
+                        has_loci_notes = True
+                        break
+
+            """
             has_loci_notes = set(
                 [loci_values[row["wa_code"]][x][allele]["notes"] for x in loci_values[row["wa_code"]] for allele in ["a", "b"]]
             ) != {""}
+            """
 
         else:
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
         if (with_notes == "all") or (with_notes == "with_notes" and (has_genotype_notes or has_loci_notes)):
             out.append(dict(row))
+
         locus_notes[row["wa_code"]] = has_loci_notes
 
     if mode == "export":
@@ -857,25 +872,31 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 @app.route("/view_genetic_data/<wa_code>")
 @fn.check_login
 def view_genetic_data(wa_code):
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        # get info about WA code
+        row = (
+            con.execute(text("SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code})
+            .mappings()
+            .fetchone()
+        )
+        sex = row["sex_id"]
+        genotype_id = row["genotype_id"]
 
-    # get sex of WA code
-    sex = con.execute(text("SELECT sex_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().fetchone()["sex_id"]
+        # loci list
+        loci_list = fn.get_loci_list()
 
-    # loci list
-    loci_list = fn.get_loci_list()
+        loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
-    loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
-
-    return render_template(
-        "view_genetic_data.html",
-        header_title=f"{wa_code} genetic data",
-        go_back_url=session.get("go_back_url", ""),
-        wa_code=wa_code,
-        loci_list=loci_list,
-        sex=sex,
-        data=loci_values,
-    )
+        return render_template(
+            "view_genetic_data.html",
+            header_title=f"{wa_code} genetic data",
+            go_back_url=request.referrer,
+            wa_code=wa_code,
+            loci_list=loci_list,
+            sex=sex,
+            genotype_id=genotype_id,
+            data=loci_values,
+        )
 
 
 @app.route(
@@ -892,8 +913,12 @@ def add_genetic_data(wa_code: str):
     """
     con = fn.conn_alchemy().connect()
 
-    # get sex of WA code
-    sex = con.execute(text("SELECT sex_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().fetchone()["sex_id"]
+    # get info about WA code
+    row = (
+        con.execute(text("SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().fetchone()
+    )
+    sex = row["sex_id"]
+    genotype_id = row["genotype_id"]
 
     loci = con.execute(text("SELECT * FROM loci ORDER BY position ASC")).mappings().all()
 
@@ -912,11 +937,12 @@ def add_genetic_data(wa_code: str):
         return render_template(
             "add_genetic_data.html",
             header_title=f"Add genetic data for {wa_code}",
-            go_back_url=session.get("go_back_url", ""),
+            go_back_url=request.referrer,
             wa_code=wa_code,
             loci=loci,
             loci_values=loci_values,
             sex=sex,
+            genotype_id=genotype_id,
         )
 
     if request.method == "POST":
@@ -1025,8 +1051,17 @@ def add_genetic_data(wa_code: str):
 
 @app.route("/view_genetic_data_history/<wa_code>/<locus>")
 @fn.check_login
-def view_genetic_data_history(wa_code, locus):
+def view_genetic_data_history(wa_code: str, locus: str):
     with fn.conn_alchemy().connect() as con:
+        # get info about WA code
+        row = (
+            con.execute(text("SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code})
+            .mappings()
+            .fetchone()
+        )
+        sex = row["sex_id"]
+        genotype_id = row["genotype_id"]
+
         locus_values = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
         locus_values = (
@@ -1050,6 +1085,8 @@ def view_genetic_data_history(wa_code, locus):
             wa_code=wa_code,
             locus=locus,
             locus_values=locus_values,
+            sex=sex,
+            genotype_id=genotype_id,
         )
 
 

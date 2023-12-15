@@ -3,29 +3,19 @@
 {% block content %}
 
 
-<h1>WolfDB</h1>
+<h1>View genetic data</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<h2>WA code: <b>{{wa_code}}</b></h2>
 
-<a href="/wa_genetic_samples" class="btn btn-primary">WA genetic samples</a>&nbsp;
-
-<br>
-<br>
-
-<h2>WA code: {{wa_code}}</h2>
-
-<a href="{{ go_back_url }}" class="btn btn-primary">Go back to WA samples</a>&nbsp;
-
-
-<a href="/wa_genetic_samples/with_notes" class="btn btn-primary">WA samples with notes</a></a>&nbsp;
+<a href="{{ go_back_url }}" class="btn btn-primary">Go back</a>&nbsp;
 
 
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;
 <br>
 <br>
 
-<span style="font-size: larger;"><b>Sex: {{ sex }}</b></span>
+<span style="font-size: larger;">Genotype id: <b>{{ genotype_id }}</b><br>Sex: <b>{{ sex }}</b></span>
 <br>
 <br>
 
