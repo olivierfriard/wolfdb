@@ -639,9 +639,6 @@ def wa_genetic_samples(with_notes="all", mode="web"):
             loci_values[row["wa_code"]] = json.loads(loci_val)
 
             # check if loci have notes
-            if row["wa_code"] == "WA2857":
-                print(f'{loci_values[row["wa_code"]]=}')
-
             for x in loci_values[row["wa_code"]]:
                 for allele in ["a", "b"]:
                     if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
