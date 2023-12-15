@@ -60,7 +60,7 @@ th {top: 0; position: sticky; left: 0}
                 <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
                 <a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
                 {% if locus_notes[result['wa_code']] %}
-            <span style='font-size:24px' >&#128681;</span>
+            <span style='font-size:24px;color:red' >&#128681;</span>
             {% endif %}
 
             </nobr>
