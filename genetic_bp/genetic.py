@@ -580,15 +580,18 @@ def genetic_samples():
 
 
 @app.route("/wa_genetic_samples")
-@app.route("/wa_genetic_samples/<with_notes>")
-@app.route("/wa_genetic_samples/<with_notes>/<mode>")
+@app.route("/wa_genetic_samples/<filter>")
+@app.route("/wa_genetic_samples/<filter>/<mode>")
 @fn.check_login
-def wa_genetic_samples(with_notes="all", mode="web"):
+def wa_genetic_samples(filter="all", mode="web"):
     """
     display genetic data for WA code
-    with_notes: all / with notes
+    filter: all / with notes / red_flag
     wa_genetic_samples_list.html
     """
+
+    if filter not in ("all", "with_notes", "red_flag"):
+        return "An error has occured. Check the URL"
 
     con = fn.conn_alchemy().connect()
 
@@ -656,7 +659,10 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         else:
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
-        if (with_notes == "all") or (with_notes == "with_notes" and (has_genotype_notes or has_loci_notes)):
+        if (filter == "red_flag") and (has_loci_notes):
+            out.append(dict(row))
+
+        if (filter == "all") or (filter == "with_notes" and (has_genotype_notes or has_loci_notes)):
             out.append(dict(row))
 
         locus_notes[row["wa_code"]] = has_loci_notes
@@ -676,12 +682,12 @@ def wa_genetic_samples(with_notes="all", mode="web"):
         return render_template(
             "wa_genetic_samples_list.html",
             header_title="Genetic data of WA codes",
-            title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (with_notes == 'with_notes')}</h2>"),
+            title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (filter == 'with_notes')}</h2>"),
             loci_list=loci_list,
             wa_scats=out,
             loci_values=loci_values,
             locus_notes=locus_notes,
-            with_notes=with_notes,
+            with_notes=filter,
         )
 
 
