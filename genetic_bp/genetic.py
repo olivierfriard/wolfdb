@@ -52,7 +52,7 @@ def del_genotype(genotype_id):
         con.execute(text("UPDATE genotypes SET record_status = 'deleted' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
         con.execute(text("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
 
-    flash(fn.alert_danger(f"<b>Genotype {genotype_id} deleted</b>"))
+    flash(fn.alert_success(f"<b>Genotype {genotype_id} deleted</b>"))
 
     return redirect(request.referrer)
 
@@ -64,9 +64,9 @@ def def_genotype(genotype_id):
     set genotype as definitive (record_status field)
     """
     with fn.conn_alchemy().connect() as con:
-        con.execute(text("UPDATE genotypes SET record_status = 'OK' WHERE genotype_id = :genoype_id"), {"genotye_id": genotype_id})
+        con.execute(text("UPDATE genotypes SET record_status = 'OK' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
 
-    flash(fn.alert_danger(f"<b>Genotype {genotype_id} set as definitive</b>"))
+    flash(fn.alert_success(f"<b>Genotype {genotype_id} set as definitive</b>"))
 
     return redirect(request.referrer)
 
@@ -78,9 +78,9 @@ def temp_genotype(genotype_id):
     set genotype as temporary (record_status field)
     """
     with fn.conn_alchemy().connect() as con:
-        con.execute(text("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = :genoype_id"), {"genotye_id": genotype_id})
+        con.execute(text("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
 
-    flash(fn.alert_danger(f"<b>Genotype {genotype_id} set as temporary</b>"))
+    flash(fn.alert_success(f"<b>Genotype {genotype_id} set as temporary</b>"))
 
     return redirect(request.referrer)
 
@@ -238,7 +238,7 @@ def update_redis_with_wa_loci():
 @app.route("/genotypes_list/<type>")
 @app.route("/genotypes_list/<type>/<mode>")
 @fn.check_login
-def genotypes_list(type, mode="web"):
+def genotypes_list(type: str, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
@@ -1176,7 +1176,7 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
 
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
 
-        return redirect(request.form["return_url"])
+        return redirect(request.form["return_url"] + f"#{wa_code}")
 
 
 @app.route(

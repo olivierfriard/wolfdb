@@ -22,10 +22,14 @@
 <br><a href="/genotypes_list/{{type }}/export" class="btn btn-info">Export data in XLSX format</a><br>
 <br>
 
-<style>th {top:0;position:sticky; left: 0}</style>
+<!--<style>th {top:0; position:sticky; left: 0}</style>-->
+
+
 
 <div class="condensed">
+<div class="wrapper">
 <table class="table table-striped">
+<thead>
 <tr>
 <th style="background-color: {{ session['background_color'] }};">Genotype ID</th>
 <th style="background-color: {{ session['background_color'] }};">Notes</th>
@@ -58,16 +62,17 @@
 {% endif %}
 
 </tr>
+</thead>
+<tbody>
 {% for result in results %}
 
 <tr>
-<th>
-<nobr>    
+<th style="white-space: nowrap;">
 
 <a href="/view_genotype/{{ result['genotype_id'] }}"><b>{{ result['genotype_id'] }}</a></b>
 
 
-<div class="dropdown">
+<span class="dropdown">
 <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 set ...
 </button>
@@ -80,16 +85,23 @@ set ...
 <li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
 <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
 </ul>
-</div>
+</span>
 
-{% if type != "deleted" %}
-<a href="/del_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete this genotype?')">Delete</a>
-{% else %}
-<a href="/def_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to set this genotype definitive?')">Set definitive</a>
-<a href="/temp_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temporary</a>
+{% if result["record_status"] != deleted %}
+<a href="/del_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete this genotype?')">Del</a>
 {% endif %}
 
-</nobr>
+
+{% if result["record_status"] in ("deleted", "temp") %}
+<a href="/def_genotype/{{ result['genotype_id'] }}" class="btn btn-success btn-sm" onclick="return confirm('Are you sure to set this genotype definitive?')">Set def</a>
+{% endif %}
+
+{% if result["record_status"] in ("deleted", "OK") %}
+<a href="/temp_genotype/{{ result['genotype_id'] }}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temp</a>
+{% endif %}
+
+
+
 </th>
 
 
@@ -137,8 +149,9 @@ set ...
 {% endif %}
 </tr>
 {% endfor %}
-
+</tbody>
 </table>
+</div>
 </div>
 
 
