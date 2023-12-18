@@ -21,7 +21,7 @@
 <br>
 
 <style>
-th {top: 0; position: sticky; left: 0}
+th {top: 0; position: sticky; left: 0; background-color: #ffffff;  z-index: 1;}
 </style>
 
 <div class="condensed">
@@ -55,6 +55,7 @@ th {top: 0; position: sticky; left: 0}
 
     <tr>
         <th>
+            <a id="{{ result['wa_code'] }}"></a>
            <nobr>
                 <a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a>
                 <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
