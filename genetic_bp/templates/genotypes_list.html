@@ -22,12 +22,9 @@
 <br><a href="/genotypes_list/{{type }}/export" class="btn btn-info">Export data in XLSX format</a><br>
 <br>
 
-<!--<style>th {top:0; position:sticky; left: 0}</style>-->
-
-
-
+{% include "freeze_1stcolumn_1strow.html" %}
+<div class="frozen">
 <div class="condensed">
-<div class="wrapper">
 <table class="table table-striped">
 <thead>
 <tr>
@@ -67,7 +64,7 @@
 {% for result in results %}
 
 <tr>
-<th style="white-space: nowrap;">
+<td style="white-space: nowrap;">
 
 <a href="/view_genotype/{{ result['genotype_id'] }}"><b>{{ result['genotype_id'] }}</a></b>
 
@@ -99,13 +96,7 @@ set ...
 {% if result["record_status"] in ("deleted", "OK") %}
 <a href="/temp_genotype/{{ result['genotype_id'] }}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temp</a>
 {% endif %}
-
-
-
-</th>
-
-
-
+</td>
 
 <td>{% if result['working_notes'] %}{{ result['working_notes'] }}{% endif %}</td>
 
