@@ -20,63 +20,9 @@
 <br>
 <br>
 
-<!--
-<style>
-th {top: 0; position: sticky; left: 0}
-</style>
-https://codepen.io/jon/pen/JZNvap
--->
+{% include "freeze_1stcolumn_1strow.html" %}
 
-<style>
-html {
-  -ms-scroll-chaining: none;
-  overscroll-behavior: contain;
-}
-
-body {
-  flex-direction:column;
-  display:flex;
-  height:100vh;
-}
-
-.buh {
-  overflow:scroll;
-  flex-grow:1;
-  width:100%;
-}
-
-table {
-  border-collapse: collapse;
-  width:200%;
-}
-
-thead tr > th {
-  background:#ccc;
-  position: sticky;
-  padding:.5rem;
-  z-index:2;
-  top: 0;
-}
-
-thead tr > :first-child {
-  z-index:3;
-  left:0;
-  top:0;
-}
-
-td {
-  text-align:center;
-}
-
-tbody tr > :first-child {
-  background:#ddd;
-  position: sticky;
-  z-index:1;
-  left:0;
-}
-</style>
-
-<div class="buh">
+<div class="frozen">
 <div class="condensed">
 <table class="table table-striped">
     <thead>
@@ -110,19 +56,16 @@ tbody tr > :first-child {
     {% for result in wa_scats %}
 
     <tr>
-        <td>
-           <nobr>
+      <td style="white-space: nowrap;">
+           
                 <a id="{{ result['wa_code'] }}"><a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
                 <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
                 <a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
                 {% if locus_notes[result['wa_code']] %}
             <span style='font-size:24px;color:red' >&#128681;</span>
             {% endif %}
-
-            </nobr>
+          
     </td>
-       
-
         <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{%
             endif %}</td>
 
