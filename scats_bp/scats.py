@@ -119,11 +119,11 @@ def view_scat(scat_id):
             con.execute(
                 text(
                     "SELECT *, "
-                    "(SELECT genotype_id FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
+                    "(SELECT genotype_id FROM wa_scat_dw_mat WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id2, "
                     "(SELECT path_id FROM paths WHERE path_id = scats.path_id) AS path_id_verif, "
                     "(SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = scats.snowtrack_id) AS snowtrack_id_verif, "
                     "CASE "
-                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw_mat WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
                     "ELSE scats.scalp_category "
                     "END, "
                     "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "

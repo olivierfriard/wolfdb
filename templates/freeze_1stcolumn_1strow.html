@@ -23,15 +23,24 @@ table {
   width:200%;
 }
 
-thead tr > th {
-  background:#ccc;
+thead tr  {
+  background-color: {{ session['background_color'] }};
   position: sticky;
-  padding:.5rem;
-  z-index:2;
+  padding: .5rem;
+  z-index: 2;
+  top: 0;
+}
+
+thead tr > th {
+  background-color: {{ session['background_color'] }};
+  position: sticky;
+  padding: .5rem;
+  z-index: 2;
   top: 0;
 }
 
 thead tr > :first-child {
+  background-color: {{ session['background_color'] }};
   z-index:3;
   left:0;
   top:0;
@@ -42,15 +51,12 @@ td {
 }
 
 tbody tr > :first-child {
-  background:#ddd;
+  background-color: {{ session['background_color'] }};
   position: sticky;
   z-index:1;
   left:0;
 
-.dropdown{
-position: absolute;
-z-index : 999; 
-}
+
 
 }
 </style>

@@ -32,76 +32,71 @@ https://codepen.io/jon/pen/JZNvap
 <div class="frozen">
 <div class="condensed">
 <table class="table table-striped">
-    <thead>
-    <tr>
-        <th style="background-color: {{ session['background_color'] }};">WA code</th>
-        <th style="background-color: {{ session['background_color'] }};">Sample ID</th>
-        <th style="background-color: {{ session['background_color'] }};">Date</th>
-        <th style="background-color: {{ session['background_color'] }};">Municipality</th>
-        <th style="background-color: {{ session['background_color'] }};">Coordinates WGS84 UTM zone 32N</th>
-        <th style="background-color: {{ session['background_color'] }};">mtDNA result</th>
-        <th style="background-color: {{ session['background_color'] }};">Genotype ID</th>
-        <th style="background-color: {{ session['background_color'] }};">Temp ID</th>
-        <th style="background-color: {{ session['background_color'] }};">Sex</th>
-        <th style="background-color: {{ session['background_color'] }};">Status</th>
-        <th style="background-color: {{ session['background_color'] }};">Pack</th>
-        <th style="background-color: {{ session['background_color'] }};">Dead recovery</th>
-        {% for locus in loci_list %}
-        {% if loci_list[locus] == 2%}
-        <th style="background-color: {{ session['background_color'] }}; border-left: 1px solid black;">{{ locus }} a</th>
-        <th style="background-color: {{ session['background_color'] }};">{{ locus }} b</th>
-        {% else %}
-        <th style="background-color: {{ session['background_color'] }}; border-left: 1px solid black;">{{ locus }}</th>
-        <th style="background-color: {{ session['background_color'] }};"></th>
-        {% endif %}
+<thead>
+<tr>
+<th>WA code</th>
+<th>Sample ID</th>
+<th>Date</th>
+<th>Municipality</th>
+<th>Coordinates WGS84 UTM zone 32N</th>
+<th>mtDNA result</th>
+<th>Genotype ID</th>
+<th>Temp ID</th>
+<th>Sex</th>
+<th>Status</th>
+<th>Pack</th>
+<th>Dead recovery</th>
+{% for locus in loci_list %}
+{% if loci_list[locus] == 2%}
+<th style="border-left: 1px solid black;">{{ locus }} a</th>
+<th>{{ locus }} b</th>
+{% else %}
+<th style="border-left: 1px solid black;">{{ locus }}</th>
+<th></th>
+{% endif %}
 
-        {% endfor %}
-
-    </tr>
+{% endfor %}
+</tr>
 </thead>
+
 <tbody>
-    {% for result in wa_scats %}
+{% for result in wa_scats %}
+<tr>
+<td style="white-space: nowrap;">
+<a id="{{ result['wa_code'] }}"><a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
+<a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
+<a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
+{% if locus_notes[result['wa_code']] %}
+<span style='font-size:24px;color:red' >&#128681;</span>
+{% endif %}
 
-    <tr>
-      <th>
-        <td>
-      <td style="white-space: nowrap;">
-           
+</td>
 
-                <a id="{{ result['wa_code'] }}"><a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
-                <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
-                <a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
-                {% if locus_notes[result['wa_code']] %}
-            <span style='font-size:24px;color:red' >&#128681;</span>
-            {% endif %}
-          
-    </td>
-        <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{%
-            endif %}</td>
+<td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
 
-        <td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
+<td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
 
-        <td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
+<td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
 
-        <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
+<td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
 
-        <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
+<td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
-        <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id']
-                }}</a>{% endif %}
-            {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
-                class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
-        </td>
+<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id']
+        }}</a>{% endif %}
+    {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
+        class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
+</td>
 
-        <td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
+<td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
 
-        <td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
+<td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
 
-        <td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
+<td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
 
-        <td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+<td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
 
-        <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
+<td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
         {% for locus in loci_values[result['wa_code']] %}
 
@@ -126,12 +121,12 @@ https://codepen.io/jon/pen/JZNvap
 
 
 
-    </tr>
-    {% endfor %}
+</tr>
+{% endfor %}
 </tbody>
 </table>
 </div><!-- condensed -->
-</div>
+</div><!-- frozen -->
 
 {% else %}
 

@@ -28,47 +28,46 @@
 <table class="table table-striped">
 <thead>
 <tr>
-<th style="background-color: {{ session['background_color'] }};">Genotype ID</th>
-<th style="background-color: {{ session['background_color'] }};">Notes</th>
-<th style="background-color: {{ session['background_color'] }};">Other ID</th>
-<th style="background-color: {{ session['background_color'] }};">Date</th>
-<th style="background-color: {{ session['background_color'] }};">Pack</th>
-<th style="background-color: {{ session['background_color'] }};">Sex</th>
-<th style="background-color: {{ session['background_color'] }};">Hybrid</th>
-<th style="background-color: {{ session['background_color'] }};">Status</th>
-<th style="background-color: {{ session['background_color'] }};">Age first capture</th>
-<th style="background-color: {{ session['background_color'] }};">Status first capture</th>
-<th style="background-color: {{ session['background_color'] }};">Dispersal</th>
-<th style="background-color: {{ session['background_color'] }};">N recap.</th>
-<th style="background-color: {{ session['background_color'] }};">Dead recovery</th>
+<th>Genotype ID</th>
+<th></th>
+<th>Notes</th>
+<th>Other ID</th>
+<th>Date</th>
+<th>Pack</th>
+<th>Sex</th>
+<th>Hybrid</th>
+<th>Status</th>
+<th>Age first capture</th>
+<th>Status first capture</th>
+<th>Dispersal</th>
+<th>N recap.</th>
+<th>Dead recovery</th>
 
 
 {% if loci_list %}
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
-<th style="background-color: {{ session['background_color'] }}; border-left: 1px solid black;">{{ locus }} a</th>
-<th style="background-color: {{ session['background_color'] }};">{{ locus }} b</th>
+<th style="border-left: 1px solid black;">{{ locus }} a</th>
+<th>{{ locus }} b</th>
 {% else %}
-<th style="background-color: {{ session['background_color'] }}; border-left: 1px solid black;">{{ locus }}</th>
-<th style="background-color: {{ session['background_color'] }};"></th>
+<th style="border-left: 1px solid black;">{{ locus }}</th>
+<th></th>
 {% endif %}
 
 {% endfor %}
 
 {% endif %}
-
 </tr>
 </thead>
+
 <tbody>
 {% for result in results %}
-
 <tr>
-<td style="white-space: nowrap;">
-
+<td>
 <a href="/view_genotype/{{ result['genotype_id'] }}"><b>{{ result['genotype_id'] }}</a></b>
-
-
+</td>
+<td style="white-space: nowrap;">
 <span class="dropdown">
 <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 set ...
