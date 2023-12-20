@@ -1,0 +1,56 @@
+<!--  https://codepen.io/jon/pen/JZNvap -->
+
+<style>
+html {
+  -ms-scroll-chaining: none;
+  overscroll-behavior: contain;
+}
+
+body {
+  flex-direction:column;
+  display:flex;
+  height:100vh;
+}
+
+.frozen {
+  overflow:scroll;
+  flex-grow:1;
+  width:100%;
+}
+
+table {
+  border-collapse: collapse;
+  width:200%;
+}
+
+thead tr > th {
+  background:#ccc;
+  position: sticky;
+  padding:.5rem;
+  z-index:2;
+  top: 0;
+}
+
+thead tr > :first-child {
+  z-index:3;
+  left:0;
+  top:0;
+}
+
+td {
+  text-align:center;
+}
+
+tbody tr > :first-child {
+  background:#ddd;
+  position: sticky;
+  z-index:1;
+  left:0;
+
+.dropdown{
+position: absolute;
+z-index : 999; 
+}
+
+}
+</style>
