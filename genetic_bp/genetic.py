@@ -707,7 +707,7 @@ def wa_genetic_samples(filter="all", mode="web"):
         return render_template(
             "wa_genetic_samples_list.html",
             header_title="Genetic data of WA codes",
-            title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (filter == 'with_notes')}</h2>"),
+            title=Markup(f"Genetic data of {len(out)} WA codes{' with notes' * (filter == 'with_notes')}"),
             loci_list=loci_list,
             wa_scats=out,
             loci_values=loci_values,
@@ -716,14 +716,14 @@ def wa_genetic_samples(filter="all", mode="web"):
         )
 
 
-@app.route("/wa_analysis/<distance>/<cluster_id>")
-@app.route("/wa_analysis/<distance>/<cluster_id>/<mode>")
+@app.route("/wa_analysis/<distance>/<int:cluster_id>")
+@app.route("/wa_analysis/<distance>/<int:cluster_id>/<mode>")
 @fn.check_login
 def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list = fn.get_loci_list()
+    loci_list: list = fn.get_loci_list()
 
     # DBScan
     wa_list: list = []
@@ -745,7 +745,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         .mappings()
         .all()
     ):
-        if row["cluster_id"] == int(cluster_id):
+        if row["cluster_id"] == cluster_id:
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
 
@@ -773,11 +773,23 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     )
 
     loci_values: dict = {}
+    out: list = []
     for row in wa_scats:
         loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
+        has_loci_values = False
+        # check if loci have values
+        for x in loci_values[row["wa_code"]]:
+            for allele in ["a", "b"]:
+                if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                    has_loci_values = True
+            if has_loci_values:
+                break
+
+        if has_loci_values:
+            out.append(row)
 
     if mode == "export":
-        file_content = export.export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id)
+        file_content = export.export_wa_analysis(loci_list, out, loci_values, distance, cluster_id)
 
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -791,9 +803,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         return render_template(
             "wa_analysis.html",
             header_title=f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
-            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+            title=Markup(f"Matches (cluster id: {cluster_id} _ {distance} m)"),
             loci_list=loci_list,
-            wa_scats=wa_scats,
+            wa_scats=out,
             loci_values=loci_values,
             distance=distance,
             cluster_id=cluster_id,
@@ -887,7 +899,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         return render_template(
             "wa_analysis_group.html",
             header_title=f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
-            title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+            title=Markup(f"Genotypes matches (cluster id: {cluster_id} _ {distance} m)"),
             loci_list=loci_list,
             genotype_id=genotype_id,
             data=data,

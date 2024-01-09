@@ -2,21 +2,13 @@
 
 {% block content %}
 
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
-<h1>WolfDB</h1>
-<hr>
-
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-<a href="/genetic_samples" class="btn btn-primary">WA genetic samples</a>&nbsp;
-
-<a href="/plot_all_wa" class="btn btn-primary">Plot WA</a>&nbsp;
-
-<a href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
+<a style="width:10%" href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
 
 <br>
 <br>
-
 
 {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -27,27 +19,29 @@
 
 {% if genotype_id %}
 
-{{ title }}
+<h3>{{ title }}></h3>
 
-<br><a href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info">Export data</a><br>
+<br><a style="width:10%" href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info">Export data</a><br>
 <br>
 
-<style>th {top:0;position:sticky;}</style>
+{% include "freeze_1stcolumn_1strow.html" %}
 
+<div class="frozen">
+<div class="condensed">
 <table class="table table-striped">
+<thead>
 <tr>
-<th style="background-color: white;"></th>
-
-<th style="background-color: white;">Genotype ID</th>
-<th style="background-color: white;">Notes</th>
-<th style="background-color: white;">Temp ID</th>
-<th style="background-color: white;">Sex</th>
-<th style="background-color: white;">Status</th>
-<th style="background-color: white;">Pack</th>
-<th style="background-color: white;">Hybrid</th>
-<th style="background-color: white;">Dispersal</th>
-<th style="background-color: white;">n. recapt</th>
-<th style="background-color: white;">Dead recovery</th>
+<th>Genotype ID</th>
+<th></th>
+<th>Notes</th>
+<th>Temp ID</th>
+<th>Sex</th>
+<th>Status</th>
+<th>Pack</th>
+<th>Hybrid</th>
+<th>Dispersal</th>
+<th>n. recapt</th>
+<th>Dead recovery</th>
 
 {% for locus in loci_list %}
 {% if loci_list[locus] == 2%}
@@ -59,14 +53,15 @@
 {% endif %}
 
 {% endfor %}
-
-
 </tr>
+</thead>
+<tbody>
 {% for genotype_id in data %}
-
 <tr>
-
 <td>
+<a href="/view_genotype/{{ genotype_id }}" target="_blank"><b>{{ genotype_id }}</b></a>
+</td>
+<td style="white-space: nowrap;">
 <div class="dropdown">
 <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 set ...
@@ -81,11 +76,7 @@ set ...
 <li><a href="/genotype_note/{{ genotype_id }}" class="dropdown-item">notes</a></li>
 </ul>
 </div>
-
-
 </td>
-
-<td><a href="/view_genotype/{{ genotype_id }}" target="_blank">{{ genotype_id }}</a></td>
 
 <td>{{ data[genotype_id]["working_notes"] if data[genotype_id]["working_notes"] is not none else "" }}</td>
 
@@ -130,8 +121,12 @@ set ...
 
 </tr>
 {% endfor %}
-
+</tbody>
 </table>
+</div><!-- condensed -->
+</div><!-- frozen -->
+
+
 {% else %}
 
 <h2>No WA code found</h2>
