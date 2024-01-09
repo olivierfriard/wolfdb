@@ -38,7 +38,9 @@ def view_tissue(tissue_id):
     """
 
     with fn.conn_alchemy().connect() as con:
-        row = con.execute(text("SELECT id FROM dead_wolves WHERE tissue_id = :tissue_id"), {"tissue_id": tissue_id}).mappings().fetchone()
+        row = (
+            con.execute(text("SELECT id FROM dead_wolves_mat WHERE tissue_id = :tissue_id"), {"tissue_id": tissue_id}).mappings().fetchone()
+        )
         if row is not None:
             return redirect(f"/view_dead_wolf_id/{row['id']}")
         else:
@@ -140,7 +142,7 @@ def plot_dead_wolves():
     for row in (
         con.execute(
             text(
-                "SELECT * FROM dead_wolves "
+                "SELECT * FROM dead_wolves_mat "
                 "WHERE deleted is NULL "
                 "AND utm_east != '0' AND utm_north != '0' "
                 "AND discovery_date BETWEEN :start_date AND :end_date"
@@ -421,7 +423,7 @@ def dead_wolves_list():
                 text(
                     "SELECT *,"
                     "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
-                    "FROM dead_wolves "
+                    "FROM dead_wolves_mat "
                     "WHERE "
                     "deleted is NULL "
                     "AND discovery_date BETWEEN :start_date AND :end_date "

@@ -397,7 +397,7 @@ def view_wa(wa_code):
                     "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
                     "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
                     "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                    "FROM dead_wolves "
+                    "FROM dead_wolves_mat "
                     "WHERE wa_code = :wa_code"
                 ),
                 {"wa_code": wa_code},
@@ -619,7 +619,7 @@ def wa_genetic_samples(filter="all", mode="web"):
         "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
         "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
         "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
-        "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+        "(SELECT 'Yes' FROM dead_wolves_mat WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
         "FROM wa_scat_dw "
         "WHERE UPPER(mtdna) not like '%POOR DNA%' "
         "AND date BETWEEN :start_date AND :end_date "
@@ -757,7 +757,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS notes, "
                 "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS status, "
                 "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS pack, "
-                "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+                "(SELECT 'Yes' FROM dead_wolves_mat WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
                 "FROM wa_scat_dw_mat "
                 f"WHERE wa_code IN ('{wa_list_str}') "
                 "AND date BETWEEN :start_date AND :end_date "
