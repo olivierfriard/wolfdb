@@ -16,22 +16,15 @@
 {{ title }}
 
 <br>
-<a href="/wa_genetic_samples/{{ with_notes }}/export" class="btn btn-info">Export data in XLSX format</a>
+<a style="width:10%" href="/wa_genetic_samples/{{ with_notes }}/export" class="btn btn-info">Export data in XLSX format</a>
 <br>
 <br>
-
-<!--
-<style>
-th {top: 0; position: sticky; left: 0; background-color: #ffffff;  z-index: 1;}
-</style>
-https://codepen.io/jon/pen/JZNvap
--->
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
 <div class="frozen">
 <div class="condensed">
-<table class="table table-striped">
+<table class="table table-striped" id="t">
 <thead>
 <tr>
 <th>WA code</th>

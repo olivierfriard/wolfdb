@@ -586,11 +586,11 @@ def genetic_samples():
 def wa_genetic_samples(filter="all", mode="web"):
     """
     display genetic data for WA code
-    filter: all / with notes / red_flag
+    filter: all / with notes / red_flag / no_values
     wa_genetic_samples_list.html
     """
 
-    if filter not in ("all", "with_notes", "red_flag"):
+    if filter not in ("all", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
 
     con = fn.conn_alchemy().connect()
@@ -630,25 +630,27 @@ def wa_genetic_samples(filter="all", mode="web"):
     loci_values: list = {}
     locus_notes: dict = {}
     for row in wa_scats:
-        has_genotype_notes = False
         # genotype working notes
-        if row["notes"] is not None and row["notes"]:
-            has_genotype_notes = True
+        has_genotype_notes = True if (row["notes"] is not None and row["notes"]) else False
 
         # get loci values from redis cache
         loci_val = rdis.get(row["wa_code"])
         has_loci_notes = False
+        has_loci_values = False
         if loci_val is not None:
             loci_values[row["wa_code"]] = json.loads(loci_val)
 
-            # check if loci have notes
+            # check if loci have notes and values
             for x in loci_values[row["wa_code"]]:
                 for allele in ["a", "b"]:
                     if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
                         "OK|"
                     ):
                         has_loci_notes = True
-                        break
+                    if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                        has_loci_values = True
+                if has_loci_notes and has_loci_values:
+                    break
 
             """
             has_loci_notes = set(
@@ -657,7 +659,15 @@ def wa_genetic_samples(filter="all", mode="web"):
             """
 
         else:
+            # extract loci value from database
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
+
+        if filter == "no_values":
+            out.append(dict(row))
+
+        # skip if no loci values and no notes
+        if not has_loci_values and not has_loci_notes:
+            continue
 
         if (filter == "red_flag") and (has_loci_notes):
             out.append(dict(row))
@@ -668,7 +678,7 @@ def wa_genetic_samples(filter="all", mode="web"):
         locus_notes[row["wa_code"]] = has_loci_notes
 
     if mode == "export":
-        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, with_notes)
+        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, filter)
 
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -1138,8 +1148,8 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
             con.execute(
                 text(
                     "SELECT val, "
-                    "CASE WHEN notes IS NULL THEN '-' ELSE notes END, "
-                    "user_id, "
+                    "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
+                    "CASE WHEN user_id IS NULL THEN '' ELSE user_id END,  "
                     "date_trunc('second', timestamp) AS timestamp FROM wa_locus "
                     "WHERE wa_code = :wa_code "
                     "AND locus = :locus "
