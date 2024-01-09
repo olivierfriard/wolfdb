@@ -57,6 +57,21 @@ def del_genotype(genotype_id):
     return redirect(request.referrer)
 
 
+@app.route("/undel_genotype/<genotype_id>")
+@fn.check_login
+def undel_genotype(genotype_id):
+    """
+    set genotype as temp (record_status field)
+    """
+    with fn.conn_alchemy().connect() as con:
+        con.execute(text("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+        # con.execute(text("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+
+    flash(fn.alert_success(f"<b>Genotype {genotype_id} undeleted</b>"))
+
+    return redirect(f"{request.referrer}#{genotype_id}")
+
+
 @app.route("/def_genotype/<genotype_id>")
 @fn.check_login
 def def_genotype(genotype_id):
@@ -68,7 +83,7 @@ def def_genotype(genotype_id):
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} set as definitive</b>"))
 
-    return redirect(request.referrer)
+    return redirect(f"{request.referrer}#{genotype_id}")
 
 
 @app.route("/temp_genotype/<genotype_id>")
@@ -82,7 +97,7 @@ def temp_genotype(genotype_id):
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} set as temporary</b>"))
 
-    return redirect(request.referrer)
+    return redirect(f"{request.referrer}#{genotype_id}")
 
 
 @app.route("/view_genotype/<genotype_id>")
@@ -885,6 +900,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 @app.route("/view_genetic_data/<wa_code>")
 @fn.check_login
 def view_genetic_data(wa_code):
+    """
+    visualize genetic data for WA code
+    """
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
         row = (
@@ -903,7 +921,7 @@ def view_genetic_data(wa_code):
         return render_template(
             "view_genetic_data.html",
             header_title=f"{wa_code} genetic data",
-            go_back_url=request.referrer,
+            go_back_url=f"{request.referrer}#{wa_code}",
             wa_code=wa_code,
             loci_list=loci_list,
             sex=sex,
@@ -1186,7 +1204,7 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
 
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
 
-        return redirect(request.form["return_url"] + f"#{wa_code}")
+        return redirect(f'{request.form["return_url"]}#{wa_code}')
 
 
 @app.route(
@@ -1232,8 +1250,8 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             con.execute(
                 text(
                     "SELECT val, "
-                    "CASE WHEN notes IS NULL THEN '-' ELSE notes END, "
-                    "user_id, "
+                    "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
+                    "CASE WHEN user_id IS NULL THEN '' ELSE user_id END, "
                     "date_trunc('second', timestamp) AS timestamp "
                     "FROM genotype_locus "
                     "WHERE genotype_id = :genotype_id "
@@ -1295,7 +1313,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             # [0] for accessing values
             rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1336,7 +1354,7 @@ def genotype_note(genotype_id):
 
             con.execute(sql, data)
 
-            return redirect(request.form["return_url"])
+            return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1374,9 +1392,9 @@ def set_wa_genotype(wa_code):
     if request.method == "POST":
         sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
         con.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
-        flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
+        # flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{wa_code}')
 
 
 @app.route(
@@ -1420,7 +1438,7 @@ def set_status(genotype_id):
 
         con.execute(sql, {"status": request.form["status"].strip().lower(), "genotype_id": genotype_id})
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1462,7 +1480,8 @@ def set_pack(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET pack = :pack WHERE genotype_id = :genotype_id")
         con.execute(sql, {"pack": request.form["pack"].lower().strip(), "genotype_id": genotype_id})
-        return redirect(request.form["return_url"])
+
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1509,7 +1528,7 @@ def set_sex(genotype_id):
         sql = text("UPDATE wa_results SET sex_id = :sex WHERE genotype_id = :genotype_id")
         con.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1552,7 +1571,7 @@ def set_status_1st_recap(genotype_id):
         sql = text("UPDATE genotypes SET status_first_capture = :status_first_capture WHERE genotype_id = :genotype_id")
         con.execute(sql, {"status_first_capture": request.form["status_first_capture"], "genotype_id": genotype_id})
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1593,7 +1612,8 @@ def set_dispersal(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET dispersal = :dispersal WHERE genotype_id = :genotype_id")
         con.execute(sql, {"dispersal": request.form["dispersal"].strip(), "genotype_id": genotype_id})
-        return redirect(request.form["return_url"])
+
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1635,7 +1655,8 @@ def set_hybrid(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET hybrid = :hybrid WHERE genotype_id = :genotype_id")
         con.execute(sql, {"hybrid": request.form["hybrid"].strip(), "genotype_id": genotype_id})
-        return redirect(request.form["return_url"])
+
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
