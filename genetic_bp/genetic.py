@@ -57,6 +57,21 @@ def del_genotype(genotype_id):
     return redirect(request.referrer)
 
 
+@app.route("/undel_genotype/<genotype_id>")
+@fn.check_login
+def undel_genotype(genotype_id):
+    """
+    set genotype as temp (record_status field)
+    """
+    with fn.conn_alchemy().connect() as con:
+        con.execute(text("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+        # con.execute(text("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+
+    flash(fn.alert_success(f"<b>Genotype {genotype_id} undeleted</b>"))
+
+    return redirect(f"{request.referrer}#{genotype_id}")
+
+
 @app.route("/def_genotype/<genotype_id>")
 @fn.check_login
 def def_genotype(genotype_id):
@@ -68,7 +83,7 @@ def def_genotype(genotype_id):
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} set as definitive</b>"))
 
-    return redirect(request.referrer)
+    return redirect(f"{request.referrer}#{genotype_id}")
 
 
 @app.route("/temp_genotype/<genotype_id>")
@@ -82,7 +97,7 @@ def temp_genotype(genotype_id):
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} set as temporary</b>"))
 
-    return redirect(request.referrer)
+    return redirect(f"{request.referrer}#{genotype_id}")
 
 
 @app.route("/view_genotype/<genotype_id>")
@@ -382,7 +397,7 @@ def view_wa(wa_code):
                     "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
                     "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
                     "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                    "FROM dead_wolves "
+                    "FROM dead_wolves_mat "
                     "WHERE wa_code = :wa_code"
                 ),
                 {"wa_code": wa_code},
@@ -586,11 +601,11 @@ def genetic_samples():
 def wa_genetic_samples(filter="all", mode="web"):
     """
     display genetic data for WA code
-    filter: all / with notes / red_flag
+    filter: all / with notes / red_flag / no_values
     wa_genetic_samples_list.html
     """
 
-    if filter not in ("all", "with_notes", "red_flag"):
+    if filter not in ("all", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
 
     con = fn.conn_alchemy().connect()
@@ -604,7 +619,7 @@ def wa_genetic_samples(filter="all", mode="web"):
         "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
         "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
         "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
-        "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+        "(SELECT 'Yes' FROM dead_wolves_mat WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
         "FROM wa_scat_dw "
         "WHERE UPPER(mtdna) not like '%POOR DNA%' "
         "AND date BETWEEN :start_date AND :end_date "
@@ -630,25 +645,27 @@ def wa_genetic_samples(filter="all", mode="web"):
     loci_values: list = {}
     locus_notes: dict = {}
     for row in wa_scats:
-        has_genotype_notes = False
         # genotype working notes
-        if row["notes"] is not None and row["notes"]:
-            has_genotype_notes = True
+        has_genotype_notes = True if (row["notes"] is not None and row["notes"]) else False
 
         # get loci values from redis cache
         loci_val = rdis.get(row["wa_code"])
         has_loci_notes = False
+        has_loci_values = False
         if loci_val is not None:
             loci_values[row["wa_code"]] = json.loads(loci_val)
 
-            # check if loci have notes
+            # check if loci have notes and values
             for x in loci_values[row["wa_code"]]:
                 for allele in ["a", "b"]:
                     if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
                         "OK|"
                     ):
                         has_loci_notes = True
-                        break
+                    if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                        has_loci_values = True
+                if has_loci_notes and has_loci_values:
+                    break
 
             """
             has_loci_notes = set(
@@ -657,7 +674,15 @@ def wa_genetic_samples(filter="all", mode="web"):
             """
 
         else:
+            # extract loci value from database
             loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
+
+        if filter == "no_values":
+            out.append(dict(row))
+
+        # skip if no loci values and no notes
+        if not has_loci_values and not has_loci_notes:
+            continue
 
         if (filter == "red_flag") and (has_loci_notes):
             out.append(dict(row))
@@ -668,7 +693,7 @@ def wa_genetic_samples(filter="all", mode="web"):
         locus_notes[row["wa_code"]] = has_loci_notes
 
     if mode == "export":
-        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, with_notes)
+        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, filter)
 
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -682,7 +707,7 @@ def wa_genetic_samples(filter="all", mode="web"):
         return render_template(
             "wa_genetic_samples_list.html",
             header_title="Genetic data of WA codes",
-            title=Markup(f"<h2>Genetic data of {len(out)} WA codes{' with notes' * (filter == 'with_notes')}</h2>"),
+            title=Markup(f"Genetic data of {len(out)} WA codes{' with notes' * (filter == 'with_notes')}"),
             loci_list=loci_list,
             wa_scats=out,
             loci_values=loci_values,
@@ -691,14 +716,14 @@ def wa_genetic_samples(filter="all", mode="web"):
         )
 
 
-@app.route("/wa_analysis/<distance>/<cluster_id>")
-@app.route("/wa_analysis/<distance>/<cluster_id>/<mode>")
+@app.route("/wa_analysis/<distance>/<int:cluster_id>")
+@app.route("/wa_analysis/<distance>/<int:cluster_id>/<mode>")
 @fn.check_login
 def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     con = fn.conn_alchemy().connect()
 
     # loci list
-    loci_list = fn.get_loci_list()
+    loci_list: list = fn.get_loci_list()
 
     # DBScan
     wa_list: list = []
@@ -720,7 +745,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         .mappings()
         .all()
     ):
-        if row["cluster_id"] == int(cluster_id):
+        if row["cluster_id"] == cluster_id:
             wa_list.append(row["wa_code"])
     wa_list_str = "','".join(wa_list)
 
@@ -732,7 +757,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS notes, "
                 "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS status, "
                 "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS pack, "
-                "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+                "(SELECT 'Yes' FROM dead_wolves_mat WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
                 "FROM wa_scat_dw_mat "
                 f"WHERE wa_code IN ('{wa_list_str}') "
                 "AND date BETWEEN :start_date AND :end_date "
@@ -748,11 +773,23 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     )
 
     loci_values: dict = {}
+    out: list = []
     for row in wa_scats:
         loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
+        has_loci_values = False
+        # check if loci have values
+        for x in loci_values[row["wa_code"]]:
+            for allele in ["a", "b"]:
+                if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                    has_loci_values = True
+            if has_loci_values:
+                break
+
+        if has_loci_values:
+            out.append(row)
 
     if mode == "export":
-        file_content = export.export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id)
+        file_content = export.export_wa_analysis(loci_list, out, loci_values, distance, cluster_id)
 
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -766,9 +803,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         return render_template(
             "wa_analysis.html",
             header_title=f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
-            title=Markup(f"<h2>Matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+            title=Markup(f"Matches (cluster id: {cluster_id} _ {distance} m)"),
             loci_list=loci_list,
-            wa_scats=wa_scats,
+            wa_scats=out,
             loci_values=loci_values,
             distance=distance,
             cluster_id=cluster_id,
@@ -862,7 +899,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         return render_template(
             "wa_analysis_group.html",
             header_title=f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
-            title=Markup(f"<h2>Genotypes matches (cluster id: {cluster_id} _ {distance} m)</h2>"),
+            title=Markup(f"Genotypes matches (cluster id: {cluster_id} _ {distance} m)"),
             loci_list=loci_list,
             genotype_id=genotype_id,
             data=data,
@@ -875,6 +912,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 @app.route("/view_genetic_data/<wa_code>")
 @fn.check_login
 def view_genetic_data(wa_code):
+    """
+    visualize genetic data for WA code
+    """
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
         row = (
@@ -893,7 +933,7 @@ def view_genetic_data(wa_code):
         return render_template(
             "view_genetic_data.html",
             header_title=f"{wa_code} genetic data",
-            go_back_url=request.referrer,
+            go_back_url=f"{request.referrer}#{wa_code}",
             wa_code=wa_code,
             loci_list=loci_list,
             sex=sex,
@@ -1138,8 +1178,8 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
             con.execute(
                 text(
                     "SELECT val, "
-                    "CASE WHEN notes IS NULL THEN '-' ELSE notes END, "
-                    "user_id, "
+                    "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
+                    "CASE WHEN user_id IS NULL THEN '' ELSE user_id END,  "
                     "date_trunc('second', timestamp) AS timestamp FROM wa_locus "
                     "WHERE wa_code = :wa_code "
                     "AND locus = :locus "
@@ -1176,7 +1216,7 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
 
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
 
-        return redirect(request.form["return_url"] + f"#{wa_code}")
+        return redirect(f'{request.form["return_url"]}#{wa_code}')
 
 
 @app.route(
@@ -1222,8 +1262,8 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             con.execute(
                 text(
                     "SELECT val, "
-                    "CASE WHEN notes IS NULL THEN '-' ELSE notes END, "
-                    "user_id, "
+                    "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
+                    "CASE WHEN user_id IS NULL THEN '' ELSE user_id END, "
                     "date_trunc('second', timestamp) AS timestamp "
                     "FROM genotype_locus "
                     "WHERE genotype_id = :genotype_id "
@@ -1285,7 +1325,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             # [0] for accessing values
             rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1326,7 +1366,7 @@ def genotype_note(genotype_id):
 
             con.execute(sql, data)
 
-            return redirect(request.form["return_url"])
+            return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1364,9 +1404,9 @@ def set_wa_genotype(wa_code):
     if request.method == "POST":
         sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
         con.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
-        flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
+        # flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{wa_code}')
 
 
 @app.route(
@@ -1410,7 +1450,7 @@ def set_status(genotype_id):
 
         con.execute(sql, {"status": request.form["status"].strip().lower(), "genotype_id": genotype_id})
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1452,7 +1492,8 @@ def set_pack(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET pack = :pack WHERE genotype_id = :genotype_id")
         con.execute(sql, {"pack": request.form["pack"].lower().strip(), "genotype_id": genotype_id})
-        return redirect(request.form["return_url"])
+
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1499,7 +1540,7 @@ def set_sex(genotype_id):
         sql = text("UPDATE wa_results SET sex_id = :sex WHERE genotype_id = :genotype_id")
         con.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1542,7 +1583,7 @@ def set_status_1st_recap(genotype_id):
         sql = text("UPDATE genotypes SET status_first_capture = :status_first_capture WHERE genotype_id = :genotype_id")
         con.execute(sql, {"status_first_capture": request.form["status_first_capture"], "genotype_id": genotype_id})
 
-        return redirect(request.form["return_url"])
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1583,7 +1624,8 @@ def set_dispersal(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET dispersal = :dispersal WHERE genotype_id = :genotype_id")
         con.execute(sql, {"dispersal": request.form["dispersal"].strip(), "genotype_id": genotype_id})
-        return redirect(request.form["return_url"])
+
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(
@@ -1625,7 +1667,8 @@ def set_hybrid(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET hybrid = :hybrid WHERE genotype_id = :genotype_id")
         con.execute(sql, {"hybrid": request.form["hybrid"].strip(), "genotype_id": genotype_id})
-        return redirect(request.form["return_url"])
+
+        return redirect(f'{request.form["return_url"]}#{genotype_id}')
 
 
 @app.route(

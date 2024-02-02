@@ -2,20 +2,15 @@
 
 {% block content %}
 
-<h1>WolfDB</h1>
-<hr>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="/genetic_samples" class="btn btn-primary">WA genetic samples</a>&nbsp;
 
-<a href="/plot_all_wa" class="btn btn-primary">Plot WA</a>&nbsp;
-
-<a href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
+<a style="width:10%" href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
 
 <br>
 <br>
-
 
 {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -23,32 +18,33 @@
     {% endif %}
 {% endwith %}
 
-
 {% if wa_scats %}
 
-{{ title }}
+<h3>{{ title }}</h3>
 
-
-<br><a href="/wa_analysis/{{ distance }}/{{ cluster_id }}/export" class="btn btn-info">Export data</a><br>
+<br><a style="width:10%" href="/wa_analysis/{{ distance }}/{{ cluster_id }}/export" class="btn btn-info">Export data</a><br>
+<br>
 <br>
 
-<style>th {top:0;position:sticky;}</style>
+{% include "freeze_1stcolumn_1strow.html" %}
 
+<div class="frozen">
+<div class="condensed">
 <table class="table table-striped">
+<thead>
 <tr>
-<th style="background-color: white;"></th> <!-- place for buttons-->
-<th style="background-color: white;">WA code</th>
-<th style="background-color: white;">Sample ID</th>
-<th style="background-color: white;">Date</th>
-<th style="background-color: white;">Municipality</th>
-<th style="background-color: white;">Coordinates<br><small>WGS84 UTM zone 32N</small></th>
-<th style="background-color: white;">mtDNA result</th>
-<th style="background-color: white;">Genotype ID</th>
-<th style="background-color: white;">Temp ID</th>
-<th style="background-color: white;">Sex</th>
-<th style="background-color: white;">Status</th>
-<th style="background-color: white;">Pack</th>
-<th style="background-color: white;">Dead recovery</th>
+<th>WA code</th>
+<th>Sample ID</th>
+<th>Date</th>
+<th>Municipality</th>
+<th>Coordinates<br><small>WGS84 UTM zone 32N</small></th>
+<th>mtDNA result</th>
+<th>Genotype ID</th>
+<th>Temp ID</th>
+<th>Sex</th>
+<th>Status</th>
+<th>Pack</th>
+<th>Dead recovery</th>
 
 
 {% for locus in loci_list %}
@@ -60,15 +56,15 @@
 {% endfor %}
 
 </tr>
+</thead>
+<tbody>
 {% for result in wa_scats %}
-
 <tr>
-<td>
+<td style="white-space: nowrap;">
+<a id="{{ result['wa_code'] }}">
+<a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
 <a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
 </td>
-
-
-<td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
 
 <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
 
@@ -113,20 +109,16 @@
 <small>
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
 </small>
-
 </td>
-
 {% endfor %}
-
-
 </tr>
 {% endfor %}
 
-
-
-
-
+</tbody>
 </table>
+</div><!-- condensed -->
+</div><!-- frozen -->
+
 {% else %}
 
 <h2>No WA code found</h2>

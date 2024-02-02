@@ -13,13 +13,13 @@
 {% endwith %}
 
 
-{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
+{% if session['start_year'] and session['end_year'] %}Date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 {% if results %}
 <h2>{{ title }}</h2>
 
 
-<br><a href="/genotypes_list/{{type }}/export" class="btn btn-info">Export data in XLSX format</a><br>
+<br><a style="width:10%" href="/genotypes_list/{{type }}/export" class="btn btn-info">Export data in XLSX format</a><br>
 <br>
 
 {% include "freeze_1stcolumn_1strow.html" %}
@@ -64,8 +64,9 @@
 <tbody>
 {% for result in results %}
 <tr>
-<td>
-<a href="/view_genotype/{{ result['genotype_id'] }}"><b>{{ result['genotype_id'] }}</a></b>
+<td><a id="{{ result['genotype_id'] }}">
+<a href="/view_genotype/{{ result['genotype_id'] }}"><b>{{ result['genotype_id'] }}</b></a>
+</a>
 </td>
 <td style="white-space: nowrap;">
 <span class="dropdown">
@@ -83,8 +84,12 @@ set ...
 </ul>
 </span>
 
-{% if result["record_status"] != deleted %}
+{% if result["record_status"] != "deleted" %}
 <a href="/del_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete this genotype?')">Del</a>
+{% endif %}
+
+{% if result["record_status"] == "deleted" %}
+<a href="/undel_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to undelete this genotype?')">Undelete</a>
 {% endif %}
 
 
