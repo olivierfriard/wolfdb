@@ -20,6 +20,7 @@ import pathlib as pl
 import uuid
 import pandas as pd
 import datetime as dt
+import time
 
 import functions as fn
 from . import export
@@ -594,6 +595,22 @@ def genetic_samples():
     return render_template("genetic_samples.html", header_title="Genetic samples")
 
 
+def get_wa_loci_values(wa_code):
+    r = rdis.get(wa_code)
+    if r is None:
+        return None
+    return json.loads(r)
+
+    """
+    with fn.conn_alchemy().connect() as con:
+        return (
+            con.execute(text("SELECT values FROM wa_loci_values WHERE wa_code = :wa_code"), {"wa_code": wa_code})
+            .mappings()
+            .fetchone()["values"]
+        )
+    """
+
+
 @app.route("/wa_genetic_samples")
 @app.route("/wa_genetic_samples/<filter>")
 @app.route("/wa_genetic_samples/<filter>/<mode>")
@@ -607,6 +624,9 @@ def wa_genetic_samples(filter="all", mode="web"):
 
     if filter not in ("all", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
+
+    t0 = time.time()
+    print(f"{t0=}")
 
     con = fn.conn_alchemy().connect()
 
@@ -649,11 +669,14 @@ def wa_genetic_samples(filter="all", mode="web"):
         has_genotype_notes = True if (row["notes"] is not None and row["notes"]) else False
 
         # get loci values from redis cache
-        loci_val = rdis.get(row["wa_code"])
+        # loci_val = rdis.get(row["wa_code"])
+        loci_val = get_wa_loci_values(row["wa_code"])
+
         has_loci_notes = False
         has_loci_values = False
         if loci_val is not None:
-            loci_values[row["wa_code"]] = json.loads(loci_val)
+            """loci_values[row["wa_code"]] = json.loads(loci_val)"""
+            loci_values[row["wa_code"]] = loci_val
 
             # check if loci have notes and values
             for x in loci_values[row["wa_code"]]:
@@ -703,6 +726,8 @@ def wa_genetic_samples(filter="all", mode="web"):
 
     else:
         session["go_back_url"] = "/wa_genetic_samples"
+
+        print(time.time() - t0)
 
         return render_template(
             "wa_genetic_samples_list.html",
