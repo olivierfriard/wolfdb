@@ -2,21 +2,20 @@
 import scats from XLSX file
 """
 
-DEBUG = True
 
 import sys
 
-if __name__ == "__main__":
-    sys.path.append("..")
 from config import config
 import functions as fn
 
-params = config()
 
 import pathlib as pl
 import pandas as pd
 import datetime
 import utm
+
+DEBUG = False
+params = config()
 
 
 def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
@@ -229,41 +228,6 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
 
     # extract paths
     all_paths = {}
-    """
-    if "Paths" in df.keys():
-        paths_df = df["Paths"]
-        for index, row in paths_df.iterrows():
-            data = {}
-            for column in list(paths_df.columns):
-                data[column] = row[column]
-                if isinstance(data[column], float) and str(data[column]) == "nan":
-                    data[column] = ""
-
-            data["date"] = str(data["date"]).split(" ")[0]
-            if data["completeness"] == "":
-                data["completeness"] = None
-
-            all_paths[index] = dict(data)
-
-    else:  # no Paths sheet found. Construct from scats
-
-        index = 0
-        for idx in scats_data:
-            if not scats_data[idx]["path_id"]:
-                continue
-            data = {}
-            data["path_id"] = scats_data[idx]["path_id"]
-            data["transect_id"] = scats_data[idx]["transect_id"]
-            data["date"] = scats_data[idx]["date"]
-            data["sampling_season"] = fn.sampling_season(scats_data[idx]["date"])
-            data["completeness"] = None
-            data["operator"] = scats_data[idx]["operator"]
-            data["institution"] = scats_data[idx]["institution"]
-            data["notes"] = ""
-
-            all_paths[index] = dict(data)
-            index += 1
-    """
 
     # extract tracks
     all_tracks = {}
@@ -282,7 +246,3 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
     """
 
     return False, "", scats_data, all_paths, all_tracks
-
-
-if __name__ == "__main__":
-    print(extract_data_from_xlsx(sys.argv[1]))

@@ -70,55 +70,60 @@ def get_loci_list() -> dict:
 
 
 def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    """
+    get WA code loci values
+    """
+    with conn_alchemy().connect() as con:
+        has_loci_notes = False
 
-    has_loci_notes = False
+        loci_values = {}
+        for locus in loci_list:
+            loci_values[locus] = {}
+            loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": ""}
+            loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
 
-    loci_values = {}
-    for locus in loci_list:
-        loci_values[locus] = {}
-        loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": ""}
-        loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
+        for locus in loci_list:
+            for allele in ["a", "b"][: loci_list[locus]]:
+                row2 = (
+                    con.execute(
+                        text(
+                            (
+                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
+                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
+                                "FROM wa_locus "
+                                "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                                "ORDER BY timestamp DESC LIMIT 1"
+                            )
+                        ),
+                        {"wa_code": wa_code, "locus": locus, "allele": allele},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
 
-    for locus in loci_list:
-        for allele in ["a", "b"][: loci_list[locus]]:
-            cursor.execute(
-                (
-                    "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
-                    "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
-                    "FROM wa_locus "
-                    "WHERE wa_code = %(wa_code)s AND locus = %(locus)s AND allele = %(allele)s "
-                    "ORDER BY timestamp DESC LIMIT 1"
-                ),
-                {"wa_code": wa_code, "locus": locus, "allele": allele},
-            )
+                if row2 is not None:
+                    val = row2["val"] if row2["val"] is not None else "-"
+                    notes = row2["notes"] if row2["notes"] is not None else ""
+                    user_id = row2["user_id"] if row2["user_id"] is not None else ""
+                    if notes:
+                        has_loci_notes = True
+                    epoch = row2["epoch"] if row2["epoch"] is not None else ""
+                    date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
 
-            row2 = cursor.fetchone()
+                else:
+                    val = "-"
+                    notes = ""
+                    epoch = ""
+                    user_id = ""
+                    date = ""
 
-            if row2 is not None:
-                val = row2["val"] if row2["val"] is not None else "-"
-                notes = row2["notes"] if row2["notes"] is not None else ""
-                user_id = row2["user_id"] if row2["user_id"] is not None else ""
-                if notes:
-                    has_loci_notes = True
-                epoch = row2["epoch"] if row2["epoch"] is not None else ""
-                date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
-
-            else:
-                val = "-"
-                notes = ""
-                epoch = ""
-                user_id = ""
-                date = ""
-
-            loci_values[locus][allele] = {
-                "value": val,
-                "notes": notes,
-                "epoch": epoch,
-                "user_id": user_id,
-                "date": date,
-            }
+                loci_values[locus][allele] = {
+                    "value": val,
+                    "notes": notes,
+                    "epoch": epoch,
+                    "user_id": user_id,
+                    "date": date,
+                }
 
     return loci_values, has_loci_notes
 
@@ -128,54 +133,43 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
     get genotype loci values
     """
 
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with conn_alchemy().connect() as con:
+        loci_values = {}
+        for locus in loci_list:
+            loci_values[locus] = {}
+            loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": ""}
+            loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
 
-    loci_values = {}
-    for locus in loci_list:
-        loci_values[locus] = {}
-        loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": ""}
-        loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
+        for locus in loci_list:
+            for allele in ["a", "b"]:
+                locus_val = (
+                    con.execute(
+                        text(
+                            (
+                                "SELECT val, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
+                                "FROM genotype_locus "
+                                "WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "
+                                "ORDER BY timestamp DESC LIMIT 1"
+                            )
+                        ),
+                        {"allele": allele, "genotype_id": genotype_id, "locus": locus},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
 
-    for locus in loci_list:
-        """
-        cursor.execute(
-            (
-                "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
-                "FROM genotype_locus "
-                "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'a' "
-                "UNION "
-                "SELECT val, allele, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
-                "FROM genotype_locus "
-                "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = 'b' "
-            ),
-            {"genotype_id": genotype_id, "locus": locus},
-        )
-        """
-        for allele in ["a", "b"]:
-            cursor.execute(
-                (
-                    "SELECT val, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
-                    "FROM genotype_locus "
-                    "WHERE genotype_id = %(genotype_id)s AND locus = %(locus)s AND allele = %(allele)s "
-                    "ORDER BY timestamp DESC LIMIT 1"
-                ),
-                {"allele": allele, "genotype_id": genotype_id, "locus": locus},
-            )
+                if locus_val is None:
+                    val = "-"
+                    notes = ""
+                    user_id = ""
+                    epoch = ""
+                else:
+                    val = locus_val["val"] if locus_val["val"] is not None else "-"
+                    notes = locus_val["notes"] if locus_val["notes"] is not None else ""
+                    user_id = locus_val["user_id"] if locus_val["user_id"] is not None else ""
+                    epoch = locus_val["epoch"] if locus_val["epoch"] is not None else ""
 
-            locus_val = cursor.fetchone()
-            if locus_val is None:
-                val = "-"
-                notes = ""
-                user_id = ""
-                epoch = ""
-            else:
-                val = locus_val["val"] if locus_val["val"] is not None else "-"
-                notes = locus_val["notes"] if locus_val["notes"] is not None else ""
-                user_id = locus_val["user_id"] if locus_val["user_id"] is not None else ""
-                epoch = locus_val["epoch"] if locus_val["epoch"] is not None else ""
-
-            loci_values[locus][allele] = {"value": val, "notes": notes, "user_id": user_id, "epoch": epoch}
+                loci_values[locus][allele] = {"value": val, "notes": notes, "user_id": user_id, "epoch": epoch}
 
     return loci_values
 
@@ -200,31 +194,38 @@ def all_transect_id() -> list:
     """
     returns a list of all transect_id in the transects table
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT transect_id FROM transects ORDER BY transect_id")
-    return [x[0].strip() for x in cursor.fetchall()]
+    with conn_alchemy().connect() as con:
+        return [
+            x["transect_id"].strip() for x in con.execute(text("SELECT transect_id FROM transects ORDER BY transect_id")).mappings().all()
+        ]
 
 
 def all_path_id() -> list:
     """
     return all path ID (transect ID and date)
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(("SELECT CONCAT(transect_id, ' ',  date) " "FROM paths " "WHERE transect_id != '' " "ORDER BY transect_id, date DESC"))
-    return [x[0].strip() for x in cursor.fetchall()]
+    with conn_alchemy().connect() as con:
+        return [
+            x["transect_date"].strip()
+            for x in con.execute(
+                text(
+                    "SELECT CONCAT(transect_id, ' ',  date) AS transect_date FROM paths WHERE transect_id != '' ORDER BY transect_id, date DESC"
+                )
+            )
+            .mappings()
+            .all()
+        ]
 
 
 def all_snow_tracks_id() -> list:
     """
     returns a list of all snowtrack_id in the snow_tracks table
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT snowtrack_id FROM snow_tracks ORDER BY snowtrack_id")
-    return [x[0].strip() for x in cursor.fetchall()]
+    with conn_alchemy().connect() as con:
+        return [
+            x["snowtrack_id"].strip()
+            for x in con.execute(text("SELECT snowtrack_id FROM snow_tracks ORDER BY snowtrack_id")).mappings().all()
+        ]
 
 
 def sampling_season(date: str) -> str:
@@ -247,12 +248,10 @@ def province_code_list() -> list:
     return list of upper case province code
     (using geo_info table)
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT UPPER(province_code) AS province_code FROM geo_info")
-
-    return [row["province_code"] for row in cursor.fetchall()]
+    with conn_alchemy().connect() as con:
+        return [
+            row["province_code"] for row in con.execute(text("SELECT UPPER(province_code) AS province_code FROM geo_info")).mappings().all()
+        ]
 
 
 def check_province_code(province_code) -> Union[None, str]:
@@ -261,14 +260,15 @@ def check_province_code(province_code) -> Union[None, str]:
     Returns province code or None if not found
     using geo_info table
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        "SELECT UPPER(province_code) AS province_code FROM geo_info WHERE UPPER(province_code) = %s",
-        [province_code.upper()],
-    )
-    result = cursor.fetchone()
+    with conn_alchemy().connect() as con:
+        result = (
+            con.execute(
+                text("SELECT UPPER(province_code) AS province_code FROM geo_info WHERE UPPER(province_code) = :province_code"),
+                {"province_code": province_code.upper()},
+            )
+            .mappings()
+            .fetchone()
+        )
     if result is None:
         return None
     else:
@@ -279,26 +279,29 @@ def prov_code2prov_name(province_code: str) -> str:
     """
     returns the province name for the province code provided (None if not found)
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        "SELECT province_name FROM geo_info WHERE UPPER(province_code) = %s",
-        [province_code.upper().strip()],
-    )
-    result = cursor.fetchone()
-    if result is None:
-        return None
-    else:
-        return result["province_name"]
+    with conn_alchemy().connect() as con:
+        result = (
+            con.execute(
+                text("SELECT province_name FROM geo_info WHERE UPPER(province_code) = :province_code"),
+                {"province_code": province_code.upper().strip()},
+            )
+            .mappings()
+            .fetchone()
+        )
+        if result is None:
+            return None
+        else:
+            return result["province_name"]
 
 
 def province_code2region_dict() -> dict:
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT province_code, region FROM geo_info")
-    return dict([(row["province_code"].upper(), row["region"]) for row in cursor.fetchall()])
+    with conn_alchemy().connect() as con:
+        return dict(
+            [
+                (row["province_code"].upper(), row["region"])
+                for row in con.execute(text("SELECT province_code, region FROM geo_info")).mappings().all()
+            ]
+        )
 
 
 def province_code2region(province_code):
@@ -308,11 +311,15 @@ def province_code2region(province_code):
     if province_code is None:
         return None
 
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT region FROM geo_info WHERE UPPER(province_code) = %s", [province_code.upper().strip()])
-    result = cursor.fetchone()
+    with conn_alchemy().connect() as con:
+        result = (
+            con.execute(
+                text("SELECT region FROM geo_info WHERE UPPER(province_code) = :province_code"),
+                {"province_code": province_code.upper().strip()},
+            )
+            .mappings()
+            .fetchone()
+        )
     if result is None:
         return None
     else:
@@ -324,12 +331,8 @@ def province_name_list() -> list:
     return list of upper case province name
     (using geo_info table)
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT province_name FROM geo_info")
-
-    return [row["province_name"].upper() for row in cursor.fetchall()]
+    with conn_alchemy().connect() as con:
+        return [row["province_name"].upper() for row in con.execute(text("SELECT province_name FROM geo_info")).mappings().all()]
 
 
 def province_name2code(province_name: str) -> str:
@@ -337,15 +340,19 @@ def province_name2code(province_name: str) -> str:
     returns province code from province name
     using geo_info table
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT province_code FROM geo_info WHERE UPPER(province_name) = %s", [province_name.upper().strip()])
-    result = cursor.fetchone()
-    if result is None:
-        return None
-    else:
-        return result["province_code"]
+    with conn_alchemy().connect() as con:
+        result = (
+            con.execute(
+                text("SELECT province_code FROM geo_info WHERE UPPER(province_name) = :province_name"),
+                {"province_name": province_name.upper().strip()},
+            )
+            .mappings()
+            .fetchone()
+        )
+        if result is None:
+            return None
+        else:
+            return result["province_code"]
 
 
 def province_name2code_dict() -> dict:
@@ -353,11 +360,17 @@ def province_name2code_dict() -> dict:
     returns dict of upper case province code for upper case province name
     (using geo_info table)
     """
-    connection = get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute("SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info")
-    return dict([(row["province_name"], row["province_code"]) for row in cursor.fetchall()])
+    with conn_alchemy().connect() as con:
+        return dict(
+            [
+                (row["province_name"], row["province_code"])
+                for row in con.execute(
+                    text("SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info")
+                )
+                .mappings()
+                .all()
+            ]
+        )
 
 
 def province_name2region(province_name) -> str:

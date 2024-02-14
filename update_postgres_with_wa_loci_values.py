@@ -31,16 +31,13 @@ with fn.conn_alchemy().connect() as con:
 
     for row in con.execute(sql).mappings().all():
         print(f'{row["wa_code"]=}')
-        #print(json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
-
-        con.execute(text(
-                            "INSERT INTO wa_loci_values "
-                            "(wa_code, values) "
-                            "VALUES (:wa_code, :values)"
-                        ),
-                        {
-                            "wa_code": row["wa_code"],
-
-                            "values": json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0])
-}
-)
+        con.execute(
+            text(
+                "INSERT INTO wa_loci_values "
+                "(wa_code, values) "
+                "VALUES (:wa_code, :values) "
+                "ON CONFLICT (wa_code) DO UPDATE "
+                "SET values = :values "
+            ),
+            {"wa_code": row["wa_code"], "values": json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0])},
+        )

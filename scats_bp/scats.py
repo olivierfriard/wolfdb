@@ -883,7 +883,7 @@ def confirm_load_xlsx(filename, mode):
 
     # check if scat_id already in DB
     scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
-    sql = text(f"select scat_id from scats where scat_id in ('{scats_list}')")
+    sql = text(f"SELECT scat_id FROM scats WHERE scat_id in ('{scats_list}')")
 
     scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
 
