@@ -9,6 +9,10 @@ CREATE TABLE wa_loci_values (
 CREATE UNIQUE INDEX wa_loci_values_idx ON wa_loci_values USING btree (wa_code);
 
 
+Comments: 
+
+    * solution that is very slow compaired with the redis solution
+
 """
 
 from sqlalchemy import text
