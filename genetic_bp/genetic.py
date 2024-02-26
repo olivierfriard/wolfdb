@@ -359,37 +359,10 @@ def view_wa(wa_code):
     )
 
     if result is not None:
-        if result["sample_id"].startswith("E"):
-            return redirect(f"/view_scat/{result['sample_id']}")
-
         if result["sample_id"].startswith("T") or result["sample_id"].startswith("M"):
             return redirect(f"/view_tissue/{result['sample_id']}")
-
-        """
-        scat_geojson = json.loads(results["scat_lonlat"])
-        scat_feature = {"geometry": dict(scat_geojson),
-                        "type": "Feature",
-                        "properties": {
-                                    "popupContent": f"WA code: <b>{wa_code}</b>"
-                                    },
-                        "id": wa_code
-                    }
-        scat_features = [scat_feature]
-        center = f"{results['latitude']}, {results['longitude']}"
-
-        # genetic data
-        cursor.execute("SELECT * FROM wa_results WHERE wa_code = %s", [wa_code])
-        wa_result = cursor.fetchone()
-
-
-        return render_template("view_wa.html",
-                               header_title=f"WA code: {wa_code}",
-                               go_back_url=request.referrer,
-                               results=results,
-                               wa_result=wa_result,
-                               map=Markup(fn.leaflet_geojson(center, scat_features, []))
-                               )
-        """
+        else:  # E or other
+            return redirect(f"/view_scat/{result['sample_id']}")
 
     else:
         result = (

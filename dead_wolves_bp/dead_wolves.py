@@ -422,7 +422,7 @@ def dead_wolves_list():
             con.execute(
                 text(
                     "SELECT *,"
-                    "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
+                    "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves_mat.genotype_id) AS genotype_id_verif "
                     "FROM dead_wolves_mat "
                     "WHERE "
                     "deleted is NULL "

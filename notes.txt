@@ -6,6 +6,18 @@ genotype_id field in scats table ?
 
 
 
+refresh MATERIALIZED VIEW dead_wolves_mat;
+
+refresh MATERIALIZED VIEW wa_scat_dw_mat;
+
+refresh MATERIALIZED VIEW scats_list_mat;
+
+refresh MATERIALIZED VIEW genotypes_list_mat;
+
+refresh MATERIALIZED VIEW wa_genetic_samples_mat;
+
+
+
 
 
 
