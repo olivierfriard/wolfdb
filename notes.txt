@@ -1,3 +1,95 @@
+2024-02-27
+--------------------
+
+data genotipo -> prima data campione:
+
+select genotype_id, (select MIN(date) from scats, wa_results  where wa_results.wa_code = scats.wa_code and wa_results.genotype_id = genotypes.genotype_id) as min_date FROM genotypes ;
+
+UPDATE genotypes SET date_first_capture = (select MIN(date) from scats, wa_results  where wa_results.wa_code = scats.wa_code and wa_results.genotype_id = genotypes.genotype_id);
+
+
+
+
+2024-02-27
+--------------------
+
+sistemato 69 genotipi AO
+
+INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210311ARV6'    ,'AO-M112',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200502BRU1'    ,'AO-F61',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200805VAL1'    ,'AO-M119',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210406ASA1'    ,'AO-F137',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210412ASA2'    ,'AO-F117',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210426ARV1'    ,'AO-F114',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200530ASA11'   ,'AO-F54',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210401VAL2'    ,'AO-F36',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210408VAL1'    ,'AO-F36',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200508PMA1'    ,'AO-F89',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200512VERDA4'  ,'AO-F89',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201020ARV1'    ,'AO-M101',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210311ARV5'    ,'AO-M113',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201117AYM01'   ,'AO-M106',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210108PSD3'    ,'AO-F112',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201129BRU211'  ,'AO-F107',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210228ASA2'    ,'AO-F123',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210202GAB1'    ,'AO-F136',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210211VAL3'    ,'AO-M134',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201217ARV1'    ,'AO-M101',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201120GAB1'    ,'AO-F111',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210427AYM4'    ,'AO-M129',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210302ARV91'   ,'AO-F74',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200527CHA1'    ,'AO-F108',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200625VEROA1'  ,'AO-F96',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210206GAB1'    ,'AO-M135',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200503AYM1'    ,'AO-F1',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201215ETR1'    ,'AO-M12',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200813PSD1'    ,'AO-M65',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210108ARV1'    ,'AO-M101',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201201GAB1'    ,'AO-F110',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210108PSD4'    ,'AO-M113',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210221VEROA1'  ,'AO-F89',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201027ARV1'    ,'AO-M33',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210424ETR2'    ,'AO-M130',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201202ETR1'    ,'AO-F114',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201212VOLCM1'  ,'AO-F115',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200525BRU0161' ,'AO-F84',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210108PSD2'    ,'AO-M113',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210117PSD2'    ,'AO-F100',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210219ARV1'    ,'AO-M12',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210221ARV1'    ,'AO-M125',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201226AYMTF1'  ,'AO-F103',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201209CHA1'    ,'AO-F107',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210109AYMTF1'  ,'AO-F104',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210331VIL1'    ,'AO-F102',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210331VIL2'    ,'AO-M124',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201115VAL1'    ,'AO-M118',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201115VAL2'    ,'AO-M118',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201116BRU191'  ,'AO-F60',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201211AYMTF1'  ,'AO-F102',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210109AYMTF2'  ,'AO-M105',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200910VAL1'    ,'AO-F120',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210208AYM1'    ,'AO-M126',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201213AYMTF1'  ,'AO-F102',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201115VEROA1'  ,'AO-M121',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210111ARV11'   ,'AO-F100',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210222PSD2'    ,'AO-M113',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210309AYM1'    ,'AO-M127',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E201121PSD1'    ,'AO-M51',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210228ASA1'    ,'AO-F122',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210427AYM1'    ,'AO-M106',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210427AYM3'    ,'AO-M128',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210308ASA1'    ,'AO-F123',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200901ARV1'    ,'AO-M75',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210117ARV1'    ,'AO-F100',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200501ASA2'    ,'AO-F83',   'Yes', 'F', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E200602PSD1'    ,'AO-M75',   'Yes', 'M', 'It Wolf-w14');
+ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) VALUES ( 'E210222PSD011'  ,'AO-F132',   'Yes', 'F', 'It Wolf-w14');
+
+
+
+
+
+
 2024-02-20
 ---------------------
 

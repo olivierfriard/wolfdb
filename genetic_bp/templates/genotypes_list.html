@@ -32,6 +32,7 @@
 <th></th>
 <th>Notes</th>
 <th>Other ID</th>
+<th>Date first capture</th>
 <th>Date</th>
 <th>Pack</th>
 <th>Sex</th>
@@ -105,6 +106,8 @@ set ...
 <td>{% if result['working_notes'] %}{{ result['working_notes'] }}{% endif %}</td>
 
 <td><a href="/view_genotype/{{ result['tmp_id'] }}" >{{ result['tmp_id'] }}</a></td>
+
+<td>{% if result['date_first_capture'] %}{{ result['date_first_capture'] }}{% endif %}</td>
 
 <td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
 

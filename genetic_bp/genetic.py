@@ -285,16 +285,6 @@ def genotypes_list(type: str, mode="web"):
     # loci list
     loci_list: dict = fn.get_loci_list()
 
-    """
-    sql = text("SELECT *, "
-                "(SELECT count(sample_id) FROM wa_scat_dw WHERE genotype_id=genotypes.genotype_id) AS n_recaptures, "
-                "(SELECT 'Yes' FROM wa_scat_dw WHERE (sample_id like 'T%' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
-                "FROM genotypes "
-                f"{filter} "
-                "AND date BETWEEN :start_date AND :end_date "
-                "ORDER BY genotype_id")
-    """
-
     sql = text(f"SELECT * FROM genotypes_list_mat {filter} AND date BETWEEN :start_date AND :end_date")
 
     results = (
