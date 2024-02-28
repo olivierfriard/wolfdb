@@ -1,3 +1,7 @@
+
+CHECK WA3003 genotipo non presente nella visualizzazione.
+
+
 2024-02-27
 --------------------
 
@@ -93,7 +97,7 @@ INSERT INTO wa_results  (wa_code, genotype_id, quality_genotype, sex_id, mtdna) 
 2024-02-20
 ---------------------
 
-genotype_id field in scats table ?
+genotype_id field in scats table ? DONE
 
 
 
