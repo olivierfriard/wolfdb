@@ -18,7 +18,7 @@ if not params:
     print("Parameters not found")
     sys.exit()
 
-# dev version use db 0
+# dev version use db #1
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
 # loci list
