@@ -22,6 +22,8 @@ import functions as fn
 import uuid
 import pathlib as pl
 import time
+from sqlalchemy import text
+
 
 app = flask.Blueprint("tracks", __name__, template_folder="templates", static_url_path="/static")
 
@@ -66,121 +68,136 @@ def view_track(snowtrack_id):
     visualize the track
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute(
-        (
-            "SELECT *, "
-            "case when (SELECT lower(mtdna) FROM wa_scat_dw  "
-            " WHERE "
-            "   lower(mtdna) LIKE '%%wolf%%' "
-            "   AND wa_code in (select wa_code from scats WHERE snowtrack_id = t.snowtrack_id)  "
-            "LIMIT 1 "
-            ") LIKE '%%wolf%%' THEN 'C1' "
-            "ELSE t.scalp_category "
-            "END, "
-            "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson, "
-            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
-            "ROUND(ST_Length(multilines)) AS track_length "
-            "FROM snow_tracks t WHERE snowtrack_id = %s"
-        ),
-        [snowtrack_id],
-    )
-    track = cursor.fetchone()
-
-    if track is None:
-        flash(fn.alert_danger(f"<b>Track {snowtrack_id} not found</b>"))
-        return redirect("/snowtracks_list")
-
-    # eventually split transect_id
-    if track["transect_id"] is not None:
-        track["transect_id"] = track["transect_id"].split(";")
-
-    track_features = []
-    min_lat, max_lat = 90, -90
-    min_lon, max_lon = 90, -90
-
-    if track["track_geojson"] is not None:
-        has_coordinates = True
-        track_geojson = json.loads(track["track_geojson"])
-
-        for line in track_geojson["coordinates"]:
-            latitudes = [lat for _, lat in line]
-            longitudes = [lon for lon, _ in line]
-            min_lat, max_lat = min(latitudes), max(latitudes)
-            min_lon, max_lon = min(longitudes), max(longitudes)
-
-        track_feature = {
-            "type": "Feature",
-            "geometry": dict(track_geojson),
-            "properties": {
-                # "style": {"color": color, "fillColor": color, "fillOpacity": 1},
-                "popupContent": f"Track ID: {snowtrack_id}",
-            },
-            "id": snowtrack_id,
-        }
-        track_features = [track_feature]
-    else:
-        has_coordinates = False
-
-    # number of scats
-    cursor.execute(
-        ("SELECT *," "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat " "FROM scats WHERE snowtrack_id LIKE %s"),
-        [snowtrack_id],
-    )
-
-    scats = cursor.fetchall()
-    n_scats = len(scats)
-    scat_features = []
-
-    for row in scats:
-        scat_geojson = json.loads(row["scat_lonlat"])
-
-        lon, lat = scat_geojson["coordinates"]
-
-        min_lat = min(min_lat, lat)
-        max_lat = max(max_lat, lat)
-        min_lon = min(min_lon, lon)
-        max_lon = max(max_lon, lon)
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                "popupContent": (
-                    f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
-                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: {row['genotype_id']}"""
-                ),
-            },
-            "id": row["scat_id"],
-        }
-        scat_features.append(scat_feature)
-
-    return render_template(
-        "view_track.html",
-        header_title=f"Track ID: {snowtrack_id}",
-        results=track,
-        has_coordinates=has_coordinates,
-        n_scats=n_scats,
-        map=Markup(
-            fn.leaflet_geojson2(
-                {
-                    "scats": scat_features,
-                    "scats_color": params["scat_color"],
-                    "tracks": track_features,
-                    "tracks_color": params["track_color"],
-                    "fit": [[min_lat, min_lon], [max_lat, max_lon]],
-                }
+    with fn.conn_alchemy().connect() as con:
+        track = dict(
+            (
+                con.execute(
+                    text(
+                        (
+                            "SELECT *, "
+                            "case when (SELECT lower(mtdna) FROM wa_scat_dw_mat  "
+                            " WHERE "
+                            "   lower(mtdna) LIKE '%%wolf%%' "
+                            "   AND wa_code in (select wa_code from scats WHERE snowtrack_id = t.snowtrack_id)  "
+                            "LIMIT 1 "
+                            ") LIKE '%%wolf%%' THEN 'C1' "
+                            "ELSE t.scalp_category "
+                            "END, "
+                            "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson, "
+                            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
+                            "ROUND(ST_Length(multilines)) AS track_length "
+                            "FROM snow_tracks t WHERE snowtrack_id = :track_id"
+                        )
+                    ),
+                    {"track_id": snowtrack_id},
+                )
+                .mappings()
+                .one()
             )
-        ),
-        scat_color=params["scat_color"],
-        dead_wolf_color=params["dead_wolf_color"],
-        transect_color=params["transect_color"],
-        track_color=params["track_color"],
-    )
+        )
+
+        if track is None:
+            flash(fn.alert_danger(f"<b>Track {snowtrack_id} not found</b>"))
+            return redirect("/snowtracks_list")
+
+        # eventually split transect_id
+        if track["transect_id"] is not None:
+            track["transect_id"] = track["transect_id"].split(";")
+
+        track_features: list = []
+        min_lat, max_lat = 90, -90
+        min_lon, max_lon = 90, -90
+
+        if track["track_geojson"] is not None:
+            has_coordinates = True
+            track_geojson = json.loads(track["track_geojson"])
+
+            for line in track_geojson["coordinates"]:
+                latitudes = [lat for _, lat in line]
+                longitudes = [lon for lon, _ in line]
+                min_lat, max_lat = min(latitudes), max(latitudes)
+                min_lon, max_lon = min(longitudes), max(longitudes)
+
+            track_feature = {
+                "type": "Feature",
+                "geometry": dict(track_geojson),
+                "properties": {
+                    # "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                    "popupContent": f"Track ID: {snowtrack_id}",
+                },
+                "id": snowtrack_id,
+            }
+            track_features = [track_feature]
+        else:
+            has_coordinates = False
+
+        # number of scats
+        scats = (
+            con.execute(
+                text(
+                    (
+                        "SELECT *,"
+                        "(SELECT genotype_id FROM wa_results WHERE wa_code = scats.wa_code) AS genotype_id, "
+                        "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                        "FROM scats WHERE snowtrack_id LIKE :snowtrack_id"
+                    )
+                ),
+                {"snowtrack_id": snowtrack_id},
+            )
+            .mappings()
+            .all()
+        )
+
+        n_scats = len(scats)
+        scat_features: list = []
+
+        for row in scats:
+            scat_geojson = json.loads(row["scat_lonlat"])
+
+            lon, lat = scat_geojson["coordinates"]
+
+            min_lat = min(min_lat, lat)
+            max_lat = max(max_lat, lat)
+            min_lon = min(min_lon, lon)
+            max_lon = max(max_lon, lon)
+
+            scat_feature = {
+                "geometry": dict(scat_geojson),
+                "type": "Feature",
+                "properties": {
+                    "popupContent": (
+                        f"""Sample ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                        f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a>"""
+                    ),
+                },
+                "id": row["scat_id"],
+            }
+            scat_features.append(scat_feature)
+
+        return render_template(
+            "view_track.html",
+            header_title=f"Track ID: {snowtrack_id}",
+            results=track,
+            has_coordinates=has_coordinates,
+            n_scats=n_scats,
+            map=Markup(
+                fn.leaflet_geojson2(
+                    {
+                        "scats": scat_features,
+                        "scats_color": params["scat_color"],
+                        "tracks": track_features,
+                        "tracks_color": params["track_color"],
+                        "fit": [[min_lat, min_lon], [max_lat, max_lon]],
+                    }
+                )
+            ),
+            scat_color=params["scat_color"],
+            dead_wolf_color=params["dead_wolf_color"],
+            transect_color=params["transect_color"],
+            track_color=params["track_color"],
+        )
 
 
 @app.route("/tracks_list")
@@ -191,44 +208,46 @@ def tracks_list():
     list of tracks
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        # split transects (more transects can be specified)
+        results: list = []
+        for row in (
+            con.execute(
+                text(
+                    (
+                        "SELECT *, "
+                        "CASE "
+                        "WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw_mat "
+                        " WHERE "
+                        "   LOWER(mtdna) LIKE '%%wolf%%' "
+                        "   AND wa_code IN (SELECT wa_code FROM scats WHERE snowtrack_id = t.snowtrack_id)  "
+                        "LIMIT 1 "
+                        ") LIKE '%%wolf%%' THEN 'C1' "
+                        "ELSE t.scalp_category "
+                        "END "
+                        "FROM snow_tracks t "
+                        "WHERE date BETWEEN :start_date AND :end_date "
+                        "ORDER BY region ASC, province ASC, date DESC"
+                    )
+                ),
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        ):
+            results.append(dict(row))
+            if results[-1]["transect_id"] is not None:
+                results[-1]["transect_id"] = results[-1]["transect_id"].split(";")
+            else:
+                results[-1]["transect_id"] = ""
 
-    cursor.execute(
-        (
-            "SELECT *, "
-            "CASE "
-            "WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw "
-            " WHERE "
-            "   LOWER(mtdna) LIKE '%%wolf%%' "
-            "   AND wa_code IN (SELECT wa_code FROM scats WHERE snowtrack_id = t.snowtrack_id)  "
-            "LIMIT 1 "
-            ") LIKE '%%wolf%%' THEN 'C1' "
-            "ELSE t.scalp_category "
-            "END "
-            "FROM snow_tracks t "
-            "WHERE date BETWEEN %s AND %s "
-            "ORDER BY region ASC, province ASC, date DESC"
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
-    )
+        # count tracks
+        n_tracks = len(results)
 
-    # split transects (more transects can be specified)
-    results = []
-    for row in cursor.fetchall():
-        results.append(dict(row))
-        if results[-1]["transect_id"] is not None:
-            results[-1]["transect_id"] = results[-1]["transect_id"].split(";")
-        else:
-            results[-1]["transect_id"] = ""
-
-    # count tracks
-    n_tracks = len(results)
-
-    return render_template("tracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
+        return render_template("tracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
 
 
 @app.route("/plot_tracks")
@@ -238,66 +257,68 @@ def plot_tracks():
     Plot all tracks
     """
 
-    connection = fn.get_connection()
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    with fn.conn_alchemy().connect() as con:
+        features = []
+        tot_min_lat, tot_min_lon = 90, 90
+        tot_max_lat, tot_max_lon = -90, -90
 
-    cursor.execute(
-        (
-            "SELECT snowtrack_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_lonlat "
-            "FROM snow_tracks "
-            "WHERE date BETWEEN %s AND %s "
-        ),
-        (
-            session["start_date"],
-            session["end_date"],
-        ),
-    )
-
-    features = []
-    tot_min_lat, tot_min_lon = 90, 90
-    tot_max_lat, tot_max_lon = -90, -90
-
-    for row in cursor.fetchall():
-        if row["track_lonlat"] is not None:
-            geojson = json.loads(row["track_lonlat"])
-
-            for line in geojson["coordinates"]:
-                # bounding box
-                latitudes = [lat for _, lat in line]
-                longitudes = [lon for lon, _ in line]
-                tot_min_lat = min([tot_min_lat, min(latitudes)])
-                tot_max_lat = max([tot_max_lat, max(latitudes)])
-                tot_min_lon = min([tot_min_lon, min(longitudes)])
-                tot_max_lon = max([tot_max_lon, max(longitudes)])
-
-            feature = {
-                "geometry": dict(geojson),
-                "type": "Feature",
-                "properties": {
-                    "popupContent": f"""Track ID: <a href="/view_track/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a>"""
-                },
-                "id": row["snowtrack_id"],
-            }
-
-            features.append(dict(feature))
-
-    return render_template(
-        "plot_tracks.html",
-        header_title="Plot of tracks",
-        map=Markup(
-            fn.leaflet_geojson2(
+        for row in (
+            con.execute(
+                text(
+                    (
+                        "SELECT snowtrack_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_lonlat "
+                        "FROM snow_tracks "
+                        "WHERE date BETWEEN :start_date AND :end_date "
+                    )
+                ),
                 {
-                    "tracks": features,
-                    "tracks_color": params["track_color"],
-                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
-                }
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
             )
-        ),
-        scat_color=params["scat_color"],
-        dead_wolf_color=params["dead_wolf_color"],
-        transect_color=params["transect_color"],
-        track_color=params["track_color"],
-    )
+            .mappings()
+            .all()
+        ):
+            if row["track_lonlat"] is not None:
+                geojson = json.loads(row["track_lonlat"])
+
+                for line in geojson["coordinates"]:
+                    # bounding box
+                    latitudes = [lat for _, lat in line]
+                    longitudes = [lon for lon, _ in line]
+                    tot_min_lat = min([tot_min_lat, min(latitudes)])
+                    tot_max_lat = max([tot_max_lat, max(latitudes)])
+                    tot_min_lon = min([tot_min_lon, min(longitudes)])
+                    tot_max_lon = max([tot_max_lon, max(longitudes)])
+
+                feature = {
+                    "geometry": dict(geojson),
+                    "type": "Feature",
+                    "properties": {
+                        "popupContent": f"""Track ID: <a href="/view_track/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a>"""
+                    },
+                    "id": row["snowtrack_id"],
+                }
+
+                features.append(dict(feature))
+
+        return render_template(
+            "plot_tracks.html",
+            header_title="Plot of tracks",
+            map=Markup(
+                fn.leaflet_geojson2(
+                    {
+                        "tracks": features,
+                        "tracks_color": params["track_color"],
+                        "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                    }
+                )
+            ),
+            scat_color=params["scat_color"],
+            dead_wolf_color=params["dead_wolf_color"],
+            transect_color=params["transect_color"],
+            track_color=params["track_color"],
+        )
 
 
 @app.route("/new_track", methods=("GET", "POST"))
@@ -361,107 +382,98 @@ def new_track():
         """
 
         if form.validate():
-            connection = fn.get_connection()
-            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            with fn.conn_alchemy().connect() as con:
+                # check if track already exists
+                rows = (
+                    con.execute(
+                        text("SELECT snowtrack_id FROM snow_tracks WHERE UPPER(snowtrack_id) = UPPER(:track_id)"),
+                        {"track_id": request.form["snowtrack_id"]},
+                    )
+                    .mappings()
+                    .all()
+                )
+                if len(rows):
+                    return not_valid(f"The track ID {request.form['snowtrack_id']} already exists")
 
-            # check if track already exists
-            cursor.execute(
-                "SELECT snowtrack_id FROM snow_tracks WHERE UPPER(snowtrack_id) = UPPER(%s)",
-                [request.form["snowtrack_id"]],
-            )
-            rows = cursor.fetchall()
-            if len(rows):
-                return not_valid(f"The track ID {request.form['snowtrack_id']} already exists")
+                # check sampling type
+                if request.form["sampling_type"] == "":
+                    return not_valid("You must select a sampling type (Systematic or Opportunistic)")
 
-            # check sampling type
-            if request.form["sampling_type"] == "":
-                return not_valid("You must select a sampling type (Systematic or Opportunistic)")
+                # check transect ID
+                if request.form["sampling_type"] == "Systematic":
+                    if request.form["transect_id"] == "":
+                        return not_valid("You must specify a transect ID for a systematic sampling")
+                    all_transects = fn.all_transect_id()
+                    transects_id = request.form["transect_id"].upper().replace(" ", "")
+                    for transect_id in transects_id.split(";"):
+                        if transect_id not in all_transects:
+                            return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
 
-            # check transect ID
-            if request.form["sampling_type"] == "Systematic":
-                if request.form["transect_id"] == "":
-                    return not_valid("You must specify a transect ID for a systematic sampling")
-                all_transects = fn.all_transect_id()
-                transects_id = request.form["transect_id"].upper().replace(" ", "")
-                for transect_id in transects_id.split(";"):
-                    if transect_id not in all_transects:
-                        return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
+                if request.form["sampling_type"] == "Opportunistic":
+                    transects_id = ""
 
-            if request.form["sampling_type"] == "Opportunistic":
-                transects_id = ""
-
-            # date
-            try:
-                year = int(request.form["snowtrack_id"][1 : 2 + 1]) + 2000
-                month = int(request.form["snowtrack_id"][3 : 4 + 1])
-                day = int(request.form["snowtrack_id"][5 : 6 + 1])
-                date = f"{year}-{month:02}-{day:02}"
+                # date
                 try:
-                    dt.datetime.strptime(date, "%Y-%m-%d")
+                    year = int(request.form["snowtrack_id"][1 : 2 + 1]) + 2000
+                    month = int(request.form["snowtrack_id"][3 : 4 + 1])
+                    day = int(request.form["snowtrack_id"][5 : 6 + 1])
+                    date = f"{year}-{month:02}-{day:02}"
+                    try:
+                        dt.datetime.strptime(date, "%Y-%m-%d")
+                    except Exception:
+                        return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
                 except Exception:
-                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
-            except Exception:
-                return not_valid("The track ID value is not correct")
+                    return not_valid("The track ID value is not correct")
 
-            """
-            # path id
-            path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
-            """
-
-            # check province code
-            province_code = fn.check_province_code(request.form["province"])
-            if province_code is None:
-                # check province name
-                province_code = fn.province_name2code(request.form["province"])
+                # check province code
+                province_code = fn.check_province_code(request.form["province"])
                 if province_code is None:
-                    return not_valid("The province was not found")
+                    # check province name
+                    province_code = fn.province_name2code(request.form["province"])
+                    if province_code is None:
+                        return not_valid("The province was not found")
 
-            # add region from province code
-            track_region = fn.province_code2region(province_code)
+                # add region from province code
+                track_region = fn.province_code2region(province_code)
 
-            """
-            # region
-            track_region = fn.get_region(request.form["province"])
-            """
+                sql = text(
+                    (
+                        "INSERT INTO snow_tracks (snowtrack_id, transect_id, date, sampling_season, "
+                        "location, municipality, province, region,"
+                        "observer, institution, scalp_category, "
+                        "sampling_type, track_type, days_after_snowfall, minimum_number_of_wolves,"
+                        "track_format, notes)"
+                        "VALUES (:track_id, :transects_id, :date, :sampling_season, "
+                        ":location, :municipality, :province, :region, "
+                        ":observer, :institution, :scalp_category, "
+                        ":sampling_type, :track_type, :days_after_snowfall, :minimum_number_of_wolves, "
+                        ":track_format, :notes)"
+                    )
+                )
+                con.execute(
+                    sql,
+                    {
+                        "track_id": request.form["snowtrack_id"],
+                        "transects_id": transects_id,
+                        "date": date,
+                        "sampling_season": fn.sampling_season(date),
+                        "location": request.form["location"].strip(),
+                        "municipality": request.form["municipality"].strip(),
+                        "province": province_code,
+                        "region": track_region,
+                        "observer": request.form["observer"],
+                        "institution": request.form["institution"],
+                        "scalp_category": request.form["scalp_category"],
+                        "sampling_type": request.form["sampling_type"],
+                        "track_type": request.form["track_type"],
+                        "days_after_snowfall": request.form["days_after_snowfall"],
+                        "minimum_number_of_wolves": request.form["minimum_number_of_wolves"],
+                        "track_format": request.form["track_format"],
+                        "notes": request.form["notes"],
+                    },
+                )
 
-            sql = (
-                "INSERT INTO snow_tracks (snowtrack_id, transect_id, date, sampling_season, "
-                "location, municipality, province, region,"
-                "observer, institution, scalp_category, "
-                "sampling_type, track_type, days_after_snowfall, minimum_number_of_wolves,"
-                "track_format, notes)"
-                "VALUES (%s, %s, %s, %s, "
-                "%s, %s, %s, %s, "
-                "%s, %s, %s, "
-                "%s, %s, %s, %s, "
-                "%s, %s)"
-            )
-            cursor.execute(
-                sql,
-                [
-                    request.form["snowtrack_id"],
-                    transects_id,
-                    date,
-                    fn.sampling_season(date),
-                    request.form["location"].strip(),
-                    request.form["municipality"].strip(),
-                    province_code,
-                    # request.form["province"].strip().upper(),
-                    track_region,
-                    request.form["observer"],
-                    request.form["institution"],
-                    request.form["scalp_category"],
-                    request.form["sampling_type"],
-                    request.form["track_type"],
-                    request.form["days_after_snowfall"],
-                    request.form["minimum_number_of_wolves"],
-                    request.form["track_format"],
-                    request.form["notes"],
-                ],
-            )
-            connection.commit()
-
-            return redirect("/snowtracks_list")
+                return redirect("/snowtracks_list")
         else:
             return not_valid("Some values are not set or are wrong. Please check and submit again")
 

@@ -5,7 +5,6 @@ WolfDB web service
 flask blueprint for packs management
 """
 
-
 import flask
 from flask import (
     render_template,
@@ -47,7 +46,7 @@ def view_pack(name):
             con.execute(
                 text(
                     "SELECT *, "
-                    "(SELECT date FROM wa_scat_dw where wa_code = "
+                    "(SELECT date FROM wa_scat_dw_mat where wa_code = "
                     "(SELECT wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) AS date "
                     "FROM genotypes WHERE pack = :pack"
                 ),

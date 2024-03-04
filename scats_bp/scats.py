@@ -5,7 +5,6 @@ WolfDB web service
 flask blueprint for scats management
 """
 
-
 import flask
 from flask import render_template, redirect, request, flash, make_response, session
 from markupsafe import Markup
@@ -705,7 +704,7 @@ def edit_scat(scat_id):
         if request.form["wa_code"]:
             if len(
                 con.execute(
-                    text("SELECT sample_id FROM wa_scat_dw WHERE sample_id !=:scat_id AND wa_code = :wa_code"),
+                    text("SELECT sample_id FROM wa_scat_dw_mat WHERE sample_id !=:scat_id AND wa_code = :wa_code"),
                     {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
                 )
                 .mappings()
@@ -1038,6 +1037,8 @@ def confirm_load_xlsx(filename, mode):
                 )
             except Exception:
                 return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+
+    con.execute(text("CALL refresh_materialized_views()"))
 
     msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
     flash(fn.alert_success(msg))

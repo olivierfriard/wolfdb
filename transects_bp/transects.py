@@ -5,13 +5,10 @@ WolfDB web service
 flask blueprint for transects management
 """
 
-
 import flask
 from flask import render_template, redirect, request, flash, make_response
 from markupsafe import Markup
 from sqlalchemy import text
-import psycopg2
-import psycopg2.extras
 from config import config
 import json
 import calendar

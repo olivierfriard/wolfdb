@@ -2,9 +2,6 @@
 import scats from XLSX file
 """
 
-
-import sys
-
 from config import config
 import functions as fn
 
@@ -219,7 +216,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         data["institution"] = str(data["institution"]).strip()
 
         scats_data[index] = dict(data)
-        print(scats_data[index])
+        # print(scats_data[index])
 
         index += 1
 
@@ -227,22 +224,9 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         return True, out, {}, {}, {}
 
     # extract paths
-    all_paths = {}
+    all_paths: dict = {}
 
     # extract tracks
-    all_tracks = {}
-    """
-    if "Tracks" in df.keys():
-        tracks_df = df["Tracks"]
-        for index, row in tracks_df.iterrows():
-            data = {}
-            for column in list(scats_df.columns):
-                if isinstance(data[column], float) and str(data[column]) == "nan":
-                    data[column] = ""
-                else:
-                    data[column] = row[column]
-
-            all_tracks[index] = dict(data)
-    """
+    all_tracks: dict = {}
 
     return False, "", scats_data, all_paths, all_tracks

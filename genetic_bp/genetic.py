@@ -5,7 +5,6 @@ WolfDB web service
 flask blueprint for genetic data management
 """
 
-
 import flask
 from flask import render_template, redirect, request, flash, session, make_response
 from markupsafe import Markup
@@ -595,20 +594,6 @@ def wa_genetic_samples(filter="all", mode="web"):
 
     # loci list
     loci_list: dict = fn.get_loci_list()
-
-    """
-    sql = text(
-        "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, genotype_id, tmp_id, mtdna, sex_id, "
-        "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS notes, "
-        "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS status, "
-        "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw.genotype_id) AS pack, "
-        "(SELECT 'Yes' FROM dead_wolves_mat WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
-        "FROM wa_scat_dw "
-        "WHERE UPPER(mtdna) not like '%POOR DNA%' "
-        "AND date BETWEEN :start_date AND :end_date "
-        "ORDER BY wa_code"
-    )
-    """
 
     sql = text("SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date ")
 
@@ -1801,6 +1786,8 @@ def confirm_load_definitive_genotypes_xlsx(filename):
             for allele in ("a", "b"):
                 if allele in d[locus]:
                     con.execute(sql_loci, {"genotype_id": d["genotype_id"], "locus": locus, "allele": allele, "val": d[locus][allele]})
+
+    con.execute(text("CALL refresh_materialized_views()"))
 
     update_redis_with_genotypes_loci()
 
