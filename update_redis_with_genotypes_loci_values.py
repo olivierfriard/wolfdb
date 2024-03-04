@@ -10,6 +10,7 @@ from sqlalchemy import text
 import functions as fn
 import json
 import redis
+from datetime import datetime
 
 from config import config
 
@@ -28,3 +29,5 @@ with fn.conn_alchemy().connect() as con:
     for row in con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all():
         print(f'{row["genotype_id"]=}')
         rdis.set(row["genotype_id"], json.dumps(fn.get_loci_value(row["genotype_id"], loci_list)))
+
+rdis.set("UPDATE GENOTYPES LOCI", datetime.now().isoformat())

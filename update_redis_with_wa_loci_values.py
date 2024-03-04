@@ -10,6 +10,7 @@ from sqlalchemy import text
 import functions as fn
 import json
 import redis
+from datetime import datetime
 
 from config import config
 
@@ -30,3 +31,5 @@ with fn.conn_alchemy().connect() as con:
     for row in con.execute(sql).mappings().all():
         print(f'{row["wa_code"]=}')
         rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
+
+rdis.set("UPDATE WA LOCI", datetime.now().isoformat())
