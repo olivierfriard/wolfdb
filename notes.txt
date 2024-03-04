@@ -1,3 +1,38 @@
+2024-03-04
+--------------------
+
+CREATE OR REPLACE FUNCTION refresh() RETURNS TRIGGER AS $refresh$
+BEGIN
+CALL refresh_materialized_views();
+RETURN NULL;
+END;
+$refresh$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE TRIGGER scats
+AFTER INSERT OR UPDATE OR DELETE ON scats
+FOR EACH STATEMENT EXECUTE FUNCTION refresh();
+
+
+
+CREATE OR REPLACE PROCEDURE refresh_materialized_views()
+LANGUAGE SQL
+AS $$
+refresh MATERIALIZED VIEW dead_wolves_mat;
+refresh MATERIALIZED VIEW wa_scat_dw_mat;
+refresh MATERIALIZED VIEW scats_list_mat;
+refresh MATERIALIZED VIEW genotypes_list_mat;
+refresh MATERIALIZED VIEW wa_genetic_samples_mat;
+$$;
+
+
+-> CALL refresh_materialized_views();
+
+
+
+
+
+
 2024-02-27
 --------------------
 
