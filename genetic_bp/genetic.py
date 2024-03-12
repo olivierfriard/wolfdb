@@ -557,20 +557,11 @@ def genetic_samples():
     return render_template("genetic_samples.html", header_title="Genetic samples")
 
 
-def get_wa_loci_values(wa_code):
+def get_wa_loci_values_redis(wa_code: str) -> dict:
     r = rdis.get(wa_code)
     if r is None:
         return None
     return json.loads(r)
-
-    """
-    with fn.conn_alchemy().connect() as con:
-        return (
-            con.execute(text("SELECT values FROM wa_loci_values WHERE wa_code = :wa_code"), {"wa_code": wa_code})
-            .mappings()
-            .fetchone()["values"]
-        )
-    """
 
 
 @app.route("/wa_genetic_samples")
@@ -588,7 +579,6 @@ def wa_genetic_samples(filter="all", mode="web"):
         return "An error has occured. Check the URL"
 
     t0 = time.time()
-    print(f"{t0=}")
 
     con = fn.conn_alchemy().connect()
 
@@ -618,12 +608,11 @@ def wa_genetic_samples(filter="all", mode="web"):
 
         # get loci values from redis cache
         # loci_val = rdis.get(row["wa_code"])
-        loci_val = get_wa_loci_values(row["wa_code"])
+        loci_val = get_wa_loci_values_redis(row["wa_code"])
 
         has_loci_notes = False
         has_loci_values = False
         if loci_val is not None:
-            """loci_values[row["wa_code"]] = json.loads(loci_val)"""
             loci_values[row["wa_code"]] = loci_val
 
             # check if loci have notes and values
@@ -635,14 +624,22 @@ def wa_genetic_samples(filter="all", mode="web"):
                         has_loci_notes = True
                     if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
                         has_loci_values = True
-                if has_loci_notes and has_loci_values:
-                    break
 
-            """
-            has_loci_notes = set(
-                [loci_values[row["wa_code"]][x][allele]["notes"] for x in loci_values[row["wa_code"]] for allele in ["a", "b"]]
-            ) != {""}
-            """
+                    if row["genotype_id"]:
+                        try:
+                            genotype_loci_val = json.loads(rdis.get(row["genotype_id"]))
+                            # print(genotype_loci_val)
+                            if genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
+                                loci_values[row["wa_code"]][x][allele]["value"] = "***" + str(
+                                    loci_values[row["wa_code"]][x][allele]["value"]
+                                )
+                        except Exception:
+                            print(row["genotype_id"], "loci not found")
+
+                # if has_loci_notes and has_loci_values:
+                #    break
+
+                # check if wa locus allele value correspond to genotype locus allele value
 
         else:
             # extract loci value from database
