@@ -375,7 +375,7 @@ def scats_list():
         sql = text(("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "))
 
         return render_template(
-            "scats_list_raw.html",
+            "scats_list_limit.html",
             header_title="List of scats",
             n_scats=n_scats,
             execution_time=round(time.time() - t0, 3),
@@ -1114,3 +1114,10 @@ def systematic_scats_transect_location():
     )
 
     return redirect("/my_results")
+
+
+@app.route("/search_samples", methods=("POST",))
+@fn.check_login
+def search_samples():
+    print("search")
+    return {}

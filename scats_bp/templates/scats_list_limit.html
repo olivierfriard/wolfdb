@@ -9,7 +9,7 @@
 <link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
-
+<!--
 <script>
  window.onload = function() {show_table()};
 
@@ -17,30 +17,40 @@ function show_table() {
     //alert("loaded");
   document.getElementById("scats_list").style.display = 'table';
 }
-
 </script>
+-->
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
 {% if results %}
 <h2>List of {{ n_scats }} samples</h2>
 <h3>Samples from {{ offset + 1}} to {{ offset + limit }}</h3>
 
-<a href="/scats_list_limit/0/{{ limit }}">Start</a>
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/0/{{ limit }}">Start</a>
 {% if offset - limit >= 0 %}
-<a href="/scats_list_limit/{{ offset - limit }}/{{ limit }}">Previous page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset - limit }}/{{ limit }}">Previous page</a>
 {% endif %}
-<a href="/scats_list_limit/{{ offset + limit }}/{{ limit }}">Next page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset + limit }}/{{ limit }}">Next page</a>
+
+<span style="display:inline-block; width: 240px;"></span>
+
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/10">10 samples / page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/20">20 samples / page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/50">50 samples / page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/100">100 samples / page</a>
 <br>
+<input class="form-control" type="search" 
+       name="search" placeholder="Begin typing to search samples"
+       hx-post="/search_samples" 
+       hx-trigger="input changed delay:500ms, search" 
+       hx-target="#search-results" 
+       hx-indicator=".htmx-indicator">
 
-<a href="/scats_list_limit/{{ offset }}/10">10 samples / page</a>
-<a href="/scats_list_limit/{{ offset }}/20">20 samples / page</a>
-<a href="/scats_list_limit/{{ offset }}/50">50 samples / page</a>
-<a href="/scats_list_limit/{{ offset }}/100">100 samples / page</a>
-<br>
 
 
-<!--<style>th {top: 0;  position: sticky;}</style>-->
+
 <div class="condensed">
-<table id="scats_list" class="table table-striped" style="width:100%;display: none">
+<table id="scats_list" class="table table-striped" style="width:100%">
 <thead>
 <tr>
 <th style="background-color: white;">Scat ID</th>
@@ -66,7 +76,7 @@ function show_table() {
 <th style="background-color: white;">Notes</th>
 </tr>
 </thead>
-<tbody>
+<tbody id="search-results">
 {% for result in results %}
 <tr>
 <td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td><td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td><td>{{ result['sampling_type'] }}</td><td>{% if result['sampling_type'] == "Systematic" %}{% if result['path_id'] != "" %}<a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>{% else %}{{ result['path_id'] }}{% endif %}{% endif %}</td><td>{% if result['snowtrack_id'] %}<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>{% endif %}</td>
