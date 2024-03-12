@@ -375,8 +375,8 @@ def scats_list():
         sql = text("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date ")
 
         return render_template(
-            "scats_list_datatable.html",
-            # "scats_list_raw.html",
+            # "scats_list_datatable.html",
+            "scats_list_raw.html",
             header_title="List of scats",
             n_scats=n_scats,
             execution_time=round(time.time() - t0, 3),

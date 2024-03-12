@@ -284,7 +284,7 @@ def genotypes_list(type: str, mode="web"):
     # loci list
     loci_list: dict = fn.get_loci_list()
 
-    sql = text(f"SELECT * FROM genotypes_list_mat {filter} AND date BETWEEN :start_date AND :end_date")
+    sql = text(f"SELECT * FROM genotypes_list_mat {filter} AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL))")
 
     results = (
         con.execute(
@@ -385,7 +385,7 @@ def plot_all_wa():
     """
     con = fn.conn_alchemy().connect()
 
-    scat_features = []
+    scat_features: list = []
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
