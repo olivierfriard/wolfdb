@@ -365,20 +365,56 @@ def scats_list():
     with fn.conn_alchemy().connect() as con:
         n_scats = (
             con.execute(
-                text("SELECT COUNT(scat_id) AS n_scats FROM scats WHERE date BETWEEN :start_date AND :end_date"),
+                text(("SELECT COUNT(scat_id) AS n_scats FROM scats " "WHERE date BETWEEN :start_date AND :end_date ")),
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
             .fetchone()["n_scats"]
         )
 
-        sql = text("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date ")
+        sql = text(("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "))
 
         return render_template(
-            # "scats_list_datatable.html",
             "scats_list_raw.html",
             header_title="List of scats",
             n_scats=n_scats,
+            execution_time=round(time.time() - t0, 3),
+            results=con.execute(
+                sql,
+                {"start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all(),
+        )
+
+
+@app.route("/scats_list_limit/<int:offset>/<int:limit>")
+@fn.check_login
+def scats_list_limit(offset: int, limit: int):
+    """
+    Display list of scats
+    """
+
+    t0 = time.time()
+    with fn.conn_alchemy().connect() as con:
+        n_scats = (
+            con.execute(
+                text(("SELECT COUNT(scat_id) AS n_scats FROM scats " "WHERE date BETWEEN :start_date AND :end_date ")),
+                {"start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .fetchone()["n_scats"]
+        )
+
+        sql = text(("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date " f"LIMIT {limit} " f"OFFSET {offset}"))
+
+        return render_template(
+            "scats_list_limit.html",
+            # "scats_list_raw.html",
+            header_title="List of scats",
+            n_scats=n_scats,
+            limit=limit,
+            offset=offset,
             execution_time=round(time.time() - t0, 3),
             results=con.execute(
                 sql,
