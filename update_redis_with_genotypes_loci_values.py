@@ -22,6 +22,9 @@ if not params:
 # dev version use db #1
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
+# empty db
+rdis.flushdb()
+
 # loci list
 loci_list: dict = fn.get_loci_list()
 
