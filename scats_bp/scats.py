@@ -399,7 +399,7 @@ def scats_list_limit(offset: int, limit: int):
     with fn.conn_alchemy().connect() as con:
         n_scats = (
             con.execute(
-                text(("SELECT COUNT(scat_id) AS n_scats FROM scats " "WHERE date BETWEEN :start_date AND :end_date ")),
+                text(("SELECT COUNT(scat_id) AS n_scats FROM scats WHERE date BETWEEN :start_date AND :end_date ")),
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
