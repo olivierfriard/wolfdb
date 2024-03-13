@@ -20,7 +20,7 @@ function show_table() {
 </script>
 -->
 
-<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<!--<script src="https://unpkg.com/htmx.org@1.9.10"></script>-->
 
 {% if results %}
 <h2>List of {{ n_scats }} samples</h2>
@@ -38,15 +38,14 @@ function show_table() {
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/20">20 samples / page</a>
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/50">50 samples / page</a>
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/100">100 samples / page</a>
-<br>
-<input class="form-control" type="search" 
-       name="search" placeholder="Begin typing to search samples"
-       hx-post="/search_samples" 
-       hx-trigger="input changed delay:500ms, search" 
-       hx-target="#search-results" 
-       hx-indicator=".htmx-indicator">
 
 
+<span style="display:inline-block; width: 240px;"></span>
+
+<form method="POST" action="/search_samples">
+<input  type="search" name="search" placeholder="Begin typing to search samples">
+<button type="submit" class="btn btn-sm" >search</button>
+</form>
 
 
 <div class="condensed">

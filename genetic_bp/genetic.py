@@ -548,15 +548,6 @@ def plot_wa_clusters(distance: int):
     )
 
 
-@app.route("/genetic_samples")
-@fn.check_login
-def genetic_samples():
-    """
-    genetic samples home page
-    """
-    return render_template("genetic_samples.html", header_title="Genetic samples")
-
-
 def get_wa_loci_values_redis(wa_code: str) -> dict:
     r = rdis.get(wa_code)
     if r is None:
@@ -602,6 +593,7 @@ def wa_genetic_samples(filter="all", mode="web"):
     out: list = []
     loci_values: list = {}
     locus_notes: dict = {}
+    mem_genotype_loci: dict = {}
     for row in wa_scats:
         # genotype working notes
         has_genotype_notes = True if (row["notes"] is not None and row["notes"]) else False
@@ -615,31 +607,37 @@ def wa_genetic_samples(filter="all", mode="web"):
         if loci_val is not None:
             loci_values[row["wa_code"]] = loci_val
 
-            # check if loci have notes and values
+            # check if loci have notes and values and corresponds to genotype loci
             for x in loci_values[row["wa_code"]]:
                 for allele in ["a", "b"]:
                     if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
                         "OK|"
                     ):
                         has_loci_notes = True
+                        loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
+                    elif loci_values[row["wa_code"]][x][allele]["user_id"].startswith("OK|"):
+                        loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
+                    else:
+                        loci_values[row["wa_code"]][x][allele]["color"] = "#ffffff00"
+
                     if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
                         has_loci_values = True
 
+                    # check if wa loci corresponds to genotype loci (if not the background colo will be orange)
                     if row["genotype_id"]:
-                        try:
-                            genotype_loci_val = json.loads(rdis.get(row["genotype_id"]))
-                            # print(genotype_loci_val)
-                            if genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
-                                loci_values[row["wa_code"]][x][allele]["value"] = "***" + str(
-                                    loci_values[row["wa_code"]][x][allele]["value"]
-                                )
-                        except Exception:
-                            print(row["genotype_id"], "loci not found")
+                        genotype_loci_val = {}
+                        if mem_genotype_loci.get(row["genotype_id"], False):
+                            genotype_loci_val = mem_genotype_loci[row["genotype_id"]]
+                        else:
+                            try:
+                                genotype_loci_val = json.loads(rdis.get(row["genotype_id"]))
+                                mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
 
-                # if has_loci_notes and has_loci_values:
-                #    break
+                            except Exception:
+                                print(f'Loci not found {row["genotype_id"]=}  {row["wa_code"]=}')
 
-                # check if wa locus allele value correspond to genotype locus allele value
+                        if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
+                            loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
 
         else:
             # extract loci value from database
@@ -672,7 +670,7 @@ def wa_genetic_samples(filter="all", mode="web"):
     else:
         session["go_back_url"] = "/wa_genetic_samples"
 
-        print(time.time() - t0)
+        print(f"execution time: {time.time() - t0}")
 
         return render_template(
             "wa_genetic_samples_list.html",

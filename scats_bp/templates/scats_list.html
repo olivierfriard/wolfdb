@@ -11,10 +11,17 @@
 
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
-{% if results %}
-<h2>List of {{ n_scats }} scats</h2>
+<h2>Search samples</h2>
+{% if n_scats %}<h4>{{ n_scats }} samples found. Query: {{ search_item }}</h4>{% endif %}
 
-<!--<style>th {top: 0;  position: sticky;}</style>-->
+{% if n_scats == 0 and search_term != 'View all samples' %}<h4>0 samples found. Query: {{ search_item }}</h4>{% endif %}
+
+<form method="POST" action="/search_samples">
+    <input  type="search" name="search" placeholder="">
+    <button type="submit" class="btn btn-sm" >search</button>
+    </form>
+    
+{% if results %}
 <div class="condensed">
 <table id="scats_list" class="table table-striped" style="width:100%">
 <thead>
@@ -69,19 +76,16 @@
             [10, 20, 50, -1],
             [10, 20, 50, 'All'],
         ],
+{% if search_term == 'View all samples' %}
+        "dom": 'flrtip',
+{% else %}
+"dom": 'flrtip',
+{% endif %}
     });
 });
 </script>
 
-
-
-{% else %}
-
-<h2>List of scats: no scats found</h2>
-
 {% endif %}
 <br>
-<small>
-Execution time: {{ execution_time }} s
-</small>
+<small>Execution time: {{ execution_time }} s</small>
 {% endblock %}

@@ -94,7 +94,7 @@
         {% for locus in loci_values[result['wa_code']] %}
 
         <td
-            style="border-left: 1px solid black; {% if 'OK|' in loci_values[result['wa_code']][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            style="border-left: 1px solid black; background: {{ loci_values[result['wa_code']][locus]['a']['color'] }}">
             {{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
             <a
                 href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
@@ -102,7 +102,7 @@
         </td>
 
         <td
-            style="{% if 'OK|' in loci_values[result['wa_code']][locus]['b']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            style="border-left: 1px solid black; background: {{ loci_values[result['wa_code']][locus]['b']['color'] }}">
             {{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
 
             <a
