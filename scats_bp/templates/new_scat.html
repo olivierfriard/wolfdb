@@ -147,6 +147,15 @@ function check_geocoding() {
 </div>
 
 
+<div class="mb-3">
+    <div class="row g-3 align-items-top"><div class="col-2">{{ form.sample_type.label }}
+    </div><div class="col-8">
+    {{ form.sample_type(class="form-control",  value=default_values["sample_type"]) }}
+    {% for message in form.sample_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+
+    </div></div>
+</div>
+
 
 
 <span id="systematic" style="display: {% if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">

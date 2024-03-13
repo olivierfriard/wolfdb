@@ -32,14 +32,46 @@
 {% if wa_codes %}
 
 <hr>
-<h3>WA codes</h3>
+<h3>Genetic data</h3>
 
+
+<table class="table table-striped">
+<thead>
+<tr><th></th>
+<th colspan="2">{{ result["genotype_id"] }}</th><th></th>
 {% for wa_code in wa_codes %}
+<th colspan="2"><a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a></th><th></th>
+{%  endfor %}
+</tr>
+<tr>
+<td><b>Allele</b></td>
+<th>a</th><th>b</th><th></th>
+{% for wa_code in wa_codes %}
+<th>a</th><th>b</th><th></th>
+{%  endfor %}
+</tr>
 
-<a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a><br>
+</thead>
+<tbody>
+{% for locus in loci_list %}
 
+<tr>
+    <td><b>{{ locus }}</b></td>
+<td>{{ genotype_loci[locus]['a']['value'] }}</td>
+<td>{{ genotype_loci[locus]['b']['value'] }}</td>
+<td></td>
+{% for wa_code in wa_codes %}
+{% for allele in ('a', 'b')%}
+<td style="background:{% if loci_values[wa_code["wa_code"]][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
+{% endfor %}
+<td></td>
+{%  endfor %}
+
+</tr>
 
 {% endfor %}
+</tbody>
+</table>
 
 <hr>
 <h2 style="padding-top:1em;">Localization of WA codes</h2>

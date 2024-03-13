@@ -3,7 +3,6 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-
 from markupsafe import Markup
 import datetime
 import re
@@ -21,9 +20,7 @@ class Scat(Form):
             int(field.data)
             return
         except Exception:
-            raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
-            )
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
 
     def iso_date_validator(form, field):
         """
@@ -34,9 +31,7 @@ class Scat(Form):
             return
         except ValueError:
             raise ValidationError(
-                Markup(
-                    '<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>'
-                )
+                Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>')
             )
 
     def wa_validator(form, field):
@@ -47,11 +42,7 @@ class Scat(Form):
             return
         m = re.match("WA.*", field.data)
         if m is None:
-            raise ValidationError(
-                Markup(
-                    '<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'
-                )
-            )
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'))
         return
 
     scat_id = StringField(
@@ -68,6 +59,13 @@ class Scat(Form):
         choices=[("", ""), ("Opportunistic", "Opportunistic"), ("Systematic", "Systematic")],
         default="",
     )
+
+    sample_type = SelectField(
+        "Sample type",
+        choices=[("", ""), ("scat", "Excrement"), ("tissue", "Tissue"), ("saliva", "Saliva"), ("blood", "Blood"), ("hair", "Hair")],
+        default="",
+    )
+
     path_id = SelectField("Path ID")
     snowtrack_id = SelectField("Track ID")
 

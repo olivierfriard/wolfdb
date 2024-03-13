@@ -623,6 +623,7 @@ def edit_scat(scat_id):
             path_id=default_path_id,
             snowtrack_id=default_values["snowtrack_id"],
             sampling_type=default_values["sampling_type"],
+            sample_type=default_values["sample_type"],
             deposition=default_values["deposition"],
             matrix=default_values["matrix"],
             collected_scat=default_values["collected_scat"],
@@ -759,6 +760,7 @@ def edit_scat(scat_id):
             " date = :date,"
             " sampling_season = :sampling_season,"
             " sampling_type = :sampling_type,"
+            " sample_type = :sample_type,"
             " path_id = :path_id, "
             " snowtrack_id = :snowtrack_id, "
             " location = :location, "
@@ -785,7 +787,8 @@ def edit_scat(scat_id):
                 "wa_code": request.form["wa_code"],
                 "date": date,
                 "sampling_season": fn.sampling_season(date),
-                "sampling_type": request.form["sampling_type"],
+                "sampling_type": request.form["sampling_type"] if request.form["sampling_type"] else None,
+                "sample_type": request.form["sample_type"],
                 "path_id": path_id,
                 "snowtrack_id": request.form["snowtrack_id"],
                 "location": request.form["location"],

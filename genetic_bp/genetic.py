@@ -102,9 +102,121 @@ def temp_genotype(genotype_id):
 
 @app.route("/view_genotype/<genotype_id>")
 @fn.check_login
+def view_genotype(genotype_id: str):
+    """
+    visualize genotype's data
+    """
+    con = fn.conn_alchemy().connect()
+
+    genotype = (
+        con.execute(
+            text("SELECT * FROM genotypes_list_mat WHERE genotype_id = :genotype_id"),
+            {"genotype_id": genotype_id},
+        )
+        .mappings()
+        .fetchone()
+    )
+
+    if genotype is None:
+        flash(fn.alert_danger(f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"))
+        return redirect("/genotypes_list")
+
+    genotype_loci = json.loads(rdis.get(genotype_id))
+
+    # samples
+    wa_codes = (
+        con.execute(
+            text(
+                "SELECT wa_code, sample_id, sample_type, "
+                "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
+                "FROM wa_scat "
+                "WHERE genotype_id = :genotype_id "
+                "ORDER BY wa_code"
+            ),
+            {"genotype_id": genotype_id},
+        )
+        .mappings()
+        .all()
+    )
+
+    # loci list
+    loci_list: dict = fn.get_loci_list()
+
+    samples_features: list = []
+    loci_values: dict = {}
+    count_wa_code, sum_lon, sum_lat = 0, 0, 0
+    for row in wa_codes:
+        sample_geojson = json.loads(row["sample_lonlat"])
+        count_wa_code += 1
+        lon, lat = sample_geojson["coordinates"]
+        sum_lon += lon
+        sum_lat += lat
+
+        if row["sample_type"] == "scat":
+            color = params["scat_color"]
+        elif row["sample_type"] == "tissue":
+            color = params["dead_wolf_color"]
+        else:
+            color = "red"
+
+        sample_feature = {
+            "geometry": dict(sample_geojson),
+            "type": "Feature",
+            "properties": {
+                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                "popupContent": (
+                    f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
+                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                    # f"""Genotype ID: {row['genotype_id']}"""
+                ),
+            },
+            "id": row["sample_id"],
+        }
+        samples_features.append(sample_feature)
+
+        loci_val = get_wa_loci_values_redis(row["wa_code"])
+        if loci_val is not None:
+            loci_values[row["wa_code"]] = loci_val
+
+    if count_wa_code:
+        center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
+        map = Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": samples_features,
+                    "scats_color": params["scat_color"],
+                    "center": center,
+                }
+            )
+        )
+
+    else:
+        map = ""
+
+    return render_template(
+        "view_genotype.html",
+        header_title=f"Genotype ID: {genotype_id}",
+        result=genotype,
+        genotype_loci=genotype_loci,
+        n_recap=len(wa_codes),
+        wa_codes=wa_codes,
+        loci_list=loci_list,
+        loci_values=loci_values,
+        count_wa_code=count_wa_code,
+        map=map,
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+        transect_color=params["transect_color"],
+        track_color=params["track_color"],
+    )
+
+
+'''
+@app.route("/view_genotype/<genotype_id>")
+@fn.check_login
 def view_genotype(genotype_id):
     """
-    view genotype
+    visualize genotype's data
     """
     con = fn.conn_alchemy().connect()
 
@@ -202,6 +314,7 @@ def view_genotype(genotype_id):
         transect_color=params["transect_color"],
         track_color=params["track_color"],
     )
+'''
 
 
 @app.route("/genotypes")
