@@ -753,6 +753,7 @@ def wa_genetic_samples(filter="all", mode="web"):
                             if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
                                 loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
                         except Exception:
+                            print(f'{row["genotype_id"]=}')
                             print(genotype_loci_val)
 
         else:
