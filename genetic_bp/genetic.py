@@ -749,11 +749,11 @@ def wa_genetic_samples(filter="all", mode="web"):
                             except Exception:
                                 print(f'Loci not found {row["genotype_id"]=}  {row["wa_code"]=}')
 
-                        if genotype_loci_val:
+                        try:
+                            if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
+                                loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
+                        except Exception:
                             print(genotype_loci_val)
-
-                        if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
-                            loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
 
         else:
             # extract loci value from database
