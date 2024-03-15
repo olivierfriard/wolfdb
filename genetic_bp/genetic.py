@@ -846,7 +846,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         has_loci_notes = False
         has_loci_values = False
         if loci_val is not None:
-            loci_values[row["wa_code"]] = loci_val
+            loci_values[row["wa_code"]] = dict(loci_val)
 
             # check if loci have notes and values and corresponds to genotype loci
             for x in loci_values[row["wa_code"]]:
@@ -880,13 +880,19 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                         try:
                             if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
                                 # check if allele has already a color
-                                if loci_values[row["wa_code"]][x][allele]["color"] != "#ffffff00":
-                                    loci_values[row["wa_code"]][x][allele]["value"] += "*"
+                                if loci_values[row["wa_code"]][x][allele]["color"] == params["red_note"]:
+                                    loci_values[row["wa_code"]][x][allele]["color"] = "#FF7E3A"
+                                elif loci_values[row["wa_code"]][x][allele]["color"] == params["green_note"]:
+                                    loci_values[row["wa_code"]][x][allele]["color"] = "#C2CD4F"
                                 else:
                                     loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
                         except Exception:
                             print(f'{row["genotype_id"]=}')
-                            print(genotype_loci_val)
+                            print(f"{x=}")
+                            print(f"{allele=}")
+                            print(f"{genotype_loci_val[x][allele]=}")
+                            print()
+                            print(f"{loci_val[x][allele]=}")
 
         else:
             # extract loci value from database
