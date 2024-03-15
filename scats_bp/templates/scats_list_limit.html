@@ -9,30 +9,18 @@
 <link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
-<!--
-<script>
- window.onload = function() {show_table()};
-
-function show_table() {
-    //alert("loaded");
-  document.getElementById("scats_list").style.display = 'table';
-}
-</script>
--->
-
-<!--<script src="https://unpkg.com/htmx.org@1.9.10"></script>-->
 
 {% if results %}
 <h2>List of {{ n_scats }} samples</h2>
 <h3>Samples from {{ offset + 1}} to {{ offset + limit }}</h3>
-
-<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/0/{{ limit }}">Start</a>
+<span style="display:solid">
+<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/0/{{ limit }}">1st page</a>
 {% if offset - limit >= 0 %}
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset - limit }}/{{ limit }}">Previous page</a>
 {% endif %}
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset + limit }}/{{ limit }}">Next page</a>
 
-<span style="display:inline-block; width: 240px;"></span>
+<span style="display:inline-block; width: 10em;"></span>
 
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/10">10 samples / page</a>
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/20">20 samples / page</a>
@@ -40,39 +28,39 @@ function show_table() {
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/100">100 samples / page</a>
 
 
-<span style="display:inline-block; width: 240px;"></span>
-
 <form method="POST" action="/search_samples">
 <input  type="search" name="search" placeholder="">
-<button type="submit" class="btn btn-sm" >search</button>
+<button type="submit" class="btn btn-secondary btn-sm" >search</button>
 </form>
+</span>
+{% include "freeze_1stcolumn_1strow.html" %}
 
-
+<div class="frozen">
 <div class="condensed">
-<table id="scats_list" class="table table-striped" style="width:100%">
+<table id="scats_list" class="table table-striped">
 <thead>
 <tr>
-<th style="background-color: white;">Scat ID</th>
-<th style="background-color: white;">Date</th>
-<th style="background-color: white;">Sampling season</th>
-<th style="background-color: white;">Sampling type</th>
-<th style="background-color: white;">Path ID</th>
-<th style="background-color: white;">Track ID</th>
-<th style="background-color: white;">WA code</th>
-<th style="background-color: white;">Genotype ID</th>
-<th style="background-color: white;">Location</th>
-<th style="background-color: white;">Municipality</th>
-<th style="background-color: white;">Province</th>
-<th style="background-color: white;">Region</th>
-<th style="background-color: white;">Deposition</th>
-<th style="background-color: white;">Matrix</th>
-<th style="background-color: white;">Collected scat</th>
-<th style="background-color: white;">Scalp category</th>
-<th style="background-color: white;">Genetic sample</th>
-<th style="background-color: white;">UTM Coordinates</th>
-<th style="background-color: white;">Operator</th>
-<th style="background-color: white;">Institution</th>
-<th style="background-color: white;">Notes</th>
+<th>Scat ID</th>
+<th>Date</th>
+<th>Sampling season</th>
+<th>Sampling type</th>
+<th>Path ID</th>
+<th>Track ID</th>
+<th>WA code</th>
+<th>Genotype ID</th>
+<th>Location</th>
+<th>Municipality</th>
+<th>Province</th>
+<th>Region</th>
+<th>Deposition</th>
+<th>Matrix</th>
+<th>Collected scat</th>
+<th>Scalp category</th>
+<th>Genetic sample</th>
+<th>UTM Coordinates</th>
+<th>Operator</th>
+<th>Institution</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody id="search-results">
@@ -88,7 +76,7 @@ function show_table() {
 </tbody>
 </table>
 </div><!-- condensed -->
-
+</div><!-- frozen -->
 
 {% else %}
 

@@ -668,11 +668,11 @@ def get_wa_loci_values_redis(wa_code: str) -> dict:
     return json.loads(r)
 
 
-@app.route("/wa_genetic_samples")
-@app.route("/wa_genetic_samples/<filter>")
-@app.route("/wa_genetic_samples/<filter>/<mode>")
+@app.route("/wa_genetic_samples/<int:offset>/<int:limit>")
+@app.route("/wa_genetic_samples/<int:offset>/<int:limit>/<filter>")
+@app.route("/wa_genetic_samples/<int:offset>/<int:limit>/<filter>/<mode>")
 @fn.check_login
-def wa_genetic_samples(filter="all", mode="web"):
+def wa_genetic_samples(offset: int, limit: int, filter="all", mode="web"):
     """
     display genetic data for WA code
     filter: all / with notes / red_flag / no_values
@@ -686,10 +686,28 @@ def wa_genetic_samples(filter="all", mode="web"):
 
     con = fn.conn_alchemy().connect()
 
-    # loci list
-    loci_list: dict = fn.get_loci_list()
+    """
+    n_wa = (
+        con.execute(
+            text("SELECT count(*) AS n_wa FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date "),
+            {
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
+        )
+        .mappings()
+        .fetchone()["n_wa"]
+    )
+    """
 
-    sql = text("SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date ")
+    """print(f"{n_wa=}")"""
+
+    sql = text(
+        (
+            "SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date "
+            # f"LIMIT {limit} OFFSET {offset}"
+        )
+    )
 
     wa_scats = (
         con.execute(
@@ -702,6 +720,9 @@ def wa_genetic_samples(filter="all", mode="web"):
         .mappings()
         .all()
     )
+
+    # loci list
+    loci_list: dict = fn.get_loci_list()
 
     out: list = []
     loci_values: list = {}
@@ -785,14 +806,24 @@ def wa_genetic_samples(filter="all", mode="web"):
         return response
 
     else:
-        session["go_back_url"] = "/wa_genetic_samples"
+        session["go_back_url"] = f"/wa_genetic_samples/{offset}/{limit}"
 
+        # apply offset and limit
+        n_wa = len(out)
+        out = out[offset : offset + limit]
         print(f"execution time: {time.time() - t0}")
 
+        if n_wa:
+            title = Markup(f"Genetic data of {n_wa} WA codes{' with notes' * (filter == 'with_notes')}")
+        else:
+            title = "No WA code found"
+
         return render_template(
-            "wa_genetic_samples_list.html",
+            "wa_genetic_samples_list_limit.html",
             header_title="Genetic data of WA codes",
-            title=Markup(f"Genetic data of {len(out)} WA codes{' with notes' * (filter == 'with_notes')}"),
+            title=title,
+            limit=limit,
+            offset=offset,
             loci_list=loci_list,
             wa_scats=out,
             loci_values=loci_values,
