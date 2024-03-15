@@ -354,6 +354,7 @@ def plot_all_scats_markerclusters():
         )
 
 
+'''
 @app.route("/scats_list")
 @fn.check_login
 def scats_list():
@@ -386,43 +387,97 @@ def scats_list():
             .mappings()
             .all(),
         )
+'''
 
 
-@app.route("/scats_list_limit/<int:offset>/<int:limit>")
+@app.route(
+    "/scats_list_limit/<int:offset>/<limit>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
 @fn.check_login
-def scats_list_limit(offset: int, limit: int):
+def scats_list_limit(offset: int, limit: int | str):
     """
     Display list of scats
     """
 
-    t0 = time.time()
+    # test limit value: must be ALL or int
+    if limit != "ALL":
+        try:
+            limit = int(limit)
+        except Exception:
+            return "An error has occured. Check the URL"
+
+    if limit == "ALL":
+        offset = 0
+
     with fn.conn_alchemy().connect() as con:
-        n_scats = (
-            con.execute(
-                text(("SELECT COUNT(scat_id) AS n_scats FROM scats WHERE date BETWEEN :start_date AND :end_date ")),
-                {"start_date": session["start_date"], "end_date": session["end_date"]},
+        if request.method == "POST":
+            offset = 0
+            limit = "ALL"
+            search_term = request.form["search"].strip()
+            sql = text(
+                (
+                    "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE ("
+                    "scat_id ILIKE :search "
+                    "OR date::text ILIKE :search "
+                    "OR sampling_type ILIKE :search "
+                    "OR sample_type ILIKE :search "
+                    "OR wa_code ILIKE :search "
+                    "OR genotype_id2 ILIKE :search "
+                    "OR location ILIKE :search "
+                    "OR municipality ILIKE :search "
+                    "OR province ILIKE :search "
+                    "OR region ILIKE :search "
+                    "OR observer ILIKE :search "
+                    "OR institution ILIKE :search "
+                    "OR notes ILIKE :search "
+                    ") "
+                    "AND (date BETWEEN :start_date AND :end_date) "
+                )
             )
-            .mappings()
-            .fetchone()["n_scats"]
-        )
-
-        sql = text(("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date " f"LIMIT {limit} " f"OFFSET {offset}"))
-
-        return render_template(
-            "scats_list_limit.html",
-            # "scats_list_raw.html",
-            header_title="List of scats",
-            n_scats=n_scats,
-            limit=limit,
-            offset=offset,
-            execution_time=round(time.time() - t0, 3),
-            results=con.execute(
-                sql,
-                {"start_date": session["start_date"], "end_date": session["end_date"]},
+            results = (
+                con.execute(
+                    sql,
+                    {
+                        "search": f"%{search_term}%",
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
+                )
+                .mappings()
+                .all()
             )
-            .mappings()
-            .all(),
-        )
+
+        elif request.method == "GET":
+            search_term: str = ""
+            sql = text(
+                (
+                    "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "
+                    f"LIMIT {limit} "
+                    f"OFFSET {offset}"
+                )
+            )
+            results = (
+                con.execute(
+                    sql,
+                    {"start_date": session["start_date"], "end_date": session["end_date"]},
+                )
+                .mappings()
+                .all()
+            )
+
+    return render_template(
+        "scats_list_limit.html",
+        header_title="List of samples",
+        n_scats=results[0]["n_scats"] if results else 0,
+        limit=limit,
+        offset=offset,
+        results=results,
+        search_term=search_term,
+    )
 
 
 @app.route("/export_scats")
@@ -1163,7 +1218,7 @@ def search_samples():
                     "OR notes ILIKE :search "
                 )
             )
-            results = con.execute(sql, {"search": f'%{request.form["search"]}%'}).mappings().all()
+            results = con.execute(sql, {"search": f'%{request.form["search"].strip()}%'}).mappings().all()
             return render_template(
                 "scats_list.html",
                 header_title="Search samples",

@@ -13,25 +13,42 @@
 
 
 <h3>{{ title }}</h3>
+{% if limit == 'ALL' %}
+<h4>All WA codes</h4>
+{% else %}
+<h4>WA codes from {{ offset + 1}} to {{ offset + limit }}</h4>
+{% endif %}
 
 {% if wa_scats %}
 <span style="display:solid">
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/0/{{ limit }}">1st page</a>
+{% if limit != 'ALL' %}
+<a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/{{ limit }}/{{ filter }}">1st page</a>
 {% if offset - limit >= 0 %}
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset - limit }}/{{ limit }}">Previous page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset - limit }}/{{ limit }}/{{ filter }}">Previous page</a>
 {% endif %}
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset + limit }}/{{ limit }}">Next page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset + limit }}/{{ limit }}/{{ filter }}">Next page</a>
+{% endif %}
 
-<span style="display:inline-block; width: 10em;"></span>
+<span style="display:inline-block; width: 8em;"></span>
+<small>Sample / page</small>
+<a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/10/{{ filter }}">10</a>
+<a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/20/{{ filter }}">20</a>
+<a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/50/{{ filter }}">50</a>
+<a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/100/{{ filter }}">100</a>
+<a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/200/{{ filter }}">200</a>
+<a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/500/{{ filter }}">500</a>
+<a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/ALL/{{ filter }}">All</a>
 
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/10">10 samples / page</a>
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/20">20 samples / page</a>
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/50">50 samples / page</a>
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/100">100 samples / page</a>
 
-<span style="display:inline-block; width: 10em;"></span>
+<span style="display:inline-block; width: 8em;"></span>
 
-<a style="width:10%" href="/wa_genetic_samples/{{ with_notes }}/export" class="btn btn-secondary btn-sm">Export data</a>
+<form style="display:inline" method="POST" action="/wa_genetic_samples/0/ALL/{{ filter }}">
+<input  type="search" name="search" placeholder="">
+<button type="submit" class="btn btn-secondary btn-sm" >search</button>
+</form>
+<span style="display:inline-block; width: 8em;"></span>
+
+<a style="width:10%" href="/wa_genetic_samples/0/ALL/{{ filter }}/export" class="btn btn-secondary btn-sm">Export data</a>
 </span>
 
 

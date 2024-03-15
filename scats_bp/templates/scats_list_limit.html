@@ -10,29 +10,41 @@
 
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
-{% if results %}
-<h2>List of {{ n_scats }} samples</h2>
-<h3>Samples from {{ offset + 1}} to {{ offset + limit }}</h3>
+
+<h3>List of {{ n_scats }} samples</h3>
+{% if limit == 'ALL' %}
+<h4>All samples</h4>
+{% else %}
+<h4>Samples from {{ offset + 1}} to {{ offset + limit }}</h4>
+{% endif %}
 <span style="display:solid">
-<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/0/{{ limit }}">1st page</a>
+{% if limit != 'ALL' %}
+<a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/scats_list_limit/0/{{ limit }}">1st page</a>
 {% if offset - limit >= 0 %}
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset - limit }}/{{ limit }}">Previous page</a>
 {% endif %}
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset + limit }}/{{ limit }}">Next page</a>
+{% endif %}
+<span style="display:inline-block; width: 8em;"></span>
+<small>Sample / page</small>
+<a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm"  href="/scats_list_limit/{{ offset }}/10">10</a>
+<a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm"  href="/scats_list_limit/{{ offset }}/20">20</a>
+<a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm"  href="/scats_list_limit/{{ offset }}/50">50</a>
+<a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary btn-sm" href="/scats_list_limit/{{ offset }}/100">100</a>
+<a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary btn-sm" href="/scats_list_limit/{{ offset }}/200">200</a>
+<a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary btn-sm" href="/scats_list_limit/{{ offset }}/500">500</a>
+<a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary btn-sm" href="/scats_list_limit/{{ offset }}/ALL">All</a>
 
-<span style="display:inline-block; width: 10em;"></span>
+<span style="display:inline-block; width: 8em;"></span>
 
-<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/10">10 samples / page</a>
-<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/20">20 samples / page</a>
-<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/50">50 samples / page</a>
-<a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset }}/100">100 samples / page</a>
-
-
-<form method="POST" action="/search_samples">
-<input  type="search" name="search" placeholder="">
+<form style="display:inline" method="POST" action="/scats_list_limit/0/ALL">
+<input  type="search" name="search" placeholder="" value="{{ search_term }}">
 <button type="submit" class="btn btn-secondary btn-sm" >search</button>
 </form>
 </span>
+
+{% if results %}
+
 {% include "freeze_1stcolumn_1strow.html" %}
 
 <div class="frozen">
@@ -77,14 +89,6 @@
 </table>
 </div><!-- condensed -->
 </div><!-- frozen -->
-
-{% else %}
-
-<h2>List of scats: no scats found</h2>
-
 {% endif %}
 <br>
-<small>
-Execution time: {{ execution_time }} s
-</small>
 {% endblock %}

@@ -363,10 +363,10 @@ def update_redis_with_wa_loci():
     return redirect("/admin")
 
 
-@app.route("/genotypes_list/<type>")
-@app.route("/genotypes_list/<type>/<mode>")
+@app.route("/genotypes_list/<int:offset>/<limit>/<type>")
+@app.route("/genotypes_list/<int:offset>/<limit>/<type>/<mode>")
 @fn.check_login
-def genotypes_list(type: str, mode="web"):
+def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     """
     list of genotypes: all, temp, definitive
 
@@ -391,6 +391,16 @@ def genotypes_list(type: str, mode="web"):
             header_title = "List of temporary genotypes"
         case _:
             return f"{type} not found"
+
+    # test limit value: must be ALL or int
+    if limit != "ALL":
+        try:
+            limit = int(limit)
+        except Exception:
+            return "An error has occured. Check the URL"
+
+    if limit == "ALL":
+        offset = 0
 
     con = fn.conn_alchemy().connect()
 
@@ -668,11 +678,17 @@ def get_wa_loci_values_redis(wa_code: str) -> dict:
     return json.loads(r)
 
 
-@app.route("/wa_genetic_samples/<int:offset>/<int:limit>")
-@app.route("/wa_genetic_samples/<int:offset>/<int:limit>/<filter>")
-@app.route("/wa_genetic_samples/<int:offset>/<int:limit>/<filter>/<mode>")
+@app.route(
+    "/wa_genetic_samples/<int:offset>/<limit>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@app.route("/wa_genetic_samples/<int:offset>/<limit>/<filter>")
+@app.route("/wa_genetic_samples/<int:offset>/<limit>/<filter>/<mode>")
 @fn.check_login
-def wa_genetic_samples(offset: int, limit: int, filter="all", mode="web"):
+def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     """
     display genetic data for WA code
     filter: all / with notes / red_flag / no_values
@@ -682,44 +698,64 @@ def wa_genetic_samples(offset: int, limit: int, filter="all", mode="web"):
     if filter not in ("all", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
 
-    t0 = time.time()
+    # test limit value: must be ALL or int
+    if limit != "ALL":
+        try:
+            limit = int(limit)
+        except Exception:
+            return "An error has occured. Check the URL"
+
+    if limit == "ALL":
+        offset = 0
 
     con = fn.conn_alchemy().connect()
 
-    """
-    n_wa = (
-        con.execute(
-            text("SELECT count(*) AS n_wa FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date "),
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+    if request.method == "POST":
+        offset = 0
+        limit = "ALL"
+        sql = text(
+            (
+                "SELECT * FROM wa_genetic_samples_mat WHERE ("
+                "wa_code ILIKE :search "
+                "OR sample_id ILIKE :search "
+                "OR date::text ILIKE :search "
+                "OR municipality ILIKE :search "
+                "OR genotype_id ILIKE :search "
+                "OR tmp_id ILIKE :search "
+                "OR notes ILIKE :search "
+                "OR pack ILIKE :search "
+                ") "
+                "AND date BETWEEN :start_date AND :end_date"
+            )
         )
-        .mappings()
-        .fetchone()["n_wa"]
-    )
-    """
 
-    """print(f"{n_wa=}")"""
-
-    sql = text(
-        (
-            "SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date "
-            # f"LIMIT {limit} OFFSET {offset}"
+        wa_scats = (
+            con.execute(
+                sql,
+                {
+                    "search": f'%{request.form["search"].strip()}%',
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
         )
-    )
 
-    wa_scats = (
-        con.execute(
-            sql,
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+    elif request.method == "GET":
+        sql = text(("SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date "))
+
+        wa_scats = (
+            con.execute(
+                sql,
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
         )
-        .mappings()
-        .all()
-    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -810,8 +846,8 @@ def wa_genetic_samples(offset: int, limit: int, filter="all", mode="web"):
 
         # apply offset and limit
         n_wa = len(out)
-        out = out[offset : offset + limit]
-        print(f"execution time: {time.time() - t0}")
+        if limit != "ALL":
+            out = out[offset : offset + limit]
 
         if n_wa:
             title = Markup(f"Genetic data of {n_wa} WA codes{' with notes' * (filter == 'with_notes')}")
@@ -828,8 +864,30 @@ def wa_genetic_samples(offset: int, limit: int, filter="all", mode="web"):
             wa_scats=out,
             loci_values=loci_values,
             locus_notes=locus_notes,
-            with_notes=filter,
+            filter=filter,
         )
+
+
+@app.route(
+    "/search_wa",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def search_wa():
+    if request.method == "GET":
+        with fn.conn_alchemy().connect() as con:
+            sql = text("SELECT * FROM wa_genetic_samples_mat ")
+            results = con.execute(sql).mappings().all()
+            return render_template(
+                "wa_genetic_samples_list.html",
+                header_title="Search WA codes",
+                title="TITOLO",
+                wa_scats=results,
+                with_notes="",
+            )
 
 
 @app.route("/wa_analysis/<distance>/<int:cluster_id>")
