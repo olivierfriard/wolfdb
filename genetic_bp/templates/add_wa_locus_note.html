@@ -6,7 +6,7 @@
 <h2>{{ header_title }}</h2>
 
 
-<a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
+<button class="btn btn-primary" onclick="history.back()">Go Back</button>&nbsp;
 
 
 <br>
@@ -18,7 +18,7 @@ Allele: <b>{{ data["allele"] }}</b><br>
 value: <b>{{ data["value"] }}</b></h3>
 
 
-<form method="POST" action="/locus_note/{{ data["wa_code"] }}/{{ data["locus"] }}/{{ data["allele"] }}/{{ data["timestamp"] }}">
+<form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}/{{ data['timestamp'] }}/{{ search_term }}">
 
 Note:<br>
 <textarea  id="notes" name="notes" value="" rows="4" cols="50">{{ data["notes"] }}</textarea><br>

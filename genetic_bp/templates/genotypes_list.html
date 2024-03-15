@@ -17,43 +17,42 @@
 
 <h3>{{ title }}</h3>
 
-{% if results %}
-
-<h4>All WA codes</h4>
+{% if limit == 'ALL' %}
+<h4>All genotypes</h4>
 {% else %}
-<h4>WA codes from {{ offset + 1}} to {{ offset + limit }}</h4>
+<h4>Genotypes from {{ offset + 1}} to {{ offset + limit }}</h4>
 {% endif %}
 
-{% if wa_scats %}
+{% if results %}
 <span style="display:solid">
 {% if limit != 'ALL' %}
-<a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/{{ limit }}">1st page</a>
+<a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/{{ limit }}/{{ type }}">1st page</a>
 {% if offset - limit >= 0 %}
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset - limit }}/{{ limit }}">Previous page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset - limit }}/{{ limit }}/{{ type }}">Previous page</a>
 {% endif %}
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset + limit }}/{{ limit }}">Next page</a>
+<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset + limit }}/{{ limit }}/{{ type }}">Next page</a>
 {% endif %}
 
 <span style="display:inline-block; width: 8em;"></span>
-<small>Sample / page</small>
-<a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/10">10</a>
-<a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/20">20</a>
-<a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/50">50</a>
-<a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/100">100</a>
-<a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/200">200</a>
-<a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/500">500</a>
-<a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/ALL">All</a>
+<small>genotypes / page</small>
+<a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm"  href="/genotypes_list/{{ offset }}/10/{{ type }}">10</a>
+<a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm"  href="/genotypes_list/{{ offset }}/20/{{ type }}">20</a>
+<a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm"  href="/genotypes_list/{{ offset }}/50/{{ type }}">50</a>
+<a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary btn-sm" href="/genotypes_list/{{ offset }}/100/{{ type }}">100</a>
+<a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary btn-sm" href="/genotypes_list/{{ offset }}/200/{{ type }}">200</a>
+<a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary btn-sm" href="/genotypes_list/{{ offset }}/500/{{ type }}">500</a>
+<a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary btn-sm" href="/genotypes_list/0/ALL/{{ type }}">All</a>
 
 
 <span style="display:inline-block; width: 8em;"></span>
 
-<form style="display:inline" method="POST" action="/wa_genetic_samples/0/ALL">
-<input  type="search" name="search" placeholder="">
+<form style="display:inline" method="POST" action="/genotypes_list/0/ALL/{{ type }}">
+<input  type="search" name="search" value="{{ search_term }}">
 <button type="submit" class="btn btn-secondary btn-sm" >search</button>
 </form>
-<span style="display:inline-block; width: 8em;"></span>
+<span style="display:inline-block; width: 6em;"></span>
 
-<a style="width:10%" href="/genotypes_list/{{type }}/export" class="btn btn-secondary btn-sm">Export data</a>
+<a style="width:10%" href="/genotypes_list/0/ALL/{{ type }}/export" class="btn btn-secondary btn-sm">Export data</a>
 </span>
 
 
@@ -166,18 +165,15 @@ set ...
 
 {% if loci_list %}
 {% for locus in loci_values[result['genotype_id']] %}
-<td style="border-left: 1px solid black; {% if 'OK|' in loci_values[result['genotype_id']][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ loci_values[result['genotype_id']][locus]['a']['value'] }}
-<br>
-<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/a/{{ loci_values[result['genotype_id']][locus]['a']['epoch'] }}">note</a></small>
-</td>
 
-<td style="{% if 'OK|' in loci_values[result['genotype_id']][locus]['b']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ loci_values[result['genotype_id']][locus]['b']['value'] }}
-
+{% for allele in ('a', 'b') %}
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}{% if 'OK|' in loci_values[result['genotype_id']][locus][allele]['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
+{{ loci_values[result['genotype_id']][locus][allele]['value'] }}
 <br>
-<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/b/{{ loci_values[result['genotype_id']][locus]['b']['epoch'] }}">note</a></small>
+<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/{{ allele }}/{{ loci_values[result['genotype_id']][locus][allele]['epoch'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ type }}{%endif%}">note</a></small>
 </td>
+{% endfor %}
+
 {% endfor %}
 {% endif %}
 </tr>

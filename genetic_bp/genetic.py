@@ -6,7 +6,7 @@ flask blueprint for genetic data management
 """
 
 import flask
-from flask import render_template, redirect, request, flash, session, make_response
+from flask import render_template, redirect, request, flash, session, make_response, url_for
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -363,7 +363,13 @@ def update_redis_with_wa_loci():
     return redirect("/admin")
 
 
-@app.route("/genotypes_list/<int:offset>/<limit>/<type>")
+@app.route(
+    "/genotypes_list/<int:offset>/<limit>/<type>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
 @app.route("/genotypes_list/<int:offset>/<limit>/<type>/<mode>")
 @fn.check_login
 def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
@@ -373,6 +379,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     read loci values from redis
     """
 
+    # check type of genotype
     match type:
         case "all":
             filter = "WHERE record_status != 'deleted'"
@@ -404,22 +411,69 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
     con = fn.conn_alchemy().connect()
 
+    if request.method == "POST":
+        offset = 0
+        limit = "ALL"
+
+        print(f"{request.args.get('search')=}")
+        print(f"{request.form=}")
+
+        if request.args.get("search") is None:
+            search_term = request.form["search"].strip()
+        else:
+            search_term = request.args.get("search")
+
+        sql = text(
+            (
+                "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
+                "genotype_id ILIKE :search "
+                "OR date::text ILIKE :search "
+                "OR pack ILIKE :search "
+                "OR record_status ILIKE :search "
+                "OR tmp_id ILIKE :search "
+                "OR notes ILIKE :search "
+                "OR working_notes ILIKE :search "
+                ") "
+                "AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL))"
+            )
+        )
+        results = (
+            con.execute(
+                sql,
+                {
+                    "search": f"%{search_term}%",
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+
+    if request.method == "GET":
+        search_term = ""
+        sql = text(
+            (
+                f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL)) "
+                f"LIMIT {limit} "
+                f"OFFSET {offset}"
+            )
+        )
+
+        results = (
+            con.execute(
+                sql,
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+
     # loci list
     loci_list: dict = fn.get_loci_list()
-
-    sql = text(f"SELECT * FROM genotypes_list_mat {filter} AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL))")
-
-    results = (
-        con.execute(
-            sql,
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .all()
-    )
 
     loci_values: dict = {}
     for row in results:
@@ -443,11 +497,15 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             "genotypes_list.html",
             header_title=header_title,
             title=f"List of {len(results)} {type} genotypes".replace(" all", "").replace("_short", ""),
+            limit=limit,
+            offset=offset,
             type=type,
+            n_genotypes=results[0]["n_genotypes"] if results else 0,
             results=results,
             loci_list=loci_list,
             loci_values=loci_values,
             short="",
+            search_term=search_term,
         )
 
 
@@ -685,7 +743,13 @@ def get_wa_loci_values_redis(wa_code: str) -> dict:
         "POST",
     ),
 )
-@app.route("/wa_genetic_samples/<int:offset>/<limit>/<filter>")
+@app.route(
+    "/wa_genetic_samples/<int:offset>/<limit>/<filter>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
 @app.route("/wa_genetic_samples/<int:offset>/<limit>/<filter>/<mode>")
 @fn.check_login
 def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
@@ -713,6 +777,12 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     if request.method == "POST":
         offset = 0
         limit = "ALL"
+
+        if request.args.get("search") is None:
+            search_term = request.form["search"].strip()
+        else:
+            search_term = request.args.get("search")
+
         sql = text(
             (
                 "SELECT * FROM wa_genetic_samples_mat WHERE ("
@@ -725,7 +795,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                 "OR notes ILIKE :search "
                 "OR pack ILIKE :search "
                 ") "
-                "AND date BETWEEN :start_date AND :end_date"
+                "AND (date BETWEEN :start_date AND :end_date OR date IS NULL)"
             )
         )
 
@@ -733,7 +803,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             con.execute(
                 sql,
                 {
-                    "search": f'%{request.form["search"].strip()}%',
+                    "search": f"%{search_term}%",
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                 },
@@ -743,7 +813,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         )
 
     elif request.method == "GET":
-        sql = text(("SELECT * FROM wa_genetic_samples_mat WHERE date BETWEEN :start_date AND :end_date "))
+        search_term: str = ""
+        sql = text(("SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date) OR (date IS NULL) "))
 
         wa_scats = (
             con.execute(
@@ -779,7 +850,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
             # check if loci have notes and values and corresponds to genotype loci
             for x in loci_values[row["wa_code"]]:
-                for allele in ["a", "b"]:
+                for allele in ("a", "b"):
                     if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
                         "OK|"
                     ):
@@ -808,7 +879,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
                         try:
                             if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
-                                loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
+                                # check if allele has already a color
+                                if loci_values[row["wa_code"]][x][allele]["color"] != "#ffffff00":
+                                    loci_values[row["wa_code"]][x][allele]["value"] += "*"
+                                else:
+                                    loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
                         except Exception:
                             print(f'{row["genotype_id"]=}')
                             print(genotype_loci_val)
@@ -850,7 +925,14 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             out = out[offset : offset + limit]
 
         if n_wa:
-            title = Markup(f"Genetic data of {n_wa} WA codes{' with notes' * (filter == 'with_notes')}")
+            title = f"Genetic data of {n_wa} WA codes"
+            match filter:
+                case "with_notes":
+                    title += " with notes"
+                case "red_flag":
+                    title += " with locus/allele notes"
+                case "no_values":
+                    title += " (including WA without loci values)"
         else:
             title = "No WA code found"
 
@@ -865,6 +947,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             loci_values=loci_values,
             locus_notes=locus_notes,
             filter=filter,
+            search_term=search_term,
         )
 
 
@@ -1083,9 +1166,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         )
 
 
-@app.route("/view_genetic_data/<wa_code>")
+@app.route("/view_genetic_data/<wa_code>/<search_term>")
 @fn.check_login
-def view_genetic_data(wa_code):
+def view_genetic_data(wa_code: str, search_term: str):
     """
     visualize genetic data for WA code
     """
@@ -1308,14 +1391,14 @@ def view_genetic_data_history(wa_code: str, locus: str):
 
 
 @app.route(
-    "/locus_note/<wa_code>/<locus>/<allele>/<int:timestamp>",
+    "/locus_note/<wa_code>/<locus>/<allele>/<int:timestamp>/<search_term>",
     methods=(
         "GET",
         "POST",
     ),
 )
 @fn.check_login
-def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
+def locus_note(wa_code: str, locus: str, allele: str, timestamp: int, search_term: str):
     """
     let user add a note on wa_code locus_name allele timestamp
     """
@@ -1372,6 +1455,7 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
             data=data,
             history=wa_locus_history,
             return_url=request.referrer,
+            search_term=search_term,
         )
 
     if request.method == "POST":
@@ -1390,18 +1474,41 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int):
 
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
 
-        return redirect(f'{request.form["return_url"]}#{wa_code}')
+        if len(search_term.split("_")) == 3:
+            offset, limit, filter = search_term.split("_")
+            return redirect(
+                url_for(
+                    "genetic.wa_genetic_samples",
+                    offset=offset,
+                    limit=limit,
+                    filter=filter,
+                ),
+            )
+
+        else:
+            return redirect(
+                url_for(
+                    "genetic.wa_genetic_samples",
+                    offset=0,
+                    limit="ALL",
+                    filter="all",
+                    search=search_term,
+                ),
+                code=307,
+            )
+
+        # return redirect(f'{request.form["return_url"]}#{wa_code}')
 
 
 @app.route(
-    "/genotype_locus_note/<genotype_id>/<locus>/<allele>/<timestamp>",
+    "/genotype_locus_note/<genotype_id>/<locus>/<allele>/<int:timestamp>/<search_term>",
     methods=(
         "GET",
         "POST",
     ),
 )
 @fn.check_login
-def genotype_locus_note(genotype_id, locus, allele, timestamp):
+def genotype_locus_note(genotype_id: str, locus: str, allele: str, timestamp: int, search_term: str):
     """
     let user add a note on genotype_id locus allele timestamp
     """
@@ -1457,6 +1564,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             data=data,
             history=locus_history,
             return_url=request.referrer,
+            search_term=search_term,
         )
 
     if request.method == "POST":
@@ -1478,7 +1586,7 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
 
         rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
 
-        # update wa_code
+        # update wa_code with genotype note
         sql = text(
             "SELECT id, wa_locus.wa_code AS wa_code FROM wa_locus, wa_results "
             "WHERE wa_locus.wa_code = wa_results.wa_code "
@@ -1499,7 +1607,30 @@ def genotype_locus_note(genotype_id, locus, allele, timestamp):
             # [0] for accessing values
             rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
 
-        return redirect(f'{request.form["return_url"]}#{genotype_id}')
+        if len(search_term.split("_")) == 3:
+            offset, limit, type = search_term.split("_")
+            return redirect(
+                url_for(
+                    "genetic.genotypes_list",
+                    offset=offset,
+                    limit=limit,
+                    type=type,
+                ),
+            )
+
+        else:
+            return redirect(
+                url_for(
+                    "genetic.genotypes_list",
+                    offset=0,
+                    limit="ALL",
+                    type="all",
+                    search=search_term,
+                ),
+                code=307,
+            )
+
+        # return redirect(f'{request.form["return_url"]}', json=json.dumps({"search": search_term}), code=307)
 
 
 @app.route(

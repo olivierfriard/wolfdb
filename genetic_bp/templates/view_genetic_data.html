@@ -8,8 +8,7 @@
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
 
-<a href="{{ go_back_url }}" class="btn btn-primary">Go back</a>&nbsp;
-
+<button class="btn btn-primary" onclick="history.back()">Go Back</button>
 
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;
 <br>
@@ -37,14 +36,14 @@
         <td>{{ locus }}</td>
 
         <td
-            style="{% if 'OK|' in data[locus]['a']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            style="{% if 'OK|' in data[locus]['a']['user_id']  %}background:#90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
             {{ data[locus]['a']['value'] }}
         </td>
 
         <td><small>{{ data[locus]['a']['date'] }}</small></td>
 
         <td
-            style="{% if 'OK|' in data[locus]['a']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            style="{% if 'OK|' in data[locus]['a']['user_id']  %}background:#90ee90{%else%}{% if data[locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
             <small>{{ data[locus]['a']['notes'] }}</small>
             {% if data[locus]['a']['user_id'] %}
             <br><small>(Inserted by {{data[locus]['a']['user_id']}})</small>
@@ -55,14 +54,14 @@
         <td style="background: #eeeeee">&nbsp;</td>
 
         <td
-            style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            style="{% if 'OK|' in data[locus]['b']['user_id']  %}background:#90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
             {{ data[locus]['b']['value'] }}
         </td>
 
         <td><small>{{ data[locus]['b']['date'] }}</small></td>
 
         <td
-            style="{% if 'OK|' in data[locus]['b']['user_id']  %}background: #90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+            style="{% if 'OK|' in data[locus]['b']['user_id']  %}background:#90ee90{%else%}{% if data[locus]['b']['notes'] %}background: #FF6461{%endif%}{%endif%}">
             <small>{{ data[locus]['b']['notes'] }}</small>
             {% if data[locus]['b']['user_id'] %}
             <br><small>(Inserted by {{data[locus]['b']['user_id']}})</small>

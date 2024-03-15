@@ -30,7 +30,7 @@
 {% endif %}
 
 <span style="display:inline-block; width: 8em;"></span>
-<small>Sample / page</small>
+<small>WA codes / page</small>
 <a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/10/{{ filter }}">10</a>
 <a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/20/{{ filter }}">20</a>
 <a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/50/{{ filter }}">50</a>
@@ -43,14 +43,13 @@
 <span style="display:inline-block; width: 8em;"></span>
 
 <form style="display:inline" method="POST" action="/wa_genetic_samples/0/ALL/{{ filter }}">
-<input  type="search" name="search" placeholder="">
+<input  type="search" name="search" value="{{ search_term }}">
 <button type="submit" class="btn btn-secondary btn-sm" >search</button>
 </form>
 <span style="display:inline-block; width: 8em;"></span>
 
 <a style="width:10%" href="/wa_genetic_samples/0/ALL/{{ filter }}/export" class="btn btn-secondary btn-sm">Export data</a>
 </span>
-
 
 
 {% include "freeze_1stcolumn_1strow.html" %}
@@ -90,7 +89,7 @@
 <tr>
 <td style="white-space: nowrap;">
 <a id="{{ result['wa_code'] }}"><a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
-<a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
+<a href="/view_genetic_data/{{ result['wa_code'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ filter }}{%endif%}" class="btn btn-sm btn-primary">Genetic data</a>
 <a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
 {% if locus_notes[result['wa_code']] %}
 <span style='font-size:24px;color:red' >&#128681;</span>
@@ -124,29 +123,13 @@
 
 <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
-        {% for locus in loci_values[result['wa_code']] %}
-
-        <td
-            style="border-left: 1px solid black; background: {{ loci_values[result['wa_code']][locus]['a']['color'] }}">
-            {{ loci_values[result['wa_code']][locus]['a']['value'] }}<br>
-            <a
-                href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
-
-        </td>
-
-        <td
-            style="border-left: 1px solid black; background: {{ loci_values[result['wa_code']][locus]['b']['color'] }}">
-            {{ loci_values[result['wa_code']][locus]['b']['value'] }}<br>
-
-            <a
-                href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
-
-        </td>
-
-        {% endfor %}
-
-
-
+{% for locus in loci_values[result['wa_code']] %}
+{% for allele in ('a', 'b') %}
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">{{ loci_values[result['wa_code']][locus][allele]['value'] }}<br>
+<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/{{ allele }}/{{ loci_values[result['wa_code']][locus][allele]['epoch'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ filter }}{%endif%}">note</a>
+</td>
+{% endfor %}
+{% endfor %}
 </tr>
 {% endfor %}
 </tbody>
