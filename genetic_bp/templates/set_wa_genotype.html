@@ -3,16 +3,7 @@
 
 {% block content %}
 
-
-<h1>WolfDB</h1>
-<hr>
-
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-<a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
-
-
-
+<button class="btn btn-primary" onclick="history.back()">Go Back</button>
 
 <br>
 <br>
@@ -22,8 +13,10 @@
 
 <form method="POST" action="/set_wa_genotype/{{ wa_code }}">
 
-Current genotype ID:<br>
-<input type="text"  id="genotype_id" name="genotype_id" value="{{ current_genotype_id }}"><br>
+Current genotype ID: <b>{{ current_genotype_id }}</b><br>
+<br>
+Set a new genotype:
+<input type="text" id="genotype_id" name="genotype_id" value="{{ current_genotype_id }}"><br>
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>
 

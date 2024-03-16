@@ -774,16 +774,34 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
     con = fn.conn_alchemy().connect()
 
+    sql_search = text(
+        (
+            "SELECT * FROM wa_genetic_samples_mat WHERE ("
+            "wa_code ILIKE :search "
+            "OR sample_id ILIKE :search "
+            "OR date::text ILIKE :search "
+            "OR municipality ILIKE :search "
+            "OR genotype_id ILIKE :search "
+            "OR tmp_id ILIKE :search "
+            "OR notes ILIKE :search "
+            "OR pack ILIKE :search "
+            ") "
+            "AND (date BETWEEN :start_date AND :end_date OR date IS NULL)"
+        )
+    )
+
+    sql_all = text(("SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date) OR (date IS NULL) "))
+
     if request.method == "POST":
         offset = 0
         limit = "ALL"
 
-        if request.args.get("search") is None:
-            search_term = request.form["search"].strip()
-        else:
+        if request.args.get("search") is not None:
             search_term = request.args.get("search")
+        else:
+            search_term = request.form["search"].strip()
 
-        sql = text(
+        """sql = text(
             (
                 "SELECT * FROM wa_genetic_samples_mat WHERE ("
                 "wa_code ILIKE :search "
@@ -797,11 +815,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                 ") "
                 "AND (date BETWEEN :start_date AND :end_date OR date IS NULL)"
             )
-        )
+        )"""
 
         wa_scats = (
             con.execute(
-                sql,
+                sql_search,
                 {
                     "search": f"%{search_term}%",
                     "start_date": session["start_date"],
@@ -813,13 +831,16 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         )
 
     elif request.method == "GET":
-        search_term: str = ""
-        sql = text(("SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date) OR (date IS NULL) "))
+        if request.args.get("search") is not None:
+            search_term: str = request.args.get("search")
+        else:
+            search_term: str = ""
 
         wa_scats = (
             con.execute(
-                sql,
+                sql_all if not search_term else sql_search,
                 {
+                    "search": f"%{search_term}%",
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                 },
@@ -844,7 +865,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         loci_val = get_wa_loci_values_redis(row["wa_code"])
 
         has_loci_notes = False
+        has_orange_loci_notes = False
         has_loci_values = False
+
         if loci_val is not None:
             loci_values[row["wa_code"]] = dict(loci_val)
 
@@ -879,11 +902,12 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
                         try:
                             if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
+                                has_orange_loci_notes = True
                                 # check if allele has already a color
                                 if loci_values[row["wa_code"]][x][allele]["color"] == params["red_note"]:
-                                    loci_values[row["wa_code"]][x][allele]["color"] = "#FF7E3A"
+                                    loci_values[row["wa_code"]][x][allele]["color"] = params["red_orange"]
                                 elif loci_values[row["wa_code"]][x][allele]["color"] == params["green_note"]:
-                                    loci_values[row["wa_code"]][x][allele]["color"] = "#C2CD4F"
+                                    loci_values[row["wa_code"]][x][allele]["color"] = params["green_orange"]
                                 else:
                                     loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
                         except Exception:
@@ -911,7 +935,13 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         if (filter == "all") or (filter == "with_notes" and (has_genotype_notes or has_loci_notes)):
             out.append(dict(row))
 
-        locus_notes[row["wa_code"]] = has_loci_notes
+        if has_loci_notes:
+            locus_notes[row["wa_code"]] = Markup("&#128681;")
+        if has_orange_loci_notes:
+            if row["wa_code"] in locus_notes:
+                locus_notes[row["wa_code"]] += Markup("&#128312;")
+            else:
+                locus_notes[row["wa_code"]] = Markup("&#128312;")
 
     if mode == "export":
         file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, filter)
@@ -941,6 +971,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                     title += " (including WA without loci values)"
         else:
             title = "No WA code found"
+
+        session["url_wa_list"] = f"/wa_genetic_samples/{offset}/{limit}/{filter}?search={search_term}"
 
         return render_template(
             "wa_genetic_samples_list_limit.html",
@@ -1172,9 +1204,9 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         )
 
 
-@app.route("/view_genetic_data/<wa_code>/<search_term>")
+@app.route("/view_genetic_data/<wa_code>")
 @fn.check_login
-def view_genetic_data(wa_code: str, search_term: str):
+def view_genetic_data(wa_code: str):
     """
     visualize genetic data for WA code
     """
@@ -1715,9 +1747,8 @@ def set_wa_genotype(wa_code):
     if request.method == "POST":
         sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
         con.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
-        # flash(fn.alert_danger(f"<b>Genotype ID modified for {wa_code}. New value is: {request.form['genotype_id'].strip()}</b>"))
 
-        return redirect(f'{request.form["return_url"]}#{wa_code}')
+        return redirect(session["url_wa_list"])
 
 
 @app.route(

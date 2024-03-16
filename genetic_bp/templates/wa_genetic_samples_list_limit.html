@@ -89,12 +89,11 @@
 <tr>
 <td style="white-space: nowrap;">
 <a id="{{ result['wa_code'] }}"><a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
-<a href="/view_genetic_data/{{ result['wa_code'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ filter }}{%endif%}" class="btn btn-sm btn-primary">Genetic data</a>
+<a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
 <a href="/set_wa_genotype/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Set genotype</a>
 {% if locus_notes[result['wa_code']] %}
-<span style='font-size:24px;color:red' >&#128681;</span>
+<span style="font-size:24px">{{ locus_notes[result['wa_code']] }}</span>
 {% endif %}
-
 </td>
 
 <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
