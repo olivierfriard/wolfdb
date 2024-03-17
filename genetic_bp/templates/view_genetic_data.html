@@ -39,7 +39,7 @@
 
 <td
     style="{% if 'OK|' in data[locus]['a']['user_id']  %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
-    {{ data[locus][allele]['value'] }}{{ data[locus][allele]['divergent_allele'] }}
+    {{ data[locus][allele]['value'] }}&nbsp;{{ data[locus][allele]['divergent_allele'] }}
 </td>
 
 <td><small>{{ data[locus][allele]['date'] }}</small></td>

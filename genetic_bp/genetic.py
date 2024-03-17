@@ -1215,9 +1215,6 @@ def view_genetic_data(wa_code: str):
                     wa_loci[locus][allele]["divergent_allele"] = Markup(
                         f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]['value']}</button>"""
                     )
-                    #                         f"""<span class="badge badge-warning">{genotype_loci[locus][allele]['value']}</span>"""
-
-                    # Markup('<span style="font-size:24px">&#128312;</span>')
 
         return render_template(
             "view_genetic_data.html",
