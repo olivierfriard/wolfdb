@@ -106,10 +106,9 @@
 
 <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 
-<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id']
-        }}</a>{% endif %}
-    {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
-        class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
+<td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
+{% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
+class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
 </td>
 
 <td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
@@ -124,7 +123,7 @@
 
 {% for locus in loci_values[result['wa_code']] %}
 {% for allele in ('a', 'b') %}
-<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">{{ loci_values[result['wa_code']][locus][allele]['value'] }}<br>
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">{{ loci_values[result['wa_code']][locus][allele]['divergent_allele'] }}{{ loci_values[result['wa_code']][locus][allele]['value'] }}<br>
 <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/{{ allele }}/{{ loci_values[result['wa_code']][locus][allele]['epoch'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ filter }}{%endif%}">note</a>
 </td>
 {% endfor %}

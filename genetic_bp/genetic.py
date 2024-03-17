@@ -801,22 +801,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         else:
             search_term = request.form["search"].strip()
 
-        """sql = text(
-            (
-                "SELECT * FROM wa_genetic_samples_mat WHERE ("
-                "wa_code ILIKE :search "
-                "OR sample_id ILIKE :search "
-                "OR date::text ILIKE :search "
-                "OR municipality ILIKE :search "
-                "OR genotype_id ILIKE :search "
-                "OR tmp_id ILIKE :search "
-                "OR notes ILIKE :search "
-                "OR pack ILIKE :search "
-                ") "
-                "AND (date BETWEEN :start_date AND :end_date OR date IS NULL)"
-            )
-        )"""
-
         wa_scats = (
             con.execute(
                 sql_search,
@@ -874,6 +858,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             # check if loci have notes and values and corresponds to genotype loci
             for x in loci_values[row["wa_code"]]:
                 for allele in ("a", "b"):
+                    loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
+
                     if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
                         "OK|"
                     ):
@@ -896,20 +882,16 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                             try:
                                 genotype_loci_val = json.loads(rdis.get(row["genotype_id"]))
                                 mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
-
                             except Exception:
                                 print(f'Loci not found {row["genotype_id"]=}  {row["wa_code"]=}')
 
                         try:
                             if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
                                 has_orange_loci_notes = True
+                                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = Markup(
+                                    '<span style="font-size:24px">&#128312;</span>'
+                                )
                                 # check if allele has already a color
-                                if loci_values[row["wa_code"]][x][allele]["color"] == params["red_note"]:
-                                    loci_values[row["wa_code"]][x][allele]["color"] = params["red_orange"]
-                                elif loci_values[row["wa_code"]][x][allele]["color"] == params["green_note"]:
-                                    loci_values[row["wa_code"]][x][allele]["color"] = params["green_orange"]
-                                else:
-                                    loci_values[row["wa_code"]][x][allele]["color"] = params["orange_note"]
                         except Exception:
                             print(f'{row["genotype_id"]=}')
                             print(f"{x=}")
@@ -936,12 +918,12 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             out.append(dict(row))
 
         if has_loci_notes:
-            locus_notes[row["wa_code"]] = Markup("&#128681;")
+            locus_notes[row["wa_code"]] = Markup("&#128681;")  # red flag
         if has_orange_loci_notes:
             if row["wa_code"] in locus_notes:
-                locus_notes[row["wa_code"]] += Markup("&#128312;")
+                locus_notes[row["wa_code"]] += Markup("&#128312;")  # orange
             else:
-                locus_notes[row["wa_code"]] = Markup("&#128312;")
+                locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
 
     if mode == "export":
         file_content = export.export_wa_genetic_samples(loci_list, out, loci_values, filter)
@@ -1223,17 +1205,28 @@ def view_genetic_data(wa_code: str):
         # loci list
         loci_list = fn.get_loci_list()
 
-        loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
+        wa_loci, _ = fn.get_wa_loci_values(wa_code, loci_list)
+
+        genotype_loci = json.loads(rdis.get(row["genotype_id"]))
+
+        for locus in loci_list:
+            for allele in ("a", "b"):
+                if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
+                    wa_loci[locus][allele]["divergent_allele"] = Markup(
+                        f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]['value']}</button>"""
+                    )
+                    #                         f"""<span class="badge badge-warning">{genotype_loci[locus][allele]['value']}</span>"""
+
+                    # Markup('<span style="font-size:24px">&#128312;</span>')
 
         return render_template(
             "view_genetic_data.html",
             header_title=f"{wa_code} genetic data",
-            go_back_url=f"{request.referrer}#{wa_code}",
             wa_code=wa_code,
             loci_list=loci_list,
             sex=sex,
             genotype_id=genotype_id,
-            data=loci_values,
+            data=wa_loci,
         )
 
 
