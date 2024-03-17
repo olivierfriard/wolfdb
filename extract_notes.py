@@ -1,7 +1,15 @@
 """
-update redis with WA loci values
+convert notes to new system (table wa_loci_notes)
 
-This script is required by wolfdb.py
+    CREATE TABLE wa_loci_notes (
+    wa_code character varying(20) NOT NULL,
+    locus character varying(20) NOT NULL,
+    allele character varying(1) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    note TEXT,
+        user_id character varying(100)
+);
+
 
 """
 
@@ -42,4 +50,31 @@ for wla in data:
     wa_code, locus, allele = wla
     timestamp, notes, user_id = data[wla]
     if notes is not None or user_id is not None:
-        print(wa_code, locus, allele, timestamp, notes, user_id)
+        # print(wa_code, locus, allele, timestamp, notes, user_id)
+
+        if notes is None or notes == "":
+            notes = "NULL"
+        else:
+            notes = f"'{notes}'"
+
+        if user_id is None or notes == "":
+            user_id = "NULL"
+        else:
+            user_id = f"'{user_id}'"
+
+        if notes == "NULL" and user_id == "NULL":
+            continue
+
+        print(
+            (
+                "INSERT INTO wa_loci_notes (wa_code, locus, allele, `timestamp`, note, user_id) "
+                "VALUES ("
+                f"'{wa_code}', "
+                f"'{locus}', "
+                f"'{allele}', "
+                f"'{timestamp}', "
+                f"{notes},"
+                f"{user_id}"
+                ");"
+            )
+        )
