@@ -125,7 +125,7 @@ class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
 {% for allele in ('a', 'b') %}
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">
 {{ loci_values[result['wa_code']][locus][allele]['value'] }}<br>
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/{{ allele }}/{{ loci_values[result['wa_code']][locus][allele]['epoch'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ filter }}{%endif%}">note</a>
+<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/{{ allele }}">note</a>
 {{ loci_values[result['wa_code']][locus][allele]['divergent_allele'] }}
 </td>
 {% endfor %}

@@ -3,10 +3,10 @@
 
 {% block content %}
 
-<h2>{{ header_title }}</h2>
+<!--<h2>{{ header_title }}</h2>-->
 
 
-<button class="btn btn-primary" onclick="history.back()">Go Back</button>&nbsp;
+<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>&nbsp;
 
 
 <br>
@@ -18,23 +18,43 @@ Allele: <b>{{ data["allele"] }}</b><br>
 value: <b>{{ data["value"] }}</b></h3>
 
 
-<form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}/{{ data['timestamp'] }}/{{ search_term }}">
+<p style="margin-bottom:2em;"><h4>Allele's notes</h4></p>
 
-Note:<br>
-<textarea  id="notes" name="notes" value="" rows="4" cols="50">{{ data["notes"] }}</textarea><br>
+{% if notes %}
+<table class="table table-striped">
+<th>Timestamp</th>
+<!--<th>Value</th>-->
+<th>Note</th>
+<th>User</th>
+</thead>
+{% for note in notes %}
+<tr>
+<td>{{ note['timestamp'] }}</td>
+<td>{{ note['note'] }}</td>
+<td>{{ note['user_id'] }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+No notes were found
+{% endif %}
 
-{% if data["user_id"] %}Note inserted by <b>{{data["user_id"]}}</b><br>{% endif %}
+<br><br>
+
+<h4>Insert a new note</h4>
+
+<form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
+
+Note<br>
+<textarea  id="new_note" name="new_note" value="" rows="4" cols="50"></textarea><br>
 
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>
 
-<input type="hidden" name="return_url" value="{{ return_url }}">
 </form>
 
-<p style="margin-bottom:2em;"><h3>Allele history</h3></p>
 
-
-
+{#
 <table class="table table-striped">
 <thead>
 <th>Timestamp</th>
@@ -53,5 +73,6 @@ Note:<br>
 
 {% endfor %}
 </table>
+#}
 
 {% endblock %}

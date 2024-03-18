@@ -19,7 +19,6 @@ import pathlib as pl
 import uuid
 import pandas as pd
 import datetime as dt
-import time
 
 import functions as fn
 from . import export
@@ -481,7 +480,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         if loci_val is not None:
             loci_values[row["genotype_id"]] = json.loads(loci_val)
         else:
-            loci_values[row["genotype_id"]] = fn.get_loci_value(row["genotype_id"], loci_list)
+            loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
 
     if mode == "export":
         file_content = export.export_genotypes_list(loci_list, results, loci_values)
@@ -731,6 +730,13 @@ def plot_wa_clusters(distance: int):
 
 def get_wa_loci_values_redis(wa_code: str) -> dict:
     r = rdis.get(wa_code)
+    if r is None:
+        return None
+    return json.loads(r)
+
+
+def get_genotype_loci_values_redis(genotype_id: str) -> dict:
+    r = rdis.get(genotype_id)
     if r is None:
         return None
     return json.loads(r)
@@ -1163,7 +1169,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         if loci_val is not None:
             loci_values[row["genotype_id"]] = json.loads(loci_val)
         else:
-            loci_values[row["genotype_id"]] = fn.get_loci_value(row["genotype_id"], loci_list)
+            loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
 
     if mode == "export":
         file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
@@ -1207,7 +1213,7 @@ def view_genetic_data(wa_code: str):
 
         wa_loci, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
-        genotype_loci = json.loads(rdis.get(row["genotype_id"]))
+        genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
 
         for locus in loci_list:
             for allele in ("a", "b"):
@@ -1372,7 +1378,7 @@ def add_genetic_data(wa_code: str):
                                 .fetchone()["genotype_id"]
                             )
 
-                            rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
+                            rdis.set(genotype_id, json.dumps(fn.get_genotype_loci_values(genotype_id, loci_list)))
 
         return redirect(f"/view_genetic_data/{wa_code}")
 
@@ -1390,8 +1396,18 @@ def view_genetic_data_history(wa_code: str, locus: str):
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
 
-        locus_values = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
+        locus_notes = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
+        locus_notes = (
+            con.execute(
+                text("select * from wa_loci_notes WHERE wa_code = :wa_code and locus = :locus ORDER BY timestamp ASC"),
+                {"wa_code": wa_code, "locus": locus},
+            )
+            .mappings()
+            .all()
+        )
+
+        """
         locus_values = (
             con.execute(
                 text(
@@ -1406,18 +1422,99 @@ def view_genetic_data_history(wa_code: str, locus: str):
             .mappings()
             .all()
         )
+        """
 
         return render_template(
             "view_genetic_data_history.html",
             header_title=f"{wa_code} genetic data",
             wa_code=wa_code,
             locus=locus,
-            locus_values=locus_values,
+            locus_notes=locus_notes,
             sex=sex,
             genotype_id=genotype_id,
         )
 
 
+@app.route(
+    "/locus_note/<wa_code>/<locus>/<allele>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def locus_note(wa_code: str, locus: str, allele: str):
+    """
+    let user add a note on wa_code locus_name allele timestamp
+    """
+
+    con = fn.conn_alchemy().connect()
+
+    data = {"wa_code": wa_code, "locus": locus, "allele": allele}
+
+    if request.method == "GET":
+        row = (
+            con.execute(
+                text("SELECT val FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "),
+                data,
+            )
+            .mappings()
+            .fetchone()
+        )
+
+        if row is None:
+            return "WA code / Locus / allele not found"
+
+        data["value"] = row["val"]
+
+        notes = (
+            con.execute(
+                text(
+                    (
+                        "SELECT "
+                        "CASE WHEN note IS NULL THEN '' ELSE note END, "
+                        "CASE WHEN user_id IS NULL THEN '' ELSE user_id END, "
+                        "date_trunc('second', timestamp) AS timestamp "
+                        "FROM wa_loci_notes "
+                        "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele ORDER BY timestamp"
+                    )
+                ),
+                data,
+            )
+            .mappings()
+            .all()
+        )
+
+        return render_template(
+            "add_wa_locus_note.html",
+            header_title="Allele's notes",
+            data=data,
+            notes=notes,
+        )
+
+    if request.method == "POST":
+        sql = text(
+            "INSERT INTO wa_loci_notes (wa_code, locus, allele, timestamp, note, user_id) "
+            "VALUES ("
+            ":wa_code, :locus, :allele, "
+            "NOW(), "
+            ":new_note, "
+            ":user_id "
+            ")"
+        )
+
+        data["new_note"] = request.form["new_note"]
+        data["user_id"] = session.get("user_name", session["email"])
+
+        con.execute(sql, data)
+
+        rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
+
+        # return redirect(session["url_wa_list"])
+        return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+
+
+'''
 @app.route(
     "/locus_note/<wa_code>/<locus>/<allele>/<int:timestamp>/<search_term>",
     methods=(
@@ -1527,6 +1624,8 @@ def locus_note(wa_code: str, locus: str, allele: str, timestamp: int, search_ter
 
         # return redirect(f'{request.form["return_url"]}#{wa_code}')
 
+'''
+
 
 @app.route(
     "/genotype_locus_note/<genotype_id>/<locus>/<allele>/<int:timestamp>/<search_term>",
@@ -1612,7 +1711,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str, timestamp: in
         # update cache
         loci_list: dict = fn.get_loci_list()
 
-        rdis.set(genotype_id, json.dumps(fn.get_loci_value(genotype_id, loci_list)))
+        rdis.set(genotype_id, json.dumps(fn.get_genotype_loci_values(genotype_id, loci_list)))
 
         # update wa_code with genotype note
         sql = text(

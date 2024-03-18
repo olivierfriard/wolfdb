@@ -3,16 +3,15 @@
 {% block content %}
 
 
-<h1>View genetic data</h1>
-<hr>
+<h2>View genetic data</h2><hr>
 
-<h2>WA code: <b>{{wa_code}}</b></h2>
-
-<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go Back</a>
+<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
 
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;
 <br>
 <br>
+
+<h3>WA code: <b>{{wa_code}}</b></h3>
 
 <span style="font-size: larger;">Genotype id: <b>{{ genotype_id }}</b><br>Sex: <b>{{ sex }}</b></span>
 <br>
@@ -29,6 +28,7 @@
         <th>Allele b</th>
         <th>Date</th>
         <th>Notes</th>
+        <th style="background: #eeeeee">&nbsp;</th>
         <th>History</th>
     </tr>
     {% for locus in loci_list %}
@@ -38,7 +38,7 @@
 {% for allele in ('a', 'b') %}
 
 <td
-    style="{% if 'OK|' in data[locus]['a']['user_id']  %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
+    style="{% if 'OK|' in data[locus]['a']['user_id'] %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
     {{ data[locus][allele]['value'] }}&nbsp;{{ data[locus][allele]['divergent_allele'] }}
 </td>
 
@@ -46,7 +46,7 @@
 
 <td
     style="{% if 'OK|' in data[locus][allele]['user_id']  %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
-    <small>{{ data[locus][allele]['notes'] }}</small>
+    <small>{{ data[locus][allele]['notes'] if data[locus][allele]['notes'] is not none else '' }} </small>
     {% if data[locus][allele]['user_id'] %}
     <br><small>(Inserted by {{data[locus][allele]['user_id']}})</small>
     {% endif %}

@@ -69,6 +69,90 @@ def get_loci_list() -> dict:
     return loci_list
 
 
+def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
+    """
+    get WA code loci values with last note from wa_loci_notes table (if any)
+    """
+    with conn_alchemy().connect() as con:
+        has_loci_notes = False
+
+        loci_values = {}
+        for locus in loci_list:
+            loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
+
+        for locus in loci_list:
+            for allele in ("a", "b")[: loci_list[locus]]:
+                # sql = text(
+                #    (
+                #        "SELECT val, note, wa_loci_notes.user_id FROM wa_locus "
+                #        "LEFT OUTER JOIN wa_loci_notes ON wa_locus.wa_code=wa_loci_notes.wa_code AND "
+                #        "wa_locus.locus=wa_loci_notes.locus AND wa_locus.allele=wa_loci_notes.allele "
+                #        "WHERE wa_locus.wa_code = :wa_code AND wa_locus.locus = :locus AND wa_locus.allele = :allele "
+                #        "ORDER BY wa_loci_notes.timestamp DESC "
+                #        "LIMIT 1"
+                #    )
+                # )
+
+                sql = text(
+                    (
+                        "SELECT val, user_id, "
+                        "extract(epoch from timestamp)::integer AS epoch, "
+                        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
+                        "(SELECT note FROM wa_loci_notes WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
+                        # "FROM wa_loci_notes "
+                        # "WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
+                        "FROM wa_locus wl WHERE wa_code = :wa_code and locus = :locus and allele = :allele "
+                        "ORDER BY timestamp DESC "
+                        "LIMIT 1"
+                    )
+                )
+
+                row = (
+                    con.execute(
+                        sql,
+                        #                        text(
+                        #                            (
+                        #                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
+                        #                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
+                        #                                "FROM wa_locus "
+                        #                                "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                        #                                "ORDER BY timestamp DESC LIMIT 1"
+                        #                            )
+                        #                        ),
+                        {"wa_code": wa_code, "locus": locus, "allele": allele},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+
+                if row is not None:
+                    val = row["val"] if row["val"] is not None else "-"
+                    notes = row["notes"] if not None else ""
+                    if notes:
+                        has_loci_notes = True
+                    epoch = row["epoch"] if row["epoch"] is not None else ""
+                    date = row["formatted_timestamp"] if row["formatted_timestamp"] is not None else ""
+                    user_id = row["user_id"] if row["user_id"] is not None else ""
+
+                else:
+                    val = "-"
+                    notes = ""
+                    epoch = ""
+                    user_id = ""
+                    date = ""
+
+                loci_values[locus][allele] = {
+                    "value": val,
+                    "notes": notes,
+                    "epoch": epoch,
+                    "user_id": user_id,
+                    "date": date,
+                }
+
+    return loci_values, has_loci_notes
+
+
+'''
 def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
     """
     get WA code loci values
@@ -83,7 +167,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
             loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
 
         for locus in loci_list:
-            for allele in ["a", "b"][: loci_list[locus]]:
+            for allele in ("a", "b")[: loci_list[locus]]:
                 row2 = (
                     con.execute(
                         text(
@@ -126,9 +210,10 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
                 }
 
     return loci_values, has_loci_notes
+'''
 
 
-def get_loci_value(genotype_id: str, loci_list: list) -> dict:
+def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
     """
     get genotype loci values
     """
@@ -136,9 +221,7 @@ def get_loci_value(genotype_id: str, loci_list: list) -> dict:
     with conn_alchemy().connect() as con:
         loci_values = {}
         for locus in loci_list:
-            loci_values[locus] = {}
-            loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": ""}
-            loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
+            loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
         for locus in loci_list:
             for allele in ["a", "b"]:

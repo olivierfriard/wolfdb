@@ -3,9 +3,7 @@
 {% block content %}
 
 
-
-<h1>View genetic data history</h1>
-<hr>
+<h2>View genetic data history</h2><hr>
 
 
 
@@ -15,33 +13,35 @@
 <br>
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
-<br>
+
 <span style="font-size: larger;">Genotype id: <b>{{ genotype_id }}</b><br>Sex: <b>{{ sex }}</b></span>
 <br>
 <br>
 
 <h3>History of <b>{{ locus }}</b> locus values</h3>
 
+
+{% for allele in ('a','b') %}
+<h4>Allele {{ allele }}</h4>
 <table class="table table-striped">
 <tr>
-<th>Allele</th>
-<th>Value</th>
+<!--<th>Value</th>-->
 <th>Date</th>
 <th>Notes</th>
 <th>User</th>
 </tr>
-
-{% for row in locus_values %}
+{% for row in locus_notes %}
+{% if row['allele'] == allele %}
 <tr>
-<td>{{ row["allele"] }}</td>
-<td>{{ row["val"]  if row["val"] is not none else "-"}}</td>
-<td>{{ row["formatted_timestamp"]  if row["formatted_timestamp"] is not none else ""}}</td>
-<td>{{ row["notes"] if row["notes"] is not none else ""}}</td>
+{#<td>{{ row["val"]  if row["val"] is not none else "-"}}</td>#}
+<td>{{ row["timestamp"]  if row["timestamp"] is not none else ""}}</td>
+<td>{{ row["note"] if row["note"] is not none else ""}}</td>
 <td>{{ row["user_id"] if row["user_id"] is not none else ""}}</td>
 </tr>
-
+{%endif%}
 {% endfor %}
-
 </table>
+{%endfor%}
+
 
 {% endblock %}
