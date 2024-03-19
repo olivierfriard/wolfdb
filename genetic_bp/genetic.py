@@ -941,7 +941,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         return response
 
     else:
-        session["go_back_url"] = f"/wa_genetic_samples/{offset}/{limit}"
+        # session["go_back_url"] = f"/wa_genetic_samples/{offset}/{limit}"
 
         # apply offset and limit
         n_wa = len(out)
@@ -966,6 +966,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             "wa_genetic_samples_list_limit.html",
             header_title="Genetic data of WA codes",
             title=title,
+            n_wa=n_wa,
             limit=limit,
             offset=offset,
             loci_list=loci_list,

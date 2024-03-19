@@ -16,7 +16,7 @@
 {% if limit == 'ALL' %}
 <h4>All WA codes</h4>
 {% else %}
-<h4>WA codes from {{ offset + 1}} to {{ offset + limit }}</h4>
+<h4>WA codes from {{ offset + 1}} to {{ (offset + limit) if offset + limit <= n_wa else n_wa }}</h4>
 {% endif %}
 
 {% if wa_scats %}
