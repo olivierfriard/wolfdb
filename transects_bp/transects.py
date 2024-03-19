@@ -109,7 +109,7 @@ def view_transect(transect_id):
     # number of scats
     scats = (
         con.execute(
-            text("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats WHERE path_id LIKE :path_id"),
+            text("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_mat WHERE path_id LIKE :path_id"),
             {"path_id": f"{transect_id}|%"},
         )
         .mappings()
@@ -137,7 +137,7 @@ def view_transect(transect_id):
                 "popupContent": (
                     f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: {row['genotype_id']}"""
+                    f"""Genotype ID: {row['genotype_id2']}"""
                 ),
             },
             "id": row["scat_id"],
