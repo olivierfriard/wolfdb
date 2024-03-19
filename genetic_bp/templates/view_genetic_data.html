@@ -24,10 +24,12 @@
         <th>Allele a</th>
         <th>Date</th>
         <th>Notes</th>
+        <th>User</th>
         <th></th>
         <th>Allele b</th>
         <th>Date</th>
         <th>Notes</th>
+        <th>User</th>
         <th style="background: #eeeeee">&nbsp;</th>
         <th>History</th>
     </tr>
@@ -38,18 +40,17 @@
 {% for allele in ('a', 'b') %}
 
 <td
-    style="{% if 'OK|' in data[locus]['a']['user_id'] %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
+    style="{% if 'OK|' in data[locus][allele]['user_id'] %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
     {{ data[locus][allele]['value'] }}&nbsp;{{ data[locus][allele]['divergent_allele'] }}
 </td>
 
 <td><small>{{ data[locus][allele]['date'] }}</small></td>
 
-<td
-    style="{% if 'OK|' in data[locus][allele]['user_id']  %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
-    <small>{{ data[locus][allele]['notes'] if data[locus][allele]['notes'] is not none else '' }} </small>
-    {% if data[locus][allele]['user_id'] %}
-    <br><small>(Inserted by {{data[locus][allele]['user_id']}})</small>
-    {% endif %}
+<td>    
+<small>{{ data[locus][allele]['notes'] if data[locus][allele]['notes'] is not none else '' }} </small>
+</td>
+<td>    
+{{ data[locus][allele]['user_id'] }}
 </td>
 
 <td style="background: #eeeeee">&nbsp;</td>

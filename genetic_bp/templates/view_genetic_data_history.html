@@ -18,16 +18,34 @@
 <br>
 <br>
 
-<h3>History of <b>{{ locus }}</b> locus values</h3>
+<h3>History of the <b>{{ locus }}</b> locus</h3>
 
 
 {% for allele in ('a','b') %}
+<br><br>
 <h4>Allele {{ allele }}</h4>
+
+<h5>Value</h5>
 <table class="table table-striped">
 <tr>
-<!--<th>Value</th>-->
-<th>Date</th>
-<th>Notes</th>
+<th style="width: 16em">Date</th>
+<th>Value</th>
+<!--<th>Notes</th>
+<th>User</th>-->
+</tr>
+{% for row in locus_values %}
+{% if row['allele'] == allele %}
+<tr><td>{{ row['timestamp'] }}</td><td>{{ row['val'] }}</td></tr>
+{%endif%}
+{% endfor %}
+</table>
+
+
+<h5>Notes</h5>
+<table class="table table-striped">
+<tr>
+<th style="width: 16em">Date</th>
+<th style="width: 26em">Notes</th>
 <th>User</th>
 </tr>
 {% for row in locus_notes %}

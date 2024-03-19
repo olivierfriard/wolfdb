@@ -19,6 +19,7 @@ import pathlib as pl
 import uuid
 import pandas as pd
 import datetime as dt
+import time
 
 import functions as fn
 from . import export
@@ -1252,21 +1253,15 @@ def add_genetic_data(wa_code: str):
     row = (
         con.execute(text("SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().fetchone()
     )
-    sex = row["sex_id"]
-    genotype_id = row["genotype_id"]
 
     loci = con.execute(text("SELECT * FROM loci ORDER BY position ASC")).mappings().all()
 
     # loci list
     loci_list = fn.get_loci_list()
 
-    loci_val = rdis.get(wa_code)
-    if loci_val is not None:
-        print("from redis")
-        loci_values = json.loads(loci_val)
-    else:
-        print("from db")
-        loci_values, _ = fn.get_wa_loci_values(wa_code, loci_list)
+    loci_val = get_wa_loci_values_redis(wa_code)
+    if loci_val is None:
+        loci_val, _ = fn.get_wa_loci_values(wa_code, loci_list)
 
     if request.method == "GET":
         return render_template(
@@ -1275,9 +1270,9 @@ def add_genetic_data(wa_code: str):
             go_back_url=request.referrer,
             wa_code=wa_code,
             loci=loci,
-            loci_values=loci_values,
-            sex=sex,
-            genotype_id=genotype_id,
+            loci_values=loci_val,
+            sex=row["sex_id"],
+            genotype_id=row["genotype_id"],
         )
 
     if request.method == "POST":
@@ -1303,26 +1298,46 @@ def add_genetic_data(wa_code: str):
             )
 
         # 'OK|' is inserted before the user_id field to demonstrate that allele value has changed (or not) -> green
+        current_epoch = int(time.time())
         for locus in loci:
-            for allele in ["a", "b"]:
+            for allele in ("a", "b"):
                 if locus["name"] + f"_{allele}" in request.form and request.form[locus["name"] + f"_{allele}"]:
                     con.execute(
                         text(
                             "INSERT INTO wa_locus "
-                            "(wa_code, locus, allele, val, timestamp, notes, user_id) "
-                            "VALUES (:wa_code, :locus, :allele, :val, NOW(), :notes, :user_id)"
+                            "(wa_code, locus, allele, val, timestamp, user_id) "
+                            "VALUES (:wa_code, :locus, :allele, :val, to_timestamp(:current_epoch), :user_id)"
                         ),
                         {
                             "wa_code": wa_code,
                             "locus": locus["name"],
                             "allele": allele,
                             "val": int(request.form[locus["name"] + f"_{allele}"]) if request.form[locus["name"] + f"_{allele}"] else None,
-                            "notes": request.form[locus["name"] + f"_{allele}_notes"]
-                            if request.form[locus["name"] + f"_{allele}_notes"]
-                            else None,
+                            "current_epoch": current_epoch,
                             "user_id": "OK|" + session.get("user_name", session["email"]),
                         },
                     )
+
+                    # set note in wa_loci_notes
+                    if request.form[locus["name"] + f"_{allele}_notes"]:
+                        con.execute(
+                            text(
+                                (
+                                    "INSERT INTO wa_loci_notes (wa_code, locus, allele, timestamp, note, user_id) "
+                                    "VALUES (:wa_code, :locus, :allele, to_timestamp(:current_epoch), :note, :user_id)"
+                                )
+                            ),
+                            {
+                                "wa_code": wa_code,
+                                "locus": locus["name"],
+                                "allele": allele,
+                                "note": request.form[locus["name"] + f"_{allele}_notes"]
+                                if request.form[locus["name"] + f"_{allele}_notes"]
+                                else None,
+                                "current_epoch": current_epoch,
+                                "user_id": session.get("user_name", session["email"]),
+                            },
+                        )
 
         # update redis
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, loci_list)[0]))
@@ -1397,11 +1412,30 @@ def view_genetic_data_history(wa_code: str, locus: str):
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
 
-        locus_notes = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
+        # get locus value
+        locus_values = (
+            con.execute(
+                text(
+                    (
+                        "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp "
+                        "FROM wa_locus WHERE wa_code = :wa_code and locus = :locus ORDER BY allele,timestamp ASC"
+                    )
+                ),
+                {"wa_code": wa_code, "locus": locus},
+            )
+            .mappings()
+            .all()
+        )
 
+        locus_notes = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
         locus_notes = (
             con.execute(
-                text("select * from wa_loci_notes WHERE wa_code = :wa_code and locus = :locus ORDER BY timestamp ASC"),
+                text(
+                    (
+                        "SELECT allele,note,user_id, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp "
+                        "FROM wa_loci_notes WHERE wa_code = :wa_code AND locus = :locus ORDER BY timestamp ASC"
+                    )
+                ),
                 {"wa_code": wa_code, "locus": locus},
             )
             .mappings()
@@ -1430,6 +1464,7 @@ def view_genetic_data_history(wa_code: str, locus: str):
             header_title=f"{wa_code} genetic data",
             wa_code=wa_code,
             locus=locus,
+            locus_values=locus_values,
             locus_notes=locus_notes,
             sex=sex,
             genotype_id=genotype_id,
