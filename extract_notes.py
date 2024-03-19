@@ -47,7 +47,7 @@ for wla in data:
         if notes is None or notes == "":
             notes = "NULL"
         else:
-            notes = f"'{notes}'"
+            notes = f"'{notes.replace("'", "\'")}'"
 
         if user_id is None or notes == "":
             user_id = "NULL"
