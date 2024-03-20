@@ -4,12 +4,10 @@
 {% block content %}
 
 
-<h1>WolfDB - Set sex</h1>
+<h1>Set sex</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-<a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
 
 
 <br>
@@ -20,12 +18,12 @@
 
 <form method="POST" action="/set_sex/{{ genotype_id }}">
 
-Current sex:<br>
+Current sex: <b>{{ current_sex }}</b><br>
+<br>
 <input type="text"  id="sex" name="sex" value="{{ current_sex }}"><br>
 <br>
 <button type="submit" class="btn btn-danger" >Submit</button>
 
-<input type="hidden" name="return_url" value="{{ return_url }}">
 </form>
 
 {% endblock %}

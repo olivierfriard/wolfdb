@@ -4,13 +4,11 @@
 {% block content %}
 
 
-<h1>WolfDB - Set status</h1>
+<h1>Set status</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
 
-<a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
-
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
 
 
 <br>
@@ -21,12 +19,12 @@
 
 <form method="POST" action="/set_status/{{ genotype_id }}">
 
-Current status:<br>
+Current status: <b>{{ current_status }}</b><br>
+<br>
 <input type="text"  id="status" name="status" value="{{ current_status }}"><br>
 <br>
 <button type="submit" class="btn btn-danger" >Submit</button>
 
-<input type="hidden" name="return_url" value="{{ return_url }}">
 </form>
 
 {% endblock %}
