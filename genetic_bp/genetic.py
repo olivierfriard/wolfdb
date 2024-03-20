@@ -495,7 +495,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         return render_template(
             "genotypes_list.html",
             header_title=header_title,
-            title=f"List of {results[0]["n_genotypes"] if results else 0} {type} genotypes".replace(" all", "").replace("_short", ""),
+            title=f"List of {results[0]['n_genotypes'] if results else 0} {type} genotypes".replace(" all", "").replace("_short", ""),
             limit=limit,
             offset=offset,
             type=type,
