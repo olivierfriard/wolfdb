@@ -28,8 +28,7 @@ Working notes:<br>
 <th>Notes</th>
 <th>User</th>
 </thead>
-{% for row in history %}
-
+{% for row in values_history %}
 <tr>
 <td>{{ row['timestamp'] }}</td>
 <td>{{ row['val'] }}</td>
@@ -39,10 +38,29 @@ Working notes:<br>
 
 {% endfor %}
 </table>
+
+<table class="table table-striped">
+    <thead>
+    <th>Timestamp</th>
+    <th>Note</th>
+    <th>User</th>
+    </thead>
+{% for row in notes_history %}
+<tr>
+<td>{{ row['timestamp'] }}</td>
+<td>{{ row['note'] }}</td>
+<td>{{ row['user_id'] }}</td>
+</tr>
+
+{% endfor %}
+</table>
+
+
+
 <hr>
 <h4>Insert a new note</h4>
 
-<form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}/{{ data['timestamp'] }}/{{ search_term }}">
+<form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
 
 Note<br>
 <textarea  id="notes" name="notes" value="" rows="4" cols="50"></textarea><br>

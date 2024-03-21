@@ -1590,7 +1590,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
 
     data = {"genotype_id": genotype_id, "locus": locus, "allele": allele}
 
-    wa_locus = (
+    genotype_locus = (
         con.execute(
             text("SELECT * FROM genotype_locus WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "),
             data,
@@ -1599,16 +1599,16 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
         .fetchone()
     )
 
-    if wa_locus is None:
+    if genotype_locus is None:
         return "Genotype ID / Locus / allele / timestamp not found"
 
     data["allele"] = allele
-    data["value"] = wa_locus["val"]
-    data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
-    data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
+    data["value"] = genotype_locus["val"]
+    data["notes"] = "" if genotype_locus["notes"] is None else genotype_locus["notes"]
+    data["user_id"] = "" if genotype_locus["user_id"] is None else genotype_locus["user_id"]
 
     if request.method == "GET":
-        locus_history = (
+        values_history = (
             con.execute(
                 text(
                     "SELECT val, "
@@ -1627,11 +1627,30 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
             .all()
         )
 
+        # notes history
+        notes_history = (
+            con.execute(
+                text(
+                    (
+                        "SELECT * FROM  genotypes_loci_notes "
+                        "WHERE genotype_id = :genotype_id "
+                        "AND locus = :locus "
+                        "AND allele = :allele "
+                        "ORDER BY timestamp ASC "
+                    )
+                ),
+                data,
+            )
+            .mappings()
+            .all()
+        )
+
         return render_template(
             "add_genotype_locus_note.html",
             header_title="Add note on genotype id",
             data=data,
-            history=locus_history,
+            values_history=values_history,
+            notes_history=notes_history,
         )
 
     if request.method == "POST":
