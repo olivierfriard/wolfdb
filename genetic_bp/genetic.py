@@ -734,14 +734,14 @@ def plot_wa_clusters(distance: int):
     )
 
 
-def get_wa_loci_values_redis(wa_code: str) -> dict:
+def get_wa_loci_values_redis(wa_code: str) -> dict | None:
     r = rdis.get(wa_code)
     if r is None:
         return None
     return json.loads(r)
 
 
-def get_genotype_loci_values_redis(genotype_id: str) -> dict:
+def get_genotype_loci_values_redis(genotype_id: str) -> dict | None:
     r = rdis.get(genotype_id)
     if r is None:
         return None
@@ -863,60 +863,63 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         has_orange_loci_notes = False
         has_loci_values = False
 
-        if loci_val is not None:
+        if loci_val is None:
+            loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
+        else:
             loci_values[row["wa_code"]] = dict(loci_val)
 
-            # check if loci have notes and values and corresponds to genotype loci
-            for x in loci_values[row["wa_code"]]:
-                for allele in ("a", "b"):
-                    loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
+        # check if loci have notes and values and corresponds to genotype loci
+        for x in loci_values[row["wa_code"]]:
+            for allele in ("a", "b"):
+                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
 
-                    if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
-                        "OK|"
-                    ):
-                        has_loci_notes = True
-                        loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
-                    elif loci_values[row["wa_code"]][x][allele]["user_id"].startswith("OK|"):
-                        loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
+                if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
+                    "OK|"
+                ):
+                    has_loci_notes = True
+                    loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
+                elif loci_values[row["wa_code"]][x][allele]["user_id"].startswith("OK|"):
+                    loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
+                else:
+                    loci_values[row["wa_code"]][x][allele]["color"] = "#ffffff00"
+
+                if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                    has_loci_values = True
+
+                # check if wa loci corresponds to genotype loci (if not the background colo will be orange)
+                if row["genotype_id"]:
+                    genotype_loci_val = {}
+                    if mem_genotype_loci.get(row["genotype_id"], False):
+                        genotype_loci_val = mem_genotype_loci[row["genotype_id"]]
                     else:
-                        loci_values[row["wa_code"]][x][allele]["color"] = "#ffffff00"
-
-                    if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
-                        has_loci_values = True
-
-                    # check if wa loci corresponds to genotype loci (if not the background colo will be orange)
-                    if row["genotype_id"]:
-                        genotype_loci_val = {}
-                        if mem_genotype_loci.get(row["genotype_id"], False):
-                            genotype_loci_val = mem_genotype_loci[row["genotype_id"]]
+                        genotype_loci_val = get_genotype_loci_values_redis(row["genotype_id"])
+                        if genotype_loci_val is not None:
+                            mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
                         else:
-                            try:
-                                genotype_loci_val = json.loads(rdis.get(row["genotype_id"]))
-                                mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
-                            except Exception:
-                                print(f'Loci not found {row["genotype_id"]=}  {row["wa_code"]=}')
+                            print(f'Loci not found {row["genotype_id"]=}  {row["wa_code"]=}')
 
-                        try:
-                            if genotype_loci_val and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]:
-                                has_orange_loci_notes = True
-                                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = Markup(
-                                    '<span style="font-size:24px">&#128312;</span>'
-                                )
-                                # check if allele has already a color
-                        except Exception:
-                            pass
-                            """
-                            print(f'{row["genotype_id"]=}')
-                            print(f"{x=}")
-                            print(f"{allele=}")
-                            print(f"{genotype_loci_val[x][allele]=}")
-                            print()
-                            print(f"{loci_val[x][allele]=}")
-                            """
-
-        else:
-            # extract loci value from database
-            loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
+                    try:
+                        if (
+                            genotype_loci_val
+                            and genotype_loci_val[x][allele]["value"] != loci_val[x][allele]["value"]
+                            and loci_val[x][allele]["value"] not in (0, "-")
+                            and loci_val[x][allele]["value"] not in (0, "-")
+                        ):
+                            has_orange_loci_notes = True
+                            loci_values[row["wa_code"]][x][allele]["divergent_allele"] = Markup(
+                                '<span style="font-size:24px">&#128312;</span>'
+                            )
+                            # check if allele has already a color
+                    except Exception:
+                        pass
+                        """
+                        print(f'{row["genotype_id"]=}')
+                        print(f"{x=}")
+                        print(f"{allele=}")
+                        print(f"{genotype_loci_val[x][allele]=}")
+                        print()
+                        print(f"{loci_val[x][allele]=}")
+                        """
 
         if filter == "no_values":
             out.append(dict(row))
