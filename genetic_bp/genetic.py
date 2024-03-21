@@ -50,6 +50,7 @@ def del_genotype(genotype_id):
     """
     with fn.conn_alchemy().connect() as con:
         con.execute(text("UPDATE genotypes SET record_status = 'deleted' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+        after_genotype_modif()
         con.execute(text("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} deleted</b>"))
@@ -1820,37 +1821,46 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str, timestamp: in
     ),
 )
 @fn.check_login
-def genotype_note(genotype_id):
+def genotype_note(genotype_id: str):
     """
     let user add a note on genotype_id (working_notes)
     """
 
-    data = {"genotype_id": genotype_id, "return_url": request.referrer}
+    data = {"genotype_id": genotype_id}
 
     if request.method == "GET":
-        con = fn.conn_alchemy().connect()
+        with fn.conn_alchemy().connect() as con:
+            notes_row = (
+                con.execute(text("SELECT working_notes FROM genotypes WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+                .mappings()
+                .fetchone()
+            )
+            if notes_row is None:
+                return "Genotype ID not found"
 
-        notes_row = (
-            con.execute(text("SELECT working_notes FROM genotypes WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
-            .mappings()
-            .fetchone()
-        )
-        if notes_row is None:
-            return "Genotype ID not found"
+            data["working_notes"] = "" if notes_row["working_notes"] is None else notes_row["working_notes"]
 
-        data["working_notes"] = "" if notes_row["working_notes"] is None else notes_row["working_notes"]
-
-        return render_template("add_genotype_note.html", header_title=f"Add note to genotype {genotype_id}", data=data)
+            return render_template("add_genotype_note.html", header_title=f"Add note to genotype {genotype_id}", data=data)
 
     if request.method == "POST":
         with fn.conn_alchemy().connect() as con:
             sql = text("UPDATE genotypes SET working_notes = :working_notes WHERE genotype_id = :genotype_id")
-
             data["working_notes"] = request.form["working_notes"]
-
             con.execute(sql, data)
 
+            after_genotype_modif()
+
             return redirect(session["url_genotypes_list"])
+
+
+def after_genotype_modif() -> None:
+    """
+    refresh materialized views after modification of genotypes table
+    """
+
+    with fn.conn_alchemy().connect() as con:
+        con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
+        con.execute(text("REFRESH MATERIALIZED VIEW wa_genetic_samples_mat"))
 
 
 @app.route(
@@ -1929,9 +1939,8 @@ def set_status(genotype_id):
 
     if request.method == "POST":
         sql = text("UPDATE genotypes SET status = :status WHERE genotype_id = :genotype_id")
-
         con.execute(sql, {"status": request.form["status"].strip().lower(), "genotype_id": genotype_id})
-
+        after_genotype_modif()
         return redirect(session["url_genotypes_list"])
 
 
@@ -1973,7 +1982,7 @@ def set_pack(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET pack = :pack WHERE genotype_id = :genotype_id")
         con.execute(sql, {"pack": request.form["pack"].lower().strip(), "genotype_id": genotype_id})
-
+        after_genotype_modif()
         return redirect(session["url_genotypes_list"])
 
 
@@ -2019,6 +2028,7 @@ def set_sex(genotype_id):
 
         sql = text("UPDATE genotypes SET sex = :sex WHERE genotype_id = :genotype_id")
         con.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
+        after_genotype_modif()
 
         # update WA results
         sql = text("UPDATE wa_results SET sex_id = :sex WHERE genotype_id = :genotype_id")
@@ -2066,7 +2076,7 @@ def set_status_1st_recap(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET status_first_capture = :status_first_capture WHERE genotype_id = :genotype_id")
         con.execute(sql, {"status_first_capture": request.form["status_first_capture"], "genotype_id": genotype_id})
-
+        after_genotype_modif()
         return redirect(session["url_genotypes_list"])
 
 
@@ -2107,7 +2117,7 @@ def set_dispersal(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET dispersal = :dispersal WHERE genotype_id = :genotype_id")
         con.execute(sql, {"dispersal": request.form["dispersal"].strip(), "genotype_id": genotype_id})
-
+        after_genotype_modif()
         return redirect(session["url_genotypes_list"])
 
 
@@ -2149,7 +2159,7 @@ def set_hybrid(genotype_id):
     if request.method == "POST":
         sql = text("UPDATE genotypes SET hybrid = :hybrid WHERE genotype_id = :genotype_id")
         con.execute(sql, {"hybrid": request.form["hybrid"].strip(), "genotype_id": genotype_id})
-
+        after_genotype_modif()
         return redirect(session["url_genotypes_list"])
 
 
