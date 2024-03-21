@@ -5,25 +5,19 @@
 
 
 
-<a href="{{ data["return_url"] }}" class="btn btn-primary">Go back</a>&nbsp;
-
-
-
-
-<br>
-<br>
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
+<br><br>
 
 <h3>Genotype ID: <b>{{ data["genotype_id"] }}</b></h3>
 
 
-<form method="POST" action="/genotype_note/{{ data["genotype_id"] }}">
+<form method="POST" action="/genotype_note/{{ data['genotype_id'] }}">
 
 Notes:<br>
 <textarea  id="working_notes" name="working_notes" value="" rows="4" cols="50">{{ data["working_notes"] }}</textarea><br>
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>
 
-<input type="hidden" name="return_url" value="{{ data["return_url"] }}">
 </form>
 
 {% endblock %}

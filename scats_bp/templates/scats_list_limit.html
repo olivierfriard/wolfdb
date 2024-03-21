@@ -11,11 +11,11 @@
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 
-<h3>List of {{ n_scats }} samples</h3>
+<h3>List of {{ n_scats }} scats</h3>
 {% if limit == 'ALL' %}
-<h4>All samples</h4>
+<h4>All scats</h4>
 {% else %}
-<h4>Samples from {{ offset + 1}} to {{ offset + limit }}</h4>
+<h4>Scats from {{ offset + 1}} to {{ offset + limit }}</h4>
 {% endif %}
 <span style="display:solid">
 {% if limit != 'ALL' %}
@@ -26,7 +26,7 @@
 <a class="btn btn-outline-secondary btn-sm" href="/scats_list_limit/{{ offset + limit }}/{{ limit }}">Next page</a>
 {% endif %}
 <span style="display:inline-block; width: 8em;"></span>
-<small>Sample / page</small>
+<small>Scats / page</small>
 <a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm"  href="/scats_list_limit/{{ offset }}/10">10</a>
 <a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm"  href="/scats_list_limit/{{ offset }}/20">20</a>
 <a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm"  href="/scats_list_limit/{{ offset }}/50">50</a>
@@ -78,11 +78,29 @@
 <tbody id="search-results">
 {% for result in results %}
 <tr>
-<td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td><td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td><td>{{ result['sampling_type'] }}</td><td>{% if result['sampling_type'] == "Systematic" %}{% if result['path_id'] != "" %}<a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] }}</a>{% else %}{{ result['path_id'] }}{% endif %}{% endif %}</td><td>{% if result['snowtrack_id'] %}<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] }}</a>{% endif %}</td>
+<td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
+<td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td>
+<td>{{ result['sampling_type'] }}</td>
+<td>{% if result['sampling_type'] == "Systematic" %}
+     {% if result['path_id'] != "" %}
+           <a href="/view_path/{{ result['path_id'] }}">{{ result['path_id'] if result['path_id'] is not none else "" }}</a>
+     {% else %}
+     {{ result['path_id'] if result['path_id'] is not none else "" }}
+    {% endif %}
+{% endif %}</td>
+<td>{% if result['snowtrack_id'] %}<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] if result['snowtrack_id'] is not none else "" }}</a>{% endif %}</td>
 <td>{% if result['wa_code'] %}<a href="/view_wa/{{result['wa_code'] }}">{{ result['wa_code'] }}</a>{% endif %}</td>
 <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}</td>
-<td>{{ result['location'] if result['location'] is not none else ""}}</td><td>{{ result['municipality'] if result['municipality'] is not none else ""}}</td><td>{{ result['province'] if result['province'] is not none else ""}}</td><td>{{ result['region'] if result['region'] is not none else ""}}</td><td>{{ result['deposition'] }}</td><td>{{ result['matrix'] }}</td><td>{{ result['collected_scat'] }}</td><td>{{ result['scalp_category'] }}</td><td>{% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}</td><td>{{ result['coord_east'] }}, {{ result['coord_north'] }} {{ result['coord_zone'] }}</td>
-<td>{{ result['observer'] }}</td><td>{{ result['institution'] }}</td><td><small>{{ result['notes'] if result['notes'] is not none else ""}}</small></td>
+<td>{{ result['location'] if result['location'] is not none else ""}}</td>
+<td>{{ result['municipality'] if result['municipality'] is not none else ""}}</td>
+<td>{{ result['province'] if result['province'] is not none else ""}}</td>
+<td>{{ result['region'] if result['region'] is not none else ""}}</td>
+<td>{{ result['deposition'] }}</td><td>{{ result['matrix'] }}</td>
+<td>{{ result['collected_scat'] }}</td><td>{{ result['scalp_category'] }}</td>
+<td>{% if result['genetic_sample'] %}{{ result['genetic_sample'] }}{% endif %}</td>
+<td>{{ result['coord_east'] }}, {{ result['coord_north'] }} {{ result['coord_zone'] }}</td>
+<td>{{ result['observer'] }}</td><td>{{ result['institution'] }}</td>
+<td><small>{{ result['notes'] if result['notes'] is not none else ""}}</small></td>
 </tr>
 {% endfor %}
 </tbody>

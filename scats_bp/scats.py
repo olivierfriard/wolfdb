@@ -414,33 +414,46 @@ def scats_list_limit(offset: int, limit: int | str):
         offset = 0
 
     with fn.conn_alchemy().connect() as con:
+        sql_search = text(
+            (
+                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE ("
+                "scat_id ILIKE :search "
+                "OR date::text ILIKE :search "
+                "OR sampling_type ILIKE :search "
+                "OR sample_type ILIKE :search "
+                "OR wa_code ILIKE :search "
+                "OR genotype_id2 ILIKE :search "
+                "OR location ILIKE :search "
+                "OR municipality ILIKE :search "
+                "OR province ILIKE :search "
+                "OR region ILIKE :search "
+                "OR observer ILIKE :search "
+                "OR institution ILIKE :search "
+                "OR notes ILIKE :search "
+                ") "
+                "AND (date BETWEEN :start_date AND :end_date) "
+            )
+        )
+
+        sql_all = text(
+            (
+                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "
+                f"LIMIT {limit} "
+                f"OFFSET {offset}"
+            )
+        )
+
         if request.method == "POST":
             offset = 0
             limit = "ALL"
-            search_term = request.form["search"].strip()
-            sql = text(
-                (
-                    "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE ("
-                    "scat_id ILIKE :search "
-                    "OR date::text ILIKE :search "
-                    "OR sampling_type ILIKE :search "
-                    "OR sample_type ILIKE :search "
-                    "OR wa_code ILIKE :search "
-                    "OR genotype_id2 ILIKE :search "
-                    "OR location ILIKE :search "
-                    "OR municipality ILIKE :search "
-                    "OR province ILIKE :search "
-                    "OR region ILIKE :search "
-                    "OR observer ILIKE :search "
-                    "OR institution ILIKE :search "
-                    "OR notes ILIKE :search "
-                    ") "
-                    "AND (date BETWEEN :start_date AND :end_date) "
-                )
-            )
+            if request.args.get("search") is None:
+                search_term = request.form["search"].strip()
+            else:
+                search_term = request.args.get("search")
+
             results = (
                 con.execute(
-                    sql,
+                    sql_search,
                     {
                         "search": f"%{search_term}%",
                         "start_date": session["start_date"],
@@ -452,22 +465,21 @@ def scats_list_limit(offset: int, limit: int | str):
             )
 
         elif request.method == "GET":
-            search_term: str = ""
-            sql = text(
-                (
-                    "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "
-                    f"LIMIT {limit} "
-                    f"OFFSET {offset}"
-                )
-            )
+            if request.args.get("search") is not None:
+                search_term: str = request.args.get("search").strip()
+            else:
+                search_term: str = ""
+
             results = (
                 con.execute(
-                    sql,
-                    {"start_date": session["start_date"], "end_date": session["end_date"]},
+                    sql_all if not search_term else sql_search,
+                    {"search": f"%{search_term}%", "start_date": session["start_date"], "end_date": session["end_date"]},
                 )
                 .mappings()
                 .all()
             )
+
+    session["url_scats_list"] = f"/scats_list_limit/{offset}/{limit}?search={search_term}"
 
     return render_template(
         "scats_list_limit.html",

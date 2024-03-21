@@ -374,9 +374,9 @@ def update_redis_with_wa_loci():
 @fn.check_login
 def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     """
-    list of genotypes: all, temp, definitive
+    Display genetic data for genotypes: all, temp, definitive
 
-    read loci values from redis
+    Read loci values from redis
     """
 
     # check type of genotype
@@ -411,6 +411,29 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
     con = fn.conn_alchemy().connect()
 
+    sql_all = text(
+        (
+            f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL)) "
+            f"LIMIT {limit} "
+            f"OFFSET {offset}"
+        )
+    )
+
+    sql_search = text(
+        (
+            "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
+            "genotype_id ILIKE :search "
+            "OR date::text ILIKE :search "
+            "OR pack ILIKE :search "
+            "OR record_status ILIKE :search "
+            "OR tmp_id ILIKE :search "
+            "OR notes ILIKE :search "
+            "OR working_notes ILIKE :search "
+            ") "
+            "AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL))"
+        )
+    )
+
     if request.method == "POST":
         offset = 0
         limit = "ALL"
@@ -420,23 +443,9 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         else:
             search_term = request.args.get("search")
 
-        sql = text(
-            (
-                "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
-                "genotype_id ILIKE :search "
-                "OR date::text ILIKE :search "
-                "OR pack ILIKE :search "
-                "OR record_status ILIKE :search "
-                "OR tmp_id ILIKE :search "
-                "OR notes ILIKE :search "
-                "OR working_notes ILIKE :search "
-                ") "
-                "AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL))"
-            )
-        )
         results = (
             con.execute(
-                sql,
+                sql_search,
                 {
                     "search": f"%{search_term}%",
                     "start_date": session["start_date"],
@@ -448,19 +457,16 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         )
 
     if request.method == "GET":
-        search_term = ""
-        sql = text(
-            (
-                f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL)) "
-                f"LIMIT {limit} "
-                f"OFFSET {offset}"
-            )
-        )
+        if request.args.get("search") is not None:
+            search_term: str = request.args.get("search").strip()
+        else:
+            search_term: str = ""
 
         results = (
             con.execute(
-                sql,
+                sql_all if not search_term else sql_search,
                 {
+                    "search": f"%{search_term}%",
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                 },
@@ -762,7 +768,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     """
     display genetic data for WA code
     filter: all / with notes / red_flag / no_values
-    wa_genetic_samples_list.html
     """
 
     if filter not in ("all", "with_notes", "red_flag", "no_values"):
@@ -796,7 +801,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         )
     )
 
-    sql_all = text(("SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date) OR (date IS NULL) "))
+    sql_all = text(("SELECT * FROM wa_genetic_samples_mat " "WHERE (date BETWEEN :start_date AND :end_date) OR (date IS NULL) "))
 
     if request.method == "POST":
         offset = 0
@@ -1834,7 +1839,7 @@ def genotype_note(genotype_id):
 
             con.execute(sql, data)
 
-            return redirect(f'{request.form["return_url"]}#{genotype_id}')
+            return redirect(session["url_genotypes_list"])
 
 
 @app.route(
@@ -2035,7 +2040,7 @@ def set_status_1st_recap(genotype_id):
 
         if result is None:
             flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-            return redirect(request.referrer)
+            return redirect(session["url_genotypes_list"])
 
         status_first_capture = "" if result["status_first_capture"] is None else result["status_first_capture"]
 
@@ -2051,7 +2056,7 @@ def set_status_1st_recap(genotype_id):
         sql = text("UPDATE genotypes SET status_first_capture = :status_first_capture WHERE genotype_id = :genotype_id")
         con.execute(sql, {"status_first_capture": request.form["status_first_capture"], "genotype_id": genotype_id})
 
-        return redirect(f'{request.form["return_url"]}#{genotype_id}')
+        return redirect(session["url_genotypes_list"])
 
 
 @app.route(
@@ -2077,7 +2082,7 @@ def set_dispersal(genotype_id):
 
         if result is None:
             flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-            return redirect(request.referrer)
+            return redirect(session["url_genotypes_list"])
 
         dispersal = "" if result["dispersal"] is None else result["dispersal"]
 

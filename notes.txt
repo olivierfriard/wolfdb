@@ -2025,20 +2025,6 @@ UPDATE wa_results set box_number = 10 WHERE wa_code = 'WA5350';
 2024-03-04
 --------------------
 
-CREATE OR REPLACE FUNCTION refresh() RETURNS TRIGGER AS $refresh$
-BEGIN
-CALL refresh_materialized_views();
-RETURN NULL;
-END;
-$refresh$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE TRIGGER scats
-AFTER INSERT OR UPDATE OR DELETE ON scats
-FOR EACH STATEMENT EXECUTE FUNCTION refresh();
-
-
-
 CREATE OR REPLACE PROCEDURE refresh_materialized_views()
 LANGUAGE SQL
 AS $$
@@ -2048,6 +2034,20 @@ refresh MATERIALIZED VIEW scats_list_mat;
 refresh MATERIALIZED VIEW genotypes_list_mat;
 refresh MATERIALIZED VIEW wa_genetic_samples_mat;
 $$;
+
+CREATE OR REPLACE FUNCTION refresh() RETURNS TRIGGER AS $refresh$
+BEGIN
+CALL refresh_materialized_views();
+RETURN NULL;
+END;
+$refresh$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE TRIGGER scats_trigger
+AFTER INSERT OR UPDATE OR DELETE ON scats
+FOR EACH STATEMENT EXECUTE FUNCTION refresh();
+
+
 
 
 -> CALL refresh_materialized_views();

@@ -4,28 +4,24 @@
 {% block content %}
 
 
-<h1>WolfDB</h1>
+<h1>Set status at first capture</h1>
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-<a href="{{ return_url }}" class="btn btn-primary">Go back</a>&nbsp;
-
-
-<br>
-<br>
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
+<br><br>
 
 <h3>Genotype ID: <b>{{ genotype_id }}</b></h3>
 
 
 <form method="POST" action="/set_status_1st_recap/{{ genotype_id }}">
 
-Current status_first_capture:<br>
+Current status at first capture: <b>{{ current_status_first_capture }}</b><br>
+<br>
+Set the new status at first capture:<br>
 <input type="text"  id="status_first_capture" name="status_first_capture" value="{{ current_status_first_capture }}"><br>
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>
 
-<input type="hidden" name="return_url" value="{{ return_url }}">
 </form>
 
 {% endblock %}
