@@ -1512,21 +1512,21 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
     data = {"wa_code": wa_code, "locus": locus, "allele": allele}
 
     if request.method == "GET":
-        row = (
+        notes = (
             con.execute(
-                text("SELECT val FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "),
+                text("SELECT * FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele " "ORDER BY timestamp ASC"),
                 data,
             )
             .mappings()
-            .fetchone()
+            .all()
         )
 
-        if row is None:
+        if notes is None:
             return "WA code / Locus / allele not found"
 
-        data["value"] = row["val"]
+        data["value"] = notes[-1]["val"]
 
-        notes = (
+        """notes = (
             con.execute(
                 text(
                     (
@@ -1543,7 +1543,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             .mappings()
             .all()
         )
-
+        """
         return render_template(
             "add_wa_locus_note.html",
             header_title="Allele's notes",
@@ -1552,6 +1552,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         )
 
     if request.method == "POST":
+        """
         sql = text(
             "INSERT INTO wa_loci_notes (wa_code, locus, allele, timestamp, note, user_id) "
             "VALUES ("
@@ -1561,7 +1562,22 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             ":user_id "
             ")"
         )
+        """
+        sql = text(
+            "INSERT INTO wa_locus "
+            "(wa_code, locus, allele, val, timestamp, notes, user_id) "
+            "VALUES ("
+            ":wa_code,"
+            ":locus,"
+            ":allele,"
+            ":new_value,"
+            "NOW(),"
+            ":new_note,"
+            ":user_id"
+            ")"
+        )
 
+        data["new_value"] = request.form["new_value"]
         data["new_note"] = request.form["new_note"]
         data["user_id"] = session.get("user_name", session["email"])
 
@@ -1592,7 +1608,9 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
 
     genotype_locus = (
         con.execute(
-            text("SELECT * FROM genotype_locus WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "),
+            text(
+                "SELECT * FROM genotype_locus WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele ORDER BY timestamp DESC LIMIT 1"
+            ),
             data,
         )
         .mappings()
@@ -1628,6 +1646,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
         )
 
         # notes history
+        """
         notes_history = (
             con.execute(
                 text(
@@ -1644,16 +1663,18 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
             .mappings()
             .all()
         )
+        """
 
         return render_template(
             "add_genotype_locus_note.html",
             header_title="Add note on genotype id",
             data=data,
             values_history=values_history,
-            notes_history=notes_history,
+            # notes_history=notes_history,
         )
 
     if request.method == "POST":
+        """
         sql = text(
             "UPDATE genotype_locus "
             "SET notes = :notes, "
@@ -1661,7 +1682,23 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
             "WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "
             "AND extract(epoch from timestamp)::integer = :timestamp"
         )
+        """
 
+        sql = text(
+            "INSERT INTO genotype_locus "
+            "(genotype_id, locus, allele, val, timestamp, notes, user_id) "
+            "VALUES ("
+            ":genotype_id,"
+            ":locus,"
+            ":allele,"
+            ":new_value,"
+            "NOW(),"
+            ":notes,"
+            ":user_id"
+            ")"
+        )
+
+        data["new_value"] = request.form["new_value"]
         data["notes"] = request.form["notes"]
         data["user_id"] = session.get("user_name", session["email"])
 

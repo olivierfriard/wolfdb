@@ -81,7 +81,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
             loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
         for locus in loci_list:
-            for allele in ("a", "b")[: loci_list[locus]]:
+            for allele in ("a", "b")[: loci_list[locus]]:  # select number of alleles
                 # sql = text(
                 #    (
                 #        "SELECT val, note, wa_loci_notes.user_id FROM wa_locus "
@@ -93,32 +93,31 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                 #    )
                 # )
 
-                sql = text(
-                    (
-                        "SELECT val, user_id, "
-                        "extract(epoch from timestamp)::integer AS epoch, "
-                        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                        "(SELECT note FROM wa_loci_notes WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
-                        # "FROM wa_loci_notes "
-                        # "WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
-                        "FROM wa_locus wl WHERE wa_code = :wa_code and locus = :locus and allele = :allele "
-                        "ORDER BY timestamp DESC "
-                        "LIMIT 1"
-                    )
-                )
+                # sql = text(
+                #    (
+                #        "SELECT val, user_id, "
+                #        "extract(epoch from timestamp)::integer AS epoch, "
+                #        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
+                #        "(SELECT note FROM wa_loci_notes WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
+                #        # "FROM wa_loci_notes "
+                #        # "WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
+                #        "FROM wa_locus wl WHERE wa_code = :wa_code and locus = :locus and allele = :allele "
+                #        "ORDER BY timestamp DESC "
+                #        "LIMIT 1"
+                #    )
+                # )
 
                 row = (
                     con.execute(
-                        sql,
-                        #                        text(
-                        #                            (
-                        #                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
-                        #                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
-                        #                                "FROM wa_locus "
-                        #                                "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
-                        #                                "ORDER BY timestamp DESC LIMIT 1"
-                        #                            )
-                        #                        ),
+                        text(
+                            (
+                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
+                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
+                                "FROM wa_locus "
+                                "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                                "ORDER BY timestamp DESC LIMIT 1"
+                            )
+                        ),
                         {"wa_code": wa_code, "locus": locus, "allele": allele},
                     )
                     .mappings()

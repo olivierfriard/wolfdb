@@ -15,7 +15,7 @@
 <h3>WA code: <b>{{ data["wa_code"] }}</b><br>
 Locus: <b>{{ data["locus"] }}</b><br>
 Allele: <b>{{ data["allele"] }}</b><br>
-value: <b>{{ data["value"] }}</b></h3>
+Current value: <b>{{ data["value"] }}</b></h3>
 
 
 <p style="margin-bottom:2em;"><h4>Allele's notes</h4></p>
@@ -23,13 +23,14 @@ value: <b>{{ data["value"] }}</b></h3>
 {% if notes %}
 <table class="table table-striped">
 <th>Timestamp</th>
-<!--<th>Value</th>-->
+<th>Value</th>
 <th>Note</th>
 <th>User</th>
 </thead>
 {% for note in notes %}
 <tr>
 <td>{{ note['timestamp'] }}</td>
+<td>{{ note['val'] }}</td>
 <td>{{ note['note'] }}</td>
 <td>{{ note['user_id'] }}</td>
 </tr>
@@ -41,12 +42,35 @@ No notes were found
 
 <br><br>
 
-<h4>Insert a new note</h4>
+<h4>Insert a new value</h4>
 
 <form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
 
-Note<br>
-<textarea  id="new_note" name="new_note" value="" rows="4" cols="50"></textarea><br>
+
+    <div class="row g-3 align-items-center">
+        <div class="col-auto">
+          <label for="new_value" class="col-form-label">New allele value</label>
+        </div>
+        <div class="col-auto">
+          <input type="text" id="new_value" name="new_value" class="form-control" aria-describedby="help" value="{{ data['value'] }}">
+        </div>
+        <div class="col-auto">
+          <span id="help" class="form-text">
+            Must be numeric or -
+          </span>
+        </div>
+      </div>
+
+
+      <div class="mb-3">
+        <label for="notes" class="form-label">Note</label>
+        <textarea class="form-control" id="new_note"  name="new_note" rows="3"></textarea>
+        <div id="passwordHelpBlock" class="form-text">
+            Optional
+          </div>
+        
+    </div>
+
 
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>
