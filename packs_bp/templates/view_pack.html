@@ -4,15 +4,16 @@
 
 
 
-<h2>pack: {{ pack_name }}</h2>
+<h2>Composition of <b>{{ pack_name }}</b> pack</h2>
 
 <br><br>
 <table class="table table-striped">
 
 <tr>
 <th>Genotype ID</th>
-<th>Sampling date</th>
+<th>Date first capture</th>
 <th>Sex</th>
+<th>Dead recovery</th>
 <th>Status</th>
 <th>Dispersal</th>
 </tr>
@@ -21,8 +22,9 @@
 
 <tr>
 <td><a href="/view_genotype/{{ row['genotype_id'] }}">{{ row['genotype_id'] }}</a></td>
-<td>{{ row['date'] if row['date'] is not none else ""}}</td>
+<td>{{ row['date_first_capture'] if row['date_first_capture'] is not none else ""}}</td>
 <td>{{ row['sex'] }}</td>
+<td>{{ row['dead_recovery'] if row['dead_recovery'] is not none else "" }}</td>
 <td>{{ row['position'] if row['position'] is not none else ""}}</td>
 <td>{{ row['dispersal'] if row['dispersal'] is not none else ""}}</td>
 </tr>

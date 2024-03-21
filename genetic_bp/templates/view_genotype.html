@@ -9,6 +9,14 @@
     {% endif %}
 {% endwith %}
 
+{% if 'url_wa_list' in session %}
+<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
+{%endif%}
+{% if 'url_genotypes_list' in session %}
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
+{%endif%}
+
+
 <h2 style="padding-top:1em;">Genotype ID: {{ result["genotype_id"] }}</h2>
 
 <br>
@@ -62,7 +70,7 @@
 <td></td>
 {% for wa_code in wa_codes %}
 {% for allele in ('a', 'b')%}
-<td style="background:{% if loci_values[wa_code["wa_code"]][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
+<td style="background:{% if loci_values[wa_code['wa_code']][locus][allele]['value'] not in (0,'-') and loci_values[wa_code['wa_code']][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
 {% endfor %}
 <td></td>
 {%  endfor %}

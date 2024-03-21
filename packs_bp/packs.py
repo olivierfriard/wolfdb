@@ -23,6 +23,9 @@ app.debug = params["debug"]
 @app.route("/packs")
 @fn.check_login
 def packs():
+    """
+    Display the list of packs
+    """
     with fn.conn_alchemy().connect() as con:
         packs_list = (
             con.execute(text("SELECT pack FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack"))
@@ -41,15 +44,13 @@ def packs():
 @app.route("/view_pack/<name>")
 @fn.check_login
 def view_pack(name):
+    """
+    Displat the pack composition
+    """
     with fn.conn_alchemy().connect() as con:
         results = (
             con.execute(
-                text(
-                    "SELECT *, "
-                    "(SELECT date FROM wa_scat_dw_mat where wa_code = "
-                    "(SELECT wa_code from wa_results where wa_results.genotype_id=genotypes.genotype_id LIMIT 1)) AS date "
-                    "FROM genotypes WHERE pack = :pack"
-                ),
+                text("SELECT * FROM genotypes_list_mat WHERE pack = :pack ORDER BY date_first_capture ASC"),
                 {"pack": name},
             )
             .mappings()

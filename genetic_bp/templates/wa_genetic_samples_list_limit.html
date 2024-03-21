@@ -117,7 +117,7 @@ class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
 
 <td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
 
-<td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+<td>{% if result['pack'] %}<a href="/view_pack/{{ result['pack'] }}">{{ result['pack'] }}</a>{% endif %}</td>
 
 <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 

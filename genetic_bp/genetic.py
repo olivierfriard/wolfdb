@@ -119,7 +119,11 @@ def view_genotype(genotype_id: str):
 
     if genotype is None:
         flash(fn.alert_danger(f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"))
-        return redirect("/genotypes_list")
+        if "url_genotypes_list" in session:
+            return redirect(session["url_genotypes_list"])
+        if "url_wa_list" in session:
+            return redirect(session["url_wa_list"])
+        return "Error on genotype"
 
     genotype_loci = json.loads(rdis.get(genotype_id))
 
@@ -177,6 +181,8 @@ def view_genotype(genotype_id: str):
         loci_val = get_wa_loci_values_redis(row["wa_code"])
         if loci_val is not None:
             loci_values[row["wa_code"]] = loci_val
+        else:
+            loci_values[row["wa_code"]] = fn.get_wa_loci_values(row["wa_code"], loci_list)
 
     if count_wa_code:
         center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
@@ -411,28 +417,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
     con = fn.conn_alchemy().connect()
 
-    sql_all = text(
-        (
-            f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL)) "
-            f"LIMIT {limit} "
-            f"OFFSET {offset}"
-        )
-    )
-
-    sql_search = text(
-        (
-            "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
-            "genotype_id ILIKE :search "
-            "OR date::text ILIKE :search "
-            "OR pack ILIKE :search "
-            "OR record_status ILIKE :search "
-            "OR tmp_id ILIKE :search "
-            "OR notes ILIKE :search "
-            "OR working_notes ILIKE :search "
-            ") "
-            "AND ((date BETWEEN :start_date AND :end_date) OR (date IS NULL))"
-        )
-    )
+    sql_all = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} LIMIT {limit} OFFSET {offset}"
 
     if request.method == "POST":
         offset = 0
@@ -441,20 +426,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         if request.args.get("search") is None:
             search_term = request.form["search"].strip()
         else:
-            search_term = request.args.get("search")
-
-        results = (
-            con.execute(
-                sql_search,
-                {
-                    "search": f"%{search_term}%",
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
-            )
-            .mappings()
-            .all()
-        )
+            search_term = request.args.get("search").strip()
 
     if request.method == "GET":
         if request.args.get("search") is not None:
@@ -462,18 +434,48 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         else:
             search_term: str = ""
 
-        results = (
-            con.execute(
-                sql_all if not search_term else sql_search,
-                {
-                    "search": f"%{search_term}%",
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
+    if ":" in search_term:
+        field, value = [x.strip().lower() for x in search_term.split(":")]
+        if field == "genotype":
+            field = "genotype id"
+        if field not in ("genotype id", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
+            flash(
+                fn.alert_danger(
+                    "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+                )
             )
-            .mappings()
-            .all()
+            return redirect(session["url_genotypes_list"])
+
+        field = field.replace(" ", "_")
+        sql_search = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat " + (f"WHERE {field} ILIKE :search")
+    else:
+        value = search_term
+
+        sql_search = (
+            "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
+            "genotype_id ILIKE :search "
+            "OR notes ILIKE :search "
+            "OR tmp_id ILIKE :search "
+            "OR date::text ILIKE :search "
+            "OR pack ILIKE :search "
+            "OR sex ILIKE :search "
+            "OR status ILIKE :search "
+            "OR working_notes ILIKE :search "
+            ") "
         )
+
+    results = (
+        con.execute(
+            text(sql_all if not search_term else sql_search),
+            {
+                "search": f"%{value}%",
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
+        )
+        .mappings()
+        .all()
+    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -497,6 +499,8 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
     else:
         session["url_genotypes_list"] = f"/genotypes_list/{offset}/{limit}/{type}?search={search_term}"
+        if "url_wa_list" in session:
+            del session["url_wa_list"]
 
         return render_template(
             "genotypes_list.html",
@@ -785,9 +789,43 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
     con = fn.conn_alchemy().connect()
 
-    sql_search = text(
-        (
-            "SELECT * FROM wa_genetic_samples_mat WHERE ("
+    sql_all = "SELECT * FROM wa_genetic_samples_mat "
+
+    if request.method == "POST":
+        offset = 0
+        limit = "ALL"
+        if request.args.get("search") is not None:
+            search_term = request.args.get("search").strip()
+        else:
+            search_term = request.form["search"].strip()
+
+    elif request.method == "GET":
+        if request.args.get("search") is not None:
+            search_term: str = request.args.get("search").strip()
+        else:
+            search_term: str = ""
+
+    if ":" in search_term:
+        field, value = [x.strip().lower() for x in search_term.split(":")]
+        if field == "wa":
+            field = "wa code"
+        if field not in ("wa code", "date", "sample id", "municipality", "genotype id", "sex", "tmp id", "notes", "pack"):
+            flash(
+                fn.alert_danger(
+                    "Search term not found. Must be 'wa code', 'date', 'sample id', 'municipality', 'genotype id', 'sex', 'tmp id', 'notes' or 'pack'"
+                )
+            )
+            return redirect(session["url_wa_list"])
+
+        field = field.replace(" ", "_")
+        if field == "sex":
+            field = "sex_id"
+
+        sql_search = sql_all + (f"WHERE {field} ILIKE :search")
+    else:
+        value = search_term
+        sql_search = sql_all + (
+            "WHERE ("
             "wa_code ILIKE :search "
             "OR sample_id ILIKE :search "
             "OR date::text ILIKE :search "
@@ -797,52 +835,20 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             "OR notes ILIKE :search "
             "OR pack ILIKE :search "
             ") "
-            "AND (date BETWEEN :start_date AND :end_date OR date IS NULL)"
         )
+
+    wa_scats = (
+        con.execute(
+            text(sql_all if not search_term else sql_search),
+            {
+                "search": f"%{value}%",
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
+        )
+        .mappings()
+        .all()
     )
-
-    sql_all = text(("SELECT * FROM wa_genetic_samples_mat " "WHERE (date BETWEEN :start_date AND :end_date) OR (date IS NULL) "))
-
-    if request.method == "POST":
-        offset = 0
-        limit = "ALL"
-
-        if request.args.get("search") is not None:
-            search_term = request.args.get("search")
-        else:
-            search_term = request.form["search"].strip()
-
-        wa_scats = (
-            con.execute(
-                sql_search,
-                {
-                    "search": f"%{search_term}%",
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
-            )
-            .mappings()
-            .all()
-        )
-
-    elif request.method == "GET":
-        if request.args.get("search") is not None:
-            search_term: str = request.args.get("search")
-        else:
-            search_term: str = ""
-
-        wa_scats = (
-            con.execute(
-                sql_all if not search_term else sql_search,
-                {
-                    "search": f"%{search_term}%",
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
-            )
-            .mappings()
-            .all()
-        )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -970,6 +976,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             title = "No WA code found"
 
         session["url_wa_list"] = f"/wa_genetic_samples/{offset}/{limit}/{filter}?search={search_term}"
+        if "url_scats_list" in session:
+            del session["url_scats_list"]
 
         return render_template(
             "wa_genetic_samples_list_limit.html",

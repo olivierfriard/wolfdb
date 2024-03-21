@@ -145,7 +145,7 @@ set ...
 
 <td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
 
-<td>{% if result['pack'] %}{{ result['pack'] }}{% endif %}</td>
+<td>{% if result['pack'] %}<a href="/view_pack/{{ result['pack'] }}">{{ result['pack'] }}</a>{% endif %}</td>
 
 <td>{% if result['sex'] %}{{ result['sex'] }}{% endif %}</td>
 

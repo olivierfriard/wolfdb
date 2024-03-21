@@ -480,6 +480,8 @@ def scats_list_limit(offset: int, limit: int | str):
             )
 
     session["url_scats_list"] = f"/scats_list_limit/{offset}/{limit}?search={search_term}"
+    if "url_wa_list" in session:
+        del session["url_wa_list"]
 
     return render_template(
         "scats_list_limit.html",
