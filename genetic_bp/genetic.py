@@ -50,8 +50,10 @@ def del_genotype(genotype_id):
     """
     with fn.conn_alchemy().connect() as con:
         con.execute(text("UPDATE genotypes SET record_status = 'deleted' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
-        after_genotype_modif()
         con.execute(text("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+
+    # after_genotype_modif()    already done in after_wa_results_modif
+    after_wa_results_modif()
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} deleted</b>"))
 
@@ -66,7 +68,7 @@ def undel_genotype(genotype_id):
     """
     with fn.conn_alchemy().connect() as con:
         con.execute(text("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
-        # con.execute(text("UPDATE wa_results SET genotype_id = NULL WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+        after_genotype_modif()
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} undeleted</b>"))
 
@@ -81,6 +83,7 @@ def def_genotype(genotype_id):
     """
     with fn.conn_alchemy().connect() as con:
         con.execute(text("UPDATE genotypes SET record_status = 'OK' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+        after_genotype_modif()
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} set as definitive</b>"))
 
@@ -95,6 +98,7 @@ def temp_genotype(genotype_id):
     """
     with fn.conn_alchemy().connect() as con:
         con.execute(text("UPDATE genotypes SET record_status = 'temp' WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+        after_genotype_modif()
 
     flash(fn.alert_success(f"<b>Genotype {genotype_id} set as temporary</b>"))
 
@@ -1297,6 +1301,7 @@ def add_genetic_data(wa_code: str):
         con.execute(
             text("UPDATE wa_results SET sex_id = :sex_id WHERE wa_code = :wa_code"), {"sex_id": request.form["sex"], "wa_code": wa_code}
         )
+        after_wa_results_modif()
         # test sex for all WA codes
         rows = (
             con.execute(
@@ -1313,6 +1318,7 @@ def add_genetic_data(wa_code: str):
                 text("UPDATE genotypes SET sex = :sex WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code)"),
                 {"sex": rows[0]["sex_id"], "wa_code": wa_code},
             )
+            after_genotype_modif()
 
         # 'OK|' is inserted before the user_id field to demonstrate that allele value has changed (or not) -> green
         current_epoch = int(time.time())
@@ -1863,6 +1869,18 @@ def after_genotype_modif() -> None:
         con.execute(text("REFRESH MATERIALIZED VIEW wa_genetic_samples_mat"))
 
 
+def after_wa_results_modif() -> None:
+    """
+    refresh materialized views after modification of wa_results table
+    """
+
+    with fn.conn_alchemy().connect() as con:
+        con.execute(text("REFRESH MATERIALIZED VIEW wa_scat_dw_mat"))
+        con.execute(text("REFRESH MATERIALIZED VIEW scats_list_mat"))
+        con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
+        con.execute(text("REFRESH MATERIALIZED VIEW wa_genetic_samples_mat"))
+
+
 @app.route(
     "/set_wa_genotype/<wa_code>",
     methods=(
@@ -1878,9 +1896,12 @@ def set_wa_genotype(wa_code):
     con = fn.conn_alchemy().connect()
 
     if request.method == "GET":
-        result = (
-            con.execute(text("SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code "), {"wa_code": wa_code}).mappings().fetchone()
-        )
+        with fn.conn_alchemy().connect() as con:
+            result = (
+                con.execute(text("SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code "), {"wa_code": wa_code})
+                .mappings()
+                .fetchone()
+            )
         if result is None:
             flash(fn.alert_danger(f"WA code not found: {wa_code}"))
             return redirect(request.referrer)
@@ -1896,8 +1917,11 @@ def set_wa_genotype(wa_code):
         )
 
     if request.method == "POST":
-        sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
-        con.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
+        with fn.conn_alchemy().connect() as con:
+            sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
+            con.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
+
+        after_wa_results_modif()
 
         return redirect(session["url_wa_list"])
 
@@ -2033,6 +2057,7 @@ def set_sex(genotype_id):
         # update WA results
         sql = text("UPDATE wa_results SET sex_id = :sex WHERE genotype_id = :genotype_id")
         con.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
+        after_wa_results_modif()
 
         return redirect(session["url_genotypes_list"])
 
