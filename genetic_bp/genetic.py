@@ -1502,7 +1502,7 @@ def view_genetic_data_history(wa_code: str, locus: str):
     ),
 )
 @fn.check_login
-def locus_note(wa_code: str, locus: str, allele: str):
+def wa_locus_note(wa_code: str, locus: str, allele: str):
     """
     let user add a note on wa_code locus_name allele timestamp
     """
@@ -1573,143 +1573,26 @@ def locus_note(wa_code: str, locus: str, allele: str):
         return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
 
 
-'''
 @app.route(
-    "/locus_note/<wa_code>/<locus>/<allele>/<int:timestamp>/<search_term>",
+    "/genotype_locus_note/<genotype_id>/<locus>/<allele>",
     methods=(
         "GET",
         "POST",
     ),
 )
 @fn.check_login
-def locus_note(wa_code: str, locus: str, allele: str, timestamp: int, search_term: str):
-    """
-    let user add a note on wa_code locus_name allele timestamp
-    """
-
-    con = fn.conn_alchemy().connect()
-
-    data = {"wa_code": wa_code, "locus": locus, "allele": allele, "timestamp": timestamp}
-
-    if request.method == "GET":
-        wa_locus = (
-            con.execute(
-                text(
-                    "SELECT * FROM wa_locus "
-                    "WHERE wa_code = :wa_code "
-                    "AND locus = :locus "
-                    "AND allele = :allele "
-                    "AND extract(epoch from timestamp)::integer = :timestamp "
-                ),
-                data,
-            )
-            .mappings()
-            .fetchone()
-        )
-
-        if wa_locus is None:
-            return "WA code / Locus / allele / timestamp not found"
-
-        data["value"] = wa_locus["val"]
-        data["allele"] = allele
-        data["notes"] = "" if wa_locus["notes"] is None else wa_locus["notes"]
-        data["user_id"] = "" if wa_locus["user_id"] is None else wa_locus["user_id"]
-
-        wa_locus_history = (
-            con.execute(
-                text(
-                    "SELECT val, "
-                    "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
-                    "CASE WHEN user_id IS NULL THEN '' ELSE user_id END,  "
-                    "date_trunc('second', timestamp) AS timestamp FROM wa_locus "
-                    "WHERE wa_code = :wa_code "
-                    "AND locus = :locus "
-                    "AND allele = :allele "
-                    "ORDER BY timestamp ASC "
-                ),
-                data,
-            )
-            .mappings()
-            .all()
-        )
-
-        return render_template(
-            "add_wa_locus_note.html",
-            header_title="Add note",
-            data=data,
-            history=wa_locus_history,
-            return_url=request.referrer,
-            search_term=search_term,
-        )
-
-    if request.method == "POST":
-        sql = text(
-            "UPDATE wa_locus SET notes = :notes, "
-            "user_id = :user_id "
-            "WHERE wa_code = :wa_code "
-            "AND locus = :locus AND allele = :allele "
-            "AND extract(epoch from timestamp)::integer = :timestamp"
-        )
-
-        data["notes"] = request.form["notes"]
-        data["user_id"] = session.get("user_name", session["email"])
-
-        con.execute(sql, data)
-
-        rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
-
-        if len(search_term.split("_")) == 3:
-            offset, limit, filter = search_term.split("_")
-            return redirect(
-                url_for(
-                    "genetic.wa_genetic_samples",
-                    offset=offset,
-                    limit=limit,
-                    filter=filter,
-                ),
-            )
-
-        else:
-            return redirect(
-                url_for(
-                    "genetic.wa_genetic_samples",
-                    offset=0,
-                    limit="ALL",
-                    filter="all",
-                    search=search_term,
-                ),
-                code=307,
-            )
-
-        # return redirect(f'{request.form["return_url"]}#{wa_code}')
-
-'''
-
-
-@app.route(
-    "/genotype_locus_note/<genotype_id>/<locus>/<allele>/<int:timestamp>/<search_term>",
-    methods=(
-        "GET",
-        "POST",
-    ),
-)
-@fn.check_login
-def genotype_locus_note(genotype_id: str, locus: str, allele: str, timestamp: int, search_term: str):
+def genotype_locus_note(genotype_id: str, locus: str, allele: str):
     """
     let user add a note on genotype_id locus allele timestamp
     """
 
     con = fn.conn_alchemy().connect()
 
-    data = {"genotype_id": genotype_id, "locus": locus, "allele": allele, "timestamp": int(timestamp)}
+    data = {"genotype_id": genotype_id, "locus": locus, "allele": allele}
 
     wa_locus = (
         con.execute(
-            text(
-                "SELECT * FROM genotype_locus "
-                "WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "
-                "AND extract(epoch from timestamp)::integer = :timestamp "
-            ),
+            text("SELECT * FROM genotype_locus WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "),
             data,
         )
         .mappings()
@@ -1749,8 +1632,6 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str, timestamp: in
             header_title="Add note on genotype id",
             data=data,
             history=locus_history,
-            return_url=request.referrer,
-            search_term=search_term,
         )
 
     if request.method == "POST":
@@ -1793,30 +1674,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str, timestamp: in
             # [0] for accessing values
             rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
 
-        if len(search_term.split("_")) == 3:
-            offset, limit, type = search_term.split("_")
-            return redirect(
-                url_for(
-                    "genetic.genotypes_list",
-                    offset=offset,
-                    limit=limit,
-                    type=type,
-                ),
-            )
-
-        else:
-            return redirect(
-                url_for(
-                    "genetic.genotypes_list",
-                    offset=0,
-                    limit="ALL",
-                    type="all",
-                    search=search_term,
-                ),
-                code=307,
-            )
-
-        # return redirect(f'{request.form["return_url"]}', json=json.dumps({"search": search_term}), code=307)
+        return redirect(f"/genotype_locus_note/{genotype_id}/{locus}/{allele}")
 
 
 @app.route(

@@ -170,7 +170,7 @@ set ...
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}{% if 'OK|' in loci_values[result['genotype_id']][locus][allele]['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
 {{ loci_values[result['genotype_id']][locus][allele]['value'] }}
 <br>
-<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/{{ allele }}/{{ loci_values[result['genotype_id']][locus][allele]['epoch'] }}/{% if search_term %}{{ search_term }}{% else %}{{ offset }}_{{ limit }}_{{ type }}{%endif%}">note</a></small>
+<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/{{ allele }}">note</a></small>
 </td>
 {% endfor %}
 

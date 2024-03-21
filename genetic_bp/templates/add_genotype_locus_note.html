@@ -3,9 +3,9 @@
 
 {% block content %}
 
-<h2>{{ header_title }}</h2>
+<!--<h2>{{ header_title }}</h2>-->
 
-<button class="btn btn-primary" onclick="history.back()">Go Back</button>&nbsp;
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
 
 <br>
 <br>
@@ -13,26 +13,13 @@
 <h3>Genotype ID: <b>{{ data["genotype_id"] }}</b><br>
 Locus: <b>{{ data["locus"] }}</b><br>
 Allele: <b>{{ data["allele"] }}</b><br>
-value: <b>{{ data["value"] }}</b></h3>
+Current value: <b>{{ data["value"] }}</b></h3>
+Working notes:<br>
+{{ data["working_notes"] }}
 
-
-<form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}/{{ data['timestamp'] }}/{{ search_term }}">
-
-Note:<br>
-<textarea  id="notes" name="notes" value="" rows="4" cols="50">{{ data["notes"] }}</textarea><br>
-
-{% if data["user_id"] %}Note inserted by <b>{{ data["user_id"] }}</b><br>{%endif%}
-
-<br>
-<button type="submit" class="btn btn-primary" >Submit</button>
-
-<input type="hidden" name="return_url" value="{{ return_url }}">
-</form>
-
+<hr>
 
 <p style="margin-bottom:2em;"><h3>Allele history</h3></p>
-
-
 
 <table class="table table-striped">
 <thead>
@@ -52,6 +39,20 @@ Note:<br>
 
 {% endfor %}
 </table>
+<hr>
+<h4>Insert a new note</h4>
+
+<form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}/{{ data['timestamp'] }}/{{ search_term }}">
+
+Note<br>
+<textarea  id="notes" name="notes" value="" rows="4" cols="50"></textarea><br>
+
+<br>
+<button type="submit" class="btn btn-primary" >Submit</button>
+
+</form>
+
+
 
 
 
