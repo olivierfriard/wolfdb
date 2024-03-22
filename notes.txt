@@ -1,3 +1,17 @@
+2024-03-22
+-------------------
+
+alter table users add column allele_modifier boolean;
+update users set allele_modifier = false;
+update users set allele_modifier = true where email = 'kristypilgrim6@gmail.com';
+
+
+
+alter table wa_locus add column definitive boolean;
+update wa_locus set definitive = TRUE where user_id ILIKE 'OK|%';
+update wa_locus set definitive = TRUE where user_id IS NULL;
+update wa_locus set definitive = FALSE where definitive IS NULL;
+
 2024-03-17
 -------------------
 

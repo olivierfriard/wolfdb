@@ -1512,38 +1512,35 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
     data = {"wa_code": wa_code, "locus": locus, "allele": allele}
 
     if request.method == "GET":
+        allele_modifier = (
+            con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
+            .mappings()
+            .fetchone()["allele_modifier"]
+        )
+        data["allele_modifier"] = allele_modifier
+
         notes = (
             con.execute(
-                text("SELECT * FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele " "ORDER BY timestamp ASC"),
-                data,
-            )
-            .mappings()
-            .all()
-        )
-
-        if notes is None:
-            return "WA code / Locus / allele not found"
-
-        data["value"] = notes[-1]["val"]
-
-        """notes = (
-            con.execute(
                 text(
-                    (
-                        "SELECT "
-                        "CASE WHEN note IS NULL THEN '' ELSE note END, "
-                        "CASE WHEN user_id IS NULL THEN '' ELSE user_id END, "
-                        "date_trunc('second', timestamp) AS timestamp "
-                        "FROM wa_loci_notes "
-                        "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele ORDER BY timestamp"
-                    )
+                    "SELECT wa_code, locus, allele, notes, user_id, "
+                    "val, definitive, "
+                    "date_trunc('second', timestamp) AS timestamp "
+                    "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                    "ORDER BY timestamp ASC"
                 ),
                 data,
             )
             .mappings()
             .all()
         )
-        """
+
+        if not notes:
+            flash(fn.alert_danger("Error with allele value"))
+            return redirect(session["url_wa_list"])
+
+        data["value"] = notes[-1]["val"]
+        data["definitive"] = notes[-1]["definitive"]
+
         return render_template(
             "add_wa_locus_note.html",
             header_title="Allele's notes",
@@ -1552,20 +1549,32 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         )
 
     if request.method == "POST":
-        """
-        sql = text(
-            "INSERT INTO wa_loci_notes (wa_code, locus, allele, timestamp, note, user_id) "
-            "VALUES ("
-            ":wa_code, :locus, :allele, "
-            "NOW(), "
-            ":new_note, "
-            ":user_id "
-            ")"
-        )
-        """
+        # check il allele value is numeric or -
+
+        if request.form["new_value"] != "":
+            try:
+                new_value = int(request.form["new_value"])
+                if new_value < 0:
+                    flash(
+                        fn.alert_danger(
+                            f"The allele value <b>{request.form['new_value']}</b> is not allowed. Must be <b>numeric (positive)</b> or <b>empty</b>."
+                        )
+                    )
+                    return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+
+            except ValueError:
+                flash(
+                    fn.alert_danger(
+                        f"The allele value <b>{request.form['new_value']}</b> is not allowed. Must be <b>numeric</b> or <b>empty</b>."
+                    )
+                )
+                return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+        else:
+            new_value = None
+
         sql = text(
             "INSERT INTO wa_locus "
-            "(wa_code, locus, allele, val, timestamp, notes, user_id) "
+            "(wa_code, locus, allele, val, timestamp, notes, user_id, definitive) "
             "VALUES ("
             ":wa_code,"
             ":locus,"
@@ -1573,13 +1582,15 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             ":new_value,"
             "NOW(),"
             ":new_note,"
-            ":user_id"
-            ")"
+            ":user_id,"
+            ":definitive"
+            ")",
         )
 
-        data["new_value"] = request.form["new_value"]
+        data["new_value"] = new_value
         data["new_note"] = request.form["new_note"]
         data["user_id"] = session.get("user_name", session["email"])
+        data["definitive"] = "definitive" in request.form
 
         con.execute(sql, data)
 
@@ -1818,7 +1829,7 @@ def set_wa_genotype(wa_code):
             )
         if result is None:
             flash(fn.alert_danger(f"WA code not found: {wa_code}"))
-            return redirect(request.referrer)
+            return redirect(session["url_wa_list"])
 
         genotype_id = "" if result["genotype_id"] is None else result["genotype_id"]
 

@@ -5,6 +5,14 @@
 
 <!--<h2>{{ header_title }}</h2>-->
 
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
+
+
 <a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
 
 <br>
@@ -35,6 +43,7 @@ Working notes:<br>
 <td>{{ row['notes'] }}</td>
 <td>{{ row['user_id'] }}</td>
 </tr>
+
 
 {% endfor %}
 </table>

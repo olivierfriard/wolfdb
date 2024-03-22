@@ -5,6 +5,12 @@
 
 <!--<h2>{{ header_title }}</h2>-->
 
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
+
 
 <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
 
@@ -12,10 +18,13 @@
 <br>
 <br>
 
-<h3>WA code: <b>{{ data["wa_code"] }}</b><br>
+<h3>
+WA code: <b>{{ data["wa_code"] }}</b><br>
 Locus: <b>{{ data["locus"] }}</b><br>
 Allele: <b>{{ data["allele"] }}</b><br>
-Current value: <b>{{ data["value"] }}</b></h3>
+Current value: <b>{{ data["value"] }}</b><br>
+{% if data['definitive'] %}DEFINITIVE{% else %}<span style="background:#FF6461">TO BE CHECKED</span>{% endif %}
+</h3>
 
 
 <p style="margin-bottom:2em;"><h4>Allele's notes</h4></p>
@@ -30,8 +39,8 @@ Current value: <b>{{ data["value"] }}</b></h3>
 {% for note in notes %}
 <tr>
 <td>{{ note['timestamp'] }}</td>
-<td>{{ note['val'] }}</td>
-<td>{{ note['note'] }}</td>
+<td>{{ note['val'] if note['val'] is not none else '' }}</td>
+<td>{{ note['notes'] }}</td>
 <td>{{ note['user_id'] }}</td>
 </tr>
 {% endfor %}
@@ -42,32 +51,37 @@ No notes were found
 
 <br><br>
 
-<h4>Insert a new value</h4>
+<h4>Insert a new value and/or a note</h4>
 
 <form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
 
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" id="definitive" name="definitive" {% if data['definitive'] %}checked{% endif %}>
+    <label class="form-check-label" for="definitive">Definitive value</label>
+  </div>
+<br>
+{% if not data['allele_modifier'] %}<fieldset disabled>{%endif%}
+<div class="row g-3 align-items-center">
+    <div class="col-auto">
+      <label for="new_value" class="col-form-label">New allele value</label>
+    </div>
+    <div class="col-auto">
+      <input type="text" id="new_value" name="new_value" class="form-control" aria-describedby="help" value="{{ data['value'] if data['value'] is not none else '' }}">
+    </div>
+    <div class="col-auto">
+      <span id="help" class="form-text">
+        Must be <b>numeric</b> or <b>empty</b>.
+      </span>
+    </div>
+</div>
+{% if not data['allele_modifier'] %}</fieldset>fieldset>{%endif%}
 
-    <div class="row g-3 align-items-center">
-        <div class="col-auto">
-          <label for="new_value" class="col-form-label">New allele value</label>
-        </div>
-        <div class="col-auto">
-          <input type="text" id="new_value" name="new_value" class="form-control" aria-describedby="help" value="{{ data['value'] }}">
-        </div>
-        <div class="col-auto">
-          <span id="help" class="form-text">
-            Must be numeric or -
-          </span>
-        </div>
+  <div class="mb-3">
+    <label for="notes" class="form-label">Note</label>
+    <textarea class="form-control" id="new_note"  name="new_note" rows="3"></textarea>
+    <div id="passwordHelpBlock" class="form-text">
+        Optional
       </div>
-
-
-      <div class="mb-3">
-        <label for="notes" class="form-label">Note</label>
-        <textarea class="form-control" id="new_note"  name="new_note" rows="3"></textarea>
-        <div id="passwordHelpBlock" class="form-text">
-            Optional
-          </div>
         
     </div>
 
