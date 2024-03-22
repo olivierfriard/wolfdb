@@ -40,7 +40,9 @@ app.secret_key = secrets.token_hex(16)
 
 SESSION_TYPE = "filesystem"
 app.config.from_object(__name__)
+app.config["SESSION_PERMANENT"] = False
 Session(app)
+
 
 app.register_blueprint(google_auth_bp.app)
 app.register_blueprint(scats.app)
