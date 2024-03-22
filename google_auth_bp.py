@@ -21,7 +21,7 @@ params = config()
 
 app = flask.Blueprint("google_auth", __name__)
 
-app.secret_key = "GeekyHgdfgdumxcxccxggfan.com"
+# app.secret_key = "GeekyHgdfgdumxcxccxggfan.com"
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = params["oauthlib_insecure_transport"]
 
@@ -66,7 +66,10 @@ def callback():
     if not session.get("state", False) == request.args["state"]:
         abort(500)  # state does not match!
 
-    credentials = flow.credentials
+    try:
+        credentials = flow.credentials
+    except Exception:
+        redirect("/")
     request_session = requests.session()
     cached_session = cachecontrol.CacheControl(request_session)
     token_request = google.auth.transport.requests.Request(session=cached_session)
