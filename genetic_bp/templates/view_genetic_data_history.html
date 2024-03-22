@@ -23,42 +23,30 @@
 
 {% for allele in ('a','b') %}
 <br><br>
-<h4>Allele {{ allele }}</h4>
+<h4><b>Allele {{ allele }}</b></h4>
 
-<h5>Value</h5>
 <table class="table table-striped">
 <tr>
 <th style="width: 16em">Date</th>
 <th>Value</th>
-<!--<th>Notes</th>
-<th>User</th>-->
+<th>Notes</th>
+<th>User</th>
+<th>Definitive</th>
 </tr>
 {% for row in locus_values %}
 {% if row['allele'] == allele %}
-<tr><td>{{ row['timestamp'] }}</td><td>{{ row['val'] }}</td></tr>
+<tr>
+<td>{{ row['timestamp'] }}</td>
+<td>{{ row['val'] }}</td>
+<td>{{ row['notes'] if row['notes'] is not none else '' }}</td>
+<td>{{ row['user_id']  if row['user_id'] is not none else '' }}</td>
+<td>{{ row['definitive'] }}</td>
+</tr>
 {%endif%}
 {% endfor %}
 </table>
 
 
-<h5>Notes</h5>
-<table class="table table-striped">
-<tr>
-<th style="width: 16em">Date</th>
-<th style="width: 26em">Notes</th>
-<th>User</th>
-</tr>
-{% for row in locus_notes %}
-{% if row['allele'] == allele %}
-<tr>
-{#<td>{{ row["val"]  if row["val"] is not none else "-"}}</td>#}
-<td>{{ row["timestamp"]  if row["timestamp"] is not none else ""}}</td>
-<td>{{ row["note"] if row["note"] is not none else ""}}</td>
-<td>{{ row["user_id"] if row["user_id"] is not none else ""}}</td>
-</tr>
-{%endif%}
-{% endfor %}
-</table>
 {%endfor%}
 
 

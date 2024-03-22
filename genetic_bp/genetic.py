@@ -884,13 +884,12 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             for allele in ("a", "b"):
                 loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
 
-                if loci_values[row["wa_code"]][x][allele]["notes"] and not loci_values[row["wa_code"]][x][allele]["user_id"].startswith(
-                    "OK|"
-                ):
-                    has_loci_notes = True
-                    loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
-                elif loci_values[row["wa_code"]][x][allele]["user_id"].startswith("OK|"):
-                    loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
+                if loci_values[row["wa_code"]][x][allele]["notes"]:
+                    if not loci_values[row["wa_code"]][x][allele]["definitive"]:
+                        has_loci_notes = True
+                        loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
+                    else:
+                        loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
                 else:
                     loci_values[row["wa_code"]][x][allele]["color"] = "#ffffff00"
 
@@ -1240,10 +1239,18 @@ def view_genetic_data(wa_code: str):
 
         for locus in loci_list:
             for allele in ("a", "b"):
+                # check wa / genotype
                 if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
                     wa_loci[locus][allele]["divergent_allele"] = Markup(
                         f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]['value']}</button>"""
                     )
+                if wa_loci[locus][allele]["notes"]:
+                    if not wa_loci[locus][allele]["definitive"]:
+                        wa_loci[locus][allele]["bgcolor"] = params["red_note"]
+                    else:
+                        wa_loci[locus][allele]["bgcolor"] = params["green_note"]
+                else:
+                    wa_loci[locus][allele]["bgcolor"] = "#ffffff00"
 
         return render_template(
             "view_genetic_data.html",
@@ -1280,9 +1287,26 @@ def add_genetic_data(wa_code: str):
     # loci list
     loci_list = fn.get_loci_list()
 
-    loci_val = get_wa_loci_values_redis(wa_code)
-    if loci_val is None:
-        loci_val, _ = fn.get_wa_loci_values(wa_code, loci_list)
+    wa_loci = get_wa_loci_values_redis(wa_code)
+    if wa_loci is None:
+        wa_loci, _ = fn.get_wa_loci_values(wa_code, loci_list)
+
+    genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+
+    for locus in loci_list:
+        for allele in ("a", "b"):
+            # check wa / genotype
+            if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
+                wa_loci[locus][allele]["divergent_allele"] = Markup(
+                    f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]['value']}</button>"""
+                )
+            if wa_loci[locus][allele]["notes"]:
+                if not wa_loci[locus][allele]["definitive"]:
+                    wa_loci[locus][allele]["bgcolor"] = params["red_note"]
+                else:
+                    wa_loci[locus][allele]["bgcolor"] = params["green_note"]
+            else:
+                wa_loci[locus][allele]["bgcolor"] = "#ffffff00"
 
     if request.method == "GET":
         return render_template(
@@ -1291,7 +1315,7 @@ def add_genetic_data(wa_code: str):
             go_back_url=request.referrer,
             wa_code=wa_code,
             loci=loci,
-            loci_values=loci_val,
+            loci_values=wa_loci,
             sex=row["sex_id"],
             genotype_id=row["genotype_id"],
         )
@@ -1320,7 +1344,6 @@ def add_genetic_data(wa_code: str):
             )
             after_genotype_modif()
 
-        # 'OK|' is inserted before the user_id field to demonstrate that allele value has changed (or not) -> green
         current_epoch = int(time.time())
         for locus in loci:
             for allele in ("a", "b"):
@@ -1328,8 +1351,8 @@ def add_genetic_data(wa_code: str):
                     con.execute(
                         text(
                             "INSERT INTO wa_locus "
-                            "(wa_code, locus, allele, val, timestamp, user_id) "
-                            "VALUES (:wa_code, :locus, :allele, :val, to_timestamp(:current_epoch), :user_id)"
+                            "(wa_code, locus, allele, val, timestamp, notes, user_id, definitive) "
+                            "VALUES (:wa_code, :locus, :allele, :val, to_timestamp(:current_epoch), :notes, :user_id, :definitive)"
                         ),
                         {
                             "wa_code": wa_code,
@@ -1337,39 +1360,21 @@ def add_genetic_data(wa_code: str):
                             "allele": allele,
                             "val": int(request.form[locus["name"] + f"_{allele}"]) if request.form[locus["name"] + f"_{allele}"] else None,
                             "current_epoch": current_epoch,
-                            "user_id": "OK|" + session.get("user_name", session["email"]),
+                            "notes": request.form[locus["name"] + f"_{allele}_notes"]
+                            if request.form[locus["name"] + f"_{allele}_notes"]
+                            else None,
+                            "user_id": session.get("user_name", session["email"]),
+                            "definitive": True,
                         },
                     )
-
-                    # set note in wa_loci_notes
-                    if request.form[locus["name"] + f"_{allele}_notes"]:
-                        con.execute(
-                            text(
-                                (
-                                    "INSERT INTO wa_loci_notes (wa_code, locus, allele, timestamp, note, user_id) "
-                                    "VALUES (:wa_code, :locus, :allele, to_timestamp(:current_epoch), :note, :user_id)"
-                                )
-                            ),
-                            {
-                                "wa_code": wa_code,
-                                "locus": locus["name"],
-                                "allele": allele,
-                                "note": request.form[locus["name"] + f"_{allele}_notes"]
-                                if request.form[locus["name"] + f"_{allele}_notes"]
-                                else None,
-                                "current_epoch": current_epoch,
-                                "user_id": session.get("user_name", session["email"]),
-                            },
-                        )
 
         # update redis
         rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, loci_list)[0]))
 
         # update genotype_locus
-        loci_list: dict = fn.get_loci_list()
 
         for locus in loci:
-            for allele in ["a", "b"]:
+            for allele in ("a", "b"):
                 if locus["name"] + f"_{allele}" in request.form and request.form[locus["name"] + f"_{allele}"]:
                     sql = text(
                         "SELECT DISTINCT (SELECT val FROM wa_locus WHERE locus = :locus AND allele = :allele AND wa_code = wa_scat_dw_mat.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
@@ -1440,8 +1445,8 @@ def view_genetic_data_history(wa_code: str, locus: str):
             con.execute(
                 text(
                     (
-                        "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp "
-                        "FROM wa_locus WHERE wa_code = :wa_code and locus = :locus ORDER BY allele,timestamp ASC"
+                        "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp, notes, user_id, definitive "
+                        "FROM wa_locus WHERE wa_code = :wa_code and locus = :locus ORDER BY allele, timestamp ASC"
                     )
                 ),
                 {"wa_code": wa_code, "locus": locus},
@@ -1449,38 +1454,6 @@ def view_genetic_data_history(wa_code: str, locus: str):
             .mappings()
             .all()
         )
-
-        locus_notes = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
-        locus_notes = (
-            con.execute(
-                text(
-                    (
-                        "SELECT allele,note,user_id, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp "
-                        "FROM wa_loci_notes WHERE wa_code = :wa_code AND locus = :locus ORDER BY timestamp ASC"
-                    )
-                ),
-                {"wa_code": wa_code, "locus": locus},
-            )
-            .mappings()
-            .all()
-        )
-
-        """
-        locus_values = (
-            con.execute(
-                text(
-                    "SELECT *, extract(epoch from timestamp)::integer AS epoch, "
-                    "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, notes "
-                    "FROM wa_locus "
-                    "WHERE wa_code = :wa_code AND locus = :locus "
-                    "ORDER BY timestamp DESC, allele ASC"
-                ),
-                {"wa_code": wa_code, "locus": locus},
-            )
-            .mappings()
-            .all()
-        )
-        """
 
         return render_template(
             "view_genetic_data_history.html",
@@ -1488,7 +1461,6 @@ def view_genetic_data_history(wa_code: str, locus: str):
             wa_code=wa_code,
             locus=locus,
             locus_values=locus_values,
-            locus_notes=locus_notes,
             sex=sex,
             genotype_id=genotype_id,
         )
@@ -1656,45 +1628,14 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
             .all()
         )
 
-        # notes history
-        """
-        notes_history = (
-            con.execute(
-                text(
-                    (
-                        "SELECT * FROM  genotypes_loci_notes "
-                        "WHERE genotype_id = :genotype_id "
-                        "AND locus = :locus "
-                        "AND allele = :allele "
-                        "ORDER BY timestamp ASC "
-                    )
-                ),
-                data,
-            )
-            .mappings()
-            .all()
-        )
-        """
-
         return render_template(
             "add_genotype_locus_note.html",
             header_title="Add note on genotype id",
             data=data,
             values_history=values_history,
-            # notes_history=notes_history,
         )
 
     if request.method == "POST":
-        """
-        sql = text(
-            "UPDATE genotype_locus "
-            "SET notes = :notes, "
-            "user_id = :user_id "
-            "WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "
-            "AND extract(epoch from timestamp)::integer = :timestamp"
-        )
-        """
-
         sql = text(
             "INSERT INTO genotype_locus "
             "(genotype_id, locus, allele, val, timestamp, notes, user_id) "

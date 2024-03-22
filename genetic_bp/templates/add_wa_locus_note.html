@@ -40,8 +40,8 @@ Current value: <b>{{ data["value"] }}</b><br>
 <tr>
 <td>{{ note['timestamp'] }}</td>
 <td>{{ note['val'] if note['val'] is not none else '' }}</td>
-<td>{{ note['notes'] }}</td>
-<td>{{ note['user_id'] }}</td>
+<td>{{ note['notes'] if note['notes'] is not none else '' }}</td>
+<td>{{ note['user_id'] if note['user_id'] is not none else '' }}</td>
 </tr>
 {% endfor %}
 </table>

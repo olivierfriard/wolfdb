@@ -40,8 +40,8 @@
 {% for allele in ('a', 'b') %}
 
 <td
-    style="{% if 'OK|' in data[locus][allele]['user_id'] %}background:#90ee90{%else%}{% if data[locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
-    {{ data[locus][allele]['value'] }}&nbsp;{{ data[locus][allele]['divergent_allele'] }}
+style="background:{{ data[locus][allele]['bgcolor'] }}">
+{{ data[locus][allele]['value'] }}&nbsp;{{ data[locus][allele]['divergent_allele'] }}
 </td>
 
 <td><small>{{ data[locus][allele]['date'] }}</small></td>

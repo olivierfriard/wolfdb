@@ -71,7 +71,7 @@ def get_loci_list() -> dict:
 
 def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     """
-    get WA code loci values with last note from wa_loci_notes table (if any)
+    get WA code loci values
     """
     with conn_alchemy().connect() as con:
         has_loci_notes = False
@@ -107,13 +107,15 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                 #    )
                 # )
 
+                # get last locus value and the last notes (if any)
                 row = (
                     con.execute(
                         text(
                             (
-                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
-                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
-                                "FROM wa_locus "
+                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, definitive, "
+                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
+                                "(SELECT notes FROM wa_locus WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele AND notes != '' and notes is not null ORDER BY timestamp DESC LIMIT 1) "
+                                "FROM wa_locus wl "
                                 "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
                                 "ORDER BY timestamp DESC LIMIT 1"
                             )
@@ -126,12 +128,18 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
 
                 if row is not None:
                     val = row["val"] if row["val"] is not None else "-"
-                    notes = row["notes"] if not None else ""
-                    if notes:
+                    # notes = row["notes"] if not None else ""
+                    # if notes:
+                    #    has_loci_notes = True
+                    if row["notes"]:
                         has_loci_notes = True
+                        notes = row["notes"]
+                    else:
+                        notes = ""
                     epoch = row["epoch"] if row["epoch"] is not None else ""
                     date = row["formatted_timestamp"] if row["formatted_timestamp"] is not None else ""
                     user_id = row["user_id"] if row["user_id"] is not None else ""
+                    definitive = row["definitive"]
 
                 else:
                     val = "-"
@@ -139,6 +147,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     epoch = ""
                     user_id = ""
                     date = ""
+                    definitive = False
 
                 loci_values[locus][allele] = {
                     "value": val,
@@ -146,6 +155,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     "epoch": epoch,
                     "user_id": user_id,
                     "date": date,
+                    "definitive": definitive,
                 }
 
     return loci_values, has_loci_notes
