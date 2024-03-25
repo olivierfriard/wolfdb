@@ -1414,7 +1414,6 @@ def add_genetic_data(wa_code: str):
 
                         rows2 = con.execute(sql, {"locus": locus["name"], "allele": allele, "wa_code": wa_code}).mappings().all()
 
-                        # 'OK|' is inserted before the user_id field to demonstrate that allele value has changed (or not) -> green
                         for row2 in rows2:
                             con.execute(
                                 text(
@@ -1433,7 +1432,7 @@ def add_genetic_data(wa_code: str):
                                     "val": int(request.form[locus["name"] + f"_{allele}"])
                                     if request.form[locus["name"] + f"_{allele}"]
                                     else None,
-                                    "user_id": "OK|" + session.get("user_name", session["email"]),
+                                    "user_id": session.get("user_name", session["email"]),
                                 },
                             )
 
@@ -1535,10 +1534,9 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         other_allele = (
             con.execute(
                 text(
-                    "SELECT val, definitive, "
-                    "date_trunc('second', timestamp) AS timestamp "
+                    "SELECT val, definitive "
                     "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele != :allele "
-                    "ORDER BY timestamp ASC "
+                    "ORDER BY timestamp DESC "
                     "LIMIT 1"
                 ),
                 data,
@@ -1684,10 +1682,9 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
         other_allele = (
             con.execute(
                 text(
-                    "SELECT val, "
-                    "date_trunc('second', timestamp) AS timestamp "
+                    "SELECT val "
                     "FROM genotype_locus WHERE genotype_id = :genotype_id AND locus = :locus AND allele != :allele "
-                    "ORDER BY timestamp ASC "
+                    "ORDER BY timestamp DESC "
                     "LIMIT 1"
                 ),
                 data,
