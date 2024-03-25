@@ -111,6 +111,9 @@ def view_genotype(genotype_id: str):
     """
     visualize genotype's data
     """
+
+    session["view_genotype_id"] = genotype_id
+
     con = fn.conn_alchemy().connect()
 
     genotype = (
@@ -420,6 +423,13 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     if limit == "ALL":
         offset = 0
 
+    # check if wa code is specified to scroll the table
+    if "view_genotype_id" in session:
+        view_genotype_id = session["view_genotype_id"]
+        del session["view_genotype_id"]
+    else:
+        view_genotype_id = None
+
     con = fn.conn_alchemy().connect()
 
     sql_all = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} LIMIT {limit} OFFSET {offset}"
@@ -520,6 +530,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             loci_values=loci_values,
             short="",
             search_term=search_term,
+            view_genotype_id=view_genotype_id,
         )
 
 
@@ -792,6 +803,13 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     if limit == "ALL":
         offset = 0
 
+    # check if wa code is specified to scroll the table
+    if "view_wa_code" in session:
+        wa_code_to_view = session["view_wa_code"]
+        del session["view_wa_code"]
+    else:
+        wa_code_to_view = None
+
     con = fn.conn_alchemy().connect()
 
     sql_all = "SELECT * FROM wa_genetic_samples_mat "
@@ -996,6 +1014,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             locus_notes=locus_notes,
             filter=filter,
             search_term=search_term,
+            wa_code_to_view=wa_code_to_view,
         )
 
 
@@ -1220,6 +1239,9 @@ def view_genetic_data(wa_code: str):
     """
     visualize genetic data for WA code
     """
+
+    session["view_wa_code"] = wa_code
+
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
         row = (
@@ -1476,14 +1498,17 @@ def view_genetic_data_history(wa_code: str, locus: str):
 @fn.check_login
 def wa_locus_note(wa_code: str, locus: str, allele: str):
     """
-    let user add a note on wa_code locus_name allele timestamp
+    let authorized user to add a note on wa_code locus_name allele timestamp
     """
+
+    session["view_wa_code"] = wa_code
 
     con = fn.conn_alchemy().connect()
 
     data = {"wa_code": wa_code, "locus": locus, "allele": allele}
 
     if request.method == "GET":
+        # check if current user can modify allele value
         allele_modifier = (
             con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
             .mappings()
@@ -1505,6 +1530,23 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             .mappings()
             .all()
         )
+
+        # other allele value
+        other_allele = (
+            con.execute(
+                text(
+                    "SELECT val, definitive, "
+                    "date_trunc('second', timestamp) AS timestamp "
+                    "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele != :allele "
+                    "ORDER BY timestamp ASC "
+                    "LIMIT 1"
+                ),
+                data,
+            )
+            .mappings()
+            .fetchone()
+        )
+        data["other_allele_value"] = other_allele["val"] if other_allele is not None else "-"
 
         if not notes:
             flash(fn.alert_danger("Error with allele value"))
@@ -1585,6 +1627,8 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
     let user add a note on genotype_id locus allele timestamp
     """
 
+    session["view_genotype_id"] = genotype_id
+
     con = fn.conn_alchemy().connect()
 
     data = {"genotype_id": genotype_id, "locus": locus, "allele": allele}
@@ -1609,6 +1653,14 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
     data["user_id"] = "" if genotype_locus["user_id"] is None else genotype_locus["user_id"]
 
     if request.method == "GET":
+        # check if current user can modify allele value
+        allele_modifier = (
+            con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
+            .mappings()
+            .fetchone()["allele_modifier"]
+        )
+        data["allele_modifier"] = allele_modifier
+
         values_history = (
             con.execute(
                 text(
@@ -1627,6 +1679,23 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
             .mappings()
             .all()
         )
+
+        # other allele value
+        other_allele = (
+            con.execute(
+                text(
+                    "SELECT val, "
+                    "date_trunc('second', timestamp) AS timestamp "
+                    "FROM genotype_locus WHERE genotype_id = :genotype_id AND locus = :locus AND allele != :allele "
+                    "ORDER BY timestamp ASC "
+                    "LIMIT 1"
+                ),
+                data,
+            )
+            .mappings()
+            .fetchone()
+        )
+        data["other_allele_value"] = other_allele["val"] if other_allele is not None else "-"
 
         return render_template(
             "add_genotype_locus_note.html",
@@ -1759,6 +1828,9 @@ def set_wa_genotype(wa_code):
     """
     set wa genotype
     """
+
+    session["view_wa_code"] = wa_code
+
     con = fn.conn_alchemy().connect()
 
     if request.method == "GET":

@@ -15,24 +15,7 @@ update wa_locus set definitive = FALSE where definitive IS NULL;
 2024-03-17
 -------------------
 
-CREATE TABLE wa_loci_notes (
-wa_code character varying(20) NOT NULL,
-locus character varying(20) NOT NULL,
-allele character varying(1) NOT NULL,
-"timestamp" timestamp without time zone NOT NULL,
-note TEXT,
-user_id character varying(100)
-);
 
-
-CREATE TABLE genotypes_loci_notes (
-genotype_id character varying(100) NOT NULL,
-locus character varying(20) NOT NULL,
-allele character varying(1) NOT NULL,
-"timestamp" timestamp without time zone NOT NULL,
-note TEXT,
-user_id character varying(100)
-);
 
 
 

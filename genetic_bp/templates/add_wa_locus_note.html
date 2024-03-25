@@ -23,7 +23,9 @@ WA code: <b>{{ data["wa_code"] }}</b><br>
 Locus: <b>{{ data["locus"] }}</b><br>
 Allele: <b>{{ data["allele"] }}</b><br>
 Current value: <b>{{ data["value"] }}</b><br>
-{% if data['definitive'] %}DEFINITIVE{% else %}<span style="background:#FF6461">TO BE CHECKED</span>{% endif %}
+{% if data['definitive'] %}DEFINITIVE{% else %}<span style="background:#FF6461">TO BE CHECKED</span>{% endif %}<br>
+<small>Other allele value: {{ data["other_allele_value"] }}</small>
+
 </h3>
 
 
@@ -66,7 +68,7 @@ No notes were found
       <label for="new_value" class="col-form-label">New allele value</label>
     </div>
     <div class="col-auto">
-      <input type="text" id="new_value" name="new_value" class="form-control" aria-describedby="help" value="{{ data['value'] if data['value'] is not none else '' }}">
+      <input type="text" id="new_value" name="new_value" class="form-control" pattern="[0-9]*" aria-describedby="help" value="{{ data['value'] if data['value'] is not none else '' }}">
     </div>
     <div class="col-auto">
       <span id="help" class="form-text">
@@ -74,7 +76,7 @@ No notes were found
       </span>
     </div>
 </div>
-{% if not data['allele_modifier'] %}</fieldset>fieldset>{%endif%}
+{% if not data['allele_modifier'] %}</fieldset>{%endif%}
 
   <div class="mb-3">
     <label for="notes" class="form-label">Note</label>

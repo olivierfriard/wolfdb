@@ -1,6 +1,17 @@
-{% extends "bootstrap_simple.html" %}
+{% extends "bootstrap_no-body.html" %}
 
 {% block content %}
+<body onload="scroll_to_genotype_id()"> 
+    <script>
+    function scroll_to_genotype_id() {
+        const element = document.getElementById("{{ view_genotype_id }}");
+        if (element) {
+            element.scrollIntoView();
+            }
+        }
+</script>
+{% include "menu.html" %}
+
 
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">

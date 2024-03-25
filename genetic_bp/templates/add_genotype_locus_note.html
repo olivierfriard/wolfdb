@@ -21,7 +21,9 @@
 <h3>Genotype ID: <b>{{ data["genotype_id"] }}</b><br>
 Locus: <b>{{ data["locus"] }}</b><br>
 Allele: <b>{{ data["allele"] }}</b><br>
-Current value: <b>{{ data["value"] }}</b></h3>
+Current value: <b>{{ data["value"] }}</b><br>
+<small>Other allele value: {{ data["other_allele_value"] }}</small>
+</h3>
 Working notes:<br>
 {{ data["working_notes"] }}
 
@@ -53,21 +55,21 @@ Working notes:<br>
 <h4>Insert a new value</h4>
 
 <form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
-
-    <div class="row g-3 align-items-center">
-        <div class="col-auto">
-          <label for="new_value" class="col-form-label">New allele value</label>
-        </div>
-        <div class="col-auto">
-          <input type="text" id="new_value" name="new_value" class="form-control" aria-describedby="help" value="{{ data['value'] }}">
-        </div>
-        <div class="col-auto">
-          <span id="help" class="form-text">
-            Must be numeric or -
-          </span>
-        </div>
+{% if not data['allele_modifier'] %}<fieldset disabled>{%endif%}
+  <div class="row g-3 align-items-center">
+      <div class="col-auto">
+        <label for="new_value" class="col-form-label">New allele value</label>
       </div>
-
+      <div class="col-auto">
+        <input type="text" id="new_value" name="new_value" class="form-control" pattern="[0-9]*" aria-describedby="help" value="{{ data['value'] }}">
+      </div>
+      <div class="col-auto">
+        <span id="help" class="form-text">
+          Must be numeric or empy
+        </span>
+      </div>
+    </div>
+{% if not data['allele_modifier'] %}</fieldset>{%endif%}
 
 <div class="mb-3">
     <label for="notes" class="form-label">Note</label>

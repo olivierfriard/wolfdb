@@ -28,9 +28,11 @@ Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
 
 {% else %}
 
+{#
 {% if session['start_date'] and session['end_date'] %}
 Analysis date interval: <strong>{{ session['start_date']}}</strong> - <strong>{{session['end_date']}}</strong>
 {% endif %}
+#}
 {% endif %}
 
 

@@ -1,6 +1,16 @@
-{% extends "bootstrap_simple.html" %}
+{% extends "bootstrap_no-body.html" %}
 
 {% block content %}
+<body onload="scroll_to_scat_id()"> 
+      <script>
+      function scroll_to_scat_id() {
+          const element = document.getElementById("{{ view_scat_id }}");
+          if (element) {
+              element.scrollIntoView();
+              }
+          }
+</script>
+{% include "menu.html" %}
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,7 +88,9 @@
 <tbody id="search-results">
 {% for result in results %}
 <tr>
-<td><a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a></td>
+<td><a id="{{ result['scat_id'] }}">
+<a href="/view_scat/{{ result['scat_id'] }}">{{ result['scat_id'] }}</a>
+</a></td>
 <td>{{ result['date'] }}</td><td>{{ result['sampling_season'] }}</td>
 <td>{{ result['sampling_type'] }}</td>
 <td>{% if result['sampling_type'] == "Systematic" %}

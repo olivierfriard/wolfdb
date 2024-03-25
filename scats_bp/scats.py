@@ -110,6 +110,8 @@ def view_scat(scat_id):
     Display scat info
     """
 
+    session["view_scat_id"] = scat_id
+
     scat_color = params["scat_color"]
     transect_color = params["transect_color"]
 
@@ -413,6 +415,13 @@ def scats_list_limit(offset: int, limit: int | str):
     if limit == "ALL":
         offset = 0
 
+    # check if wa code is specified to scroll the table
+    if "view_scat_id" in session:
+        view_scat_id = session["view_scat_id"]
+        del session["view_scat_id"]
+    else:
+        view_scat_id = None
+
     with fn.conn_alchemy().connect() as con:
         sql_search = text(
             (
@@ -491,6 +500,7 @@ def scats_list_limit(offset: int, limit: int | str):
         offset=offset,
         results=results,
         search_term=search_term,
+        view_scat_id=view_scat_id,
     )
 
 
