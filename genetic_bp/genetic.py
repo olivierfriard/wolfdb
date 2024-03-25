@@ -805,10 +805,10 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
     # check if wa code is specified to scroll the table
     if "view_wa_code" in session:
-        wa_code_to_view = session["view_wa_code"]
+        view_wa_code = session["view_wa_code"]
         del session["view_wa_code"]
     else:
-        wa_code_to_view = None
+        view_wa_code = None
 
     con = fn.conn_alchemy().connect()
 
@@ -1014,7 +1014,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             locus_notes=locus_notes,
             filter=filter,
             search_term=search_term,
-            wa_code_to_view=wa_code_to_view,
+            view_wa_code=view_wa_code,
         )
 
 
