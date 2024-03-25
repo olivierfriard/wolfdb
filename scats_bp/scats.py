@@ -215,6 +215,7 @@ def view_scat(scat_id):
     )
 
 
+'''
 @app.route("/plot_all_scats_old")
 @fn.check_login
 def plot_all_scats():
@@ -230,20 +231,10 @@ def plot_all_scats():
         tot_min_lat, tot_min_lon = 90, 90
         tot_max_lat, tot_max_lon = -90, -90
 
+        count_scats: int = 0
+
         for row in (
-            con.execute(
-                text(
-                    "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-                    "FROM scats "
-                    "WHERE date BETWEEN :start_date AND :end_date"
-                ),
-                {
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
-            )
-            .mappings()
-            .all()
+            con.execute(text("SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats ")).mappings().all()
         ):
             scat_geojson = json.loads(row["scat_lonlat"])
 
@@ -265,6 +256,9 @@ def plot_all_scats():
             }
 
             scat_features.append(dict(scat_feature))
+            count_scats += 1
+
+        print(count_scats)
 
         return render_template(
             "plot_all_scats.html",
@@ -282,7 +276,9 @@ def plot_all_scats():
             dead_wolf_color=params["dead_wolf_color"],
             transect_color=params["transect_color"],
             track_color=params["track_color"],
+            count_scats=count_scats,
         )
+'''
 
 
 @app.route("/plot_all_scats")
@@ -300,7 +296,7 @@ def plot_all_scats_markerclusters():
 
         tot_min_lat, tot_min_lon = 90, 90
         tot_max_lat, tot_max_lon = -90, -90
-
+        count_scats: int = 0
         for row in (
             con.execute(
                 text(
@@ -336,6 +332,7 @@ def plot_all_scats_markerclusters():
             }
 
             scat_features.append(dict(scat_feature))
+            count_scats += 1
 
         return render_template(
             "plot_all_scats.html",
@@ -353,43 +350,8 @@ def plot_all_scats_markerclusters():
             dead_wolf_color=params["dead_wolf_color"],
             transect_color=params["transect_color"],
             track_color=params["track_color"],
+            count_scats=count_scats,
         )
-
-
-'''
-@app.route("/scats_list")
-@fn.check_login
-def scats_list():
-    """
-    Display list of scats
-    """
-
-    t0 = time.time()
-    with fn.conn_alchemy().connect() as con:
-        n_scats = (
-            con.execute(
-                text(("SELECT COUNT(scat_id) AS n_scats FROM scats " "WHERE date BETWEEN :start_date AND :end_date ")),
-                {"start_date": session["start_date"], "end_date": session["end_date"]},
-            )
-            .mappings()
-            .fetchone()["n_scats"]
-        )
-
-        sql = text(("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "))
-
-        return render_template(
-            "scats_list_limit.html",
-            header_title="List of scats",
-            n_scats=n_scats,
-            execution_time=round(time.time() - t0, 3),
-            results=con.execute(
-                sql,
-                {"start_date": session["start_date"], "end_date": session["end_date"]},
-            )
-            .mappings()
-            .all(),
-        )
-'''
 
 
 @app.route(
