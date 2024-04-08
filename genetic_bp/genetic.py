@@ -1535,6 +1535,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
         data["value"] = notes[-1]["val"]
         data["definitive"] = notes[-1]["definitive"]
+        data["user_id"] = notes[-1]["user_id"]
 
         # other allele value
         other_allele = (
