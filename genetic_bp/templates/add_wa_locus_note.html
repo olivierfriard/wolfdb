@@ -23,8 +23,20 @@ WA code: <b>{{ data["wa_code"] }}</b><br>
 Locus: <b>{{ data["locus"] }}</b><br>
 Allele: <b>{{ data["allele"] }}</b><br>
 Current value: <b>{{ data["value"] }}</b><br>
-{% if data['definitive'] %}DEFINITIVE{% else %}<span style="background:#FF6461">TO BE CHECKED</span>{% endif %}<br>
-<small>Other allele value: {{ data["other_allele_value"] }}</small>
+{% if data['definitive'] %}
+DEFINITIVE
+{% else %}
+{% if data['user_id'] %}
+<span style="background:#FF6461">TO BE CHECKED</span>
+{% endif %}
+{% endif %}<br>
+<br>
+
+<small>
+Other allele value: {{ data["other_allele_value"] }}<br>
+Genotype ID: {{ data["genotype_id"] }}<br>
+</small>
+
 
 </h3>
 

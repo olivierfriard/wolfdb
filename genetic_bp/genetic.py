@@ -1529,6 +1529,13 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             .mappings()
             .all()
         )
+        if not notes:
+            flash(fn.alert_danger("Error with allele value"))
+            return redirect(session["url_wa_list"])
+
+        data["value"] = notes[-1]["val"]
+        data["definitive"] = notes[-1]["definitive"]
+        data["user_id"] = notes[-1]["user_id"]
 
         # other allele value
         other_allele = (
@@ -1546,12 +1553,16 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         )
         data["other_allele_value"] = other_allele["val"] if other_allele is not None else "-"
 
-        if not notes:
-            flash(fn.alert_danger("Error with allele value"))
-            return redirect(session["url_wa_list"])
-
-        data["value"] = notes[-1]["val"]
-        data["definitive"] = notes[-1]["definitive"]
+        # genotype id
+        genotype_id = (
+            con.execute(
+                text("SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code "),
+                data,
+            )
+            .mappings()
+            .fetchone()
+        )
+        data["genotype_id"] = genotype_id["genotype_id"] if genotype_id is not None else ""
 
         return render_template(
             "add_wa_locus_note.html",
