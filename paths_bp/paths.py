@@ -176,7 +176,7 @@ def paths_list():
                 "(SELECT COUNT(*) FROM scats WHERE path_id = paths.path_id) AS n_samples, "
                 "(SELECT COUNT(*) FROM snow_tracks WHERE transect_id = paths.transect_id AND date = paths.date) AS n_tracks "
                 "FROM paths "
-                "WHERE date BETWEEN :start_date AND :end_date "
+                "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
                 "ORDER BY region ASC, "
                 # "province ASC, "
                 "path_id, date DESC "

@@ -114,42 +114,41 @@ def view_genotype(genotype_id: str):
 
     session["view_genotype_id"] = genotype_id
 
-    con = fn.conn_alchemy().connect()
-
-    genotype = (
-        con.execute(
-            text("SELECT * FROM genotypes_list_mat WHERE genotype_id = :genotype_id"),
-            {"genotype_id": genotype_id},
+    with fn.conn_alchemy().connect() as con:
+        genotype = (
+            con.execute(
+                text("SELECT * FROM genotypes_list_mat WHERE genotype_id = :genotype_id"),
+                {"genotype_id": genotype_id},
+            )
+            .mappings()
+            .fetchone()
         )
-        .mappings()
-        .fetchone()
-    )
 
-    if genotype is None:
-        flash(fn.alert_danger(f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"))
-        if "url_genotypes_list" in session:
-            return redirect(session["url_genotypes_list"])
-        if "url_wa_list" in session:
-            return redirect(session["url_wa_list"])
-        return "Error on genotype"
+        if genotype is None:
+            flash(fn.alert_danger(f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"))
+            if "url_genotypes_list" in session:
+                return redirect(session["url_genotypes_list"])
+            if "url_wa_list" in session:
+                return redirect(session["url_wa_list"])
+            return "Error on genotype"
 
-    genotype_loci = json.loads(rdis.get(genotype_id))
+        genotype_loci = json.loads(rdis.get(genotype_id))
 
-    # samples
-    wa_codes = (
-        con.execute(
-            text(
-                "SELECT wa_code, sample_id, sample_type, "
-                "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
-                "FROM wa_scat "
-                "WHERE genotype_id = :genotype_id "
-                "ORDER BY wa_code"
-            ),
-            {"genotype_id": genotype_id},
+        # samples
+        wa_codes = (
+            con.execute(
+                text(
+                    "SELECT wa_code, sample_id, sample_type, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
+                    "FROM wa_scat "
+                    "WHERE genotype_id = :genotype_id "
+                    "ORDER BY wa_code"
+                ),
+                {"genotype_id": genotype_id},
+            )
+            .mappings()
+            .all()
         )
-        .mappings()
-        .all()
-    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -393,22 +392,24 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     Read loci values from redis
     """
 
+    filter: str = "WHERE (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL) "
+
     # check type of genotype
     match type:
         case "all":
-            filter = "WHERE record_status != 'deleted'"
+            filter += "AND record_status != 'deleted'"
             header_title = "List of all genotypes"
 
         case "definitive":
-            filter = "WHERE record_status = 'OK'"
+            filter += "AND record_status = 'OK'"
             header_title = "List of definitive genotypes"
 
         case "temp":
-            filter = "WHERE record_status = 'temp'"
+            filter += "AND record_status = 'temp'"
             header_title = "List of temporary genotypes"
 
         case "deleted":
-            filter = "WHERE record_status = 'deleted'"
+            filter += "AND record_status = 'deleted'"
             header_title = "List of temporary genotypes"
         case _:
             return f"{type} not found"
@@ -812,7 +813,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
     con = fn.conn_alchemy().connect()
 
-    sql_all = "SELECT * FROM wa_genetic_samples_mat "
+    sql_all = "SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     if request.method == "POST":
         offset = 0
@@ -844,11 +845,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         if field == "sex":
             field = "sex_id"
 
-        sql_search = sql_all + (f"WHERE {field} ILIKE :search")
+        sql_search = sql_all + (f" AND ({field} ILIKE :search) ")
     else:
         value = search_term
         sql_search = sql_all + (
-            "WHERE ("
+            " AND ("
             "wa_code ILIKE :search "
             "OR sample_id ILIKE :search "
             "OR date::text ILIKE :search "

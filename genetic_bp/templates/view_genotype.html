@@ -64,15 +64,15 @@
 {% for locus in loci_list %}
 
 <tr>
-    <td><b>{{ locus }}</b></td>
-<td>{{ genotype_loci[locus]['a']['value'] }}</td>
+<td><b>{{ locus }}</b></td>
+<td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
 <td>{{ genotype_loci[locus]['b']['value'] }}</td>
-<td></td>
+<td style="border-left: 1px solid black;"></td>
 {% for wa_code in wa_codes %}
 {% for allele in ('a', 'b')%}
 <td style="background:{% if loci_values[wa_code['wa_code']][locus][allele]['value'] not in (0,'-') and loci_values[wa_code['wa_code']][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
 {% endfor %}
-<td></td>
+<td style="border-left: 1px solid black;"></td>
 {%  endfor %}
 
 </tr>

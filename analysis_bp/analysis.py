@@ -5,7 +5,6 @@ WolfDB web service
 flask blueprint for data analysis
 """
 
-
 import flask
 from flask import render_template, redirect, request, flash, make_response, session
 from sqlalchemy import text

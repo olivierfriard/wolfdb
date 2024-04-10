@@ -6,7 +6,7 @@ flask blueprint for transects management
 """
 
 import flask
-from flask import render_template, redirect, request, flash, make_response
+from flask import render_template, redirect, request, flash, make_response, session
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -96,9 +96,15 @@ def view_transect(transect_id):
                 "SELECT *,"
                 "(SELECT count(*) FROM scats WHERE scats.path_id = paths.path_id) AS n_scats "
                 "FROM paths "
-                "WHERE transect_id = :transect_id ORDER BY date ASC"
+                "WHERE transect_id = :transect_id "
+                "AND (date between :start_date AND :end_date OR date IS NULL) "
+                "ORDER BY date ASC"
             ),
-            {"transect_id": transect_id},
+            {
+                "transect_id": transect_id,
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
         )
         .mappings()
         .all()
@@ -109,8 +115,18 @@ def view_transect(transect_id):
     # number of scats
     scats = (
         con.execute(
-            text("SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_mat WHERE path_id LIKE :path_id"),
-            {"path_id": f"{transect_id}|%"},
+            text(
+                (
+                    "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_mat "
+                    "WHERE path_id LIKE :path_id "
+                    " AND (date between :start_date AND :end_date OR date IS NULL) "
+                )
+            ),
+            {
+                "path_id": f"{transect_id}|%",
+                "start_date": session["start_date"],
+                "end_date": session["end_date"],
+            },
         )
         .mappings()
         .all()
