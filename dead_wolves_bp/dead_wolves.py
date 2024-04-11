@@ -5,7 +5,6 @@ WolfDB web service
 flask blueprint for dead wolves management
 """
 
-
 import flask
 from flask import render_template, redirect, request, flash, session
 from markupsafe import Markup
@@ -88,9 +87,9 @@ def view_dead_wolf_id(id):
             dead_wolf["UTM zone"][-1],
         )
 
-        dead_wolf[
-            "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"
-        ] = f"East: {dead_wolf['UTM Coordinates X']} North: {dead_wolf['UTM Coordinates Y']}"
+        dead_wolf["Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"] = (
+            f"East: {dead_wolf['UTM Coordinates X']} North: {dead_wolf['UTM Coordinates Y']}"
+        )
         fields_list.append({"name": "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"})
 
     except Exception:

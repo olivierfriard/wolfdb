@@ -32,7 +32,11 @@ from dead_wolves_bp import dead_wolves
 from admin_bp import admin
 from analysis_bp import analysis
 
-__version__ = "2023-11-17"
+__version__ = "2024-04-11"
+
+DEFAULT_START_DATE = "1990-01-01"
+DEFAULT_END_DATE = "2030-12-31"
+
 
 app = Flask(__name__)
 
@@ -83,9 +87,12 @@ def home():
     home page
     """
     if "start_date" not in session:
-        session["start_date"] = "2000-01-01"
+        session["start_date"] = DEFAULT_START_DATE
     if "end_date" not in session:
-        session["end_date"] = "2025-01-01"
+        session["end_date"] = DEFAULT_END_DATE
+
+    session["default_start_date"] = DEFAULT_START_DATE
+    session["default_end_date"] = DEFAULT_END_DATE
 
     session["background_color"] = params["background_color"]
 
@@ -112,14 +119,21 @@ def settings():
             raise False
 
     if request.method == "GET":
-        return render_template("settings.html", header_title="Settings")
+        return render_template(
+            "settings.html", header_title="Settings", default_start_date=DEFAULT_START_DATE, default_end_date=DEFAULT_END_DATE
+        )
 
     if request.method == "POST":
-        if not iso_date_validator(request.form["start_date"]) or not iso_date_validator(request.form["end_date"]):
-            return render_template("settings.html", header_title="Settings")
+        print(request.form)
 
-        session["start_date"] = request.form["start_date"]
-        session["end_date"] = request.form["end_date"]
+        if "enable_date_interval" in request.form:
+            if not iso_date_validator(request.form["start_date"]) or not iso_date_validator(request.form["end_date"]):
+                return render_template("settings.html", header_title="Settings")
+            session["start_date"] = request.form["start_date"]
+            session["end_date"] = request.form["end_date"]
+        else:
+            session["start_date"] = DEFAULT_START_DATE
+            session["end_date"] = DEFAULT_END_DATE
 
         return redirect("/")
 

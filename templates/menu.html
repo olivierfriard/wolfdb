@@ -163,7 +163,7 @@ Analysis
     </a>
     <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
     
-        <li><a class="dropdown-item" href="/settings">Profile</a></li>
+        <li><a class="dropdown-item" href="/settings">Settings</a></li>
 
         <li><a class="dropdown-item" href="/my_results">Result files</a></li>
 
@@ -172,8 +172,11 @@ Analysis
 </ul>
 </li>
 
-
-
+{% if session["start_date"] != session["default_start_date"] or session["end_date"] != session["default_end_date"] %}
+<li class="nav-item">
+<a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><small><span style="color:orange">{{ session["start_date"] }} - {{ session["end_date"] }}</span></small></a>
+</li>
+{% endif %}
 
 </ul>
 </div>
