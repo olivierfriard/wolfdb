@@ -537,51 +537,37 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
 @app.route("/view_wa/<wa_code>")
 @fn.check_login
-def view_wa(wa_code):
-    con = fn.conn_alchemy().connect()
-
-    result = (
-        con.execute(
-            text(
-                "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
-                "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                " FROM wa_scat_dw_mat WHERE wa_code = :wa_code"
-            ),
-            {"wa_code": wa_code},
-        )
-        .mappings()
-        .fetchone()
-    )
-
-    if result is not None:
-        if result["sample_id"].startswith("T") or result["sample_id"].startswith("M"):
-            return redirect(f"/view_tissue/{result['sample_id']}")
-        else:  # E or other
-            return redirect(f"/view_scat/{result['sample_id']}")
-
-    else:
+def view_wa(wa_code: str):
+    """
+    visualize WA code and correlated sample data
+    link to view genetic data (if available)
+    """
+    with fn.conn_alchemy().connect() as con:
         result = (
             con.execute(
                 text(
-                    "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
-                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                    "FROM dead_wolves_mat "
-                    "WHERE wa_code = :wa_code"
+                    "SELECT scat_id AS sample_id, 'Scat' AS sample_type, NULL AS tissue_id FROM scats WHERE wa_code = :wa_code "
+                    "UNION "
+                    "SELECT id::text as sample_id, 'Dead wolf' AS sample_type, tissue_id FROM dead_wolves_mat WHERE wa_code = :wa_code "
                 ),
                 {"wa_code": wa_code},
             )
             .mappings()
-            .fetchone()
+            .all()
         )
-
-        if result is not None:
-            return redirect(f"/view_tissue/{result['tissue_id']}")
-
-        else:
+        if result is None:
             flash(fn.alert_danger(f"WA code not found: {wa_code}"))
             return redirect(request.referrer)
+        if len(result) > 1:
+            flash(fn.alert_danger(f"WA code found in scats and dead wolves table. Check {wa_code}"))
+            return redirect(request.referrer)
+
+        # check if genetic data available
+        genetic_data = con.execute(text("SELECT wa_code FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().all()
+
+        print(f"{genetic_data=}")
+
+        return render_template("view_wa.html", header_title=f"{wa_code}", wa_code=wa_code, result=result[0], genetic_data=genetic_data)
 
 
 @app.route("/plot_all_wa")
@@ -590,61 +576,61 @@ def plot_all_wa():
     """
     plot all WA codes (scats and dead wolves)
     """
-    con = fn.conn_alchemy().connect()
 
     scat_features: list = []
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
 
-    for row in (
-        con.execute(
-            text(
-                "SELECT wa_code, sample_id, genotype_id, "
-                "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-                "FROM wa_scat_dw_mat "
-                "WHERE mtdna != 'Poor DNA' "
-                "AND date BETWEEN :start_date AND :end_date "
-            ),
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .all()
-    ):
-        scat_geojson = json.loads(row["scat_lonlat"])
-
-        lon, lat = scat_geojson["coordinates"]
-
-        tot_min_lat = min([tot_min_lat, lat])
-        tot_max_lat = max([tot_max_lat, lat])
-        tot_min_lon = min([tot_min_lon, lon])
-        tot_max_lon = max([tot_max_lon, lon])
-
-        if row["sample_id"].startswith("E"):
-            color = params["scat_color"]
-        elif row["sample_id"][0] in "TM":
-            color = params["dead_wolf_color"]
-        else:
-            color = "red"
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
-                "popupContent": (
-                    f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
-                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: {row['genotype_id']}"""
+    with fn.conn_alchemy().connect() as con:
+        for row in (
+            con.execute(
+                text(
+                    "SELECT wa_code, sample_id, genotype_id, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "FROM wa_scat_dw_mat "
+                    "WHERE mtdna != 'Poor DNA' "
+                    "AND date BETWEEN :start_date AND :end_date "
                 ),
-            },
-            "id": row["sample_id"],
-        }
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        ):
+            scat_geojson = json.loads(row["scat_lonlat"])
 
-        scat_features.append(scat_feature)
+            lon, lat = scat_geojson["coordinates"]
+
+            tot_min_lat = min([tot_min_lat, lat])
+            tot_max_lat = max([tot_max_lat, lat])
+            tot_min_lon = min([tot_min_lon, lon])
+            tot_max_lon = max([tot_max_lon, lon])
+
+            if row["sample_id"].startswith("E"):
+                color = params["scat_color"]
+            elif row["sample_id"][0] in "TM":
+                color = params["dead_wolf_color"]
+            else:
+                color = "red"
+
+            scat_feature = {
+                "geometry": dict(scat_geojson),
+                "type": "Feature",
+                "properties": {
+                    "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                    "popupContent": (
+                        f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                        f"""Genotype ID: {row['genotype_id']}"""
+                    ),
+                },
+                "id": row["sample_id"],
+            }
+
+            scat_features.append(scat_feature)
 
     return render_template(
         "plot_all_wa.html",
@@ -1250,6 +1236,11 @@ def view_genetic_data(wa_code: str):
             .mappings()
             .fetchone()
         )
+
+        if row is None:
+            flash(fn.alert_danger(f"WA code {wa_code} not found"))
+            return redirect(request.referrer)
+
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
 
