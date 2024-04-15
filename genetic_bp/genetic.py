@@ -1005,6 +1005,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         )
 
 
+"""
 @app.route(
     "/search_wa",
     methods=(
@@ -1025,6 +1026,7 @@ def search_wa():
                 wa_scats=results,
                 with_notes="",
             )
+"""
 
 
 @app.route("/wa_analysis/<distance>/<int:cluster_id>")
