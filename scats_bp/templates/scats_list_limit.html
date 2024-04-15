@@ -21,9 +21,10 @@
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 
-<h3>List of {{ n_scats }} scats</h3>
+<h3>{{ title }}</h3>
+
 {% if limit == 'ALL' %}
-<h4>All scats</h4>
+{% if results %}<h4>All scats</h4>{% endif %}
 {% else %}
 <h4>Scats from {{ offset + 1}} to {{ offset + limit }}</h4>
 {% endif %}
@@ -53,7 +54,7 @@
 </form>
 </span>
 
-{% if results %}
+
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
@@ -86,6 +87,7 @@
 </tr>
 </thead>
 <tbody id="search-results">
+{% if results %}
 {% for result in results %}
 <tr>
 <td><a id="{{ result['scat_id'] }}">
@@ -115,10 +117,11 @@
 <td><small>{{ result['notes'] if result['notes'] is not none else ""}}</small></td>
 </tr>
 {% endfor %}
+{% endif %}
 </tbody>
 </table>
 </div><!-- condensed -->
 </div><!-- frozen -->
-{% endif %}
+
 <br>
 {% endblock %}

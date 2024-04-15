@@ -451,21 +451,44 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             search_term: str = ""
 
     if ":" in search_term:
-        field, value = [x.strip().lower() for x in search_term.split(":")]
-        if field == "genotype":
-            field = "genotype id"
-        if field not in ("genotype id", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
-            flash(
-                fn.alert_danger(
-                    "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+        sql_search = sql_all
+        values: dict = {}
+        sql_search: str = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat "
+        for idx, field_term in enumerate(search_term.split(";")):
+            field, value = [x.strip().lower() for x in field_term.split(":")]
+            if field not in ("genotype", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
+                flash(
+                    fn.alert_danger(
+                        "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+                    )
                 )
-            )
-            return redirect(session["url_genotypes_list"])
+                return redirect(session["url_wa_list"])
+            if field == "genotype":
+                field = "genotype id"
+            field = field.replace(" ", "_")
+            if idx == 0:
+                sql_search += f" WHERE ({field} ILIKE :search{idx}) "
+            else:
+                sql_search += f" AND ({field} ILIKE :search{idx}) "
+            values[f"search{idx}"] = f"%{value}%"
 
-        field = field.replace(" ", "_")
-        sql_search = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat " + (f"WHERE {field} ILIKE :search")
+            """
+            field, value = [x.strip().lower() for x in search_term.split(":")]
+            if field == "genotype":
+                field = "genotype id"
+            if field not in ("genotype", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
+                flash(
+                    fn.alert_danger(
+                        "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+                    )
+                )
+                return redirect(session["url_genotypes_list"])
+
+            field = field.replace(" ", "_")
+            sql_search = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat " + (f"WHERE {field} ILIKE :search")
+            """
     else:
-        value = search_term
+        values = {"search": f"%{search_term}%"}
 
         sql_search = (
             "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
@@ -483,11 +506,13 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     results = (
         con.execute(
             text(sql_all if not search_term else sql_search),
-            {
-                "search": f"%{value}%",
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+            dict(
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+                **values,
+            ),
         )
         .mappings()
         .all()
@@ -518,10 +543,15 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         if "url_wa_list" in session:
             del session["url_wa_list"]
 
+        if results:
+            title = f"List of {results[0]['n_genotypes']} {type} genotypes".replace(" all", "").replace("_short", "")
+        else:
+            title = "No genotype found"
+
         return render_template(
             "genotypes_list.html",
             header_title=header_title,
-            title=f"List of {results[0]['n_genotypes'] if results else 0} {type} genotypes".replace(" all", "").replace("_short", ""),
+            title=title,
             limit=limit,
             offset=offset,
             type=type,
@@ -816,24 +846,35 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             search_term: str = ""
 
     if ":" in search_term:
-        field, value = [x.strip().lower() for x in search_term.split(":")]
-        if field == "wa":
-            field = "wa code"
-        if field not in ("wa code", "date", "sample id", "municipality", "genotype id", "sex", "tmp id", "notes", "pack"):
-            flash(
-                fn.alert_danger(
-                    "Search term not found. Must be 'wa code', 'date', 'sample id', 'municipality', 'genotype id', 'sex', 'tmp id', 'notes' or 'pack'"
+        sql_search = sql_all
+        values: dict = {}
+        for idx, field_term in enumerate(search_term.split(";")):
+            field, value = [x.strip().lower() for x in field_term.split(":")]
+            if field not in ("wa", "date", "sample id", "municipality", "genotype id", "sex", "tmp id", "notes", "pack", "box"):
+                flash(
+                    fn.alert_danger(
+                        "Search term not found. Must be 'wa', 'date', 'sample id', 'municipality', 'genotype id', 'sex', 'tmp id', 'notes', 'box' or 'pack'"
+                    )
                 )
-            )
-            return redirect(session["url_wa_list"])
+                return redirect(session["url_wa_list"])
 
-        field = field.replace(" ", "_")
-        if field == "sex":
-            field = "sex_id"
+            field = field.replace(" ", "_")
+            if field == "wa":
+                field = "wa_code"
+            if field == "sex":
+                field = "sex_id"
+                values[f"search{idx}"] = value
+                sql_search += f" AND ({field} = :search{idx}) "
+            elif field == "box":
+                field = "box_number"
+                values[f"search{idx}"] = value
+                sql_search += f" AND ({field} = :search{idx}) "
+            else:
+                sql_search += f" AND ({field} ILIKE :search{idx}) "
+                values[f"search{idx}"] = f"%{value}%"
 
-        sql_search = sql_all + (f" AND ({field} ILIKE :search) ")
     else:
-        value = search_term
+        values = {"search": f"%{search_term}%"}
         sql_search = sql_all + (
             " AND ("
             "wa_code ILIKE :search "
@@ -844,17 +885,20 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             "OR tmp_id ILIKE :search "
             "OR notes ILIKE :search "
             "OR pack ILIKE :search "
+            "OR box_number::text = :search "
             ") "
         )
 
     wa_scats = (
         con.execute(
             text(sql_all if not search_term else sql_search),
-            {
-                "search": f"%{value}%",
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+            dict(
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+                **values,
+            ),
         )
         .mappings()
         .all()
@@ -1003,30 +1047,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             search_term=search_term,
             view_wa_code=view_wa_code,
         )
-
-
-"""
-@app.route(
-    "/search_wa",
-    methods=(
-        "GET",
-        "POST",
-    ),
-)
-@fn.check_login
-def search_wa():
-    if request.method == "GET":
-        with fn.conn_alchemy().connect() as con:
-            sql = text("SELECT * FROM wa_genetic_samples_mat ")
-            results = con.execute(sql).mappings().all()
-            return render_template(
-                "wa_genetic_samples_list.html",
-                header_title="Search WA codes",
-                title="TITOLO",
-                wa_scats=results,
-                with_notes="",
-            )
-"""
 
 
 @app.route("/wa_analysis/<distance>/<int:cluster_id>")
