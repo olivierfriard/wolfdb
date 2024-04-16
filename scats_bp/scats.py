@@ -437,7 +437,7 @@ def scats_list_limit(offset: int, limit: int | str):
         del session["url_wa_list"]
 
     if results:
-        title = f"List of {results[0]["n_scats"]} scat{'s' if results[0]["n_scats"] >1 else ''}"
+        title = f"List of {results[0]['n_scats']} scat{'s' if results[0]['n_scats'] >1 else ''}"
     else:
         title = "No scat found"
 
