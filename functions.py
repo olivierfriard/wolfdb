@@ -76,7 +76,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     with conn_alchemy().connect() as con:
         has_loci_notes = False
 
-        loci_values = {}
+        loci_values: dict = {}
         for locus in loci_list:
             loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 

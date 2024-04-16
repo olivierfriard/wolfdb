@@ -451,21 +451,44 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             search_term: str = ""
 
     if ":" in search_term:
-        field, value = [x.strip().lower() for x in search_term.split(":")]
-        if field == "genotype":
-            field = "genotype id"
-        if field not in ("genotype id", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
-            flash(
-                fn.alert_danger(
-                    "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+        sql_search = sql_all
+        values: dict = {}
+        sql_search: str = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat "
+        for idx, field_term in enumerate(search_term.split(";")):
+            field, value = [x.strip().lower() for x in field_term.split(":")]
+            if field not in ("genotype", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
+                flash(
+                    fn.alert_danger(
+                        "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+                    )
                 )
-            )
-            return redirect(session["url_genotypes_list"])
+                return redirect(session["url_wa_list"])
+            if field == "genotype":
+                field = "genotype id"
+            field = field.replace(" ", "_")
+            if idx == 0:
+                sql_search += f" WHERE ({field} ILIKE :search{idx}) "
+            else:
+                sql_search += f" AND ({field} ILIKE :search{idx}) "
+            values[f"search{idx}"] = f"%{value}%"
 
-        field = field.replace(" ", "_")
-        sql_search = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat " + (f"WHERE {field} ILIKE :search")
+            """
+            field, value = [x.strip().lower() for x in search_term.split(":")]
+            if field == "genotype":
+                field = "genotype id"
+            if field not in ("genotype", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
+                flash(
+                    fn.alert_danger(
+                        "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
+                    )
+                )
+                return redirect(session["url_genotypes_list"])
+
+            field = field.replace(" ", "_")
+            sql_search = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat " + (f"WHERE {field} ILIKE :search")
+            """
     else:
-        value = search_term
+        values = {"search": f"%{search_term}%"}
 
         sql_search = (
             "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
@@ -483,11 +506,13 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     results = (
         con.execute(
             text(sql_all if not search_term else sql_search),
-            {
-                "search": f"%{value}%",
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+            dict(
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+                **values,
+            ),
         )
         .mappings()
         .all()
@@ -518,10 +543,15 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         if "url_wa_list" in session:
             del session["url_wa_list"]
 
+        if results:
+            title = f"List of {results[0]['n_genotypes']} {type} genotypes".replace(" all", "").replace("_short", "")
+        else:
+            title = "No genotype found"
+
         return render_template(
             "genotypes_list.html",
             header_title=header_title,
-            title=f"List of {results[0]['n_genotypes'] if results else 0} {type} genotypes".replace(" all", "").replace("_short", ""),
+            title=title,
             limit=limit,
             offset=offset,
             type=type,
@@ -537,51 +567,37 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
 @app.route("/view_wa/<wa_code>")
 @fn.check_login
-def view_wa(wa_code):
-    con = fn.conn_alchemy().connect()
-
-    result = (
-        con.execute(
-            text(
-                "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
-                "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                " FROM wa_scat_dw_mat WHERE wa_code = :wa_code"
-            ),
-            {"wa_code": wa_code},
-        )
-        .mappings()
-        .fetchone()
-    )
-
-    if result is not None:
-        if result["sample_id"].startswith("T") or result["sample_id"].startswith("M"):
-            return redirect(f"/view_tissue/{result['sample_id']}")
-        else:  # E or other
-            return redirect(f"/view_scat/{result['sample_id']}")
-
-    else:
+def view_wa(wa_code: str):
+    """
+    visualize WA code and correlated sample data
+    link to view genetic data (if available)
+    """
+    with fn.conn_alchemy().connect() as con:
         result = (
             con.execute(
                 text(
-                    "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat,"
-                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
-                    "FROM dead_wolves_mat "
-                    "WHERE wa_code = :wa_code"
+                    "SELECT scat_id AS sample_id, 'Scat' AS sample_type, NULL AS tissue_id FROM scats WHERE wa_code = :wa_code "
+                    "UNION "
+                    "SELECT id::text as sample_id, 'Dead wolf' AS sample_type, tissue_id FROM dead_wolves_mat WHERE wa_code = :wa_code "
                 ),
                 {"wa_code": wa_code},
             )
             .mappings()
-            .fetchone()
+            .all()
         )
-
-        if result is not None:
-            return redirect(f"/view_tissue/{result['tissue_id']}")
-
-        else:
+        if result is None:
             flash(fn.alert_danger(f"WA code not found: {wa_code}"))
             return redirect(request.referrer)
+        if len(result) > 1:
+            flash(fn.alert_danger(f"WA code found in scats and dead wolves table. Check {wa_code}"))
+            return redirect(request.referrer)
+
+        # check if genetic data available
+        genetic_data = con.execute(text("SELECT wa_code FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().all()
+
+        print(f"{genetic_data=}")
+
+        return render_template("view_wa.html", header_title=f"{wa_code}", wa_code=wa_code, result=result[0], genetic_data=genetic_data)
 
 
 @app.route("/plot_all_wa")
@@ -590,61 +606,61 @@ def plot_all_wa():
     """
     plot all WA codes (scats and dead wolves)
     """
-    con = fn.conn_alchemy().connect()
 
     scat_features: list = []
 
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
 
-    for row in (
-        con.execute(
-            text(
-                "SELECT wa_code, sample_id, genotype_id, "
-                "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
-                "FROM wa_scat_dw_mat "
-                "WHERE mtdna != 'Poor DNA' "
-                "AND date BETWEEN :start_date AND :end_date "
-            ),
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .all()
-    ):
-        scat_geojson = json.loads(row["scat_lonlat"])
-
-        lon, lat = scat_geojson["coordinates"]
-
-        tot_min_lat = min([tot_min_lat, lat])
-        tot_max_lat = max([tot_max_lat, lat])
-        tot_min_lon = min([tot_min_lon, lon])
-        tot_max_lon = max([tot_max_lon, lon])
-
-        if row["sample_id"].startswith("E"):
-            color = params["scat_color"]
-        elif row["sample_id"][0] in "TM":
-            color = params["dead_wolf_color"]
-        else:
-            color = "red"
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
-                "popupContent": (
-                    f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
-                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: {row['genotype_id']}"""
+    with fn.conn_alchemy().connect() as con:
+        for row in (
+            con.execute(
+                text(
+                    "SELECT wa_code, sample_id, genotype_id, "
+                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "FROM wa_scat_dw_mat "
+                    "WHERE mtdna != 'Poor DNA' "
+                    "AND date BETWEEN :start_date AND :end_date "
                 ),
-            },
-            "id": row["sample_id"],
-        }
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        ):
+            scat_geojson = json.loads(row["scat_lonlat"])
 
-        scat_features.append(scat_feature)
+            lon, lat = scat_geojson["coordinates"]
+
+            tot_min_lat = min([tot_min_lat, lat])
+            tot_max_lat = max([tot_max_lat, lat])
+            tot_min_lon = min([tot_min_lon, lon])
+            tot_max_lon = max([tot_max_lon, lon])
+
+            if row["sample_id"].startswith("E"):
+                color = params["scat_color"]
+            elif row["sample_id"][0] in "TM":
+                color = params["dead_wolf_color"]
+            else:
+                color = "red"
+
+            scat_feature = {
+                "geometry": dict(scat_geojson),
+                "type": "Feature",
+                "properties": {
+                    "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                    "popupContent": (
+                        f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                        f"""Genotype ID: {row['genotype_id']}"""
+                    ),
+                },
+                "id": row["sample_id"],
+            }
+
+            scat_features.append(scat_feature)
 
     return render_template(
         "plot_all_wa.html",
@@ -830,24 +846,35 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             search_term: str = ""
 
     if ":" in search_term:
-        field, value = [x.strip().lower() for x in search_term.split(":")]
-        if field == "wa":
-            field = "wa code"
-        if field not in ("wa code", "date", "sample id", "municipality", "genotype id", "sex", "tmp id", "notes", "pack"):
-            flash(
-                fn.alert_danger(
-                    "Search term not found. Must be 'wa code', 'date', 'sample id', 'municipality', 'genotype id', 'sex', 'tmp id', 'notes' or 'pack'"
+        sql_search = sql_all
+        values: dict = {}
+        for idx, field_term in enumerate(search_term.split(";")):
+            field, value = [x.strip().lower() for x in field_term.split(":")]
+            if field not in ("wa", "date", "sample id", "municipality", "genotype id", "sex", "tmp id", "notes", "pack", "box"):
+                flash(
+                    fn.alert_danger(
+                        "Search term not found. Must be 'wa', 'date', 'sample id', 'municipality', 'genotype id', 'sex', 'tmp id', 'notes', 'box' or 'pack'"
+                    )
                 )
-            )
-            return redirect(session["url_wa_list"])
+                return redirect(session["url_wa_list"])
 
-        field = field.replace(" ", "_")
-        if field == "sex":
-            field = "sex_id"
+            field = field.replace(" ", "_")
+            if field == "wa":
+                field = "wa_code"
+            if field == "sex":
+                field = "sex_id"
+                values[f"search{idx}"] = value
+                sql_search += f" AND ({field} = :search{idx}) "
+            elif field == "box":
+                field = "box_number"
+                values[f"search{idx}"] = value
+                sql_search += f" AND ({field} = :search{idx}) "
+            else:
+                sql_search += f" AND ({field} ILIKE :search{idx}) "
+                values[f"search{idx}"] = f"%{value}%"
 
-        sql_search = sql_all + (f" AND ({field} ILIKE :search) ")
     else:
-        value = search_term
+        values = {"search": f"%{search_term}%"}
         sql_search = sql_all + (
             " AND ("
             "wa_code ILIKE :search "
@@ -858,17 +885,20 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             "OR tmp_id ILIKE :search "
             "OR notes ILIKE :search "
             "OR pack ILIKE :search "
+            "OR box_number::text = :search "
             ") "
         )
 
     wa_scats = (
         con.execute(
             text(sql_all if not search_term else sql_search),
-            {
-                "search": f"%{value}%",
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
+            dict(
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+                **values,
+            ),
         )
         .mappings()
         .all()
@@ -1017,28 +1047,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             search_term=search_term,
             view_wa_code=view_wa_code,
         )
-
-
-@app.route(
-    "/search_wa",
-    methods=(
-        "GET",
-        "POST",
-    ),
-)
-@fn.check_login
-def search_wa():
-    if request.method == "GET":
-        with fn.conn_alchemy().connect() as con:
-            sql = text("SELECT * FROM wa_genetic_samples_mat ")
-            results = con.execute(sql).mappings().all()
-            return render_template(
-                "wa_genetic_samples_list.html",
-                header_title="Search WA codes",
-                title="TITOLO",
-                wa_scats=results,
-                with_notes="",
-            )
 
 
 @app.route("/wa_analysis/<distance>/<int:cluster_id>")
@@ -1250,6 +1258,11 @@ def view_genetic_data(wa_code: str):
             .mappings()
             .fetchone()
         )
+
+        if row is None:
+            flash(fn.alert_danger(f"WA code {wa_code} not found"))
+            return redirect(request.referrer)
+
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
 

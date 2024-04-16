@@ -2,121 +2,38 @@
 
 {% block content %}
 
-<h1>WolfDB</h1>
+
+
+<h2>WA code: <b>{{ wa_code }}</b></h2>
+
 <hr>
 
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
+<h3>Sample type: <b>{{ result["sample_type"] }}</b></h3>
 
-<a href="{{ go_back_url }}" class="btn btn-primary">Go back</a>
+<h3>
+{% if result["sample_type"] == 'Scat' %}
+View scat data: <a href="/view_scat/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>
+{% endif %}
+
+
+{% if result["sample_type"] == 'Dead wolf' %}
+View dead wolf data: <a href="/view_dead_wolf_id/{{ result['sample_id'] }}">
+{% if result['tissue_id'] not in ('', none) %}
+{{ result['tissue_id'] }}
+{% else %}
+{{ result['sample_id'] }}
+{% endif %}
+</a>
+{% endif %}
+</h3>
 
 <br><br>
 
-
-<h2>WA code: {{ results["wa_code"] }}</h2>
-
-<br>
-
-<table class="table table-striped">
-
-</table>
-
-
-<h4>Sample</h4>
-
-<table class="table table-striped">
-<tr><td>Date</td><td>{{ results["date"] }}</td></tr>
-
-<tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
-<tr><td>Sampling type</td><td>{{ results["sampling_type"] }}</td></tr>
-
- <!--
-<tr>
-
-    <td>Transect ID</td>
-    <td>
-        {% if results["transect_id"] %}
-        <a href="/view_transect/{{ transect_id }}">{{ results["transect_id"] }}</a>
-    {% endif %}
-
-    </td>
-
-</tr>
--->
-
-<tr>
-    <td>Path ID</td>
-    <td>
-        {% if results['path_id'] != "-" %}
-        <a href="/view_path/{{ results['path_id'] }}">{{ results['path_id'] }}</a>
-        {% else %}
-    {{ results['path_id'] }}
-    {% endif %}
-
-    </td>
-</tr>
-<tr><td>Snowtrack ID</td><td>
-
-    {% if results['snowtrack_id'] != "-" %}
-    <a href="/view_snowtrack/{{ results['snowtrack_id'] }}">{{ results['snowtrack_id'] }}</a>
-    {% else %}
-    {{ results['snowtrack_id'] }}
-    {% endif %}
-
-</td></tr>
-<tr><td>Location</td><td>{{ results["location"] }}</td></tr>
-<tr><td>Municipality</td><td>{{ results["municipality"] }}</td></tr>
-<tr><td>Province</td><td>{{ results["province"] }}</td></tr>
-<tr><td>Region</td><td>{{ results["region"] }}</td></tr>
-<tr><td>Deposition</td><td>{{ results["deposition"] }}</td></tr>
-<tr><td>Matrix</td><td>{{ results["matrix"] }}</td></tr>
-<tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
-<tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
-
-<tr><td>Coordinates (WGS 84 / UTM zone 32N)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
-<!--<tr><td>Longitude, Latitude</td><td>{{ results["lonlat_str"] }}</td></tr>-->
-<tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
-<tr><td>Institution</td><td>{{ results["institution"] }}</td></tr>
-<tr><td>Notes</td><td>{{ results["notes"] }}</td></tr>
-
-</table>
-
-
-<h4>Genetic data</h4>
-
-<table class="table table-striped">
-
-    <tr><td>Genotype ID</td><td>
-        {% if wa_result["genotype_id"] %}
-        <a href="/view_genotype/{{ wa_result["genotype_id"] }}">{{ wa_result["genotype_id"] }}</a>
-        {% endif %}
-    </td></tr>
-
-    <tr><td>Pack</td><td>{% if wa_result["pack"] %}{{ wa_result["pack"] }}{% endif %}</td></tr>
-
-    <tr><td>mtDNA</td><td>{{  wa_result["mtdna"] }}</td></tr>
-
-    <!--<tr><td>Genotype</td><td>{{  wa_result["quality_genotype"] }}</td></tr>-->
-
-    <tr><td>Sex</td><td>{% if wa_result["sex_id"] %}{{ wa_result["sex_id"] }}{% endif %}</td></tr>
-
-
-    <tr><td>Package sent</td><td>{% if wa_result["package_sent"] %}{{  wa_result["package_sent"] }}{% endif %}</td></tr>
-
-    <tr>
-        <td>Notes</td><td>{% if wa_result["notes"] %}{{ wa_result["notes"] }}{% endif %}</td>
-    </tr>
-
-
-</table>
-
-
-
-<h2>Map</h2>
-
-<div id="map" style="width: 800px; height: 800px;"></div>
-
-
-{{ map }}
+{% if genetic_data  %}
+<a class="btn btn-primary" href="/view_genetic_data/{{ wa_code }}">View genetic data</a>
+{% else %}
+<h4>No genetic data available</h4>
+{% endif %}
 
 {% endblock %}
 

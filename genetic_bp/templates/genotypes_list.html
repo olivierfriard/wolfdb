@@ -24,17 +24,15 @@
 {% endwith %}
 
 
-{% if session['start_year'] and session['end_year'] %}Date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
-
 <h3>{{ title }}</h3>
 
 {% if limit == 'ALL' %}
-<h4>All genotypes</h4>
+{% if results %}<h4>All genotypes</h4>{% endif %}
 {% else %}
 <h4>Genotypes from {{ offset + 1}} to {{ offset + limit }}</h4>
 {% endif %}
 
-{% if results %}
+
 <span style="display:solid">
 {% if limit != 'ALL' %}
 <a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/genotypes_list/0/{{ limit }}/{{ type }}">1st page</a>
@@ -108,6 +106,7 @@
 </thead>
 
 <tbody>
+{% if results %}
 {% for result in results %}
 <tr>
 <td><a id="{{ result['genotype_id'] }}">
@@ -189,17 +188,14 @@ set ...
 {% endif %}
 </tr>
 {% endfor %}
+{% endif %}
 </tbody>
 </table>
 </div>
 </div>
 
 
-{% else %}
 
-<h2>No genotypes found</h2>
-
-{% endif %}
 
 
 {% endblock %}

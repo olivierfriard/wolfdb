@@ -24,12 +24,12 @@ function scroll_to_wa() {
 
 <h3>{{ title }}</h3>
 {% if limit == 'ALL' %}
-<h4>All WA codes</h4>
+{% if wa_scats %}<h4>All WA codes</h4>{% endif %}
 {% else %}
 <h4>WA codes from {{ offset + 1}} to {{ (offset + limit) if offset + limit <= n_wa else n_wa }}</h4>
 {% endif %}
 
-{% if wa_scats %}
+
 <span style="display:solid">
 {% if limit != 'ALL' %}
 <a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/{{ limit }}/{{ filter }}">1st page</a>
@@ -72,6 +72,7 @@ function scroll_to_wa() {
 <th>WA code</th>
 <th>Sample ID</th>
 <th>Date</th>
+<th>Box number</th>
 <th>Municipality</th>
 <th>Coordinates WGS84 UTM zone 32N</th>
 <th>mtDNA result</th>
@@ -95,6 +96,8 @@ function scroll_to_wa() {
 </thead>
 
 <tbody>
+{% if wa_scats %}
+
 {% for result in wa_scats %}
 <tr>
 <td style="white-space: nowrap;">
@@ -109,6 +112,8 @@ function scroll_to_wa() {
 <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
 
 <td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
+
+<td>{% if result['box_number'] %}{{ result['box_number'] }}{% endif %}</td>
 
 <td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
 
@@ -142,13 +147,14 @@ class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
 {% endfor %}
 </tr>
 {% endfor %}
+{% endif %}
 </tbody>
 </table>
 </div><!-- condensed -->
 </div><!-- frozen -->
 
 
-{% endif %}
+
 
 
 {% endblock %}

@@ -58,24 +58,6 @@ def error_info(exc_info: tuple) -> tuple:
     return f"Error {error_type} in {error_file_name} at line #{error_lineno}"
 
 
-@app.route("/scats")
-@fn.check_login
-def scats():
-    """
-    Scats home page
-    """
-
-    if os.path.exists(LOCK_FILE_NAME_PATH):
-        check_location_creation_time = "Check location is running. Please wait."
-    else:
-        if os.path.exists("static/systematic_scats_transects_location.html"):
-            check_location_creation_time = time.ctime(os.path.getctime("static/systematic_scats_transects_location.html"))
-        else:
-            check_location_creation_time = "File not found"
-
-    return render_template("scats.html", header_title="Scats", check_location_creation_time=check_location_creation_time)
-
-
 @app.route("/wa_form", methods=("POST",))
 @fn.check_login
 def wa_form():
@@ -454,9 +436,15 @@ def scats_list_limit(offset: int, limit: int | str):
     if "url_wa_list" in session:
         del session["url_wa_list"]
 
+    if results:
+        title = f"List of {results[0]['n_scats']} scat{'s' if results[0]['n_scats'] >1 else ''}"
+    else:
+        title = "No scat found"
+
     return render_template(
         "scats_list_limit.html",
-        header_title="List of samples",
+        title=title,
+        header_title="List of scats",
         n_scats=results[0]["n_scats"] if results else 0,
         limit=limit,
         offset=offset,
