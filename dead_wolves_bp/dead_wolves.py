@@ -132,55 +132,54 @@ def plot_dead_wolves():
     """
     plot dead wolves
     """
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        tot_min_lat, tot_min_lon = 90, 90
+        tot_max_lat, tot_max_lon = -90, -90
 
-    tot_min_lat, tot_min_lon = 90, 90
-    tot_max_lat, tot_max_lon = -90, -90
-
-    dw_features = []
-    for row in (
-        con.execute(
-            text(
-                "SELECT * FROM dead_wolves_mat "
-                "WHERE deleted is NULL "
-                "AND utm_east != '0' AND utm_north != '0' "
-                "AND discovery_date BETWEEN :start_date AND :end_date"
-            ),
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .all()
-    ):
-        try:
-            lat, lon = utm.to_latlon(int(float(row["utm_east"])), int(float(row["utm_north"])), 32, "N")
-
-            tot_min_lat = min([tot_min_lat, lat])
-            tot_max_lat = max([tot_max_lat, lat])
-            tot_min_lon = min([tot_min_lon, lon])
-            tot_max_lon = max([tot_max_lon, lon])
-
-            dw_geojson = {"type": "Point", "coordinates": [lon, lat]}
-
-            dw_feature = {
-                "geometry": dict(dw_geojson),
-                "type": "Feature",
-                "properties": {
-                    "popupContent": (f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>""")
-                    + (
-                        f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>"""
-                        if row["genotype_id"]
-                        else "" f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>"""
-                    ),
+        dw_features = []
+        for row in (
+            con.execute(
+                text(
+                    "SELECT * FROM dead_wolves_mat "
+                    "WHERE deleted is NULL "
+                    "AND utm_east != '0' AND utm_north != '0' "
+                    "AND discovery_date BETWEEN :start_date AND :end_date"
+                ),
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
                 },
-                "id": row["id"],
-            }
-            dw_features.append(dict(dw_feature))
+            )
+            .mappings()
+            .all()
+        ):
+            try:
+                lat, lon = utm.to_latlon(int(float(row["utm_east"])), int(float(row["utm_north"])), 32, "N")
 
-        except Exception:
-            pass
+                tot_min_lat = min([tot_min_lat, lat])
+                tot_max_lat = max([tot_max_lat, lat])
+                tot_min_lon = min([tot_min_lon, lon])
+                tot_max_lon = max([tot_max_lon, lon])
+
+                dw_geojson = {"type": "Point", "coordinates": [lon, lat]}
+
+                dw_feature = {
+                    "geometry": dict(dw_geojson),
+                    "type": "Feature",
+                    "properties": {
+                        "popupContent": (f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>""")
+                        + (
+                            f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>"""
+                            if row["genotype_id"]
+                            else "" f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>"""
+                        ),
+                    },
+                    "id": row["id"],
+                }
+                dw_features.append(dict(dw_feature))
+
+            except Exception:
+                pass
 
     return render_template(
         "plot_dead_wolves.html",
@@ -210,7 +209,7 @@ def new_dead_wolf():
 
     def not_valid(form, msg):
         # default values
-        default_values = {}
+        default_values: dict = {}
         for k in request.form:
             default_values[k] = request.form[k]
 
@@ -241,54 +240,53 @@ def new_dead_wolf():
         if not form.validate():
             return not_valid(form, "Dead wolf form NOT validated. See details below.")
 
-        con = fn.conn_alchemy().connect()
+        with fn.conn_alchemy().connect() as con:
+            row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves_values")).mappings().fetchone()
+            new_id = row["max_id"] + 1
 
-        row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves_values")).mappings().fetchone()
-        new_id = row["max_id"] + 1
-
-        # add region
-        if request.form["field20"]:
-            region = (
-                con.execute(text("SELECT region from geo_info WHERE province_code = %s", [request.form["field20"]]))
-                .mappings()
-                .fetchone()["region"]
-            )
-        else:
-            region = ""
-
-        # fields list
-        fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition order by position")).mappings().all()
-
-        # insert ID
-        con.execute(text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 1, :new_id)"), {"new_id": new_id})
-
-        for field in fields_list:
-            # region
-            if field["field_id"] == 200:
-                con.execute(
-                    text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :region)"),
-                    {"new_id": new_id, "field_id": field["field_id"], "region": region},
+            # add region
+            if request.form["field20"]:
+                region = (
+                    con.execute(text("SELECT region from geo_info WHERE province_code = %s", [request.form["field20"]]))
+                    .mappings()
+                    .fetchone()["region"]
                 )
+            else:
+                region = ""
 
-            if f"field{field['field_id']}" in request.form:
-                # check UTM coordinates
-                if field["field_id"] in (23, 24) and request.form[f"field{field['field_id']}"] == "":
+            # fields list
+            fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition order by position")).mappings().all()
+
+            # insert ID
+            con.execute(text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 1, :new_id)"), {"new_id": new_id})
+
+            for field in fields_list:
+                # region
+                if field["field_id"] == 200:
                     con.execute(
-                        text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :value)"),
-                        {"new_id": new_id, "field_id": field["field_id"], "value": "0"},
-                    )
-                # date
-                elif field["field_id"] in (8, 9, 11) and request.form[f"field{field['field_id']}"] == "":
-                    con.execute(
-                        text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, NULL)"),
-                        {"new_id": new_id, "field_id": field["field_id"]},
+                        text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :region)"),
+                        {"new_id": new_id, "field_id": field["field_id"], "region": region},
                     )
 
-                else:
-                    con.execute(
-                        "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :value)",
-                        {"new_id": new_id, "field_id": field["field_id"], "value": request.form[f"field{field['field_id']}"]},
-                    )
+                if f"field{field['field_id']}" in request.form:
+                    # check UTM coordinates
+                    if field["field_id"] in (23, 24) and request.form[f"field{field['field_id']}"] == "":
+                        con.execute(
+                            text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :value)"),
+                            {"new_id": new_id, "field_id": field["field_id"], "value": "0"},
+                        )
+                    # date
+                    elif field["field_id"] in (8, 9, 11) and request.form[f"field{field['field_id']}"] == "":
+                        con.execute(
+                            text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, NULL)"),
+                            {"new_id": new_id, "field_id": field["field_id"]},
+                        )
+
+                    else:
+                        con.execute(
+                            "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :value)",
+                            {"new_id": new_id, "field_id": field["field_id"], "value": request.form[f"field{field['field_id']}"]},
+                        )
 
         return redirect(f"/view_dead_wolf_id/{new_id}")
 
@@ -317,21 +315,20 @@ def edit_dead_wolf(id):
             default_values=default_values,
         )
 
-    con = fn.conn_alchemy().connect()
-
     if request.method == "GET":
-        rows = (
-            con.execute(
-                text(
-                    "SELECT id, dead_wolves_values.field_id AS field_id, name, val "
-                    "FROM dead_wolves_values, dead_wolves_fields_definition "
-                    "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = :id"
-                ),
-                {"id": id},
+        with fn.conn_alchemy().connect() as con:
+            rows = (
+                con.execute(
+                    text(
+                        "SELECT id, dead_wolves_values.field_id AS field_id, name, val "
+                        "FROM dead_wolves_values, dead_wolves_fields_definition "
+                        "WHERE dead_wolves_values.field_id=dead_wolves_fields_definition.field_id AND id = :id"
+                    ),
+                    {"id": id},
+                )
+                .mappings()
+                .all()
             )
-            .mappings()
-            .all()
-        )
 
         default_values: dict = {}
         for row in rows:
@@ -369,28 +366,29 @@ def edit_dead_wolf(id):
         form = Dead_wolf(request.form)
 
         if form.validate():
-            fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition ORDER BY position")).mappings().all()
+            with fn.conn_alchemy().connect() as con:
+                fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition ORDER BY position")).mappings().all()
 
-            for row in fields_list:
-                if f"field{row['field_id']}" in request.form:
-                    # date
-                    if row["field_id"] in (8, 9, 11) and request.form[f"field{row['field_id']}"] == "":
-                        con.execute(
-                            text(
-                                "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:id, :field_id, NULL)"
-                                "ON CONFLICT (id, field_id) DO UPDATE SET val = NULL"
-                            ),
-                            {"id": id, "field_id": row["field_id"]},
-                        )
-                    else:
-                        con.execute(
-                            text(
-                                "INSERT INTO dead_wolves_values VALUES (:id, :field_id, :value) "
-                                "ON CONFLICT (id, field_id) DO UPDATE "
-                                "SET val = EXCLUDED.val"
-                            ),
-                            {"id": id, "field_id": row["field_id"], "value": request.form[f"field{row['field_id']}"]},
-                        )
+                for row in fields_list:
+                    if f"field{row['field_id']}" in request.form:
+                        # date
+                        if row["field_id"] in (8, 9, 11) and request.form[f"field{row['field_id']}"] == "":
+                            con.execute(
+                                text(
+                                    "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:id, :field_id, NULL)"
+                                    "ON CONFLICT (id, field_id) DO UPDATE SET val = NULL"
+                                ),
+                                {"id": id, "field_id": row["field_id"]},
+                            )
+                        else:
+                            con.execute(
+                                text(
+                                    "INSERT INTO dead_wolves_values VALUES (:id, :field_id, :value) "
+                                    "ON CONFLICT (id, field_id) DO UPDATE "
+                                    "SET val = EXCLUDED.val"
+                                ),
+                                {"id": id, "field_id": row["field_id"], "value": request.form[f"field{row['field_id']}"]},
+                            )
 
             return redirect(f"/view_dead_wolf_id/{id}")
         else:
@@ -413,7 +411,7 @@ def del_dead_wolf(id):
 @fn.check_login
 def dead_wolves_list():
     """
-    get list of all dead_wolves
+    show list of all dead_wolves
     """
 
     with fn.conn_alchemy().connect() as con:

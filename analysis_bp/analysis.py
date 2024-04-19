@@ -110,86 +110,87 @@ def transects_samples(mode: str):
 
     year_init = session["start_date"][:4]
 
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        # check if path based on transect exist
+        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
-    # check if path based on transect exist
-    transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
-
-    out: dict = {}
-    template: dict = {}
-    header = f"Transect ID{sep}"
-    # check max number of sampling by year
-    result = (
-        con.execute(
-            text(
-                "SELECT MAX(c) AS n_paths "
-                "FROM "
-                "(SELECT COUNT(*) AS c FROM paths "
-                "      WHERE transect_id != '' "
-                "            AND date BETWEEN :start_date AND :end_date "
-                "      GROUP BY transect_id "
-                ") x"
-            ),
-            {"start_date": session["start_date"], "end_date": session["end_date"]},
-        )
-        .mappings()
-        .fetchone()
-    )
-    template = ["NA"] * result["n_paths"]
-    for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}{sep}"
-
-    for transect in transects:
-        row_out = copy.deepcopy(template)
-
-        paths = (
+        out: dict = {}
+        template: dict = {}
+        header = f"Transect ID{sep}"
+        # check max number of sampling by year
+        result = (
             con.execute(
-                text("SELECT path_id FROM paths WHERE transect_id = :transect_id AND date BETWEEN :start_date AND :end_date ORDER BY date"),
-                {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                text(
+                    "SELECT MAX(c) AS n_paths "
+                    "FROM "
+                    "(SELECT COUNT(*) AS c FROM paths "
+                    "      WHERE transect_id != '' "
+                    "            AND date BETWEEN :start_date AND :end_date "
+                    "      GROUP BY transect_id "
+                    ") x"
+                ),
+                {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
-            .all()
+            .fetchone()
         )
+        template = ["NA"] * result["n_paths"]
+        for i in range(result["n_paths"]):
+            header += f"{year_init}-{i + 1}{sep}"
 
-        idx = 0
-        for path in paths:
-            scats = (
-                con.execute(text("SELECT count(*) AS n_scats FROM scats WHERE path_id = :path_id"), {"path_id": path["path_id"]})
+        for transect in transects:
+            row_out = copy.deepcopy(template)
+
+            paths = (
+                con.execute(
+                    text(
+                        "SELECT path_id FROM paths WHERE transect_id = :transect_id AND date BETWEEN :start_date AND :end_date ORDER BY date"
+                    ),
+                    {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                )
                 .mappings()
-                .fetchone()
+                .all()
             )
-            if mode == "number":
-                row_out[idx] = str(scats["n_scats"])
-            if mode == "presence":
-                row_out[idx] = str(1 if scats["n_scats"] > 0 else 0)
-            idx += 1
 
-        out[transect["transect_id"]] = copy.deepcopy(row_out)
+            idx = 0
+            for path in paths:
+                scats = (
+                    con.execute(text("SELECT count(*) AS n_scats FROM scats WHERE path_id = :path_id"), {"path_id": path["path_id"]})
+                    .mappings()
+                    .fetchone()
+                )
+                if mode == "number":
+                    row_out[idx] = str(scats["n_scats"])
+                if mode == "presence":
+                    row_out[idx] = str(1 if scats["n_scats"] > 0 else 0)
+                idx += 1
 
-    out_str = header[:-1] + "\n"
-    for transect in out:
-        out_str += transect + sep
-        out_str += sep.join(out[transect])
-        out_str += sep
-        out_str = out_str[:-1] + "\n"
+            out[transect["transect_id"]] = copy.deepcopy(row_out)
 
-    response = make_response(out_str, 200)
+        out_str = header[:-1] + "\n"
+        for transect in out:
+            out_str += transect + sep
+            out_str += sep.join(out[transect])
+            out_str += sep
+            out_str = out_str[:-1] + "\n"
 
-    if mode == "number":
-        file_name = "transects_n-samples"
-    if mode == "presence":
-        file_name = "transects_samples_presence-samples"
+        response = make_response(out_str, 200)
 
-    if sep == "\t":
-        response.headers["Content-type"] = "text/tab-separated-values"
-        extension = "tsv"
-    if sep in (",", ";"):
-        response.headers["Content-type"] = "text/csv"
-        extension = "csv"
+        if mode == "number":
+            file_name = "transects_n-samples"
+        if mode == "presence":
+            file_name = "transects_samples_presence-samples"
 
-    response.headers["Content-disposition"] = f"attachment; filename={file_name}.{extension}"
+        if sep == "\t":
+            response.headers["Content-type"] = "text/tab-separated-values"
+            extension = "tsv"
+        if sep in (",", ";"):
+            response.headers["Content-type"] = "text/csv"
+            extension = "csv"
 
-    return response
+        response.headers["Content-disposition"] = f"attachment; filename={file_name}.{extension}"
+
+        return response
 
 
 @app.route("/transects_dates")
@@ -199,60 +200,59 @@ def transects_dates():
 
     year_init = session["start_date"][:4]
 
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        # check if path based on transect exist
+        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
-    # check if path based on transect exist
-    transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
-
-    out: dict = {}
-    template: dict = {}
-    header = f"Transect ID{sep}"
-    # check max number of sampling
-    result = (
-        con.execute(
-            text(
-                "SELECT MAX(c) AS n_paths "
-                "FROM "
-                "(SELECT COUNT(*) AS c FROM paths "
-                "      WHERE transect_id != '' "
-                "            AND date BETWEEN :start_date AND :end_date "
-                "      GROUP BY transect_id "
-                ") x"
-            ),
-            {
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .fetchone()
-    )
-    template = ["NA"] * result["n_paths"]
-    for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}{sep}"
-
-    for transect in transects:
-        row_out = copy.deepcopy(template)
-
-        paths = (
+        out: dict = {}
+        template: dict = {}
+        header = f"Transect ID{sep}"
+        # check max number of sampling
+        result = (
             con.execute(
                 text(
-                    "SELECT path_id, date::date as date FROM paths "
-                    "WHERE transect_id = :transect_id "
-                    "AND date BETWEEN :start_date AND :end_date "
-                    "ORDER BY date"
+                    "SELECT MAX(c) AS n_paths "
+                    "FROM "
+                    "(SELECT COUNT(*) AS c FROM paths "
+                    "      WHERE transect_id != '' "
+                    "            AND date BETWEEN :start_date AND :end_date "
+                    "      GROUP BY transect_id "
+                    ") x"
                 ),
-                {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
             )
             .mappings()
-            .all()
+            .fetchone()
         )
-        idx = 0
-        for path in paths:
-            row_out[idx] = str(path["date"])
-            idx += 1
+        template = ["NA"] * result["n_paths"]
+        for i in range(result["n_paths"]):
+            header += f"{year_init}-{i + 1}{sep}"
 
-        out[transect["transect_id"]] = copy.deepcopy(row_out)
+        for transect in transects:
+            row_out = copy.deepcopy(template)
+
+            paths = (
+                con.execute(
+                    text(
+                        "SELECT path_id, date::date as date FROM paths "
+                        "WHERE transect_id = :transect_id "
+                        "AND date BETWEEN :start_date AND :end_date "
+                        "ORDER BY date"
+                    ),
+                    {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                )
+                .mappings()
+                .all()
+            )
+            idx = 0
+            for path in paths:
+                row_out[idx] = str(path["date"])
+                idx += 1
+
+            out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:
@@ -279,53 +279,52 @@ def transects_completeness():
     sep = ";"
     year_init = session["start_date"][:4]
 
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        # check if path based on transect exist
+        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
 
-    # check if path based on transect exist
-    transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
-
-    out: dict = {}
-    template: dict = {}
-    header = f"Transect ID{sep}"
-    # check max number of sampling
-    result = con.execute(
-        text(
-            "SELECT MAX(c) AS n_paths "
-            "FROM "
-            "(SELECT COUNT(*) AS c FROM paths "
-            "      WHERE transect_id != '' "
-            "            AND date BETWEEN :start_date AND :end_date "
-            "      GROUP BY transect_id "
-            ") x"
-        ),
-        {"start_date": session["start_date"], "end_date": session["end_date"]},
-    )
-
-    template = ["NA"] * result["n_paths"]
-    for i in range(result["n_paths"]):
-        header += f"{year_init}-{i + 1}{sep}"
-
-    for transect in transects:
-        row_out = copy.deepcopy(template)
-
-        paths = (
-            con.execute(
-                text(
-                    "SELECT completeness FROM paths "
-                    "WHERE transect_id = :transect_id "
-                    "AND date BETWEEN :start_date AND :end_date ORDER BY date"
-                ),
-                {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
-            )
-            .mappings()
-            .all()
+        out: dict = {}
+        template: dict = {}
+        header = f"Transect ID{sep}"
+        # check max number of sampling
+        result = con.execute(
+            text(
+                "SELECT MAX(c) AS n_paths "
+                "FROM "
+                "(SELECT COUNT(*) AS c FROM paths "
+                "      WHERE transect_id != '' "
+                "            AND date BETWEEN :start_date AND :end_date "
+                "      GROUP BY transect_id "
+                ") x"
+            ),
+            {"start_date": session["start_date"], "end_date": session["end_date"]},
         )
-        idx = 0
-        for path in paths:
-            row_out[idx] = str(path["completeness"])
-            idx += 1
 
-        out[transect["transect_id"]] = copy.deepcopy(row_out)
+        template = ["NA"] * result["n_paths"]
+        for i in range(result["n_paths"]):
+            header += f"{year_init}-{i + 1}{sep}"
+
+        for transect in transects:
+            row_out = copy.deepcopy(template)
+
+            paths = (
+                con.execute(
+                    text(
+                        "SELECT completeness FROM paths "
+                        "WHERE transect_id = :transect_id "
+                        "AND date BETWEEN :start_date AND :end_date ORDER BY date"
+                    ),
+                    {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                )
+                .mappings()
+                .all()
+            )
+            idx = 0
+            for path in paths:
+                row_out[idx] = str(path["completeness"])
+                idx += 1
+
+            out[transect["transect_id"]] = copy.deepcopy(row_out)
 
     out_str = header[:-1] + "\n"
     for transect in out:

@@ -22,7 +22,6 @@ import uuid
 import os
 import sys
 import subprocess
-import time
 import datetime
 from . import scats_export, scats_import
 
@@ -616,8 +615,6 @@ def edit_scat(scat_id):
     Let user edit a scat
     """
 
-    con = fn.conn_alchemy().connect()
-
     def not_valid(form, msg):
         # default values
         default_values = {}
@@ -636,7 +633,9 @@ def edit_scat(scat_id):
         )
 
     if request.method == "GET":
-        default_values = con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}).mappings().fetchone()
+        with fn.conn_alchemy().connect() as con:
+            default_values = con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}).mappings().fetchone()
+
         if default_values["notes"] is None:
             default_values["notes"] = ""
 
@@ -708,134 +707,135 @@ def edit_scat(scat_id):
         if not form.validate():
             return not_valid(form, "Some values are not set or are wrong. Please check and submit again")
 
-        # check if scat id already exists
-        if scat_id != request.form["scat_id"]:
-            if len(
-                con.execute(text("SELECT scat_id FROM scats WHERE scat_id = :scat_id"), {"scat_id": request.form["scat_id"]})
-                .mappings()
-                .all()
-            ):
-                return not_valid(
-                    form,
-                    (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). " "Please check and submit again"),
-                )
+        with fn.conn_alchemy().connect() as con:
+            # check if scat id already exists
+            if scat_id != request.form["scat_id"]:
+                if len(
+                    con.execute(text("SELECT scat_id FROM scats WHERE scat_id = :scat_id"), {"scat_id": request.form["scat_id"]})
+                    .mappings()
+                    .all()
+                ):
+                    return not_valid(
+                        form,
+                        (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). " "Please check and submit again"),
+                    )
 
-        # date
-        try:
-            year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
-            month = int(request.form["scat_id"][3 : 4 + 1])
-            day = int(request.form["scat_id"][5 : 6 + 1])
-            date = f"{year:04}-{month:02}-{day:02}"
+            # date
             try:
-                datetime.datetime.strptime(date, "%Y-%m-%d")
+                year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
+                month = int(request.form["scat_id"][3 : 4 + 1])
+                day = int(request.form["scat_id"][5 : 6 + 1])
+                date = f"{year:04}-{month:02}-{day:02}"
+                try:
+                    datetime.datetime.strptime(date, "%Y-%m-%d")
+                except Exception:
+                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
             except Exception:
-                return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
-        except Exception:
-            return not_valid("The scat_id value is not correct")
+                return not_valid("The scat_id value is not correct")
 
-        # path id
-        if request.form["sampling_type"] == "Systematic":
-            # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
-            path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
-        else:
-            path_id = ""
+            # path id
+            if request.form["sampling_type"] == "Systematic":
+                # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
+                path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+            else:
+                path_id = ""
 
-        """
-        # check if province code exists
-        if request.form["province"].upper().strip() in fn.province_code_list():
-            province_code = request.form["province"].upper().strip()
-        elif request.form["province"].strip().upper() in fn.province_name_list():
-            province_code = fn.province_name2code(request.form["province"])
-        else:
-            return not_valid(f"Province {request.form['province']} not found")
-        """
+            """
+            # check if province code exists
+            if request.form["province"].upper().strip() in fn.province_code_list():
+                province_code = request.form["province"].upper().strip()
+            elif request.form["province"].strip().upper() in fn.province_name_list():
+                province_code = fn.province_name2code(request.form["province"])
+            else:
+                return not_valid(f"Province {request.form['province']} not found")
+            """
 
-        # check province code
-        province_code = fn.check_province_code(request.form["province"])
-        if province_code is None:
-            # check province name
-            province_code = fn.province_name2code(request.form["province"])
+            # check province code
+            province_code = fn.check_province_code(request.form["province"])
             if province_code is None:
-                return not_valid("The province was not found")
+                # check province name
+                province_code = fn.province_name2code(request.form["province"])
+                if province_code is None:
+                    return not_valid("The province was not found")
 
-        # add region from province code
-        scat_region = fn.province_code2region(province_code)
+            # add region from province code
+            scat_region = fn.province_code2region(province_code)
 
-        # check UTM coord conversion
-        try:
-            utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
-        except Exception:
-            return not_valid(form, "The UTM coordinates are not valid. Please check and submit again")
+            # check UTM coord conversion
+            try:
+                utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+            except Exception:
+                return not_valid(form, "The UTM coordinates are not valid. Please check and submit again")
 
-        # check if WA code exists for another sample
-        if request.form["wa_code"]:
-            if len(
-                con.execute(
-                    text("SELECT sample_id FROM wa_scat_dw_mat WHERE sample_id !=:scat_id AND wa_code = :wa_code"),
-                    {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
-                )
-                .mappings()
-                .all()
-            ):
-                return not_valid(
-                    form,
-                    (f"Another sample has the same WA code ({request.form['wa_code']}). " "Please check and submit again"),
-                )
+            # check if WA code exists for another sample
+            if request.form["wa_code"]:
+                if len(
+                    con.execute(
+                        text("SELECT sample_id FROM wa_scat_dw_mat WHERE sample_id !=:scat_id AND wa_code = :wa_code"),
+                        {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
+                    )
+                    .mappings()
+                    .all()
+                ):
+                    return not_valid(
+                        form,
+                        (f"Another sample has the same WA code ({request.form['wa_code']}). " "Please check and submit again"),
+                    )
 
-        sql = text(
-            "UPDATE scats SET "
-            " scat_id = :scat_id, "
-            " wa_code = :wa_code,"
-            " date = :date,"
-            " sampling_season = :sampling_season,"
-            " sampling_type = :sampling_type,"
-            " sample_type = :sample_type,"
-            " path_id = :path_id, "
-            " snowtrack_id = :snowtrack_id, "
-            " location = :location, "
-            " municipality = :municipality, "
-            " province = :province, "
-            " region = :region, "
-            " deposition = :deposition, "
-            " matrix = :matrix, "
-            " collected_scat = :collected_scat, "
-            " scalp_category = :scalp_category, "
-            " coord_east = :coord_east, "
-            " coord_north = :coord_north, "
-            #  coord_zone = %s, "
-            " observer = :observer, "
-            " institution = :institution, "
-            " notes = :notes, "
-            " geometry_utm = :geometry_utm "
-            "WHERE scat_id = :scat_id"
-        )
-        con.execute(
-            sql,
-            {
-                "scat_id": request.form["scat_id"],
-                "wa_code": request.form["wa_code"],
-                "date": date,
-                "sampling_season": fn.sampling_season(date),
-                "sampling_type": request.form["sampling_type"] if request.form["sampling_type"] else None,
-                "sample_type": request.form["sample_type"],
-                "path_id": path_id,
-                "snowtrack_id": request.form["snowtrack_id"],
-                "location": request.form["location"],
-                "municipality": request.form["municipality"],
-                "province": province_code,
-                "region": scat_region,
-                "deposition": request.form["deposition"],
-                "matrix": request.form["matrix"],
-                "collected_scat": request.form["collected_scat"],
-                "scalp_category": request.form["scalp_category"],
-                "coord_east": request.form["coord_east"],
-                "coord_north": request.form["coord_north"],  # request.form["coord_zone"],
-                "observer": request.form["observer"],
-                "institution": request.form["institution"],
-                "notes": request.form["notes"],
-                "geometry_utm": f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
-            },
-        )
+            sql = text(
+                "UPDATE scats SET "
+                " scat_id = :scat_id, "
+                " wa_code = :wa_code,"
+                " date = :date,"
+                " sampling_season = :sampling_season,"
+                " sampling_type = :sampling_type,"
+                " sample_type = :sample_type,"
+                " path_id = :path_id, "
+                " snowtrack_id = :snowtrack_id, "
+                " location = :location, "
+                " municipality = :municipality, "
+                " province = :province, "
+                " region = :region, "
+                " deposition = :deposition, "
+                " matrix = :matrix, "
+                " collected_scat = :collected_scat, "
+                " scalp_category = :scalp_category, "
+                " coord_east = :coord_east, "
+                " coord_north = :coord_north, "
+                #  coord_zone = %s, "
+                " observer = :observer, "
+                " institution = :institution, "
+                " notes = :notes, "
+                " geometry_utm = :geometry_utm "
+                "WHERE scat_id = :scat_id"
+            )
+            con.execute(
+                sql,
+                {
+                    "scat_id": request.form["scat_id"],
+                    "wa_code": request.form["wa_code"],
+                    "date": date,
+                    "sampling_season": fn.sampling_season(date),
+                    "sampling_type": request.form["sampling_type"] if request.form["sampling_type"] else None,
+                    "sample_type": request.form["sample_type"],
+                    "path_id": path_id,
+                    "snowtrack_id": request.form["snowtrack_id"],
+                    "location": request.form["location"],
+                    "municipality": request.form["municipality"],
+                    "province": province_code,
+                    "region": scat_region,
+                    "deposition": request.form["deposition"],
+                    "matrix": request.form["matrix"],
+                    "collected_scat": request.form["collected_scat"],
+                    "scalp_category": request.form["scalp_category"],
+                    "coord_east": request.form["coord_east"],
+                    "coord_north": request.form["coord_north"],  # request.form["coord_zone"],
+                    "observer": request.form["observer"],
+                    "institution": request.form["institution"],
+                    "notes": request.form["notes"],
+                    "geometry_utm": f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
+                },
+            )
 
         return redirect(f"/view_scat/{request.form['scat_id']}")
 
@@ -934,180 +934,179 @@ def confirm_load_xlsx(filename, mode):
         flash(msg)
         return redirect("/load_scats_xlsx")
 
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        # check if scat_id already in DB
+        scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
+        sql = text(f"SELECT scat_id FROM scats WHERE scat_id in ('{scats_list}')")
 
-    # check if scat_id already in DB
-    scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
-    sql = text(f"SELECT scat_id FROM scats WHERE scat_id in ('{scats_list}')")
+        scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
 
-    scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
-
-    sql = text(
-        "UPDATE scats SET scat_id = :scat_id, "
-        "                date = :date,"
-        "                wa_code = :wa_code,"
-        "                genotype_id = :genotype_id,"
-        "                sampling_season = :sampling_season,"
-        "                sampling_type = :sampling_type,"
-        "                path_id = :path_id, "
-        "                snowtrack_id = :snowtrack_id, "
-        "                location = :location, "
-        "                municipality = :municipality, "
-        "                province = :province, "
-        "                region = :region, "
-        "                deposition = :deposition, "
-        "                matrix = :matrix, "
-        "                collected_scat = :collected_scat, "
-        "                scalp_category = :scalp_category, "
-        "                genetic_sample = :genetic_sample, "
-        "                coord_east = :coord_east, "
-        "                coord_north = :coord_north, "
-        "                coord_zone = :coord_zone, "
-        "                observer = :operator, "
-        "                institution = :institution, "
-        # "                geo = %(geo)s, "
-        "                geometry_utm = :geometry_utm, "
-        "                notes = :notes "
-        "WHERE scat_id = :scat_id;"
-        "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
-        "location, municipality, province, region, "
-        "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
-        "coord_east, coord_north, coord_zone, "
-        "observer, institution,"
-        # "geo, "
-        "geometry_utm, notes) "
-        "SELECT :scat_id, :date, :wa_code, :genotype_id, "
-        ":sampling_season, :sampling_type, :path_id, :snowtrack_id, "
-        ":location, :municipality, :province, :region, "
-        ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
-        ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
-        # "%(geo)s, "
-        ":geometry_utm, :notes "
-        "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = :scat_id)"
-    )
-    count_added = 0
-    count_updated = 0
-    for idx in all_data:
-        data = dict(all_data[idx])
-
-        if mode == "new" and (data["scat_id"] in scats_to_update):
-            continue
-        if data["scat_id"] in scats_to_update:
-            count_updated += 1
-        else:
-            count_added += 1
-
-        try:
-            con.execute(
-                sql,
-                {
-                    "scat_id": data["scat_id"].strip(),
-                    "date": data["date"],
-                    "wa_code": data["wa_code"].strip(),
-                    "genotype_id": data["genotype_id"].strip(),
-                    "sampling_season": fn.sampling_season(data["date"]),
-                    "sampling_type": data["sampling_type"],
-                    "path_id": data["path_id"],
-                    "snowtrack_id": data["snowtrack_id"].strip(),
-                    "location": data["location"].strip(),
-                    "municipality": data["municipality"].strip(),
-                    "province": data["province"].strip().upper(),
-                    "region": data["region"],
-                    "deposition": data["deposition"],
-                    "matrix": data["matrix"],
-                    "collected_scat": data["collected_scat"],
-                    "scalp_category": data["scalp_category"].strip(),
-                    "genetic_sample": data["genetic_sample"],
-                    "coord_east": data["coord_east"],
-                    "coord_north": data["coord_north"],
-                    "coord_zone": data["coord_zone"].strip(),
-                    "operator": data["operator"],
-                    "institution": data["institution"],
-                    # "geo": data["coord_latlon"],
-                    "geometry_utm": data["geometry_utm"],
-                    "notes": data["notes"],
-                },
-            )
-        except Exception:
-            return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
-
-    # paths
-    if all_paths:
         sql = text(
-            "UPDATE paths SET path_id = :path_id, "
-            "                 transect_id = :transect_id, "
+            "UPDATE scats SET scat_id = :scat_id, "
             "                date = :date,"
+            "                wa_code = :wa_code,"
+            "                genotype_id = :genotype_id,"
             "                sampling_season = :sampling_season,"
-            "                completeness = :completeness,"
-            "                observer = :operator,"
-            "                institution = :institution,"
+            "                sampling_type = :sampling_type,"
+            "                path_id = :path_id, "
+            "                snowtrack_id = :snowtrack_id, "
+            "                location = :location, "
+            "                municipality = :municipality, "
+            "                province = :province, "
+            "                region = :region, "
+            "                deposition = :deposition, "
+            "                matrix = :matrix, "
+            "                collected_scat = :collected_scat, "
+            "                scalp_category = :scalp_category, "
+            "                genetic_sample = :genetic_sample, "
+            "                coord_east = :coord_east, "
+            "                coord_north = :coord_north, "
+            "                coord_zone = :coord_zone, "
+            "                observer = :operator, "
+            "                institution = :institution, "
+            # "                geo = %(geo)s, "
+            "                geometry_utm = :geometry_utm, "
             "                notes = :notes "
-            "WHERE path_id = :path_id;"
-            "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
-            "observer, institution, notes) "
-            "SELECT :path_id, :transect_id, :date,"
-            ":sampling_season, :completeness, "
-            ":operator, :institution, :notes "
-            "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
+            "WHERE scat_id = :scat_id;"
+            "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
+            "location, municipality, province, region, "
+            "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
+            "coord_east, coord_north, coord_zone, "
+            "observer, institution,"
+            # "geo, "
+            "geometry_utm, notes) "
+            "SELECT :scat_id, :date, :wa_code, :genotype_id, "
+            ":sampling_season, :sampling_type, :path_id, :snowtrack_id, "
+            ":location, :municipality, :province, :region, "
+            ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
+            ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
+            # "%(geo)s, "
+            ":geometry_utm, :notes "
+            "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = :scat_id)"
         )
-        for idx in all_paths:
-            data = dict(all_paths[idx])
+        count_added = 0
+        count_updated = 0
+        for idx in all_data:
+            data = dict(all_data[idx])
+
+            if mode == "new" and (data["scat_id"] in scats_to_update):
+                continue
+            if data["scat_id"] in scats_to_update:
+                count_updated += 1
+            else:
+                count_added += 1
+
             try:
                 con.execute(
                     sql,
                     {
-                        "path_id": data["path_id"],
-                        "transect_id": data["transect_id"].strip(),
+                        "scat_id": data["scat_id"].strip(),
                         "date": data["date"],
+                        "wa_code": data["wa_code"].strip(),
+                        "genotype_id": data["genotype_id"].strip(),
                         "sampling_season": fn.sampling_season(data["date"]),
-                        "completeness": data["completeness"],
-                        "operator": data["operator"].strip(),
-                        "institution": data["institution"].strip(),
-                        "notes": data["notes"],
-                    },
-                )
-            except Exception:
-                return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
-
-    # snow tracks
-    if all_tracks:
-        sql = text(
-            "UPDATE snow_tracks SET snowtrack_id = :snowtrack_id, "
-            "                 path_id = :path_id, "
-            "                date = :date, "
-            "                sampling_season = :sampling_season,"
-            "                observer = :operator,"
-            "                institution = :institution,"
-            "                notes = :notes "
-            "WHERE snow_tracks = :snow_tracks;"
-            "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
-            "sampling_season,  "
-            "observer, institution, notes) "
-            "SELECT :snowtrack_id, :path_id, :date, "
-            "       :sampling_season, "
-            "       :operator, :institution, :notes "
-            "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = :snowtrack_id)"
-        )
-        for idx in all_tracks:
-            data = dict(all_paths[idx])
-
-            try:
-                con.execute(
-                    sql,
-                    {
+                        "sampling_type": data["sampling_type"],
                         "path_id": data["path_id"],
                         "snowtrack_id": data["snowtrack_id"].strip(),
-                        "date": data["date"],
-                        "sampling_season": fn.sampling_season(data["date"]),
-                        "operator": data["operator"].strip(),
-                        "institution": data["institution"].strip(),
+                        "location": data["location"].strip(),
+                        "municipality": data["municipality"].strip(),
+                        "province": data["province"].strip().upper(),
+                        "region": data["region"],
+                        "deposition": data["deposition"],
+                        "matrix": data["matrix"],
+                        "collected_scat": data["collected_scat"],
+                        "scalp_category": data["scalp_category"].strip(),
+                        "genetic_sample": data["genetic_sample"],
+                        "coord_east": data["coord_east"],
+                        "coord_north": data["coord_north"],
+                        "coord_zone": data["coord_zone"].strip(),
+                        "operator": data["operator"],
+                        "institution": data["institution"],
+                        # "geo": data["coord_latlon"],
+                        "geometry_utm": data["geometry_utm"],
                         "notes": data["notes"],
                     },
                 )
             except Exception:
-                return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+                return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
-    con.execute(text("CALL refresh_materialized_views()"))
+        # paths
+        if all_paths:
+            sql = text(
+                "UPDATE paths SET path_id = :path_id, "
+                "                 transect_id = :transect_id, "
+                "                date = :date,"
+                "                sampling_season = :sampling_season,"
+                "                completeness = :completeness,"
+                "                observer = :operator,"
+                "                institution = :institution,"
+                "                notes = :notes "
+                "WHERE path_id = :path_id;"
+                "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
+                "observer, institution, notes) "
+                "SELECT :path_id, :transect_id, :date,"
+                ":sampling_season, :completeness, "
+                ":operator, :institution, :notes "
+                "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
+            )
+            for idx in all_paths:
+                data = dict(all_paths[idx])
+                try:
+                    con.execute(
+                        sql,
+                        {
+                            "path_id": data["path_id"],
+                            "transect_id": data["transect_id"].strip(),
+                            "date": data["date"],
+                            "sampling_season": fn.sampling_season(data["date"]),
+                            "completeness": data["completeness"],
+                            "operator": data["operator"].strip(),
+                            "institution": data["institution"].strip(),
+                            "notes": data["notes"],
+                        },
+                    )
+                except Exception:
+                    return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
+
+        # snow tracks
+        if all_tracks:
+            sql = text(
+                "UPDATE snow_tracks SET snowtrack_id = :snowtrack_id, "
+                "                 path_id = :path_id, "
+                "                date = :date, "
+                "                sampling_season = :sampling_season,"
+                "                observer = :operator,"
+                "                institution = :institution,"
+                "                notes = :notes "
+                "WHERE snow_tracks = :snow_tracks;"
+                "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
+                "sampling_season,  "
+                "observer, institution, notes) "
+                "SELECT :snowtrack_id, :path_id, :date, "
+                "       :sampling_season, "
+                "       :operator, :institution, :notes "
+                "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = :snowtrack_id)"
+            )
+            for idx in all_tracks:
+                data = dict(all_paths[idx])
+
+                try:
+                    con.execute(
+                        sql,
+                        {
+                            "path_id": data["path_id"],
+                            "snowtrack_id": data["snowtrack_id"].strip(),
+                            "date": data["date"],
+                            "sampling_season": fn.sampling_season(data["date"]),
+                            "operator": data["operator"].strip(),
+                            "institution": data["institution"].strip(),
+                            "notes": data["notes"],
+                        },
+                    )
+                except Exception:
+                    return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+
+        con.execute(text("CALL refresh_materialized_views()"))
 
     msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
     flash(fn.alert_success(msg))

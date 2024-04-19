@@ -44,162 +44,161 @@ def view_transect(transect_id):
     transects_color = params["transect_color"]
     tracks_color = params["track_color"]
 
-    con = fn.conn_alchemy().connect()
-
-    transect = (
-        con.execute(
-            text(
-                "SELECT *, "
-                "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
-                "ROUND(ST_Length(multilines)) AS transect_length "
-                "FROM transects "
-                "WHERE transect_id = :transect_id"
-            ),
-            {"transect_id": transect_id},
-        )
-        .mappings()
-        .fetchone()
-    )
-
-    if transect is None:
-        flash(fn.alert_danger(f"<b>Transect {transect_id} not found</b>"))
-        return redirect("/transects_list")
-
-    transect_features = []
-    min_lat, max_lat = 90, -90
-    min_lon, max_lon = 90, -90
-
-    if transect["transect_geojson"] is not None:
-        transect_geojson = json.loads(transect["transect_geojson"])
-
-        for line in transect_geojson["coordinates"]:
-            latitudes = [lat for _, lat in line]
-            longitudes = [lon for lon, _ in line]
-            min_lat, max_lat = min(latitudes), max(latitudes)
-            min_lon, max_lon = min(longitudes), max(longitudes)
-
-        transect_feature = {
-            "type": "Feature",
-            "properties": {
-                # "style": {"stroke": transects_color, "stroke-width": 2, "stroke-opacity": 1},
-                "popupContent": f"Transect ID: {transect_id}",
-            },
-            "geometry": dict(transect_geojson),
-            "id": 1,
-        }
-        transect_features = [transect_feature]
-
-    # path
-    results_paths = (
-        con.execute(
-            text(
-                "SELECT *,"
-                "(SELECT count(*) FROM scats WHERE scats.path_id = paths.path_id) AS n_scats "
-                "FROM paths "
-                "WHERE transect_id = :transect_id "
-                "AND (date between :start_date AND :end_date OR date IS NULL) "
-                "ORDER BY date ASC"
-            ),
-            {
-                "transect_id": transect_id,
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .all()
-    )
-
-    # scats
-
-    # number of scats
-    scats = (
-        con.execute(
-            text(
-                (
-                    "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_mat "
-                    "WHERE path_id LIKE :path_id "
-                    " AND (date between :start_date AND :end_date OR date IS NULL) "
-                )
-            ),
-            {
-                "path_id": f"{transect_id}|%",
-                "start_date": session["start_date"],
-                "end_date": session["end_date"],
-            },
-        )
-        .mappings()
-        .all()
-    )
-
-    n_scats = len(scats)
-
-    scat_features: list = []
-    for row in scats:
-        scat_geojson = json.loads(row["scat_lonlat"])
-
-        lon, lat = scat_geojson["coordinates"]
-
-        min_lat = min(min_lat, lat)
-        max_lat = max(max_lat, lat)
-        min_lon = min(min_lon, lon)
-        max_lon = max(max_lon, lon)
-
-        scat_feature = {
-            "geometry": dict(scat_geojson),
-            "type": "Feature",
-            "properties": {
-                # "style": {"color": color, "fillColor": color },
-                "popupContent": (
-                    f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
-                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: {row['genotype_id2']}"""
+    with fn.conn_alchemy().connect() as con:
+        transect = (
+            con.execute(
+                text(
+                    "SELECT *, "
+                    "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_geojson, "
+                    "ROUND(ST_Length(multilines)) AS transect_length "
+                    "FROM transects "
+                    "WHERE transect_id = :transect_id"
                 ),
-            },
-            "id": row["scat_id"],
-        }
-        scat_features.append(scat_feature)
-
-    # tracks
-    tracks = (
-        con.execute(
-            text(
-                "SELECT *, "
-                "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson "
-                "FROM snow_tracks WHERE (transect_id = :transect_id OR transect_id LIKE :transect_id2) ORDER BY date DESC"
-            ),
-            {"transect_id": transect_id, "transect_id2": f"%{transect_id};%"},
+                {"transect_id": transect_id},
+            )
+            .mappings()
+            .fetchone()
         )
-        .mappings()
-        .all()
-    )
 
-    track_features: list = []
-    for row in tracks:
-        if row["track_geojson"] is not None:
-            track_geojson = json.loads(row["track_geojson"])
+        if transect is None:
+            flash(fn.alert_danger(f"<b>Transect {transect_id} not found</b>"))
+            return redirect("/transects_list")
 
-            for line in track_geojson["coordinates"]:
+        transect_features = []
+        min_lat, max_lat = 90, -90
+        min_lon, max_lon = 90, -90
+
+        if transect["transect_geojson"] is not None:
+            transect_geojson = json.loads(transect["transect_geojson"])
+
+            for line in transect_geojson["coordinates"]:
                 latitudes = [lat for _, lat in line]
                 longitudes = [lon for lon, _ in line]
+                min_lat, max_lat = min(latitudes), max(latitudes)
+                min_lon, max_lon = min(longitudes), max(longitudes)
 
-                min_lat = min(min_lat, min(latitudes))
-                max_lat = max(max_lat, max(latitudes))
-
-                min_lon = min(min_lon, min(longitudes))
-                max_lon = max(max_lon, max(longitudes))
-
-            track_feature = {
-                "geometry": dict(track_geojson),
+            transect_feature = {
                 "type": "Feature",
                 "properties": {
+                    # "style": {"stroke": transects_color, "stroke-width": 2, "stroke-opacity": 1},
+                    "popupContent": f"Transect ID: {transect_id}",
+                },
+                "geometry": dict(transect_geojson),
+                "id": 1,
+            }
+            transect_features = [transect_feature]
+
+        # path
+        results_paths = (
+            con.execute(
+                text(
+                    "SELECT *,"
+                    "(SELECT count(*) FROM scats WHERE scats.path_id = paths.path_id) AS n_scats "
+                    "FROM paths "
+                    "WHERE transect_id = :transect_id "
+                    "AND (date between :start_date AND :end_date OR date IS NULL) "
+                    "ORDER BY date ASC"
+                ),
+                {
+                    "transect_id": transect_id,
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+
+        # scats
+
+        # number of scats
+        scats = (
+            con.execute(
+                text(
+                    (
+                        "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_mat "
+                        "WHERE path_id LIKE :path_id "
+                        " AND (date between :start_date AND :end_date OR date IS NULL) "
+                    )
+                ),
+                {
+                    "path_id": f"{transect_id}|%",
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+
+        n_scats = len(scats)
+
+        scat_features: list = []
+        for row in scats:
+            scat_geojson = json.loads(row["scat_lonlat"])
+
+            lon, lat = scat_geojson["coordinates"]
+
+            min_lat = min(min_lat, lat)
+            max_lat = max(max_lat, lat)
+            min_lon = min(min_lon, lon)
+            max_lon = max(max_lon, lon)
+
+            scat_feature = {
+                "geometry": dict(scat_geojson),
+                "type": "Feature",
+                "properties": {
+                    # "style": {"color": color, "fillColor": color },
                     "popupContent": (
-                        f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
+                        f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                        f"""Genotype ID: {row['genotype_id2']}"""
                     ),
                 },
-                "id": row["snowtrack_id"],
+                "id": row["scat_id"],
             }
-            track_features.append(track_feature)
+            scat_features.append(scat_feature)
+
+        # tracks
+        tracks = (
+            con.execute(
+                text(
+                    "SELECT *, "
+                    "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson "
+                    "FROM snow_tracks WHERE (transect_id = :transect_id OR transect_id LIKE :transect_id2) ORDER BY date DESC"
+                ),
+                {"transect_id": transect_id, "transect_id2": f"%{transect_id};%"},
+            )
+            .mappings()
+            .all()
+        )
+
+        track_features: list = []
+        for row in tracks:
+            if row["track_geojson"] is not None:
+                track_geojson = json.loads(row["track_geojson"])
+
+                for line in track_geojson["coordinates"]:
+                    latitudes = [lat for _, lat in line]
+                    longitudes = [lon for lon, _ in line]
+
+                    min_lat = min(min_lat, min(latitudes))
+                    max_lat = max(max_lat, max(latitudes))
+
+                    min_lon = min(min_lon, min(longitudes))
+                    max_lon = max(max_lon, max(longitudes))
+
+                track_feature = {
+                    "geometry": dict(track_geojson),
+                    "type": "Feature",
+                    "properties": {
+                        "popupContent": (
+                            f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
+                        ),
+                    },
+                    "id": row["snowtrack_id"],
+                }
+                track_features.append(track_feature)
 
     return render_template(
         "view_transect.html",
@@ -563,84 +562,83 @@ def plot_transects():
 @app.route("/transects_analysis")
 @fn.check_login
 def transects_analysis():
-    con = fn.conn_alchemy().connect()
+    with fn.conn_alchemy().connect() as con:
+        # check if path based on transect exist
+        transects = con.execute(text("SELECT * FROM transects ORDER BY region, province, transect_id")).mappings().all()
 
-    # check if path based on transect exist
-    transects = con.execute(text("SELECT * FROM transects ORDER BY region, province, transect_id")).mappings().all()
+        out = """<style>    table{    border-width: 0 0 1px 1px;    border-style: solid;} td{    border-width: 1px 1px 0 0;    border-style: solid;    margin: 0;    }</style>    """
 
-    out = """<style>    table{    border-width: 0 0 1px 1px;    border-style: solid;} td{    border-width: 1px 1px 0 0;    border-style: solid;    margin: 0;    }</style>    """
+        season = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
 
-    season = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
-
-    out += "<table>"
-    out += "<tr><th>Region</th><th>Province</th><th>transect ID</th>"
-    for month in season:
-        out += f"<th>{calendar.month_abbr[month]}</th>"
-    out += "</tr>"
-
-    for row in transects:
-        transect_id = row["transect_id"]
-
-        # print(f"{transect_id=}")
-
-        transect_month = {}
-        dates_list = {}
-        completeness_list = {}
-
-        for row_path in (
-            con.execute(text("SELECT * FROM paths WHERE transect_id = :transect_id"), {"transect_id": transect_id}).mappings().all()
-        ):
-            # add date of path
-            path_date = str(row_path["date"])
-            path_month = int(path_date.split("-")[1])
-            if path_month not in dates_list:
-                dates_list[path_month] = []
-            dates_list[path_month].append(path_date)
-
-            # add completeness
-            path_completeness = str(row_path["completeness"])
-            path_month = int(path_date.split("-")[1])
-            if path_month not in completeness_list:
-                completeness_list[path_month] = []
-            completeness_list[path_month].append(path_completeness)
-
-            for row_scat in (
-                con.execute(text("SELECT * FROM scats WHERE path_id = :path_id "), {"path_id": row_path["path_id"]}).mappings().all()
-            ):
-                month = int(str(row_scat["date"]).split("-")[1])
-
-                if month not in transect_month:
-                    transect_month[month] = {"samples": 0}
-
-                transect_month[month]["samples"] += 1
-
-        out += f'<tr><td>{row["region"]}</td><td>{row["province"]}</td><td>{transect_id}</td>'
-
+        out += "<table>"
+        out += "<tr><th>Region</th><th>Province</th><th>transect ID</th>"
         for month in season:
-            flag_path = False
-            # date
-            if month in dates_list:
-                out += f"<td>{', '.join(dates_list[month])}<br>"
-                flag_path = True
-            else:
-                out += "<td>"
-
-            if month in completeness_list:
-                out += f"{', '.join(completeness_list[month])}<br>"
-
-            if month in transect_month:
-                out += f"{transect_month[month]['samples']}<br>"
-            else:
-                if flag_path:
-                    out += "0<br>"
-                else:
-                    out += "<br>"
-
-            out += "</td>"
+            out += f"<th>{calendar.month_abbr[month]}</th>"
         out += "</tr>"
 
-    out += "</table>"
-    return out
+        for row in transects:
+            transect_id = row["transect_id"]
+
+            # print(f"{transect_id=}")
+
+            transect_month = {}
+            dates_list = {}
+            completeness_list = {}
+
+            for row_path in (
+                con.execute(text("SELECT * FROM paths WHERE transect_id = :transect_id"), {"transect_id": transect_id}).mappings().all()
+            ):
+                # add date of path
+                path_date = str(row_path["date"])
+                path_month = int(path_date.split("-")[1])
+                if path_month not in dates_list:
+                    dates_list[path_month] = []
+                dates_list[path_month].append(path_date)
+
+                # add completeness
+                path_completeness = str(row_path["completeness"])
+                path_month = int(path_date.split("-")[1])
+                if path_month not in completeness_list:
+                    completeness_list[path_month] = []
+                completeness_list[path_month].append(path_completeness)
+
+                for row_scat in (
+                    con.execute(text("SELECT * FROM scats WHERE path_id = :path_id "), {"path_id": row_path["path_id"]}).mappings().all()
+                ):
+                    month = int(str(row_scat["date"]).split("-")[1])
+
+                    if month not in transect_month:
+                        transect_month[month] = {"samples": 0}
+
+                    transect_month[month]["samples"] += 1
+
+            out += f'<tr><td>{row["region"]}</td><td>{row["province"]}</td><td>{transect_id}</td>'
+
+            for month in season:
+                flag_path = False
+                # date
+                if month in dates_list:
+                    out += f"<td>{', '.join(dates_list[month])}<br>"
+                    flag_path = True
+                else:
+                    out += "<td>"
+
+                if month in completeness_list:
+                    out += f"{', '.join(completeness_list[month])}<br>"
+
+                if month in transect_month:
+                    out += f"{transect_month[month]['samples']}<br>"
+                else:
+                    if flag_path:
+                        out += "0<br>"
+                    else:
+                        out += "<br>"
+
+                out += "</td>"
+            out += "</tr>"
+
+        out += "</table>"
+        return out
 
 
 @app.route("/transects_n_samples_by_month/<year_init>/<year_end>")

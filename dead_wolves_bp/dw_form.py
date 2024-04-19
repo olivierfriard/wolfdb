@@ -3,7 +3,6 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-
 from markupsafe import Markup
 import datetime
 import re
@@ -13,6 +12,11 @@ from wtforms.validators import ValidationError
 
 
 class Dead_wolf(Form):
+    """
+    form to insert or modifiy a dead wolf
+
+    """
+
     def integer_validator(form, field):
         if not field.data:
             return
@@ -20,9 +24,7 @@ class Dead_wolf(Form):
             int(field.data)
             return
         except Exception:
-            raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
-            )
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
 
     def iso_date_validator(form, field):
         """
@@ -35,9 +37,7 @@ class Dead_wolf(Form):
             return
         except ValueError:
             raise ValidationError(
-                Markup(
-                    '<div class="alert alert-danger" role="alert">The date is not valid. Use the YYYY-MM-DD format</div>'
-                )
+                Markup('<div class="alert alert-danger" role="alert">The date is not valid. Use the YYYY-MM-DD format</div>')
             )
 
     def sampling_season_validator(form, field):
@@ -49,22 +49,21 @@ class Dead_wolf(Form):
             return
         m = re.match("(\d{4})-(\d{4})", field.data)
         if m is None:
-            raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Wrong format. Use the YYYY-YYYY format</div>')
-            )
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. Use the YYYY-YYYY format</div>'))
         try:
             y1, y2 = m.group().split("-")
             if int(y1) >= int(y2):
-                raise ValidationError(
-                    Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>')
-                )
+                raise ValidationError(Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>'))
         except Exception:
-            raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Check the format (YYYY-YYYY)</div>')
-            )
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Check the format (YYYY-YYYY)</div>'))
         return
 
     field1 = StringField("ID", [], default="")
+
+    field6 = StringField("Tissue ID", [], default="")
+
+    field46 = StringField("WA code", [], default="")
+
     field2 = SelectField(
         "Necroscopy done",
         choices=[("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO"), ("In attesa", "In attesa")],
@@ -73,7 +72,7 @@ class Dead_wolf(Form):
     field3 = SelectField("Definitive data", choices=[("NO", "NO"), ("SI", "SI")], default="NO")
     field4 = StringField("Genetic sample to recover", [], default="")
     field5 = StringField("Reminder on genetic sample collecting and documentation", [], default="")
-    field6 = StringField("Tissue ID", [], default="")
+
     field7 = StringField("Additional Note on wolf recovery", [], default="")
     field8 = StringField("Presumed death date", validators=[iso_date_validator], default="")
     field9 = StringField("Discovery Date", validators=[iso_date_validator], default="")
@@ -242,12 +241,8 @@ class Dead_wolf(Form):
 
     field21 = StringField("Area", [], default="")
     field22 = StringField("Country", [], default="")
-    field23 = StringField(
-        "Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default=""
-    )
-    field24 = StringField(
-        "Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default=""
-    )
+    field23 = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
+    field24 = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
     field25 = StringField("UTM zone", [], default="32N")
     field26 = SelectField(
         "Georeference",
@@ -303,7 +298,7 @@ class Dead_wolf(Form):
     )
     field44 = StringField("Note on recovery", [], default="")
     field45 = StringField("Box send to USA Genetic Lab", [], default="")
-    field46 = StringField("WA", [], default="")
+
     field47 = StringField("ISPRA Lab", [], default="")
     field48 = StringField("Note on genetic sample", [], default="")
     field49 = StringField("Coded Sample to be sent", [], default="")
@@ -342,9 +337,7 @@ class Dead_wolf(Form):
 
     field82 = SelectField("Skull cleaned", choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")], default="")
 
-    field83 = SelectField(
-        "Recoverable for embalming", choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")], default=""
-    )
+    field83 = SelectField("Recoverable for embalming", choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")], default="")
 
     field84 = StringField("Placed in", [], default="")
     field85 = StringField("CITES Code", [], default="")
