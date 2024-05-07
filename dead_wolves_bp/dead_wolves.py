@@ -24,31 +24,24 @@ params = config()
 app.debug = params["debug"]
 
 
-@app.route("/dead_wolves")
-@fn.check_login
-def dead_wolves():
-    return render_template("dead_wolves.html", header_title="Dead wolves")
-
-
 @app.route("/view_tissue/<path:tissue_id>")
-def view_tissue(tissue_id):
+def view_tissue(tissue_id: str):
     """
     show dead wolf corresponding to tissue ID
     """
 
     with fn.conn_alchemy().connect() as con:
-        row = (
-            con.execute(text("SELECT id FROM dead_wolves_mat WHERE tissue_id = :tissue_id"), {"tissue_id": tissue_id}).mappings().fetchone()
-        )
+        row = con.execute(text("SELECT id FROM dead_wolves WHERE tissue_id = :tissue_id"), {"tissue_id": tissue_id}).mappings().fetchone()
         if row is not None:
             return redirect(f"/view_dead_wolf_id/{row['id']}")
         else:
-            "Tissue ID not found"
+            flash(Markup(f'<div class="alert alert-danger" role="alert"><b>Tissue ID <b>{tissue_id}</b> not found</b></div>'))
+            return redirect("/dead_wolves_list")
 
 
-@app.route("/view_dead_wolf_id/<id>")
+@app.route("/view_dead_wolf_id/<int:id>")
 @fn.check_login
-def view_dead_wolf_id(id):
+def view_dead_wolf_id(id: int):
     """
     visualize dead wolf data (by id)
     """
@@ -87,9 +80,9 @@ def view_dead_wolf_id(id):
             dead_wolf["UTM zone"][-1],
         )
 
-        dead_wolf["Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"] = (
-            f"East: {dead_wolf['UTM Coordinates X']} North: {dead_wolf['UTM Coordinates Y']}"
-        )
+        dead_wolf[
+            "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"
+        ] = f"East: {dead_wolf['UTM Coordinates X']} North: {dead_wolf['UTM Coordinates Y']}"
         fields_list.append({"name": "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"})
 
     except Exception:
@@ -140,7 +133,7 @@ def plot_dead_wolves():
         for row in (
             con.execute(
                 text(
-                    "SELECT * FROM dead_wolves_mat "
+                    "SELECT * FROM dead_wolves "
                     "WHERE deleted is NULL "
                     "AND utm_east != '0' AND utm_north != '0' "
                     "AND discovery_date BETWEEN :start_date AND :end_date"
@@ -241,21 +234,22 @@ def new_dead_wolf():
             return not_valid(form, "Dead wolf form NOT validated. See details below.")
 
         with fn.conn_alchemy().connect() as con:
-            row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves_values")).mappings().fetchone()
+            row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves")).mappings().fetchone()
             new_id = row["max_id"] + 1
 
             # add region
+            region: str = ""
             if request.form["field20"]:
                 region = (
-                    con.execute(text("SELECT region from geo_info WHERE province_code = %s", [request.form["field20"]]))
+                    con.execute(
+                        text("SELECT region FROM geo_info WHERE province_code = :province_code", {"province_code": request.form["field20"]})
+                    )
                     .mappings()
                     .fetchone()["region"]
                 )
-            else:
-                region = ""
 
             # fields list
-            fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition order by position")).mappings().all()
+            fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition ORDER BY position")).mappings().all()
 
             # insert ID
             con.execute(text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 1, :new_id)"), {"new_id": new_id})
@@ -411,7 +405,7 @@ def del_dead_wolf(id):
 @fn.check_login
 def dead_wolves_list():
     """
-    show list of all dead_wolves
+    show list of dead wolves that were not deleted
     """
 
     with fn.conn_alchemy().connect() as con:
@@ -419,8 +413,8 @@ def dead_wolves_list():
             con.execute(
                 text(
                     "SELECT *,"
-                    "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves_mat.genotype_id) AS genotype_id_verif "
-                    "FROM dead_wolves_mat "
+                    # "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
+                    "FROM dead_wolves "
                     "WHERE "
                     "deleted is NULL "
                     "AND discovery_date BETWEEN :start_date AND :end_date "
