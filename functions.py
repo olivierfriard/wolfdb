@@ -44,16 +44,6 @@ def get_connection():
     )
 
 
-def get_cursor():
-    return psycopg2.connect(
-        user=params["user"],
-        password=params["password"],
-        host=params["host"],
-        # port="5432",
-        database=params["database"],
-    ).cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-
 def conn_alchemy():
     return create_engine(
         f'postgresql+psycopg://{params["user"]}:{params["password"]}@{params["host"]}:5432/{params["database"]}',
@@ -82,31 +72,6 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
 
         for locus in loci_list:
             for allele in ("a", "b")[: loci_list[locus]]:  # select number of alleles
-                # sql = text(
-                #    (
-                #        "SELECT val, note, wa_loci_notes.user_id FROM wa_locus "
-                #        "LEFT OUTER JOIN wa_loci_notes ON wa_locus.wa_code=wa_loci_notes.wa_code AND "
-                #        "wa_locus.locus=wa_loci_notes.locus AND wa_locus.allele=wa_loci_notes.allele "
-                #        "WHERE wa_locus.wa_code = :wa_code AND wa_locus.locus = :locus AND wa_locus.allele = :allele "
-                #        "ORDER BY wa_loci_notes.timestamp DESC "
-                #        "LIMIT 1"
-                #    )
-                # )
-
-                # sql = text(
-                #    (
-                #        "SELECT val, user_id, "
-                #        "extract(epoch from timestamp)::integer AS epoch, "
-                #        "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                #        "(SELECT note FROM wa_loci_notes WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
-                #        # "FROM wa_loci_notes "
-                #        # "WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele ORDER BY timestamp DESC LIMIT 1) AS notes "
-                #        "FROM wa_locus wl WHERE wa_code = :wa_code and locus = :locus and allele = :allele "
-                #        "ORDER BY timestamp DESC "
-                #        "LIMIT 1"
-                #    )
-                # )
-
                 # get last locus value and the last notes (if any)
                 row = (
                     con.execute(
@@ -114,7 +79,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                             (
                                 "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, definitive, "
                                 "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                                "(SELECT notes FROM wa_locus WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele AND notes != '' and notes is not null ORDER BY timestamp DESC LIMIT 1) "
+                                "(SELECT notes FROM wa_locus WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele AND notes != '' AND notes IS NOT NULL ORDER BY timestamp DESC LIMIT 1) "
                                 "FROM wa_locus wl "
                                 "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
                                 "ORDER BY timestamp DESC LIMIT 1"
@@ -161,67 +126,6 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     return loci_values, has_loci_notes
 
 
-'''
-def get_wa_loci_values(wa_code: str, loci_list: list) -> dict:
-    """
-    get WA code loci values
-    """
-    with conn_alchemy().connect() as con:
-        has_loci_notes = False
-
-        loci_values = {}
-        for locus in loci_list:
-            loci_values[locus] = {}
-            loci_values[locus]["a"] = {"value": "-", "notes": "", "user_id": ""}
-            loci_values[locus]["b"] = {"value": "-", "notes": "", "user_id": ""}
-
-        for locus in loci_list:
-            for allele in ("a", "b")[: loci_list[locus]]:
-                row2 = (
-                    con.execute(
-                        text(
-                            (
-                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, "
-                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp "
-                                "FROM wa_locus "
-                                "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
-                                "ORDER BY timestamp DESC LIMIT 1"
-                            )
-                        ),
-                        {"wa_code": wa_code, "locus": locus, "allele": allele},
-                    )
-                    .mappings()
-                    .fetchone()
-                )
-
-                if row2 is not None:
-                    val = row2["val"] if row2["val"] is not None else "-"
-                    notes = row2["notes"] if row2["notes"] is not None else ""
-                    user_id = row2["user_id"] if row2["user_id"] is not None else ""
-                    if notes:
-                        has_loci_notes = True
-                    epoch = row2["epoch"] if row2["epoch"] is not None else ""
-                    date = row2["formatted_timestamp"] if row2["formatted_timestamp"] is not None else ""
-
-                else:
-                    val = "-"
-                    notes = ""
-                    epoch = ""
-                    user_id = ""
-                    date = ""
-
-                loci_values[locus][allele] = {
-                    "value": val,
-                    "notes": notes,
-                    "epoch": epoch,
-                    "user_id": user_id,
-                    "date": date,
-                }
-
-    return loci_values, has_loci_notes
-'''
-
-
 def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
     """
     get genotype loci values
@@ -233,7 +137,7 @@ def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
             loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
         for locus in loci_list:
-            for allele in ["a", "b"]:
+            for allele in ("a", "b"):
                 locus_val = (
                     con.execute(
                         text(
@@ -251,10 +155,10 @@ def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
                 )
 
                 if locus_val is None:
-                    val = "-"
-                    notes = ""
-                    user_id = ""
-                    epoch = ""
+                    val: str = "-"
+                    notes: str = ""
+                    user_id: str = ""
+                    epoch: str = ""
                 else:
                     val = locus_val["val"] if locus_val["val"] is not None else "-"
                     notes = locus_val["notes"] if locus_val["notes"] is not None else ""
@@ -267,10 +171,16 @@ def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
 
 
 def alert_danger(text: str) -> str:
+    """
+    Danger message
+    """
     return Markup(f'<div class="alert alert-danger" role="alert">{text}</div>')
 
 
 def alert_success(text: str) -> str:
+    """
+    Success message
+    """
     return Markup(f'<div class="alert alert-success" role="alert">{text}</div>')
 
 
@@ -329,8 +239,10 @@ def sampling_season(date: str) -> str:
         year = int(date[0 : 3 + 1])
         if 5 <= month <= 12:
             return f"{year}-{year + 1}"
-        if 1 <= month <= 4:
+        elif 1 <= month <= 4:
             return f"{year - 1}-{year}"
+        else:
+            return f"Error {date}"
     except Exception:
         return f"Error {date}"
 
@@ -361,10 +273,7 @@ def check_province_code(province_code) -> Union[None, str]:
             .mappings()
             .fetchone()
         )
-    if result is None:
-        return None
-    else:
-        return result["province_code"]
+    return result["province_code"] if result is not None else None
 
 
 def prov_code2prov_name(province_code: str) -> str:
@@ -380,10 +289,8 @@ def prov_code2prov_name(province_code: str) -> str:
             .mappings()
             .fetchone()
         )
-        if result is None:
-            return None
-        else:
-            return result["province_name"]
+
+    return result["province_name"] if result else None
 
 
 def province_code2region_dict() -> dict:
@@ -412,10 +319,8 @@ def province_code2region(province_code):
             .mappings()
             .fetchone()
         )
-    if result is None:
-        return None
-    else:
-        return result["region"]
+
+    return result["region"] if result else None
 
 
 def province_name_list() -> list:
@@ -441,10 +346,8 @@ def province_name2code(province_name: str) -> str:
             .mappings()
             .fetchone()
         )
-        if result is None:
-            return None
-        else:
-            return result["province_code"]
+
+    return result["province_code"] if result else None
 
 
 def province_name2code_dict() -> dict:
@@ -469,7 +372,7 @@ def province_name2region(province_name) -> str:
     """
     get region by province name
     """
-    region_out = ""
+    region_out: str = ""
     if province_name:
         for region in regions:
             if province_name.upper() in [x.upper() for x in region["capoluoghi"]]:
@@ -484,7 +387,7 @@ def get_regions(provinces: list) -> str:
     returns list of regions (as str) corresponding to the list of provinces
     """
 
-    transect_region = []
+    transect_region: list = []
     if provinces:
         for region in regions:
             for x in provinces.split(" "):
@@ -925,6 +828,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
 
     if province_code == "" and country == "Francia":
         province = d["address"].get("county", "")
+        # extract 2 first digits from postcode
         province_code = d["address"].get("postcode", "  ")[:2].strip()
 
     if province == "Distretto di Locarno":

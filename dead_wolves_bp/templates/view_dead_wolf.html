@@ -4,7 +4,7 @@
 
 
 
-<h2>Dead wolf <b>#{{ dead_wolf["ID"] }}</b></h2>
+<h2>Dead wolf <b>#{{ dead_wolf["id"] }}</b></h2>
 
 
 <a href="/edit_dead_wolf/{{ dead_wolf["ID"] }}" class="btn btn-danger">Edit dead wolf</a>&nbsp;
@@ -14,17 +14,35 @@
 
 <table class="table table-striped">
 
-<tr><td>ID</td><td><a href="/view_wa/{{ dead_wolf["ID"] }}">{{ dead_wolf["ID"] }}</a></td></tr>
-<tr><td>WA code</td><td><a href="/view_wa/{{ dead_wolf["WA"] }}">{{ dead_wolf["WA"] }}</a></td></tr>
-<tr><td>Genotype ID</td><td><a href="/view_genotype/{{ dead_wolf["Genotype ID"] }}">{{ dead_wolf["Genotype ID"] }}</a></td></tr>
-<tr><td>Tissue ID</td><td><a href="/view_tissue/{{ dead_wolf["Tissue ID"] }}">{{ dead_wolf["Tissue ID"] }}</a></td></tr>
+<tr><td>Dead wolf ID</td><td><a href="/view_wa/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a></td></tr>
+<tr><td>Genotype ID</td><td><a href="/view_genotype/{{ dead_wolf['genotype_id'] }}">{{ dead_wolf["genotype_id"] }}</a></td></tr>
+<tr><td>WA code</td><td><a href="/view_wa/{{ dead_wolf['wa_code'] }}">{{ dead_wolf["wa_code"] }}</a></td></tr>
+<tr><td>Tissue ID</td><td><a href="/view_tissue/{{ dead_wolf['tissue_id'] }}">{{ dead_wolf["tissue_id"] }}</a></td></tr>
 
+
+
+<tr><td>Location</td><td>{{ dead_wolf["location"] }}</td></tr>
+<tr><td>Municipality</td><td>{{ dead_wolf["municipality"] }}</td></tr>
+<tr><td>Province</td><td>{{ dead_wolf["province"] }}</td></tr>
+<tr><td>Region</td><td>  {{ dead_wolf["region"] }}</td></tr>
+
+
+<tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf["utm_zone"] }} EPSG:32632)</td>
+<td>East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}</td>
+</tr>
+
+
+</table>
+
+<br>
+
+<table class="table table-striped">
 
 {% for field in fields_list %}
 
 {% if field["name"] != 'ID' and field["name"] != 'Tissue ID' and field["name"] != 'Genotype ID' and field["name"] != 'WA'%}
 
-<tr><td>{{ field["name"] }}</td><td>{{ dead_wolf[field["name"]] if dead_wolf[field["name"]] is not none else "" }}</td></tr>
+<tr><td>{{ field["name"] }}</td><td>{{ dead_wolf_values[field["name"]] if dead_wolf_values[field["name"]] is not none else "" }}</td></tr>
 
 {%endif%}
 

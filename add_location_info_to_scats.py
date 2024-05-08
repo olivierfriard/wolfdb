@@ -32,19 +32,16 @@ cursor.execute(
 )
 scats = cursor.fetchall()
 for row in scats:
-
     print(f"scat ID: {row['scat_id']}, Coordinates UTM: {row['x']}, {row['y']}", file=sys.stderr)
 
     r = db.search(Row.xy == f"{row['x']} {row['y']}")
     # print(r)
     if r:
-
         d = r[0]["geolocation"]
         print(f"found in db: {d}", file=sys.stderr)
 
     else:
-
-        print(f"NOT FOUND in db", file=sys.stderr)
+        print("NOT FOUND in db", file=sys.stderr)
         out, error = subprocess.Popen(
             f"wget -O - http://127.0.0.1:5000/rev_geocoding/{row['x']}/{row['y']}/32N",
             stdout=subprocess.PIPE,
@@ -57,7 +54,7 @@ for row in scats:
         try:
             d = eval(out)
             db.update({"xy": f"{row['x']} {row['y']}", "geolocation": d})
-        except:
+        except Exception:
             print(f"{out=}", file=sys.stderr)
             d = {
                 "continent": "",

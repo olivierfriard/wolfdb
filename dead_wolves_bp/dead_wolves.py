@@ -46,6 +46,16 @@ def view_dead_wolf_id(id: int):
     visualize dead wolf data (by id)
     """
     with fn.conn_alchemy().connect() as con:
+        dead_wolf = (
+            con.execute(text("SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"), {"dead_wolf_id": id})
+            .mappings()
+            .fetchone()
+        )
+
+        if dead_wolf is None:
+            flash(Markup(f'<div class="alert alert-danger" role="alert"><b>Dead wolf <b>#{id}</b> not found</b></div>'))
+            return redirect("/dead_wolves_list")
+
         # fields list
         fields_list = (
             con.execute(text("SELECT * FROM dead_wolves_fields_definition WHERE visible = 'Y' ORDER BY position")).mappings().all()
@@ -65,28 +75,38 @@ def view_dead_wolf_id(id: int):
             .all()
         )
 
-    dead_wolf: dict = {}
+    dead_wolf_values: dict = {}
     for row in rows:
-        dead_wolf[row["name"]] = row["val"]
+        dead_wolf_values[row["name"]] = row["val"]
 
+    # coordinates
+    lat_lon = utm.to_latlon(
+        dead_wolf["utm_east"],
+        dead_wolf["utm_north"],
+        int(dead_wolf["utm_zone"].replace("N", "")),
+        dead_wolf["utm_zone"][-1],
+    )
+
+    """
     try:
-        dead_wolf["UTM Coordinates X"] = int(float(dead_wolf["UTM Coordinates X"]))
-        dead_wolf["UTM Coordinates Y"] = int(float(dead_wolf["UTM Coordinates Y"]))
+        dead_wolf_values["UTM Coordinates X"] = int(float(dead_wolf_values["UTM Coordinates X"]))
+        dead_wolf_values["UTM Coordinates Y"] = int(float(dead_wolf_values["UTM Coordinates Y"]))
 
         lat_lon = utm.to_latlon(
-            dead_wolf["UTM Coordinates X"],
-            dead_wolf["UTM Coordinates Y"],
-            int(dead_wolf["UTM zone"].replace("N", "")),
-            dead_wolf["UTM zone"][-1],
+            dead_wolf_values["UTM Coordinates X"],
+            dead_wolf_values["UTM Coordinates Y"],
+            int(dead_wolf_values["UTM zone"].replace("N", "")),
+            dead_wolf_values["UTM zone"][-1],
         )
 
-        dead_wolf[
-            "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"
-        ] = f"East: {dead_wolf['UTM Coordinates X']} North: {dead_wolf['UTM Coordinates Y']}"
+        dead_wolf_values["Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"] = (
+            f"East: {dead_wolf_values['UTM Coordinates X']} North: {dead_wolf_values['UTM Coordinates Y']}"
+        )
         fields_list.append({"name": "Coordinates (WGS 84 / UTM zone 32N EPSG:32632)"})
 
     except Exception:
         lat_lon = []
+    """
 
     if lat_lon:
         dw_feature = {
@@ -104,9 +124,10 @@ def view_dead_wolf_id(id: int):
 
     return render_template(
         "view_dead_wolf.html",
-        header_title=f"Dead wolf #{dead_wolf['ID']}",
+        header_title=f"Dead wolf #{dead_wolf['id']}",
         fields_list=fields_list,
         dead_wolf=dead_wolf,
+        dead_wolf_values=dead_wolf_values,
         map=Markup(
             fn.leaflet_geojson2(
                 {
@@ -392,11 +413,20 @@ def edit_dead_wolf(id):
 @app.route("/del_dead_wolf/<id>")
 @fn.check_login
 def del_dead_wolf(id):
+    """
+    set dead wolf as deleted
+    """
     with fn.conn_alchemy().connect() as con:
+        """
         con.execute(
             text("INSERT INTO dead_wolves_values VALUES (:id, 107, NOW()) ON CONFLICT (id, field_id) DO UPDATE SET val = NOW()"),
             {"id": id},
         )
+        """
+
+        con.execute(text("UPDATE dead_wolves SET deleted = NOW() WHERE id = :dead_wolf_id"), {"dead_wolf_id": id})
+
+    flash(Markup(f'<div class="alert alert-success" role="alert"><b>Dead wolf <b>#{id}</b> deleted</b></div>'))
 
     return redirect("/dead_wolves_list")
 
@@ -412,8 +442,8 @@ def dead_wolves_list():
         results = (
             con.execute(
                 text(
-                    "SELECT *,"
-                    # "(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
+                    "SELECT * "
+                    # ",(SELECT genotype_id FROM genotypes WHERE genotype_id=dead_wolves.genotype_id) AS genotype_id_verif "
                     "FROM dead_wolves "
                     "WHERE "
                     "deleted is NULL "
@@ -432,7 +462,6 @@ def dead_wolves_list():
     return render_template(
         "dead_wolves_list.html",
         header_title="List of dead wolves",
-        length=len(results),
         results=results,
         n_dead_wolves=len(results),
     )

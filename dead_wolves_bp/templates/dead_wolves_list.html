@@ -2,9 +2,6 @@
 
 {% block content %}
 
-
-
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {{ messages[0] }}
@@ -13,7 +10,7 @@
 
 
 {% if results %}
-<h2>List of {{ n_dead_wolves }} dead wolves</h2>
+<h2>{{ header_title }} ({{ n_dead_wolves }})</h2>
 <table class="table table-striped">
 <tr>
 <th>ID</th>
