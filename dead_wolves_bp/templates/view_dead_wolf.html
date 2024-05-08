@@ -7,9 +7,9 @@
 <h2>Dead wolf <b>#{{ dead_wolf["id"] }}</b></h2>
 
 
-<a href="/edit_dead_wolf/{{ dead_wolf["ID"] }}" class="btn btn-danger">Edit dead wolf</a>&nbsp;
+<a href="/edit_dead_wolf/{{ dead_wolf["id"] }}" class="btn btn-danger">Edit dead wolf</a>&nbsp;
 
-<a href="/del_dead_wolf/{{ dead_wolf["ID"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete dead wolf</a><br>
+<a href="/del_dead_wolf/{{ dead_wolf["id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete dead wolf</a><br>
 <br>
 
 <table class="table table-striped">
@@ -21,18 +21,24 @@
 
 
 
-<tr><td>Location</td><td>{{ dead_wolf["location"] }}</td></tr>
-<tr><td>Municipality</td><td>{{ dead_wolf["municipality"] }}</td></tr>
-<tr><td>Province</td><td>{{ dead_wolf["province"] }}</td></tr>
-<tr><td>Region</td><td>  {{ dead_wolf["region"] }}</td></tr>
+<tr><td>Location</td><td>{{ dead_wolf["location"] if dead_wolf["location"] else ""}}</td></tr>
+<tr><td>Municipality</td><td>{{ dead_wolf["municipality"] if dead_wolf["municipality"] else ""}}</td></tr>
+<tr><td>Province</td><td>{{ dead_wolf["province"] if dead_wolf["province"] else ""}}</td></tr>
+<tr><td>Region</td><td>  {{ dead_wolf["region"] if dead_wolf["region"] else ""}}</td></tr>
 
 
 <tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf["utm_zone"] }} EPSG:32632)</td>
-<td>East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}</td>
+<td>
+{% if dead_wolf["utm_east"] and dead_wolf["utm_north"] %}
+East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}
+{% endif %}
+</td>
 </tr>
 
 
 </table>
+
+<hr>
 
 <br>
 
@@ -50,16 +56,11 @@
 
 </table>
 
-
+{% if dead_wolf['geonetry_utm'] %}
 <h2>Location</h2>
-
-
 <div id="map" style="width: 800px; height: 800px;"></div>
-
-
-
 {{ map }}
-
+{%endif%}
 
 
 {% endblock %}
