@@ -122,9 +122,17 @@
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field5.label }}</div><div class="col-8">{{ form.field5(class="form-control", value=default_values["field5"]) }}{% for message in form.field5.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field7.label }}</div><div class="col-8">{{ form.field7(class="form-control", value=default_values["field7"]) }}{% for message in form.field7.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
-<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field8.label }}</div><div class="col-8">{{ form.field8(class="form-control", value=default_values["field8"]) }}{% for message in form.field8.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">Date format: YYYY-MM-DD</span></div></div></div>
-<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field10.label }}</div><div class="col-8">{{ form.field10(class="form-control", value=default_values["field10"]) }}{% for message in form.field10.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">YYYY-YYYY</span></div></div></div>
-<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field11.label }}</div><div class="col-8">{{ form.field11(class="form-control", value=default_values["field11"]) }}{% for message in form.field11.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">Date format: YYYY-MM-DD</span></div></div></div>
+
+{# presumed death date #}
+<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field8.label }}</div><div class="col-2">{{ form.field8(class="form-control", value=default_values["field8"]) }}{% for message in form.field8.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">Date format: YYYY-MM-DD</span></div></div></div>
+
+{# sampling season #}
+<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field10.label }}</div><div class="col-2">{{ form.field10(class="form-control", value=default_values["field10"]) }}{% for message in form.field10.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">YYYY-YYYY</span></div></div></div>
+
+{# Necroscopy date #}
+<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field11.label }}</div><div class="col-2">{{ form.field11(class="form-control", value=default_values["field11"]) }}{% for message in form.field11.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">Date format: YYYY-MM-DD</span></div></div></div>
+
+
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field12.label }}</div><div class="col-8">{{ form.field12(class="form-control", value=default_values["field12"]) }}{% for message in form.field12.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field13.label }}</div><div class="col-8">{{ form.field13(class="form-control", value=default_values["field13"]) }}{% for message in form.field13.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field14.label }}</div><div class="col-8">{{ form.field14(class="form-control", value=default_values["field14"]) }}{% for message in form.field14.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
@@ -155,7 +163,11 @@
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field47.label }}</div><div class="col-8">{{ form.field47(class="form-control", value=default_values["field47"]) }}{% for message in form.field47.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field48.label }}</div><div class="col-8">{{ form.field48(class="form-control", value=default_values["field48"]) }}{% for message in form.field48.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field49.label }}</div><div class="col-8">{{ form.field49(class="form-control", value=default_values["field49"]) }}{% for message in form.field49.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
-<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field50.label }}</div><div class="col-8">{{ form.field50(class="form-control", value=default_values["field50"]) }}{% for message in form.field50.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">Lunghezza totale in cm</span></div></div></div>
+
+{# Lunghezza totale #}
+<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field50.label }}</div><div class="col-2">{{ form.field50(class="form-control", value=default_values["field50"]) }}{% for message in form.field50.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text">Lunghezza totale in cm</span></div></div></div>
+
+
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field51.label }}</div><div class="col-8">{{ form.field51(class="form-control", value=default_values["field51"]) }}{% for message in form.field51.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field52.label }}</div><div class="col-8">{{ form.field52(class="form-control", value=default_values["field52"]) }}{% for message in form.field52.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field53.label }}</div><div class="col-8">{{ form.field53(class="form-control", value=default_values["field53"]) }}{% for message in form.field53.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
