@@ -26,6 +26,7 @@ dependencies = [
     "sqlalchemy>=2.0.23",
     "psycopg>=3.1.13",
     "gunicorn>=22.0.0",
+    "pip>=24.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
