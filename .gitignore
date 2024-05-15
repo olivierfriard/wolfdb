@@ -3,3 +3,4 @@ flask_session
 .vscode
 .venv
 src/static/results/
+notes.txt
