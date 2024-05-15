@@ -18,9 +18,9 @@ Debug: <b>{{ debug }}</b>
 
 {% with messages = get_flashed_messages() %}
 <br>
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
 
 <br>

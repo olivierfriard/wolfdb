@@ -126,6 +126,7 @@ def view_genotype(genotype_id: str):
 
         if genotype is None:
             flash(fn.alert_danger(f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"))
+            # return to the last page
             if "url_genotypes_list" in session:
                 return redirect(session["url_genotypes_list"])
             if "url_wa_list" in session:

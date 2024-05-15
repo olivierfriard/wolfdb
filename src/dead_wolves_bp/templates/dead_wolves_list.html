@@ -21,9 +21,9 @@
 </tr>
 {% for result in results %}
 <tr>
-    <td><a href="/view_dead_wolf_id/{{ result['id'] }}">{{ result['id'] }}</a></td>
+<td><a href="/view_dead_wolf_id/{{ result['id'] }}">{{ result['id'] }}</a></td>
 
-    <td><a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
+<td><a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
 
 <td>
 {% if result['genotype_id_verif'] is not none %}
@@ -33,7 +33,11 @@
 {% endif %}
 </td>
 
-<td><a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a></td>
+<td>
+{% if result['wa_code'] %}
+    <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
+{%  endif %}
+</td>
 </tr>
 {% endfor %}
 </table>
