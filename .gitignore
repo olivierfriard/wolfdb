@@ -1,3 +1,6 @@
-.gitignore
-*__pycache__*
+__pycache__
 flask_session
+.vscode
+.venv
+src/static/results/
+notes.txt

@@ -1,0 +1,73 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+
+<h2>Settings for {{ session['user_name'] }}</h2>
+
+<h3>{{ session['email'] }}</h3>
+
+
+<form id="settings" action="/settings"  method="POST" enctype="multipart/form-data">
+
+<br>
+<div class="form-group">
+
+
+  {% with messages = get_flashed_messages() %}
+  <br>
+  {% if messages %}
+  {{ messages[0] }}
+  {% endif %}
+  {% endwith %}
+  
+
+<h4>Date interval</h4>
+<br>
+<div class="form-check">
+  <input class="form-check-input" type="checkbox" value="" id="enable_date_interval" name="enable_date_interval"  
+  {% if session['start_date'] != default_start_date or session['end_date'] != default_end_date %}checked{% endif %}>
+  <label class="form-check-label" for="enable_date_interval">Enable time interval for visualization</label>
+</div>
+
+<br>
+<div class="mb-3 row">
+<label for="start_date" class="col-sm-1 col-form-label">Start date</label>
+<div class="col-sm-4">
+<input type="text" class="form-control" placeholder="YYYY-MM-DD" id="start_date" name="start_date" value="{{session['start_date']}}"
+{% if session['start_date'] == default_start_date and session['end_date'] == default_end_date %}disabled{% endif %}>
+<span class="form-text">Use the YYYY-MM-DD format</span>
+</div>
+</div>
+
+<div class="mb-3 row">
+<label for="end_date" class="col-sm-1 col-form-label">End date</label>
+<div class="col-sm-4">
+<input type="text" class="form-control" placeholder="YYYY-MM-DD" id="end_date" name="end_date" value="{{session['end_date']}}"
+{% if session["start_date"] == default_start_date and session["end_date"] == default_end_date %}disabled{% endif %}>
+<span class="form-text">Use the YYYY-MM-DD format</span>
+</div>
+</div>
+
+
+<button type="submit" class="btn btn-danger" id="submit-btn" type="button">Save</button>
+
+</form>
+
+<script>
+const checkbox = document.getElementById('enable_date_interval')
+
+checkbox.addEventListener('change', (event) => {
+  if (event.currentTarget.checked) {
+    document.getElementById('start_date').disabled = false;
+    document.getElementById('end_date').disabled = false;
+  } else {
+    document.getElementById('start_date').disabled = true;
+    document.getElementById('end_date').disabled = true;
+
+}
+})
+</script>
+
+{% endblock %}
+
