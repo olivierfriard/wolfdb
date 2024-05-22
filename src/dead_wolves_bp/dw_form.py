@@ -188,9 +188,24 @@ class Dead_wolf(Form):
         default="",
     )
 
+    field21 = StringField("Area", [], default="")
+    field22 = StringField("Country", [], default="")
+    field26 = SelectField(
+        "Georeference",
+        choices=[("Accurata", "Accurata"), ("N.D.", "N.D."), ("Dedotta, non accurata", "Dedotta, non accurata")],
+        default="N.D.",
+    )
+
     utm_east = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
     utm_north = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
     utm_zone = StringField("UTM zone", [], default="32N")
+
+    # SCALP category
+    field230 = SelectField(
+        "SCALP category",
+        choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")],
+        default="C1",
+    )
 
     field2 = SelectField(
         "Necroscopy done",
@@ -247,13 +262,7 @@ class Dead_wolf(Form):
     field16 = StringField("Toxic category", [], default="")
 
     field19 = StringField("Valley", [], default="")
-    field21 = StringField("Area", [], default="")
-    field22 = StringField("Country", [], default="")
-    field26 = SelectField(
-        "Georeference",
-        choices=[("Accurata", "Accurata"), ("N.D.", "N.D."), ("Dedotta, non accurata", "Dedotta, non accurata")],
-        default="N.D.",
-    )
+
     field27 = StringField("Whole weight", [], default="")
     field28 = StringField("Gutted weight", [], default="")
 

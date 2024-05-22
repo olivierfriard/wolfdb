@@ -144,10 +144,13 @@ def settings():
         return redirect("/")
 
 
-@app.route("/rev_geocoding/<east>/<north>/<zone>")
-def rev_geocoding(east, north, zone):
+@app.route("/rev_geocoding/<int:east>/<int:north>/<zone>")
+def rev_geocoding(east: int, north: int, zone: str):
+    """
+    get location info from UTM coordinates
+    """
     try:
-        lat_lon = utm.to_latlon(int(east), int(north), int(zone.replace("N", "")), zone[-1])
+        lat_lon = utm.to_latlon(int(east), int(north), int(zone.upper().replace("N", "")), zone[-1])
     except Exception:
         return {
             "continent": "",

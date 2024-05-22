@@ -111,8 +111,16 @@
 
 
 </div></div>
-
+{# georeference #}
 <div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field26.label }}</div><div class="col-4">{{ form.field26(class="form-control", value=default_values["field26"]) }}{% for message in form.field26.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
+
+
+{# SCALP category #}
+<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field230.label }}</div><div class="col-4">
+{{ form.field230(class="form-control", value=default_values["field230"]) }}{% for message in form.field230.errors %}
+<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
+
+
 
 <hr>
 

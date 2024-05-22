@@ -14,7 +14,7 @@
 
 <table class="table table-striped">
 
-<tr><td>Dead wolf ID</td><td><a href="/view_wa/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a></td></tr>
+<tr><td>Dead wolf ID</td><td><a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a></td></tr>
 <tr><td>Genotype ID</td><td>
 {% if dead_wolf["genotype_id"] %}    
 <a href="/view_genotype/{{ dead_wolf['genotype_id'] }}">{{ dead_wolf["genotype_id"] }}</a>
@@ -58,17 +58,13 @@ East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}
 
 {% for field in fields_list %}
 
-{% if field["name"] != 'ID' and field["name"] != 'Tissue ID' and field["name"] != 'Genotype ID' and field["name"] != 'WA'%}
-
 <tr><td>{{ field["name"] }}</td><td>{{ dead_wolf_values[field["name"]] if dead_wolf_values[field["name"]] is not none else "" }}</td></tr>
-
-{%endif%}
 
 {% endfor %}
 
 </table>
 
-{% if dead_wolf['geonetry_utm'] %}
+{% if dead_wolf['geometry_utm'] %}
 <h2>Location</h2>
 <div id="map" style="width: 800px; height: 800px;"></div>
 {{ map }}

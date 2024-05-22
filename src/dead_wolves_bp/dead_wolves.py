@@ -15,7 +15,7 @@ from config import config
 from .dw_form import Dead_wolf
 
 import functions as fn
-from italian_regions import regions
+# from italian_regions import regions
 
 app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
 
@@ -35,7 +35,7 @@ def view_tissue(tissue_id: str):
         if row is not None:
             return redirect(f"/view_dead_wolf_id/{row['id']}")
         else:
-            flash(Markup(f'<div class="alert alert-danger" role="alert"><b>Tissue ID <b>{tissue_id}</b> not found</b></div>'))
+            flash(fn.alert_danger(f"Tissue ID <b>{tissue_id}</b> not found."))
             return redirect("/dead_wolves_list")
 
 
@@ -53,7 +53,7 @@ def view_dead_wolf_id(id: int):
         )
 
         if dead_wolf is None:
-            flash(Markup(f'<div class="alert alert-danger" role="alert"><b>Dead wolf <b>#{id}</b> not found</b></div>'))
+            flash(fn.alert_danger(f"Dead wolf <b>#{id}</b> not found"))
             return redirect("/dead_wolves_list")
 
         # fields list
@@ -210,7 +210,7 @@ def new_dead_wolf():
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
+        flash(fn.alert_danger(f"<b>{msg}</b>"))
 
         return render_template(
             "new_dead_wolf.html",
@@ -263,17 +263,36 @@ def new_dead_wolf():
                 if genotype_id is not None:
                     return not_valid(form, f"The genotype id <b>{request.form['genotype_id']}</b> is already present in dead wolves table")
 
-            # insert ID
-            row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves")).mappings().fetchone()
-            new_id = row["max_id"] + 1
+            location = request.form["location"]
+            municipality = request.form["municipality"]
+            province_code = request.form["province"]
+
+            # add location, municipality, province, region if not indicated
+            if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]:
+                try:
+                    lat_lon = utm.to_latlon(
+                        int(request.form["utm_east"]),
+                        int(request.form["utm_north"]),
+                        int(request.form["utm_zone"].upper().replace("N", "")),
+                        request.form["utm_zone"].upper()[-1],
+                    )
+                except Exception as error:
+                    return not_valid(form, f"Check the UTM coordinates ({error.args[0]})")
+                r = fn.reverse_geocoding(lat_lon[::-1])
+                if not location:
+                    location = r["location"]
+                if not municipality:
+                    municipality = r["municipality"]
+                if not province_code:
+                    province_code = r["province_code"]
 
             # add region
             region: str = ""
-            if request.form["province"]:
+            if province_code:
                 region = (
                     con.execute(
                         text("SELECT region FROM geo_info WHERE province_code = :province_code"),
-                        {"province_code": request.form["province"]},
+                        {"province_code": province_code},
                     )
                     .mappings()
                     .fetchone()["region"]
@@ -284,34 +303,43 @@ def new_dead_wolf():
                     text(
                         (
                             "INSERT INTO dead_wolves "
-                            "(id, genotype_id, tissue_id, discovery_date, location, municipality, province, region, wa_code, utm_east, utm_north, utm_zone, geometry_utm) "
+                            "(genotype_id, tissue_id, discovery_date, location, municipality, province, region, wa_code, utm_east, utm_north, utm_zone, geometry_utm) "
                             "VALUES "
-                            "(:new_id, :genotype_id, :tissue_id, :discovery_date, :location, :municipality, :province, :region, :wa_code, "
+                            "(:genotype_id, :tissue_id, :discovery_date, :location, :municipality, :province, :region, :wa_code, "
                             ":utm_east, :utm_north, :utm_zone, st_geomfromtext(:utm_geometry, 32632))"
                         )
                     ),
                     {
-                        "new_id": new_id,
+                        # "new_id": new_id,
                         "genotype_id": request.form["genotype_id"] if request.form["genotype_id"] else None,
                         "tissue_id": request.form["tissue_id"] if request.form["tissue_id"] else None,
                         "discovery_date": request.form["discovery_date"] if request.form["discovery_date"] else None,
-                        "location": request.form["location"] if request.form["location"] else None,
-                        "municipality": request.form["municipality"] if request.form["municipality"] else None,
-                        "province": request.form["province"] if request.form["province"] else None,
+                        "location": location if location else None,
+                        "municipality": municipality if municipality else None,
+                        "province": province_code if province_code else None,
                         "wa_code": request.form["wa_code"] if request.form["wa_code"] else None,
                         "utm_east": request.form["utm_east"] if request.form["utm_east"] else None,
                         "utm_north": request.form["utm_north"] if request.form["utm_north"] else None,
                         "utm_zone": request.form["utm_zone"]
                         if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]
                         else None,
-                        "utm_geometry": f"POINT({request.form['utm_east']} {request.form['utm_zone']})"
+                        "utm_geometry": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
                         if request.form["utm_east"] and request.form["utm_north"]
                         else None,
                         "region": region if region else None,
                     },
                 )
-            except exc.IntegrityError:
-                return not_valid(form, "field not unique")
+            except exc.IntegrityError as error:
+                return not_valid(form, f"field not unique: {error.args[0]}")
+            except exc.InternalError as error:
+                if "invalid geometry" in error.args[0]:
+                    return not_valid(form, f"Check the UTM coordinates ({error.args[0]})")
+                else:
+                    return not_valid(form, f"Error {error.args[0]}")
+
+            # get last id
+            row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves")).mappings().fetchone()
+            new_id = row["max_id"]
 
             # fields list
             fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition ORDER BY position")).mappings().all()
@@ -347,7 +375,7 @@ def edit_dead_wolf(id: int):
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
+        flash(fn.alert_danger(f"<b>{msg}</b>"))
 
         return render_template(
             "new_dead_wolf.html",
@@ -367,7 +395,7 @@ def edit_dead_wolf(id: int):
             )
 
             if dead_wolf is None:
-                flash(Markup(f'<div class="alert alert-danger" role="alert"><b>Dead wolf <b>#{id}</b> not found</b></div>'))
+                flash(fn.alert_danger(f"Dead wolf <b>#{id}</b> not found"))
                 return redirect("/dead_wolves_list")
 
             rows = (
@@ -509,7 +537,7 @@ def edit_dead_wolf(id: int):
                             text(
                                 "INSERT INTO dead_wolves_values VALUES (:id, :field_id, :value) "
                                 "ON CONFLICT (id, field_id) DO UPDATE "
-                                "SET val = EXCLUDED.val"
+                                "SET val = :value"
                             ),
                             {"id": id, "field_id": row["field_id"], "value": request.form[f"field{row['field_id']}"]},
                         )
@@ -524,16 +552,9 @@ def del_dead_wolf(id):
     set dead wolf as deleted
     """
     with fn.conn_alchemy().connect() as con:
-        """
-        con.execute(
-            text("INSERT INTO dead_wolves_values VALUES (:id, 107, NOW()) ON CONFLICT (id, field_id) DO UPDATE SET val = NOW()"),
-            {"id": id},
-        )
-        """
-
         con.execute(text("UPDATE dead_wolves SET deleted = NOW() WHERE id = :dead_wolf_id"), {"dead_wolf_id": id})
 
-    flash(Markup(f'<div class="alert alert-success" role="alert"><b>Dead wolf <b>#{id}</b> deleted</b></div>'))
+    flash(fn.alert_success(f"Dead wolf <b>#{id}</b> deleted"))
 
     return redirect("/dead_wolves_list")
 
