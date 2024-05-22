@@ -2,13 +2,13 @@
 
 {% block content %}
 <body onload="scroll_to_scat_id()"> 
-      <script>
-      function scroll_to_scat_id() {
-          const element = document.getElementById("{{ view_scat_id }}");
-          if (element) {
-              element.scrollIntoView();
-              }
-          }
+<script>
+function scroll_to_scat_id() {
+        const element = document.getElementById("{{ view_scat_id }}");
+        if (element) {
+            element.scrollIntoView();
+            }
+    }
 </script>
 {% include "menu.html" %}
 
@@ -122,4 +122,5 @@
 </div><!-- frozen -->
 
 <br>
+</body>
 {% endblock %}

@@ -12,7 +12,12 @@
 {% endwith %}
 
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@400&display=swap" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
+
+<style>
+.condensed {
+    font-family: "Fira Sans Condensed";
+    font-size: 1.2em;
+}</style>
 
 
 {% if results %}
