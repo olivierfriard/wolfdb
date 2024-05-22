@@ -1,6 +1,9 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_no-body.html" %}
 
 {% block content %}
+<body>
+
+{% include "menu.html" %}
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -8,17 +11,30 @@
 {% endif %}
 {% endwith %}
 
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@400&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
+
 
 {% if results %}
-<h2>{{ header_title }} ({{ n_dead_wolves }})</h2>
-<table class="table table-striped">
+<h3>{{ header_title }} ({{ n_dead_wolves }})</h3>
+
+
+
+{% include "freeze_1stcolumn_1strow.html" %}
+
+<div class="frozen">
+<div class="condensed">
+
+<table id="dead_wolves_list" class="table table-striped">
+<thead>
 <tr>
 <th>ID</th>
 <th>Tissue ID</th>
 <th>Genotype ID</th>
 <th>WA code</th>
-
 </tr>
+</thead>
+<tbody>
 {% for result in results %}
 <tr>
 <td><a href="/view_dead_wolf_id/{{ result['id'] }}">{{ result['id'] }}</a></td>
@@ -40,14 +56,17 @@
 </td>
 </tr>
 {% endfor %}
+</tbody>
 </table>
+</div>
+</div>
 {% else %}
 
 <h2>No dead wolf found</h2>
 
 {% endif %}
 
-
+</body>
 {% endblock %}
 
 
