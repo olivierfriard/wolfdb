@@ -21,7 +21,7 @@ import datetime
 import pathlib as pl
 
 # blueprints
-import google_auth_bp
+import google_auth
 from scats_bp import scats
 from paths_bp import paths
 from packs_bp import packs
@@ -48,7 +48,7 @@ app.config["SESSION_PERMANENT"] = False
 Session(app)
 
 
-app.register_blueprint(google_auth_bp.app)
+app.register_blueprint(google_auth.app)
 app.register_blueprint(scats.app)
 app.register_blueprint(paths.app)
 app.register_blueprint(packs.app)

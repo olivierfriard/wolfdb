@@ -6,7 +6,6 @@
 <hr>
 
 
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {{ messages[0] }}
@@ -24,7 +23,9 @@ Go to the production interface <a href="https://wolf.unito.it">wolf.unito.it</a>
 {%endif%}
 
 {% if not session["email"] %}
-<a href="/login" class="btn btn-primary">Login with Google</a>
+<a href="{{ url_for('google_auth.login')}}" class="btn btn-lg btn-primary">Login with Google</a>
+
+{# <a href="/login" class="btn btn-primary">Login with Google</a> #}
 
 {% else %}
 
