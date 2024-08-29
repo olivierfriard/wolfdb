@@ -7,7 +7,7 @@ functions module
 """
 
 from functools import wraps
-from flask import redirect, session
+from flask import redirect, session, url_for
 from markupsafe import Markup
 from sqlalchemy import text
 import psycopg2
@@ -28,7 +28,7 @@ def check_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "google_id" not in session:
-            return redirect("/login")
+            return redirect(url_for("google_auth.login"))
         return f(*args, **kwargs)
 
     return decorated_function
