@@ -59,13 +59,11 @@ Current sex: <b>{{ sex }}</b>
             </td>
             <td><input type="text" id="{{ locus['name'] }}_{{allele}}_notes" name="{{ locus['name'] }}_{{allele}}_notes" value=""><br>
             </td>
-            {%endif%}
-            {%endfor%}
-
             {% else %}
             <td></td>
             <td></td>
             {% endif %}
+            {% endfor %}
 
             <td><a class="btn btn-sm btn-primary"
                     href="/view_genetic_data_history/{{ wa_code }}/{{ locus['name'] }}">view</a></td>
