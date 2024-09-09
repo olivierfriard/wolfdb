@@ -81,7 +81,7 @@ markupsafe==2.1.5
     # via jinja2
     # via werkzeug
     # via wtforms
-matplotlib==3.9.0
+matplotlib==3.7.3
 msgspec==0.18.6
     # via flask-session
 numpy==1.26.4

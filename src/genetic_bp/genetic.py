@@ -40,6 +40,7 @@ def get_cmap(n, name="viridis"):
     """
 
     return plt.cm.get_cmap(name, n)
+    # return plt.colormaps.get_cmap(name, n)
 
 
 @app.route("/del_genotype/<genotype_id>")
