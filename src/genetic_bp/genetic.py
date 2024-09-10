@@ -141,7 +141,9 @@ def view_genotype(genotype_id: str):
             con.execute(
                 text(
                     "SELECT wa_code, sample_id, sample_type, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
+                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
                     "FROM wa_scat "
                     "WHERE genotype_id = :genotype_id "
                     "ORDER BY wa_code"
@@ -159,11 +161,11 @@ def view_genotype(genotype_id: str):
     loci_values: dict = {}
     count_wa_code, sum_lon, sum_lat = 0, 0, 0
     for row in wa_codes:
-        sample_geojson = json.loads(row["sample_lonlat"])
+        # sample_geojson = json.loads(row["sample_lonlat"])
         count_wa_code += 1
-        lon, lat = sample_geojson["coordinates"]
-        sum_lon += lon
-        sum_lat += lat
+        # lon, lat = row["longitude"], row["latitude"]
+        sum_lon += row["longitude"]
+        sum_lat += row["latitude"]
 
         if row["sample_type"] == "scat":
             color = params["scat_color"]
@@ -173,7 +175,7 @@ def view_genotype(genotype_id: str):
             color = "red"
 
         sample_feature = {
-            "geometry": dict(sample_geojson),
+            "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
             "type": "Feature",
             "properties": {
                 "style": {"color": color, "fillColor": color, "fillOpacity": 1},
@@ -581,13 +583,26 @@ def plot_all_wa():
 @app.route("/plot_wa_clusters/<int:distance>")
 @fn.check_login
 def plot_wa_clusters(distance: int):
+    """
+    plot WA clusters using ST_ClusterDBSCAN function
+    """
+
+    print(f"{session["start_date"]=}")
+    print(f"{session["end_date"]=}")
+    print(f"{distance=}")
+
     with fn.conn_alchemy().connect() as con:
         results = (
             con.execute(
                 text(
                     "SELECT wa_code, sample_id, genotype_id, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cid "
+                    "coord_east, coord_north, "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude, "
+                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    # "geometry_utm,"
+                    # "st_transform(geometry_utm, 4326) AS geometry_utm_4326,"
+                    "ST_ClusterDBSCAN(geometry_utm, eps:=:distance, minpoints:=1) OVER(ORDER BY wa_code) AS cid "
                     "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
                     "AND date BETWEEN :start_date AND :end_date"
@@ -595,44 +610,83 @@ def plot_wa_clusters(distance: int):
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
+                    "distance": distance,
                 },
             )
             .mappings()
             .all()
         )
 
+    print(f"{len(results)=}")
+
     # max cluster id
-    max_cluster_id = max([row["cid"] for row in results])
+    max_cluster_id = max([row["cid"] for row in results if row["cid"] is not None])
+
+    """print(f"{max_cluster_id=}")"""
+
     cmap = get_cmap(max_cluster_id)
+
+    """print(f"{cmap=}")"""
+
+    # size of each cluster
+    cluster_id_count = {}
+    for row in results:
+        if row["cid"] not in cluster_id_count:
+            cluster_id_count[row["cid"]] = 0
+        cluster_id_count[row["cid"]] += 1
+    print(f"{cluster_id_count=}")
+
+    """
+    for row in results:
+        if row["cid"] == 0:
+            print(row["coord_east"], row["coord_north"], row["longitude"], row["latitude"])
+            print("-" * 50)
+
+            max_dist = 0
+            min_dist = 1000000
+            for row2 in results:
+                if row2["cid"] == 0:
+                    d = ((row["coord_east"] - row2["coord_east"]) ** 2 + (row["coord_north"] - row2["coord_north"]) ** 2) ** 0.5
+                    max_dist = max(d, max_dist)
+                    min_dist = min(min_dist, d)
+            print(f"{min_dist=}")
+            print(f"{max_dist=}")
+            print()
+    """
 
     scat_features: list = []
     min_lon, min_lat, max_lon, max_lat = 90, 90, -90, -90
     for row in results:
-        # skip loci with value  0 or -
+        # skip loci with value 0 or -
         loci_val = rdis.get(row["wa_code"])
-        if loci_val is not None:
-            flag_ok = False
-            d = json.loads(loci_val)
-            for locus in d:
-                for allele in d[locus]:
-                    if d[locus][allele]["value"] not in ("-", 0):
-                        flag_ok = True
-                        break
-                if flag_ok:
+        if loci_val is None:
+            continue
+        flag_ok = False
+        d = json.loads(loci_val)
+        for locus in d:
+            for allele in d[locus]:
+                if d[locus][allele]["value"] not in ("-", 0):
+                    flag_ok = True
                     break
-            else:  # not broken
-                continue
+            if flag_ok:
+                break
+        else:  # not broken
+            continue
 
-        scat_geojson = json.loads(row["scat_lonlat"])
-        lon, lat = scat_geojson["coordinates"]
-        min_lon = min(min_lon, lon)
-        min_lat = min(min_lat, lat)
-        max_lon = max(max_lon, lon)
-        max_lat = max(max_lat, lat)
+        # scat_geojson = json.loads(row["scat_lonlat"])
+        # print(f"{row["scat_lonlat"]=}")
+        # lon, lat = scat_geojson["coordinates"]
+        min_lon = min(min_lon, row["longitude"])
+        min_lat = min(min_lat, row["latitude"])
+        max_lon = max(max_lon, row["longitude"])
+        max_lat = max(max_lat, row["latitude"])
 
-        color = matplotlib.colors.to_hex(cmap(row["cid"]), keep_alpha=False)
+        if row["cid"] is not None:
+            color = matplotlib.colors.to_hex(cmap(row["cid"]), keep_alpha=False)
+        else:
+            color = "#000000"
         scat_feature = {
-            "geometry": dict(scat_geojson),
+            "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},  # dict(scat_geojson),
             "type": "Feature",
             "properties": {
                 "style": {"color": color, "fillColor": color, "fillOpacity": 1},
@@ -640,7 +694,7 @@ def plot_wa_clusters(distance: int):
                     f"""Sample ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
                     f"""Genotype ID: {row['genotype_id']}<br>"""
-                    f"""Cluster ID {row['cid']}:  <a href="/wa_analysis/{distance}/{row['cid']}">samples</a><br>"""
+                    f"""Cluster ID {row['cid']}:<br><a href="/wa_analysis/{distance}/{row['cid']}">{cluster_id_count[row['cid']]} samples</a><br>"""
                     f"""<a href="/wa_analysis_group/web/{distance}/{row['cid']}">genotypes</a>"""
                 ),
             },
@@ -956,23 +1010,24 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         for row in (
             con.execute(
                 text(
-                    "SELECT wa_code, sample_id, municipality, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
+                    "SELECT wa_code, sample_id, municipality, cluster_id FROM "
+                    "(SELECT wa_code, sample_id, municipality, "
+                    "ST_ClusterDBSCAN(geometry_utm, eps:= :distance, minpoints:=1) OVER(ORDER BY wa_code) AS cluster_id "
                     "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
-                    "AND date BETWEEN :start_date AND :end_date "
+                    "AND date BETWEEN :start_date AND :end_date) q WHERE cluster_id = :cluster_id "
                 ),
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
+                    "distance": distance,
+                    "cluster_id": cluster_id,
                 },
             )
             .mappings()
             .all()
         ):
-            if row["cluster_id"] == cluster_id:
-                wa_list.append(row["wa_code"])
+            wa_list.append(row["wa_code"])
         wa_list_str = "','".join(wa_list)
 
         wa_scats = (
@@ -1001,11 +1056,20 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         loci_values: dict = {}
         out: list = []
         for row in wa_scats:
-            loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
+            print(f"{row["wa_code"]=}")
+
+            # loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
+
+            from_rdis = rdis.get(row["wa_code"])
+            if from_rdis is None:
+                continue
+            loci_values[row["wa_code"]] = json.loads(from_rdis)
+            if loci_values[row["wa_code"]] is None:
+                continue
             has_loci_values = False
             # check if loci have values
             for x in loci_values[row["wa_code"]]:
-                for allele in ["a", "b"]:
+                for allele in ("a", "b"):
                     if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
                         has_loci_values = True
                 if has_loci_values:
@@ -1028,8 +1092,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
             return render_template(
                 "wa_analysis.html",
-                header_title=f"WA matches (cluster ID: {cluster_id} _ {distance} m))",
-                title=Markup(f"Matches (cluster id: {cluster_id} _ {distance} m)"),
+                header_title=f"cluster ID: {cluster_id} distance: {distance} m) - WA matches",
+                title=Markup(f"Matches (cluster id: {cluster_id} distance: {distance} m) {len(wa_scats)} sample(s)"),
                 loci_list=loci_list,
                 wa_scats=out,
                 loci_values=loci_values,
@@ -1093,7 +1157,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
                 con.execute(
                     text(
                         "SELECT *, "
-                        "(SELECT 'Yes' FROM wa_scat_dw_mat WHERE (sample_id like 'T%' OR sample_id like 'M%')AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                        "(SELECT 'Yes' FROM wa_scat_dw_mat WHERE (sample_id like 'T%' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                         "FROM genotypes WHERE genotype_id = :genotype_id"
                     ),
                     {"genotype_id": row["genotype_id"]},
@@ -1123,8 +1187,8 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     else:
         return render_template(
             "wa_analysis_group.html",
-            header_title=f"Genotypes matches (cluster ID: {cluster_id} _ {distance} m))",
-            title=Markup(f"Genotypes matches (cluster id: {cluster_id} _ {distance} m)"),
+            header_title=f"Genotypes matches (cluster ID: {cluster_id} distance: {distance} m))",
+            title=Markup(f"Genotypes matches (cluster id: {cluster_id} distance: {distance} m)"),
             loci_list=loci_list,
             genotype_id=genotype_id,
             data=data,
