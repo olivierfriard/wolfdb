@@ -587,6 +587,8 @@ def plot_wa_clusters(distance: int):
     plot WA clusters using ST_ClusterDBSCAN function
     """
 
+    MINPOINT = 1
+
     print(f"{session["start_date"]=}")
     print(f"{session["end_date"]=}")
     print(f"{distance=}")
@@ -602,7 +604,7 @@ def plot_wa_clusters(distance: int):
                     # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
                     # "geometry_utm,"
                     # "st_transform(geometry_utm, 4326) AS geometry_utm_4326,"
-                    "ST_ClusterDBSCAN(geometry_utm, eps:=:distance, minpoints:=1) OVER(ORDER BY wa_code) AS cid "
+                    "ST_ClusterDBSCAN(geometry_utm, eps:=:distance, minpoints:=:minpoint) OVER(ORDER BY wa_code) AS cid "
                     "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
                     "AND date BETWEEN :start_date AND :end_date"
@@ -611,6 +613,7 @@ def plot_wa_clusters(distance: int):
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                     "distance": distance,
+                    "minpoint": MINPOINT,
                 },
             )
             .mappings()
@@ -693,8 +696,8 @@ def plot_wa_clusters(distance: int):
                 "popupContent": (
                     f"""Sample ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: {row['genotype_id']}<br>"""
-                    f"""Cluster ID {row['cid']}:<br><a href="/wa_analysis/{distance}/{row['cid']}">{cluster_id_count[row['cid']]} samples</a><br>"""
+                    f"""Genotype ID: <b>{row['genotype_id']}</b><br>"""
+                    f"""Cluster ID {row['cid']}:<br><a href="/wa_analysis/{distance}/{row['cid']}">{cluster_id_count[row['cid']]} samples</a> """
                     f"""<a href="/wa_analysis_group/web/{distance}/{row['cid']}">genotypes</a>"""
                 ),
             },
@@ -706,7 +709,7 @@ def plot_wa_clusters(distance: int):
     return render_template(
         "plot_clusters.html",
         header_title=f"WA codes clusters ({distance} m)",
-        title=Markup(f"<h3>Plot of {len(scat_features)} WA codes clusters</h3>DBSCAN: {distance} m"),
+        title=Markup(f"Plot of {len(scat_features)} WA codes clusters"),
         map=Markup(
             fn.leaflet_geojson2(
                 {
@@ -717,6 +720,7 @@ def plot_wa_clusters(distance: int):
             )
         ),
         distance=int(distance),
+        minpoint=MINPOINT,
     )
 
 

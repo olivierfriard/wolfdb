@@ -125,7 +125,7 @@ def google_auth_redirect():
             flask.session["email"] = user_info["email"]
             flask.session["user_name"] = user_info["name"]
         else:
-            session.clear()
+            flask.session.clear()
             return flask.redirect("/")
 
     flask.flash(Markup(f"<h2>Welcome {flask.session['user_name']}</h2>"))
