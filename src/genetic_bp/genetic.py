@@ -514,7 +514,9 @@ def plot_all_wa():
             con.execute(
                 text(
                     "SELECT wa_code, sample_id, genotype_id, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
+                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                     "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
                     "AND date BETWEEN :start_date AND :end_date "
@@ -527,14 +529,13 @@ def plot_all_wa():
             .mappings()
             .all()
         ):
-            scat_geojson = json.loads(row["scat_lonlat"])
+            # scat_geojson = json.loads(row["scat_lonlat"])
+            # lon, lat = scat_geojson["coordinates"]
 
-            lon, lat = scat_geojson["coordinates"]
-
-            tot_min_lat = min([tot_min_lat, lat])
-            tot_max_lat = max([tot_max_lat, lat])
-            tot_min_lon = min([tot_min_lon, lon])
-            tot_max_lon = max([tot_max_lon, lon])
+            tot_min_lat = min([tot_min_lat, row["latitude"]])
+            tot_max_lat = max([tot_max_lat, row["latitude"]])
+            tot_min_lon = min([tot_min_lon, row["longitude"]])
+            tot_max_lon = max([tot_max_lon, row["longitude"]])
 
             if row["sample_id"].startswith("E"):
                 color = params["scat_color"]
@@ -544,7 +545,7 @@ def plot_all_wa():
                 color = "red"
 
             scat_feature = {
-                "geometry": dict(scat_geojson),
+                "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
                 "type": "Feature",
                 "properties": {
                     "style": {"color": color, "fillColor": color, "fillOpacity": 1},

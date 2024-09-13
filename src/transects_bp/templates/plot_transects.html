@@ -3,7 +3,9 @@
 {% block content %}
 
 
-<h2>Location of transects</h2>
+<h3>Location of transects</h3>
+
+{% include 'legend.html' %}
 
 <style>
 #map {
@@ -13,28 +15,16 @@ width: 100%;
 }
 </style>
 
-<div id="mapdiv" class="col-md-12"><div id="map"></div></div>
+<div id="mapdiv" class="col-md-12">
+<div id="map"></div>
+</div>
 
 {{ map }}
 
-{% include 'legend.html' %}
 
 
 
 
-<script>
-
-    function map_dec() {
-        document.getElementById("map").setAttribute("style","height:500px");
-    }
-
-    //map_dec();
-
-    </script>
-
-<!--
-<button onclick="map_dec()">Click me</button>
--->
 {% endblock %}
 
 

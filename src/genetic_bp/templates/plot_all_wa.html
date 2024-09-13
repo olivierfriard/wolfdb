@@ -5,7 +5,7 @@
 
 
 
-
+{#
 {% if distance != 0 %}
 
 <a href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
@@ -19,12 +19,31 @@
 <a href="/plot_wa_clusters/2500" class="btn btn-primary">Plot WA clusters (2500 m)</a>&nbsp;
 
 {% endif %}
+#}
+
+<div class="btn-group dropend">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+Plot DBSCAN clusters
+</button>
+<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+<li><a class="dropdown-item" href="/plot_wa_clusters/100">100 m</a></li>
+<li><a class="dropdown-item" href="/plot_wa_clusters/250">250 m</a></li>
+<li><a class="dropdown-item" href="/plot_wa_clusters/500">500 m</a></li>
+<li><a class="dropdown-item" href="/plot_wa_clusters/750">750 m</a></li>
+<li><a class="dropdown-item" href="/plot_wa_clusters/1000">1000 m</a></li>
+<li><a class="dropdown-item" href="/plot_wa_clusters/2000">2000 m</a></li>
+<li><a class="dropdown-item" href="/plot_wa_clusters/2500">2500 m</a></li>
+</ul>
+</div>
+    
 
 <br><br>
 
 {% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
 
 {{ title }}
+
+{% include 'legend.html' %}
 
 <style>
 #map {
