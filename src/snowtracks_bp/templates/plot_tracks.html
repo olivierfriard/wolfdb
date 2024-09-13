@@ -2,8 +2,6 @@
 
 {% block content %}
 
-{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
-
 <h3>Locations of tracks</h3>
 
 {% include 'legend.html' %}
