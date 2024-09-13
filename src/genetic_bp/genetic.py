@@ -721,6 +721,7 @@ def plot_wa_clusters(distance: int):
         ),
         distance=int(distance),
         minpoint=MINPOINT,
+        clusters_number=len(cluster_id_count),
     )
 
 

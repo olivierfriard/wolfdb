@@ -859,13 +859,14 @@ def leaflet_geojson2(data: dict) -> str:
     map = Template(
         """
 
- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-   crossorigin=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+ 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
 
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-   crossorigin=""></script>
 
 <script>
 
@@ -889,19 +890,31 @@ var dead_wolves = {
     "features": {{ dead_wolves }}
 };
 
-var map = L.map('map').setView([{{ center }}], {{ zoom }});
+
+var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'})
+
+var opentopomap = L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
+	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+})
+
+var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [osm, opentopomap]});
+
+var baseMaps = {
+    "OpenStreetMap": osm,
+    "OpenTopoMap": opentopomap,
+};
+
+var layerControl = L.control.layers(baseMaps).addTo(map);
+
 
 /*
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-*/
-
+var map = L.map('map').setView([{{ center }}], {{ zoom }});
 
 L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
 	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
 }).addTo(map);
-
+*/
 
 function onEachFeature(feature, layer) {
     var popupContent = "";
