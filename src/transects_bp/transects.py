@@ -510,7 +510,7 @@ def plot_transects():
         tot_max_lat, tot_max_lon = -90, -90
 
         for row in (
-            con.execute(text("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects"))
+            con.execute(text("SELECT transect_id, " "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat " "FROM transects"))
             .mappings()
             .all()
         ):

@@ -281,7 +281,9 @@ def plot_all_scats_markerclusters():
         for row in (
             con.execute(
                 text(
-                    "SELECT scat_id, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
+                    "SELECT scat_id,"
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
                     "FROM scats "
                     "WHERE date BETWEEN :start_date AND :end_date"
                 ),
@@ -293,18 +295,14 @@ def plot_all_scats_markerclusters():
             .mappings()
             .all()
         ):
-            scat_geojson = json.loads(row["scat_lonlat"])
-
             # bounding box
-            lon, lat = scat_geojson["coordinates"]
-
-            tot_min_lat = min([tot_min_lat, lat])
-            tot_max_lat = max([tot_max_lat, lat])
-            tot_min_lon = min([tot_min_lon, lon])
-            tot_max_lon = max([tot_max_lon, lon])
+            tot_min_lat = min([tot_min_lat, row["latitude"]])
+            tot_max_lat = max([tot_max_lat, row["latitude"]])
+            tot_min_lon = min([tot_min_lon, row["longitude"]])
+            tot_max_lon = max([tot_max_lon, row["longitude"]])
 
             scat_feature = {
-                "geometry": dict(scat_geojson),
+                "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
                 "type": "Feature",
                 "properties": {
                     "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",

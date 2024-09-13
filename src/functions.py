@@ -401,13 +401,13 @@ def leaflet_geojson(center, scat_features, transect_features, fit="", zoom=13) -
     map = (
         """
 
- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-   crossorigin=""/>
-
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-   crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+ 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
 
 <script>
 
@@ -908,14 +908,6 @@ var baseMaps = {
 var layerControl = L.control.layers(baseMaps).addTo(map);
 
 
-/*
-var map = L.map('map').setView([{{ center }}], {{ zoom }});
-
-L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
-	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-}).addTo(map);
-*/
-
 function onEachFeature(feature, layer) {
     var popupContent = "";
     if (feature.properties && feature.properties.popupContent) {
@@ -1014,14 +1006,13 @@ def leaflet_geojson3(data: dict) -> str:
 
     map = Template(
         """
- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-   crossorigin="">
-
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-   crossorigin="">
-</script>
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+ 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
 
 
 <link rel="stylesheet" href="/static/MarkerCluster.Default.css">
@@ -1049,18 +1040,22 @@ var dead_wolves = {
     "features": {{ dead_wolves }}
 };
 
-var map = L.map('map').setView([{{ center }}], {{ zoom }});
+var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'})
 
-/*
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-*/
-
-
-L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
+var opentopomap = L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
 	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-}).addTo(map);
+})
+
+var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [osm, opentopomap]});
+
+var baseMaps = {
+    "OpenStreetMap": osm,
+    "OpenTopoMap": opentopomap,
+};
+
+var layerControl = L.control.layers(baseMaps).addTo(map);
+
 
 
 function onEachFeature(feature, layer) {
@@ -1070,26 +1065,6 @@ function onEachFeature(feature, layer) {
     }
     layer.bindPopup(popupContent);
 }
-
-/*
-L.geoJSON([scats], {
-
-    style: function (feature) { return feature.properties && feature.properties.style; },
-
-    onEachFeature: onEachFeature,
-
-    pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, {
-            color: '{{ scats_color }}',
-            fillcolor: '{{ scats_color }}',
-            radius: 8,
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 1
-        });
-    }
-}).addTo(map);
-*/
 
 
 var scat_markers = L.geoJson(scats,

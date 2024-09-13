@@ -676,9 +676,6 @@ def plot_wa_clusters(distance: int):
         else:  # not broken
             continue
 
-        # scat_geojson = json.loads(row["scat_lonlat"])
-        # print(f"{row["scat_lonlat"]=}")
-        # lon, lat = scat_geojson["coordinates"]
         min_lon = min(min_lon, row["longitude"])
         min_lat = min(min_lat, row["latitude"])
         max_lon = max(max_lon, row["longitude"])
