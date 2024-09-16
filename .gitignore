@@ -4,3 +4,5 @@ flask_session
 .venv
 src/static/results/
 notes.txt
+src/start.bash
+
