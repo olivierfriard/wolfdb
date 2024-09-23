@@ -1,0 +1,26 @@
+{% extends "bootstrap.html" %}
+
+
+{% block content %}
+
+<h1>Set {{ parent }}</h1>
+<hr>
+
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
+<br><br>
+
+<h3>Genotype ID: <b>{{ genotype_id }}</b></h3>
+
+
+<form method="POST" action="/set_parent/{{ genotype_id }}/{{ parent }}">
+
+Current {{ parent }}: <b>{{ current_parent }}</b><br>
+<br>
+Set the new {{ parent }}:<br>
+<input type="text"  id="parent" name="parent" value="{{ current_parent }}"><br>
+<br>
+<button type="submit" class="btn btn-danger" >Submit</button>
+
+</form>
+
+{% endblock %}
