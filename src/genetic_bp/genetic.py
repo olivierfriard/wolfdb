@@ -2065,6 +2065,53 @@ def set_dispersal(genotype_id):
 
 
 @app.route(
+    "/set_parent/<genotype_id>/<parent_type>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def set_parent(genotype_id, parent_type):
+    """
+    let user set the parent (father or mother) of the individual
+    """
+    if parent_type not in ("father", "mother"):
+        flash(fn.alert_danger(f"Error in {parent_type} parameter (must be 'father' or 'mother')"))
+        return redirect(session["url_genotypes_list"])
+
+    with fn.conn_alchemy().connect() as con:
+        if request.method == "GET":
+            result = (
+                con.execute(text("SELECT mother, father FROM genotypes WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
+                .mappings()
+                .fetchone()
+            )
+
+            if result is None:
+                flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+                return redirect(session["url_genotypes_list"])
+
+            current_parent = "" if result[parent_type] is None else result[parent_type]
+
+            # if parent_type == "m":
+
+            return render_template(
+                "set_parent.html",
+                header_title=f"Set dispersal for {genotype_id}",
+                genotype_id=genotype_id,
+                parent=parent_type,
+                current_parent=current_parent,
+            )
+
+        if request.method == "POST":
+            sql = text(f"UPDATE genotypes SET {parent_type} = :parent WHERE genotype_id = :genotype_id")
+            con.execute(sql, {"parent": request.form["parent"].strip(), "genotype_id": genotype_id})
+            after_genotype_modif()
+            return redirect(session["url_genotypes_list"])
+
+
+@app.route(
     "/set_hybrid/<genotype_id>",
     methods=(
         "GET",

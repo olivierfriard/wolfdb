@@ -79,6 +79,8 @@
 <th>Date</th>
 <th>Pack</th>
 <th>Sex</th>
+<th>Mother</th>
+<th>Father</th>
 <th>Hybrid</th>
 <th>Status</th>
 <th>Age first capture</th>
@@ -125,6 +127,9 @@ set ...
 <li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
 <li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
 <li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/set_parent/{{ result['genotype_id'] }}/mother" class="dropdown-item">mother</a></li>
+<li><a href="/set_parent/{{ result['genotype_id'] }}/father" class="dropdown-item">father</a></li>
+
 <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
 </ul>
 </span>
@@ -158,6 +163,10 @@ set ...
 <td>{% if result['pack'] %}<a href="/view_pack/{{ result['pack'] }}">{{ result['pack'] }}</a>{% endif %}</td>
 
 <td>{% if result['sex'] %}{{ result['sex'] }}{% endif %}</td>
+
+<td>{% if result['mother'] %}{{ result['mother'] }}{% endif %}</td>
+
+<td>{% if result['father'] %}{{ result['father'] }}{% endif %}</td>
 
 <td>{% if result['hybrid'] %}{{ result['hybrid'] }}{% endif %}</td>
 
