@@ -19,12 +19,33 @@
 
 <h2 style="padding-top:1em;">Genotype ID: {{ result["genotype_id"] }}</h2>
 
+<span class="dropdown">
+    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+    set ...
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+    <li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
+    <li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
+    <li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
+    <li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
+    <li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
+    <li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
+    <li><a href="/set_parent/{{ result['genotype_id'] }}/mother" class="dropdown-item">mother</a></li>
+    <li><a href="/set_parent/{{ result['genotype_id'] }}/father" class="dropdown-item">father</a></li>
+    
+    <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
+    </ul>
+    </span>
+    
+
 <br>
 
 <table class="table table-striped">
 <tr><td>Record status</td><td>{{ result["record_status"] }}</td></tr>
 <tr><td>Other ID</td><td>{{ result["tmp_id"] }}</td></tr>
 <tr><td>Sex</td><td>{{ result["sex"] }}</td></tr>
+<tr><td>Mother</td><td>{{ result["mother"] if result["mother"] is not none else "" }}</td></tr>
+<tr><td>Father</td><td>{{ result["father"] if result["father"] is not none else "" }}</td></tr>
 <tr><td>Status</td><td>{{ result["status"] if result["status"] is not none else "" }}</td></tr>
 <tr><td>Pack</td><td>{% if result["pack"] is not none %}<a href="/view_pack/{{result['pack'] }}">{{ result["pack"] }}{% endif %}</a></td></tr>
 <tr><td>Date first capture</td><td>{{ result["date_first_capture"] if result["date_first_capture"] is not none else "" }}</td></tr>
@@ -47,8 +68,17 @@
 <thead>
 <tr><th></th>
 <th colspan="2">{{ result["genotype_id"] }}</th><th></th>
+
 {% for wa_code in wa_codes %}
-<th colspan="2"><a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a></th><th></th>
+<th colspan="2"><a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a>
+    
+{% if wa_code["wa_code"] == 'Dead wolf' %}
+(<a href="/view_dead_wolf_id/{{ wa_code["sample_id"] }}">{{ wa_code["sample_id"] }}</a>)
+{% else %}
+(<a href="/view_scat/{{ wa_code["sample_id"] }}">{{ wa_code["sample_id"] }}</a>)
+{% endif %}
+
+</th><th></th>
 {%  endfor %}
 </tr>
 <tr>
@@ -58,8 +88,8 @@
 <th>a</th><th>b</th><th></th>
 {%  endfor %}
 </tr>
-
 </thead>
+
 <tbody>
 {% for locus in loci_list %}
 

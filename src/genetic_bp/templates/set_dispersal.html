@@ -3,14 +3,11 @@
 
 {% block content %}
 
-<h1>Set dispersal</h1>
-<hr>
-
-<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
+<a href="{{ back_url }}" class="btn btn-primary">Go back</a>
 <br><br>
 
-<h3>Genotype ID: <b>{{ genotype_id }}</b></h3>
-
+<h1>Set dispersal of <b>{{ genotype_id }}</b></h1>
+<hr>
 
 <form method="POST" action="/set_dispersal/{{ genotype_id }}">
 

@@ -84,7 +84,7 @@ def add_wa():
     return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
-@app.route("/view_scat/<scat_id>")
+@app.route("/view_scat/<path:scat_id>")
 @fn.check_login
 def view_scat(scat_id):
     """

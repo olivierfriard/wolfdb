@@ -3,18 +3,11 @@
 
 {% block content %}
 
+<a href="{{ back_url }}" class="btn btn-primary">Go back</a>
+<br><br>
 
-<h1>Set pack</h1>
+<h1>Set pack of <b>{{ genotype_id }}</h1>
 <hr>
-
-<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>&nbsp;
-
-
-<br>
-<br>
-
-<h3>Genotype ID: <b>{{ genotype_id }}</b></h3>
-
 
 <form method="POST" action="/set_pack/{{ genotype_id }}">
 

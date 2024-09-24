@@ -6,7 +6,7 @@ flask blueprint for genetic data management
 """
 
 import flask
-from flask import render_template, redirect, request, flash, session, make_response, url_for
+from flask import render_template, redirect, request, flash, session, make_response
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -113,8 +113,6 @@ def view_genotype(genotype_id: str):
     visualize genotype's data
     """
 
-    session["view_genotype_id"] = genotype_id
-
     with fn.conn_alchemy().connect() as con:
         genotype = (
             con.execute(
@@ -134,17 +132,36 @@ def view_genotype(genotype_id: str):
                 return redirect(session["url_wa_list"])
             return "Error on genotype"
 
+        session["view_genotype_id"] = genotype_id
+
         genotype_loci = json.loads(rdis.get(genotype_id))
 
         # samples
+        """
         wa_codes = (
             con.execute(
                 text(
                     "SELECT wa_code, sample_id, sample_type, "
                     "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
                     "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
-                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS sample_lonlat "
                     "FROM wa_scat "
+                    "WHERE genotype_id = :genotype_id "
+                    "ORDER BY wa_code"
+                ),
+                {"genotype_id": genotype_id},
+            )
+            .mappings()
+            .all()
+        )
+        """
+
+        wa_codes = (
+            con.execute(
+                text(
+                    "SELECT wa_code, sample_id, sample_type, "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
+                    "FROM wa_scat_dw_mat "
                     "WHERE genotype_id = :genotype_id "
                     "ORDER BY wa_code"
                 ),
@@ -159,20 +176,24 @@ def view_genotype(genotype_id: str):
 
     samples_features: list = []
     loci_values: dict = {}
-    count_wa_code, sum_lon, sum_lat = 0, 0, 0
+    count_wa_code: int = 0
+    sum_lon: float = 0.0
+    sum_lat: float = 0.0
     for row in wa_codes:
-        # sample_geojson = json.loads(row["sample_lonlat"])
         count_wa_code += 1
-        # lon, lat = row["longitude"], row["latitude"]
         sum_lon += row["longitude"]
         sum_lat += row["latitude"]
 
+        """
         if row["sample_type"] == "scat":
             color = params["scat_color"]
-        elif row["sample_type"] == "tissue":
+        """
+        if row["sample_type"] == "Dead wolf":
             color = params["dead_wolf_color"]
         else:
             color = "red"
+
+        color = params["scat_color"]
 
         sample_feature = {
             "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
@@ -1761,11 +1782,19 @@ def genotype_note(genotype_id: str):
                 .fetchone()
             )
             if notes_row is None:
-                return "Genotype ID not found"
+                flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
+                return redirect(request.referrer)
 
             data["working_notes"] = "" if notes_row["working_notes"] is None else notes_row["working_notes"]
 
-            return render_template("add_genotype_note.html", header_title=f"Add note to genotype {genotype_id}", data=data)
+            session["redirect_url"] = request.referrer
+
+            return render_template(
+                "add_genotype_note.html",
+                header_title=f"Add note to genotype {genotype_id}",
+                data=data,
+                back_url=session["redirect_url"],
+            )
 
     if request.method == "POST":
         with fn.conn_alchemy().connect() as con:
@@ -1775,7 +1804,12 @@ def genotype_note(genotype_id: str):
 
             after_genotype_modif()
 
-            return redirect(session["url_genotypes_list"])
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 def after_genotype_modif() -> None:
@@ -1870,22 +1904,31 @@ def set_status(genotype_id):
 
             if result is None:
                 flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-                return redirect(session["url_genotypes_list"])
+                return redirect(request.referrer)
 
             status = "" if result["status"] is None else result["status"]
+
+            session["redirect_url"] = request.referrer
 
             return render_template(
                 "set_status.html",
                 header_title="Set status",
                 genotype_id=genotype_id,
                 current_status=status,
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
             sql = text("UPDATE genotypes SET status = :status WHERE genotype_id = :genotype_id")
             con.execute(sql, {"status": request.form["status"].strip().lower(), "genotype_id": genotype_id})
             after_genotype_modif()
-            return redirect(session["url_genotypes_list"])
+
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -1911,22 +1954,31 @@ def set_pack(genotype_id):
 
             if result is None:
                 flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-                return redirect(session["url_genotypes_list"])
+                return redirect(request.referrer)
 
             pack = "" if result["pack"] is None else result["pack"]
+
+            session["redirect_url"] = request.referrer
 
             return render_template(
                 "set_pack.html",
                 header_title=f"Set pack for {genotype_id}",
                 genotype_id=genotype_id,
                 current_pack=pack,
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
             sql = text("UPDATE genotypes SET pack = :pack WHERE genotype_id = :genotype_id")
             con.execute(sql, {"pack": request.form["pack"].lower().strip(), "genotype_id": genotype_id})
             after_genotype_modif()
-            return redirect(session["url_genotypes_list"])
+
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -1956,17 +2008,26 @@ def set_sex(genotype_id):
 
             sex = "" if result["sex"] is None else result["sex"]
 
+            session["redirect_url"] = request.referrer
+
             return render_template(
                 "set_sex.html",
                 header_title=f"Set sex for {genotype_id}",
                 genotype_id=genotype_id,
                 current_sex=sex,
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
             if request.form["sex"].upper().strip() not in ("F", "M", ""):
                 flash(fn.alert_danger(f"<big><b>Sex value not available ({request.form['sex'].upper().strip()})</b></big>"))
-                return redirect(session["url_genotypes_list"])
+
+                if "redirect_url" in session:
+                    redirect_url = session["redirect_url"]
+                    del session["redirect_url"]
+                    return redirect(redirect_url)
+                else:
+                    return redirect("/")
 
             sql = text("UPDATE genotypes SET sex = :sex WHERE genotype_id = :genotype_id")
             con.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
@@ -1977,7 +2038,12 @@ def set_sex(genotype_id):
             con.execute(sql, {"sex": request.form["sex"].upper().strip(), "genotype_id": genotype_id})
             after_wa_results_modif()
 
-            return redirect(session["url_genotypes_list"])
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -2005,9 +2071,11 @@ def set_status_1st_recap(genotype_id):
 
             if result is None:
                 flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-                return redirect(session["url_genotypes_list"])
+                return redirect(request.referrer)
 
             status_first_capture = "" if result["status_first_capture"] is None else result["status_first_capture"]
+
+            session["redirect_url"] = request.referrer
 
             return render_template(
                 "set_status_1st_recap.html",
@@ -2015,13 +2083,19 @@ def set_status_1st_recap(genotype_id):
                 genotype_id=genotype_id,
                 current_status_first_capture=status_first_capture,
                 return_url=request.referrer,
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
             sql = text("UPDATE genotypes SET status_first_capture = :status_first_capture WHERE genotype_id = :genotype_id")
             con.execute(sql, {"status_first_capture": request.form["status_first_capture"], "genotype_id": genotype_id})
             after_genotype_modif()
-            return redirect(session["url_genotypes_list"])
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -2046,22 +2120,28 @@ def set_dispersal(genotype_id):
 
             if result is None:
                 flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-                return redirect(session["url_genotypes_list"])
+                return redirect(request.referrer)
 
-            dispersal = "" if result["dispersal"] is None else result["dispersal"]
+            session["redirect_url"] = request.referrer
 
             return render_template(
                 "set_dispersal.html",
                 header_title=f"Set dispersal for {genotype_id}",
                 genotype_id=genotype_id,
-                current_dispersal=dispersal,
+                current_dispersal="" if result["dispersal"] is None else result["dispersal"],
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
             sql = text("UPDATE genotypes SET dispersal = :dispersal WHERE genotype_id = :genotype_id")
             con.execute(sql, {"dispersal": request.form["dispersal"].strip(), "genotype_id": genotype_id})
             after_genotype_modif()
-            return redirect(session["url_genotypes_list"])
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -2076,12 +2156,13 @@ def set_parent(genotype_id, parent_type):
     """
     let user set the parent (father or mother) of the individual
     """
-    if parent_type not in ("father", "mother"):
-        flash(fn.alert_danger(f"Error in {parent_type} parameter (must be 'father' or 'mother')"))
-        return redirect(session["url_genotypes_list"])
 
     with fn.conn_alchemy().connect() as con:
         if request.method == "GET":
+            if parent_type not in ("father", "mother"):
+                flash(fn.alert_danger(f"Error in {parent_type} parameter (must be 'father' or 'mother')"))
+                return redirect(request.referrer)
+
             result = (
                 con.execute(text("SELECT mother, father FROM genotypes WHERE genotype_id = :genotype_id"), {"genotype_id": genotype_id})
                 .mappings()
@@ -2090,25 +2171,33 @@ def set_parent(genotype_id, parent_type):
 
             if result is None:
                 flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-                return redirect(session["url_genotypes_list"])
+                return redirect(request.referrer)
 
-            current_parent = "" if result[parent_type] is None else result[parent_type]
-
-            # if parent_type == "m":
+            session["redirect_url"] = request.referrer
 
             return render_template(
                 "set_parent.html",
                 header_title=f"Set dispersal for {genotype_id}",
                 genotype_id=genotype_id,
                 parent=parent_type,
-                current_parent=current_parent,
+                current_parent="" if result[parent_type] is None else result[parent_type],
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
+            if parent_type not in ("father", "mother"):
+                flash(fn.alert_danger(f"Error in {parent_type} parameter (must be 'father' or 'mother')"))
+                return redirect(request.referrer)
+
             sql = text(f"UPDATE genotypes SET {parent_type} = :parent WHERE genotype_id = :genotype_id")
             con.execute(sql, {"parent": request.form["parent"].strip(), "genotype_id": genotype_id})
             after_genotype_modif()
-            return redirect(session["url_genotypes_list"])
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -2134,22 +2223,30 @@ def set_hybrid(genotype_id):
 
             if result is None:
                 flash(fn.alert_danger(f"Genotype ID not found: {genotype_id}"))
-                return redirect(session["url_genotypes_list"])
+                return redirect(request.referrer)
 
             hybrid = "" if result["hybrid"] is None else result["hybrid"]
+
+            session["redirect_url"] = request.referrer
 
             return render_template(
                 "set_hybrid.html",
                 header_title=f"Set hybrid state for {genotype_id}",
                 genotype_id=genotype_id,
                 current_hybrid=hybrid,
+                back_url=session["redirect_url"],
             )
 
         if request.method == "POST":
             sql = text("UPDATE genotypes SET hybrid = :hybrid WHERE genotype_id = :genotype_id")
             con.execute(sql, {"hybrid": request.form["hybrid"].strip(), "genotype_id": genotype_id})
             after_genotype_modif()
-            return redirect(session["url_genotypes_list"])
+            if "redirect_url" in session:
+                redirect_url = session["redirect_url"]
+                del session["redirect_url"]
+                return redirect(redirect_url)
+            else:
+                return redirect("/")
 
 
 @app.route(
@@ -2179,7 +2276,9 @@ def load_definitive_genotypes_xlsx():
 
         try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
+
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect("/load_definitive_genotypes_xlsx")

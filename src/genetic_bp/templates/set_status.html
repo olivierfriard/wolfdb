@@ -4,23 +4,17 @@
 {% block content %}
 
 
-<h1>Set status</h1>
+<a href="{{ back_url }}" class="btn btn-primary">Go back</a>
+<br><br>
+
+<h1>Set status of <b>{{ genotype_id }}</b></h1>
 <hr>
-
-
-<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
-
-
-<br>
-<br>
-
-<h3>Genotype ID: <b>{{ genotype_id }}</b></h3>
-
 
 <form method="POST" action="/set_status/{{ genotype_id }}">
 
 Current status: <b>{{ current_status }}</b><br>
 <br>
+Set the new status:<br>
 <input type="text"  id="status" name="status" value="{{ current_status }}"><br>
 <br>
 <button type="submit" class="btn btn-danger" >Submit</button>
