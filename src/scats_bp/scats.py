@@ -606,7 +606,7 @@ def new_scat():
         return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
-@app.route("/edit_scat/<scat_id>", methods=("GET", "POST"))
+@app.route("/edit_scat/<path:scat_id>", methods=("GET", "POST"))
 @fn.check_login
 def edit_scat(scat_id):
     """
@@ -638,12 +638,15 @@ def edit_scat(scat_id):
             default_values["notes"] = ""
 
         # convert convert XX_NN|YYMMDD to XX_NN YYYY-MM-DD
-        if "|" in default_values["path_id"]:
-            transect_id, date = default_values["path_id"].split("|")
-            date = f"20{date[:2]}-{date[2:4]}-{date[4:]}"
-            default_path_id = f"{transect_id} {date}"
+        if default_values["path_id"] is None:
+            default_path_id = ""
         else:
-            default_path_id = default_values["path_id"]
+            if "|" in default_values["path_id"]:
+                transect_id, date = default_values["path_id"].split("|")
+                date = f"20{date[:2]}-{date[2:4]}-{date[4:]}"
+                default_path_id = f"{transect_id} {date}"
+            else:
+                default_path_id = default_values["path_id"] 
 
         form = Scat(
             path_id=default_path_id,
@@ -700,8 +703,6 @@ def edit_scat(scat_id):
         all_tracks = [(request.form["snowtrack_id"], request.form["snowtrack_id"])] + all_tracks
         form.snowtrack_id.choices = list(all_tracks)
 
-        # form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
-
         if not form.validate():
             return not_valid(form, "Some values are not set or are wrong. Please check and submit again")
 
@@ -718,7 +719,9 @@ def edit_scat(scat_id):
                         (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). " "Please check and submit again"),
                     )
 
-            # date
+            # check date in scat ID
+            '''
+            DISABLED
             try:
                 year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
                 month = int(request.form["scat_id"][3 : 4 + 1])
@@ -727,16 +730,17 @@ def edit_scat(scat_id):
                 try:
                     datetime.datetime.strptime(date, "%Y-%m-%d")
                 except Exception:
-                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
+                    return not_valid(form,"The date of the track ID is not valid. Use the YYMMDD format")
             except Exception:
-                return not_valid("The scat_id value is not correct")
+                return not_valid(form,"The scat_id value is not correct")
+            '''
 
             # path id
             if request.form["sampling_type"] == "Systematic":
                 # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
                 path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
             else:
-                path_id = ""
+                path_id =   ""
 
             """
             # check if province code exists
@@ -754,7 +758,7 @@ def edit_scat(scat_id):
                 # check province name
                 province_code = fn.province_name2code(request.form["province"])
                 if province_code is None:
-                    return not_valid("The province was not found")
+                    return not_valid(form,"The province was not found")
 
             # add region from province code
             scat_region = fn.province_code2region(province_code)
@@ -838,7 +842,7 @@ def edit_scat(scat_id):
         return redirect(f"/view_scat/{request.form['scat_id']}")
 
 
-@app.route("/del_scat/<scat_id>")
+@app.route("/del_scat/<path:scat_id>")
 @fn.check_login
 def del_scat(scat_id):
     """
@@ -847,7 +851,7 @@ def del_scat(scat_id):
     with fn.conn_alchemy().connect() as con:
         con.execute(text("DELETE FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id})
 
-    return redirect("/scats_list")
+    return redirect("/scats_list_limit/0/20")
 
 
 @app.route("/set_path_id/<scat_id>/<path_id>")

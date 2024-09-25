@@ -40,10 +40,13 @@ class Scat(Form):
         """
         if field.data == "":
             return
+        '''
+        disabled
         m = re.match("WA.*", field.data)
         if m is None:
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'))
         return
+        '''
 
     scat_id = StringField(
         "Scat ID",
