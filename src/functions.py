@@ -61,7 +61,7 @@ def get_loci_list() -> dict:
 
 def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     """
-    get WA code loci values
+    get WA code loci values from postgresql
     """
     with conn_alchemy().connect() as con:
         has_loci_notes = False

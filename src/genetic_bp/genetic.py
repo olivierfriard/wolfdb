@@ -1025,6 +1025,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 @app.route("/wa_analysis/<distance>/<int:cluster_id>/<mode>")
 @fn.check_login
 def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
+    """
+    excel add-in GenAIex
+    """
     with fn.conn_alchemy().connect() as con:
         # loci list
         loci_list: list = fn.get_loci_list()
@@ -1077,21 +1080,28 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             .all()
         )
 
+        ml_relate: list = [f'Title line: "Cluster id {cluster_id}"']
+        for loci in loci_list:
+            ml_relate.append(loci)
+
         loci_values: dict = {}
         out: list = []
         for row in wa_scats:
-            print(f"{row["wa_code"]=}")
-
-            # loci_values[row["wa_code"]], _ = fn.get_wa_loci_values(row["wa_code"], loci_list)
-
             from_rdis = rdis.get(row["wa_code"])
             if from_rdis is None:
                 continue
+            
+
+
             loci_values[row["wa_code"]] = json.loads(from_rdis)
             if loci_values[row["wa_code"]] is None:
                 continue
+
+            ml_relate.append("Pop")
+
             has_loci_values = False
             # check if loci have values
+            
             for x in loci_values[row["wa_code"]]:
                 for allele in ("a", "b"):
                     if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
@@ -1099,8 +1109,23 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 if has_loci_values:
                     break
 
+            # ML-relate
+            mrl = row["wa_code"] + "\t,\t"
+            
+            for x in loci_values[row["wa_code"]]:
+                for allele in ("a", "b"):
+                    if loci_values[row["wa_code"]][x][allele]["value"] == 0:
+                        mrl += "000"
+                    elif loci_values[row["wa_code"]][x][allele]["value"] == '-':
+                        mrl += "000"
+                    else:
+                        mrl += f"{loci_values[row["wa_code"]][x][allele]["value"]:03}"
+                mrl += "\t"
+
             if has_loci_values:
                 out.append(row)
+
+                ml_relate.append(mrl.strip())
 
         if mode == "export":
             file_content = export.export_wa_analysis(loci_list, out, loci_values, distance, cluster_id)
@@ -1123,6 +1148,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 loci_values=loci_values,
                 distance=distance,
                 cluster_id=cluster_id,
+                ml_relate="\n".join(ml_relate),
             )
 
 
