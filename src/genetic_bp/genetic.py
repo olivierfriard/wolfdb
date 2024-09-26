@@ -262,7 +262,7 @@ def update_redis_with_genotypes_loci():
     !require the update_redis_with_genotypes_loci_values file
     """
 
-    _ = subprocess.Popen(["python3", "update_redis_with_genotypes_loci_values.py"])
+    _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_genotypes_loci_values.py"])
 
 
 @app.route("/update_redis_genotypes")
@@ -288,11 +288,24 @@ def update_redis_with_wa_loci():
 
     !require the update_redis_with_wa_loci_values.py file
     """
-    _ = subprocess.Popen(["python3", "update_redis_with_wa_loci_values.py"])
+    _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_wa_loci_values.py"])
 
     flash(fn.alert_danger("Redis updating with WA loci in progress"))
 
     return redirect("/admin")
+
+
+def run_colony(data_file: str):
+    """
+    run colony
+
+    !require the colony software
+    """
+    _ = subprocess.Popen(["/opt/colony/colony2s.ifort.out", f"IFN:{data_file}"])
+
+    flash(fn.alert_danger("Colony is running"))
+
+    return redirect("/")
 
 
 @app.route(
@@ -1012,7 +1025,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     """
     excel add-in GenAIex
     """
-    if mode not in ("web", "export", "ml-relate"):
+    if mode not in ("web", "export", "ml-relate", "colony"):
         return "error: mode must be web, export or ml-relate"
 
     with fn.conn_alchemy().connect() as con:
@@ -1093,12 +1106,14 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
         out: list = []
         for row in wa_scats:
+            """
             from_rdis = rdis.get(row["wa_code"])
             if from_rdis is None:
                 continue
 
             loci_values[row["wa_code"]] = json.loads(from_rdis)
-            if loci_values[row["wa_code"]] is None:
+            """
+            if row["wa_code"] not in loci_values:
                 continue
 
             # check if almost one locus has a value
