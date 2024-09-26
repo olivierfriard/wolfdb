@@ -41,17 +41,17 @@ def packs():
     )
 
 
-@app.route("/view_pack/<name>")
+@app.route("/view_pack/<path:pack_name>")
 @fn.check_login
-def view_pack(name):
+def view_pack(pack_name):
     """
-    Displat the pack composition
+    Display the pack composition
     """
     with fn.conn_alchemy().connect() as con:
         results = (
             con.execute(
-                text("SELECT * FROM genotypes_list_mat WHERE pack = :pack ORDER BY date_first_capture ASC"),
-                {"pack": name},
+                text("SELECT * FROM genotypes_list_mat WHERE pack = :pack_name ORDER BY date_first_capture ASC"),
+                {"pack_name": pack_name},
             )
             .mappings()
             .all()
@@ -60,7 +60,7 @@ def view_pack(name):
     return render_template(
         "view_pack.html",
         header_title="View pack",
-        pack_name=name,
+        pack_name=pack_name,
         results=results,
         n_individuals=len(results),
     )

@@ -21,7 +21,11 @@
 
 <h3>{{ title }}</h3>
 
-<br><a style="width:10%" href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info">Export data</a><br>
+<br>
+<a style="width:10%" href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export XLSX</a>
+<a style="width:10%" href="/wa_analysis_group/ml-relate/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export Genepop</a>
+
+<br>
 <br>
 
 {% include "freeze_1stcolumn_1strow.html" %}
@@ -36,9 +40,12 @@
 <th>Notes</th>
 <th>Temp ID</th>
 <th>Sex</th>
+<th>Mother</th>
+<th>Father</th>
+<th>Hybrid</th>
 <th>Status</th>
 <th>Pack</th>
-<th>Hybrid</th>
+
 <th>Dispersal</th>
 <th>n. recapt</th>
 <th>Dead recovery</th>
@@ -73,6 +80,9 @@ set ...
 <li><a href="/set_hybrid/{{ genotype_id }}" class="dropdown-item">hybrid</a></li>
 <li><a href="/set_status_1st_recap/{{ genotype_id }}" class="dropdown-item">status at 1st recap</a></li>
 <li><a href="/set_dispersal/{{ genotype_id }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/set_parent/{{ genotype_id }}/mother" class="dropdown-item">mother</a></li>
+<li><a href="/set_parent/{{ genotype_id }}/father" class="dropdown-item">father</a></li>
+
 <li><a href="/genotype_note/{{ genotype_id }}" class="dropdown-item">notes</a></li>
 </ul>
 </div>
@@ -84,12 +94,20 @@ set ...
 
 <td>{{ data[genotype_id]["sex"] }}</td>
 
-<td>{{ data[genotype_id]["status"] if data[genotype_id]["status"] is not none else "" }}</td>
+<td>{% if data[genotype_id]['mother'] %}{{ data[genotype_id]['mother'] }}{% endif %}</td>
 
-<td>{{ data[genotype_id]["pack"] if data[genotype_id]["pack"] is not none else "" }}</td>
-
+<td>{% if data[genotype_id]['father'] %}{{ data[genotype_id]['father'] }}{% endif %}</td>
 
 <td>{{ data[genotype_id]["hybrid"] if data[genotype_id]["hybrid"] is not none else "" }}</td>
+
+<td>{{ data[genotype_id]["status"] if data[genotype_id]["status"] is not none else "" }}</td>
+
+<td>
+{% if data[genotype_id]["pack"] is not none %}
+<a href="/view_pack/{{ data[genotype_id]["pack"]}}">{{ data[genotype_id]["pack"]}}</a>
+{% endif %}
+</td>
+
 
 <td>{{ data[genotype_id]["dispersal"] if data[genotype_id]["dispersal"] is not none else "" }}</td>
 

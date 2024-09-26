@@ -1179,7 +1179,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             )
 
 
-@app.route("/wa_analysis_group/<mode>/<distance>/<cluster_id>")
+@app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     with fn.conn_alchemy().connect() as con:
