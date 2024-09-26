@@ -22,9 +22,14 @@
 
 <h3>{{ title }}</h3>
 
-<br><a style="width:10%" href="/wa_analysis/{{ distance }}/{{ cluster_id }}/export" class="btn btn-info">Export data</a><br>
+<br>
+<a style="width:10%" href="/wa_analysis/{{ distance }}/{{ cluster_id }}/export" class="btn btn-info btn-sm">Export XLSX</a>
+<a style="width:10%" href="/wa_analysis/{{ distance }}/{{ cluster_id }}/ml-relate" class="btn btn-info btn-sm">Export for ML-Relate</a>
 <br>
 <br>
+<br>
+
+
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
@@ -118,23 +123,6 @@
 </table>
 </div><!-- condensed -->
 </div><!-- frozen -->
-
-
-<hr>
-
-GENEPOP format
-<br><br><br>
-<pre>
-
-{{ ml_relate }}
-
-</pre>
-
-<textarea>
-{{ ml_relate }}
-
-</textarea>
-
 
 {% else %}
 

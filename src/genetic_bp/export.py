@@ -12,13 +12,12 @@ from tempfile import NamedTemporaryFile
 
 
 def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
-
     wb = Workbook()
 
     ws1 = wb.active
-    ws1.title = f"WA genetic samples"
+    ws1.title = "WA genetic samples"
 
-    header = [
+    header: list = [
         "WA code",
         "Sample ID",
         "Date",
@@ -84,14 +83,12 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
 
 
 def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
-
     wb = Workbook()
 
     ws1 = wb.active
     ws1.title = f"WA matches (DBSCAN distance {distance} cluster ID {cluster_id})"
-    print(ws1.title)
 
-    header = [
+    header: list = [
         "WA code",
         "Sample ID",
         "Date",
@@ -159,11 +156,10 @@ def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
 
 
 def export_wa_analysis_group(loci_list, data, loci_values):
-
     wb = Workbook()
 
     ws1 = wb.active
-    ws1.title = f"Genotype matches"
+    ws1.title = "Genotype matches"
 
     header = [
         "Genotype ID",
@@ -219,13 +215,12 @@ def export_wa_analysis_group(loci_list, data, loci_values):
 
 
 def export_genotypes_list(loci_list, results, loci_values):
-
     wb = Workbook()
 
     ws1 = wb.active
-    ws1.title = f"Genotype matches"
+    ws1.title = "Genotype matches"
 
-    header = [
+    header: list = [
         "Genotype ID",
         "Other ID",
         "Date",

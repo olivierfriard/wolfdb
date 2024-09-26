@@ -1028,6 +1028,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     """
     excel add-in GenAIex
     """
+    if mode not in ("web", "export", "ml-relate"):
+        return "error: mode must be web, export or ml-relate"
+
     with fn.conn_alchemy().connect() as con:
         # loci list
         loci_list: list = fn.get_loci_list()
@@ -1080,28 +1083,42 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             .all()
         )
 
-        ml_relate: list = [f'Title line: "Cluster id {cluster_id}"']
-        for loci in loci_list:
-            ml_relate.append(loci)
-
         loci_values: dict = {}
+        count_samples_with_data: int = 0
+
+        ml_relate: list = [f'Title line: "Cluster id {cluster_id}"']
+
+        # check if almost one value for locus (ML-Relate)
+        for loci in loci_list:
+            has_loci_values: bool = False
+            for row in wa_scats:
+                from_rdis = rdis.get(row["wa_code"])
+                if from_rdis is None:
+                    continue
+                loci_values[row["wa_code"]] = json.loads(from_rdis)
+                if loci_values[row["wa_code"]] is None:
+                    continue
+                for allele in ("a", "b"):
+                    if loci_values[row["wa_code"]][loci][allele]["value"] not in (0, "-"):
+                        has_loci_values = True
+
+            if has_loci_values:
+                ml_relate.append(loci)
+
+        ml_relate.append("Pop")
+
         out: list = []
         for row in wa_scats:
             from_rdis = rdis.get(row["wa_code"])
             if from_rdis is None:
                 continue
-            
-
 
             loci_values[row["wa_code"]] = json.loads(from_rdis)
             if loci_values[row["wa_code"]] is None:
                 continue
 
-            ml_relate.append("Pop")
-
+            # check if almost one locus has a value
             has_loci_values = False
-            # check if loci have values
-            
             for x in loci_values[row["wa_code"]]:
                 for allele in ("a", "b"):
                     if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
@@ -1111,12 +1128,11 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
             # ML-relate
             mrl = row["wa_code"] + "\t,\t"
-            
             for x in loci_values[row["wa_code"]]:
+                if x not in ml_relate:  # no value for locus
+                    continue
                 for allele in ("a", "b"):
-                    if loci_values[row["wa_code"]][x][allele]["value"] == 0:
-                        mrl += "000"
-                    elif loci_values[row["wa_code"]][x][allele]["value"] == '-':
+                    if loci_values[row["wa_code"]][x][allele]["value"] in (0, "-"):
                         mrl += "000"
                     else:
                         mrl += f"{loci_values[row["wa_code"]][x][allele]["value"]:03}"
@@ -1124,16 +1140,22 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
             if has_loci_values:
                 out.append(row)
-
                 ml_relate.append(mrl.strip())
+                count_samples_with_data += 1
 
         if mode == "export":
             file_content = export.export_wa_analysis(loci_list, out, loci_values, distance, cluster_id)
-
             response = make_response(file_content, 200)
             response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            response.headers["Content-disposition"] = f"attachment; filename=wa_analysis_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+            response.headers["Content-disposition"] = (
+                f"attachment; filename=cluster_id{cluster_id}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+            )
+            return response
 
+        if mode == "ml-relate":
+            response = make_response("\n".join(ml_relate), 200)
+            response.headers["Content-type"] = "text/plain"
+            response.headers["Content-disposition"] = f"attachment; filename=cluster_id{cluster_id}_distance{distance}.txt"
             return response
 
         else:
@@ -1142,7 +1164,12 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             return render_template(
                 "wa_analysis.html",
                 header_title=f"cluster ID: {cluster_id} distance: {distance} m) - WA matches",
-                title=Markup(f"Matches (cluster id: {cluster_id} distance: {distance} m) {len(wa_scats)} sample(s)"),
+                title=Markup(
+                    (
+                        f"Matches (cluster id: {cluster_id} distance: {distance} m) "
+                        f"{count_samples_with_data} WA code{'s' if count_samples_with_data>1 else ''} with data ({len(wa_scats)} total)"
+                    )
+                ),
                 loci_list=loci_list,
                 wa_scats=out,
                 loci_values=loci_values,
