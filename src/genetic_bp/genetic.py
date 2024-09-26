@@ -339,8 +339,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             limit = int(limit)
         except Exception:
             return "An error has occured. Check the URL"
-
-    if limit == "ALL":
+    else:  # "ALL":
         offset = 0
 
     # check if wa code is specified to scroll the table
@@ -390,22 +389,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
                     sql_search += f" AND ({field} ILIKE :search{idx}) "
                 values[f"search{idx}"] = f"%{value}%"
 
-                """
-                field, value = [x.strip().lower() for x in search_term.split(":")]
-                if field == "genotype":
-                    field = "genotype id"
-                if field not in ("genotype", "notes", "tmp id", "date", "pack", "sex", "status", "working notes"):
-                    flash(
-                        fn.alert_danger(
-                            "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
-                        )
-                    )
-                    return redirect(session["url_genotypes_list"])
-
-                field = field.replace(" ", "_")
-                sql_search = "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat " + (f"WHERE {field} ILIKE :search")
-                """
-        else:
+        else:  # search in all fields
             values = {"search": f"%{search_term}%"}
 
             sql_search = (
@@ -1257,7 +1241,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             else:
                 loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
 
-        # Genepop formt (for ML-Relate)
+        # Genepop format (for ML-Relate)
         ml_relate: list = [f"Cluster id {cluster_id}"]
 
         for locus in loci_list:
@@ -1299,7 +1283,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     elif mode == "ml-relate":
         response = make_response("\n".join(ml_relate), 200)
         response.headers["Content-type"] = "text/plain"
-        response.headers["Content-disposition"] = f"attachment; filename=cluster_id{cluster_id}_distance{distance}.txt"
+        response.headers["Content-disposition"] = f"attachment; filename=genotypes_cluster_id{cluster_id}_distance{distance}.txt"
         return response
 
     else:

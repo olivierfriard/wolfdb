@@ -158,18 +158,24 @@ Analysis
 
 
 <li class="nav-item dropdown">
+    {% if session.user_name %}
     <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    My account ({{session.email}})
+    My account ({{session.user_name}})
     </a>
+
     <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
     
+{% if session.role == 'administrator' %}
+   <li><a class="dropdown-item" href="/admin">Administration</a></li>
+{%endif%}
+
         <li><a class="dropdown-item" href="/settings">Settings</a></li>
 
         <li><a class="dropdown-item" href="/my_results">Result files</a></li>
 
-
     <li><a class="dropdown-item" href="/google/logout">Logout</a></li>
 </ul>
+{% endif %}
 </li>
 
 {% if session["start_date"] != session["default_start_date"] or session["end_date"] != session["default_end_date"] %}

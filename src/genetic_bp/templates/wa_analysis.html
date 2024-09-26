@@ -5,17 +5,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
-
-
 <a style="width:10%" href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
 
 <br>
 <br>
-
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
 
 {% if wa_scats %}
@@ -28,8 +25,6 @@
 <br>
 <br>
 <br>
-
-
 
 {% include "freeze_1stcolumn_1strow.html" %}
 

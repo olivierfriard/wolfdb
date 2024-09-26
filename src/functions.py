@@ -128,7 +128,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
 
 def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
     """
-    get genotype loci values
+    get genotype loci values from postgresql db
     """
 
     with conn_alchemy().connect() as con:

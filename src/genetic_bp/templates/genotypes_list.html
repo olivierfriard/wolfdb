@@ -186,7 +186,15 @@ set ...
 {% for locus in loci_values[result['genotype_id']] %}
 
 {% for allele in ('a', 'b') %}
-<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}{% if 'OK|' in loci_values[result['genotype_id']][locus][allele]['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['genotype_id']][locus][allele]['notes'] %}background: #FF6461{%endif%}{%endif%}">
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
+{% if result["record_status"] == "temp" %} 
+{% if 'OK|' in loci_values[result['genotype_id']][locus][allele]['user_id'] %}background: #90ee90
+{%else%}
+{% if loci_values[result['genotype_id']][locus][allele]['notes'] %}background: #FF6461
+{%endif%}
+{%endif%}
+{%endif%}
+">
 {{ loci_values[result['genotype_id']][locus][allele]['value'] }}
 <br>
 <small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/{{ allele }}">note</a></small>

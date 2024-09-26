@@ -52,6 +52,9 @@ def build_credentials():
 
 
 def get_user_info():
+    """
+    get user info from Google
+    """
     credentials = build_credentials()
 
     oauth2_client = googleapiclient.discovery.build("oauth2", "v2", credentials=credentials)
@@ -113,20 +116,23 @@ def google_auth_redirect():
 
     # check if user authorized
     user_info = get_user_info()
-    print(user_info)
 
     # check if email contained in email field of users table
-
     with fn.conn_alchemy().connect() as con:
-        if len(con.execute(text("SELECT * FROM users WHERE email = :email"), {"email": user_info["email"]}).mappings().all()):
-            flask.session["google_id"] = user_info["id"]  # defing the results to show on the page
-            flask.session["firstname"] = user_info["given_name"]
-            flask.session["lastname"] = user_info["family_name"]
-            flask.session["email"] = user_info["email"]
-            flask.session["user_name"] = user_info["name"]
-        else:
+        row = con.execute(text("SELECT * FROM users WHERE email = :email"), {"email": user_info["email"]}).mappings().fetchone()
+        if row is None:
             flask.session.clear()
+            flask.flash(fn.alert_danger("<h2>You are not allowed to access this resource</h2>"))
             return flask.redirect("/")
+
+        flask.session["role"] = row["role"]
+        flask.session["google_id"] = user_info["id"]
+        flask.session["firstname"] = user_info["given_name"]
+        flask.session["lastname"] = user_info["family_name"]
+        flask.session["email"] = user_info["email"]
+        flask.session["user_name"] = user_info["name"]
+
+        print(f"{flask.session["role"]=}")
 
     flask.flash(Markup(f"<h2>Welcome {flask.session['user_name']}</h2>"))
     return flask.redirect(BASE_URI, code=302)
@@ -135,9 +141,11 @@ def google_auth_redirect():
 @app.route("/google/logout")
 @no_cache
 def logout():
+    """
     flask.session.pop(AUTH_TOKEN_KEY, None)
     flask.session.pop(AUTH_STATE_KEY, None)
     flask.session.pop("email", None)
+    """
     flask.session.clear()
 
     return flask.redirect("/", code=302)
