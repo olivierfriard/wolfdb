@@ -1086,7 +1086,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         loci_values: dict = {}
         count_samples_with_data: int = 0
 
-        ml_relate: list = [f'Title line: "Cluster id {cluster_id}"']
+        ml_relate: list = [f"Cluster id {cluster_id}"]
 
         # check if almost one value for locus (ML-Relate)
         for loci in loci_list:
@@ -1119,23 +1119,23 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
             # check if almost one locus has a value
             has_loci_values = False
-            for x in loci_values[row["wa_code"]]:
+            for locus in loci_values[row["wa_code"]]:
                 for allele in ("a", "b"):
-                    if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                    if loci_values[row["wa_code"]][locus][allele]["value"] not in (0, "-"):
                         has_loci_values = True
                 if has_loci_values:
                     break
 
-            # ML-relate
+            # Genepop / ML-relate
             mrl = row["wa_code"] + "\t,\t"
             for x in loci_values[row["wa_code"]]:
-                if x not in ml_relate:  # no value for locus
+                if locus not in ml_relate:  # no value for locus
                     continue
                 for allele in ("a", "b"):
-                    if loci_values[row["wa_code"]][x][allele]["value"] in (0, "-"):
+                    if loci_values[row["wa_code"]][locus][allele]["value"] in (0, "-"):
                         mrl += "000"
                     else:
-                        mrl += f"{loci_values[row["wa_code"]][x][allele]["value"]:03}"
+                        mrl += f"{loci_values[row["wa_code"]][locus][allele]["value"]:03}"
                 mrl += "\t"
 
             if has_loci_values:
@@ -1152,7 +1152,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             )
             return response
 
-        if mode == "ml-relate":
+        elif mode == "ml-relate":
             response = make_response("\n".join(ml_relate), 200)
             response.headers["Content-type"] = "text/plain"
             response.headers["Content-disposition"] = f"attachment; filename=cluster_id{cluster_id}_distance{distance}.txt"
@@ -1182,6 +1182,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 @app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
+    if mode not in ("web", "export", "ml-relate"):
+        return "error: mode must be web, export or ml-relate"
+
     with fn.conn_alchemy().connect() as con:
         # loci list
         loci_list: dict = fn.get_loci_list()
@@ -1254,11 +1257,49 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             else:
                 loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
 
+        # Genepop formt (for ML-Relate)
+        ml_relate: list = [f"Cluster id {cluster_id}"]
+
+        for locus in loci_list:
+            print()
+            print(f"{locus=}")
+            locus_has_values: bool = False
+            for genotype in loci_values:
+                print(f"{genotype=}")
+                for allele in ("a", "b"):
+                    print(f"{allele} {loci_values[genotype][locus][allele]=}")
+                    if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
+                        locus_has_values = True
+            if locus_has_values:
+                ml_relate.append(locus)
+
+        print(f"{ml_relate=}")
+
+        for genotype in loci_values:
+            mrl = genotype + "\t,\t"
+            for locus in loci_values[genotype]:
+                if locus not in ml_relate:  # no value for locus
+                    continue
+                for allele in ("a", "b"):
+                    if loci_values[genotype][locus][allele]["value"] in (0, "-"):
+                        mrl += "000"
+                    else:
+                        mrl += f"{loci_values[genotype][locus][allele]["value"]:03}"
+                mrl += "\t"
+
+            ml_relate.append(mrl.strip())
+
     if mode == "export":
         file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         response.headers["Content-disposition"] = f"attachment; filename=genotypes_matches_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        return response
+
+    elif mode == "ml-relate":
+        response = make_response("\n".join(ml_relate), 200)
+        response.headers["Content-type"] = "text/plain"
+        response.headers["Content-disposition"] = f"attachment; filename=cluster_id{cluster_id}_distance{distance}.txt"
         return response
 
     else:
