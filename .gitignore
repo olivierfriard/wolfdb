@@ -5,4 +5,4 @@ flask_session
 src/static/results/
 notes.txt
 src/start.bash
-
+src/static/colony_output/
