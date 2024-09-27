@@ -1275,7 +1275,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
                 if locus_has_values:
                     ml_relate.append(locus)
             # print(f"{ml_relate=}")
-
+            ml_relate.append("Pop")
             for genotype in loci_values:
                 mrl = genotype + "\t,\t"
                 for locus in loci_values[genotype]:
