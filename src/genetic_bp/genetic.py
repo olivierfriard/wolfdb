@@ -5,8 +5,7 @@ WolfDB web service
 flask blueprint for genetic data management
 """
 
-import flask
-from flask import render_template, redirect, request, flash, session, make_response
+from flask import render_template, redirect, request, flash, session, make_response, Blueprint
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -20,11 +19,12 @@ import uuid
 import pandas as pd
 import datetime as dt
 import time
+import jinja2
 
 import functions as fn
 from . import export
 
-app = flask.Blueprint("genetic", __name__, template_folder="templates")
+app = Blueprint("genetic", __name__, template_folder="templates")
 
 params = config()
 app.debug = params["debug"]
@@ -1181,8 +1181,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 @app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
-    if mode not in ("web", "export", "ml-relate"):
-        return "error: mode must be web, export or ml-relate"
+    accepted_mode = ("web", "export", "ml-relate", "colony")
+    if mode not in accepted_mode:
+        return f"mode error: mode must be {','.join(accepted_mode)}"
 
     with fn.conn_alchemy().connect() as con:
         # loci list
@@ -1215,10 +1216,10 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         genotype_id = (
             con.execute(
                 text(
-                    "SELECT genotype_id, count(wa_code) AS n_recap "
+                    "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
                     "FROM wa_scat_dw_mat "
                     f"WHERE wa_code in ('{wa_list_str}') "
-                    "GROUP BY genotype_id "
+                    "GROUP BY genotype_id, sex_id "
                     "ORDER BY genotype_id ASC"
                 )
             )
@@ -1228,6 +1229,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 
         loci_values: dict = {}
         data: dict = {}
+        count_sex: dict = {"M": 0, "F": 0, "": 0}
         for row in genotype_id:
             if row["genotype_id"] is None:
                 continue
@@ -1249,6 +1251,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
                 continue
             data[row["genotype_id"]] = dict(result)
             data[row["genotype_id"]]["n_recap"] = row["n_recap"]
+            count_sex[result["sex"]] += 1
 
             loci_val = rdis.get(row["genotype_id"])
             if loci_val is not None:
@@ -1257,42 +1260,120 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
                 loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
 
         # Genepop format (for ML-Relate)
-        ml_relate: list = [f"Cluster id {cluster_id}"]
+        if mode == "ml-relate":
+            ml_relate: list = [f"Cluster id {cluster_id}"]
+            for locus in loci_list:
+                # print()
+                # print(f"{locus=}")
+                locus_has_values: bool = False
+                for genotype in loci_values:
+                    # print(f"{genotype=}")
+                    for allele in ("a", "b"):
+                        # print(f"{allele} {loci_values[genotype][locus][allele]=}")
+                        if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
+                            locus_has_values = True
+                if locus_has_values:
+                    ml_relate.append(locus)
+            # print(f"{ml_relate=}")
 
-        for locus in loci_list:
-            print()
-            print(f"{locus=}")
-            locus_has_values: bool = False
             for genotype in loci_values:
-                print(f"{genotype=}")
-                for allele in ("a", "b"):
-                    print(f"{allele} {loci_values[genotype][locus][allele]=}")
-                    if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
-                        locus_has_values = True
-            if locus_has_values:
-                ml_relate.append(locus)
+                mrl = genotype + "\t,\t"
+                for locus in loci_values[genotype]:
+                    if locus not in ml_relate:  # no value for locus
+                        continue
+                    for allele in ("a", "b"):
+                        if loci_values[genotype][locus][allele]["value"] in (0, "-"):
+                            mrl += "000"
+                        else:
+                            mrl += f"{loci_values[genotype][locus][allele]["value"]:03}"
+                    mrl += "\t"
 
-        print(f"{ml_relate=}")
+                ml_relate.append(mrl.strip())
 
-        for genotype in loci_values:
-            mrl = genotype + "\t,\t"
-            for locus in loci_values[genotype]:
-                if locus not in ml_relate:  # no value for locus
-                    continue
-                for allele in ("a", "b"):
-                    if loci_values[genotype][locus][allele]["value"] in (0, "-"):
-                        mrl += "000"
-                    else:
-                        mrl += f"{loci_values[genotype][locus][allele]["value"]:03}"
-                mrl += "\t"
+        if mode == "colony":
+            with open("external_functions/colony_template.dat", "r") as file_in:
+                colony_template = jinja2.Template(file_in.read())
 
-            ml_relate.append(mrl.strip())
+            valid_locus: list = []
+            for locus in loci_list:
+                # print()
+                # print(f"{locus=}")
+                locus_has_values: bool = False
+                for genotype in loci_values:
+                    # print(f"{genotype=}")
+                    for allele in ("a", "b"):
+                        # print(f"{allele} {loci_values[genotype][locus][allele]=}")
+                        if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
+                            locus_has_values = True
+                if locus_has_values:
+                    valid_locus.append(locus)
+
+            allele_data = []
+            allele_data.append("     " + ("     ".join(valid_locus)))
+            allele_data.append("     " + ("     ".join(["0"] * len(valid_locus))))
+            allele_data.append("")
+            allele_data.append("  ".join(["0.01"] * len(valid_locus)))
+            allele_data.append("  ".join(["0.01"] * len(valid_locus)))
+            allele_data.extend(["", ""])
+            for genotype in loci_values:
+                row = genotype + " "
+
+                for locus in loci_values[genotype]:
+                    if locus not in valid_locus:  # no value for locus
+                        continue
+                    for allele in ("a", "b"):
+                        if loci_values[genotype][locus][allele]["value"] in (0, "-"):
+                            row += "0 "
+                        else:
+                            row += f"{loci_values[genotype][locus][allele]["value"]:03} "
+                    row += " "
+
+                allele_data.append(row.strip())
+
+            allele_sex: dict = {}
+            for sex in ("M", "F"):
+                allele_sex[sex] = []
+                for genotype in loci_values:
+                    if data[genotype]["sex"] != sex:
+                        continue
+                    row = genotype + " "
+                    for locus in loci_values[genotype]:
+                        if locus not in valid_locus:  # no value for locus
+                            continue
+                        for allele in ("a", "b"):
+                            if loci_values[genotype][locus][allele]["value"] in (0, "-"):
+                                row += "0 "
+                            else:
+                                row += f"{loci_values[genotype][locus][allele]["value"]:03} "
+                        row += " "
+
+                    allele_sex[sex].append(row.strip())
+
+            colony_out = [
+                colony_template.render(
+                    dataset_name=f"genotypes_cluster_id{cluster_id}_distance{distance}",
+                    output_file_name=f"genotypes_cluster_id{cluster_id}_distance{distance}",
+                    offspring_number=len(allele_sex["M"]) + len(allele_sex["F"]),
+                    loci_number=len(valid_locus),
+                    alleles="\n".join(allele_data),
+                    n_male=count_sex["M"],
+                    n_female=count_sex["F"],
+                    male_alleles="\n".join(allele_sex["M"]),
+                    female_alleles="\n".join(allele_sex["F"]),
+                )
+            ]
 
     if mode == "export":
         file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         response.headers["Content-disposition"] = f"attachment; filename=genotypes_matches_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        return response
+
+    elif mode == "colony":
+        response = make_response("\n".join(colony_out), 200)
+        response.headers["Content-type"] = "text/plain"
+        response.headers["Content-disposition"] = f"attachment; filename=genotypes_cluster_id{cluster_id}_distance{distance}.dat"
         return response
 
     elif mode == "ml-relate":

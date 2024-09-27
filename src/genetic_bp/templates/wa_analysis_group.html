@@ -22,9 +22,12 @@
 <h3>{{ title }}</h3>
 
 <br>
-<a style="width:10%" href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export XLSX</a>
-<a style="width:10%" href="/wa_analysis_group/ml-relate/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a>
+<table>
+    <tr><td><a href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export XLSX</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/ml-relate/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/colony/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Colony</a></td></tr>
 
+</table>
 <br>
 <br>
 
