@@ -25,8 +25,12 @@
 <table>
     <tr><td><a href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export XLSX</a></td></tr>
     <tr><td><a href="/wa_analysis_group/ml-relate/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/colony/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Colony</a></td></tr>
-
+    <tr><td><a href="/wa_analysis_group/colony/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export for Colony</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/run_colony/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Run Colony</a></td></tr>
+{% if colony_result %}
+    <tr><td><a href="{{ colony_result }}">Download Colony results</a></td></tr>
+{%  endif %}
+<tr><td><pre>{{ colony_results_content }}</pre></td></tr>
 </table>
 <br>
 <br>

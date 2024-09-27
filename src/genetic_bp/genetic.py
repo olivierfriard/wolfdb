@@ -5,7 +5,7 @@ WolfDB web service
 flask blueprint for genetic data management
 """
 
-from flask import render_template, redirect, request, flash, session, make_response, Blueprint
+from flask import render_template, redirect, request, flash, session, make_response, Blueprint, current_app
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -1181,9 +1181,13 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 @app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
-    accepted_mode = ("web", "export", "ml-relate", "colony")
+    accepted_mode = ("web", "export", "ml-relate", "colony", "run_colony")
     if mode not in accepted_mode:
         return f"mode error: mode must be {','.join(accepted_mode)}"
+
+    colony_output_directory = pl.Path(current_app.static_folder) / pl.Path("colony_output")
+    if not colony_output_directory.is_dir():
+        colony_output_directory.mkdir(parents=True, exist_ok=True)
 
     with fn.conn_alchemy().connect() as con:
         # loci list
@@ -1290,7 +1294,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
 
                 ml_relate.append(mrl.strip())
 
-        if mode == "colony":
+        if "colony" in mode:
             with open("external_functions/colony_template.dat", "r") as file_in:
                 colony_template = jinja2.Template(file_in.read())
 
@@ -1376,13 +1380,32 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         response.headers["Content-disposition"] = f"attachment; filename=genotypes_cluster_id{cluster_id}_distance{distance}.dat"
         return response
 
+    elif mode == "run_colony":
+        input_file_name = colony_output_directory / pl.Path(f"{distance}_{cluster_id}")
+        with open(f"{input_file_name}.dat", "w") as file_out:
+            file_out.write("\n".join(colony_out))
+
+        process = subprocess.Popen(["/opt/colony/colony2s.ifort.out", f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"])
+
+        flash(fn.alert_danger("Colony is running. Reload the page continuously until the results are displayed."))
+
+        return redirect(f"/wa_analysis_group/web/{distance}/{cluster_id}")
+
     elif mode == "ml-relate":
         response = make_response("\n".join(ml_relate), 200)
         response.headers["Content-type"] = "text/plain"
         response.headers["Content-disposition"] = f"attachment; filename=genotypes_cluster_id{cluster_id}_distance{distance}.txt"
         return response
 
-    else:
+    else:  # html
+        colony_results_content: str = ""
+        colony_result: str = ""
+        colony_output_path = colony_output_directory / pl.Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
+        if colony_output_path.is_file():
+            colony_result = f"/static/colony_output/{distance}_{cluster_id}.BestConfig_Ordered"
+            with open(colony_output_path, "r") as file_in:
+                colony_results_content = file_in.read()
+
         return render_template(
             "wa_analysis_group.html",
             header_title=f"Genotypes matches (cluster ID: {cluster_id} distance: {distance} m))",
@@ -1393,6 +1416,8 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             loci_values=loci_values,
             distance=distance,
             cluster_id=cluster_id,
+            colony_result=colony_result,
+            colony_results_content=colony_results_content,
         )
 
 
