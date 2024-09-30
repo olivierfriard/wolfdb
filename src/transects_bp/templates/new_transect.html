@@ -3,8 +3,6 @@
 {% block content %}
 
 
-
-
 <h2>{{ title }}</h2>
 <hr>
 
@@ -16,9 +14,7 @@
 {% endif %}
 {% endwith %}
 
-
 <form method="POST" action="{{ action }}">
-
 
     <div class="mb-3">
         <div class="row g-3 align-items-top">
@@ -71,12 +67,14 @@
 
     <div class="mb-3">
         <div class="row g-3 align-items-top">
-            <div class="col-2">{{ form.province.label }}
+            <div class="col-2">{{ form.province_code.label }}
             </div><!-- col -->
             <div class="col-8">
-                {{ form.province(class="form-control", value=default_values["province"]) }}
-                {% for message in form.province.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+                {{ form.province_code(class="form-control", pattern="[0-9a-zA-Z]{2}", value=default_values["province_code"]) }}
+                {% for message in form.province_code.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+                <small>2 letters for Italy, 2 digits for France</small>
             </div>
+            
         </div>
     </div>
 
@@ -90,8 +88,6 @@
             </div>
         </div>
     </div>
-
-
 
 
     <button type="submit" class="btn btn-danger">Submit</button>

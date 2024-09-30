@@ -308,6 +308,20 @@ def new_transect():
                     return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
                 # check province code
+                row = (
+                    con.execute(
+                        text("SELECT * FROM geo_info WHERE province_code = :province_code"),
+                        {"province_code": request.form["province_code"].upper()},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+                if row is None:
+                    return not_valid("Check the province code")
+                transect_province_name = row["province_name"]
+                transect_region = row["region"]
+
+                """
                 transect_province_code = fn.check_province_code(request.form["province"])
                 if transect_province_code is None:
                     # check province name
@@ -316,47 +330,38 @@ def new_transect():
                         return not_valid("The province was not found")
 
                 transect_region = fn.province_code2region(transect_province_code)
+                """
+
+                data = {
+                    "transect_id": request.form["transect_id"].upper().strip(),
+                    "sector": request.form["sector"].strip(),
+                    "location": request.form["location"].strip(),
+                    "municipality": request.form["municipality"].strip(),
+                    "province_code": request.form["province_code"].upper(),
+                    "province": transect_province_name,
+                    "region": transect_region,
+                }
 
                 if request.form["multilines"]:
                     sql = text(
-                        "INSERT INTO transects (transect_id, sector, location, municipality, province, region, multilines) "
-                        "VALUES (:transect_id, :sector, :location, :municipality, :province, :region, ST_GeomFromText(:multilines , 32632))"
+                        "INSERT INTO transects (transect_id, sector, location, municipality, province_code, province, region, multilines) "
+                        "VALUES (:transect_id, :sector, :location, :municipality, :province_code, :province, :region, ST_GeomFromText(:multilines , 32632))"
                     )
-
-                    try:
-                        con.execute(
-                            sql,
-                            {
-                                "transect_id": request.form["transect_id"].upper().strip(),
-                                "sector": request.form["sector"].strip(),
-                                "location": request.form["location"].strip(),
-                                "municipality": request.form["municipality"].strip(),
-                                "province": transect_province_code,
-                                "region": transect_region,
-                                "multilines": request.form["multilines"].strip(),
-                            },
-                        )
-
-                    except Exception:
-                        return not_valid("Check the MultiLineString field")
-
+                    data["multilines"] = request.form["multilines"].strip()
                 else:
                     sql = text(
                         "INSERT INTO transects (transect_id, sector, location, municipality, province, region) "
                         "VALUES (:transect_id, :sector, :location, :municipality, :province, :region)"
                     )
 
+                try:
                     con.execute(
                         sql,
-                        {
-                            "transect_id": request.form["transect_id"].upper().strip(),
-                            "sector": request.form["sector"].strip(),
-                            "location": request.form["location"].strip(),
-                            "municipality": request.form["municipality"].strip(),
-                            "province": transect_province_code,
-                            "region": transect_region,
-                        },
+                        data,
                     )
+
+                except Exception:
+                    return not_valid("Check the MultiLineString field")
 
                 return redirect("/transects_list")
         else:
@@ -389,7 +394,7 @@ def edit_transect(transect_id):
                     text(
                         "SELECT transect_id, "
                         "CASE WHEN sector IS NULL THEN '' ELSE sector END, "
-                        "location, municipality, province, "
+                        "location, municipality, province_code, "
                         "ST_AsText(multilines) AS multilines "
                         "FROM transects "
                         "WHERE transect_id = :transect_id"
@@ -431,17 +436,32 @@ def edit_transect(transect_id):
                     ):
                         return not_valid(f"The transect ID {request.form['transect_id']} already exists")
 
-                # convert province code in province name
-                if request.form["province"].upper() in province_codes:
-                    transect_province_name = province_codes[request.form["province"].upper()]["nome"]
-                    transect_region = province_codes[request.form["province"].upper()]["regione"]
+                # extract province name and region
+                row = (
+                    con.execute(
+                        text("SELECT * FROM geo_info WHERE province_code = :province_code"),
+                        {"province_code": request.form["province_code"].upper()},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+                if row is None:
+                    return not_valid("Check the province code")
+                transect_province_name = row["province_name"]
+                transect_region = row["region"]
+
+                """
+                if request.form["province_code"].upper() in province_codes:
+                    transect_province_name = province_codes[request.form["province_code"].upper()]["nome"]
+                    transect_region = province_codes[request.form["province_code"].upper()]["regione"]
                 else:
                     transect_province_name = request.form["province"].strip().upper()
                     transect_region = fn.province_name2region(request.form["province"])
+                """
 
                 sql = text(
                     "UPDATE transects SET transect_id = :_new_transect_id, sector = :sector, location = :location, "
-                    "   municipality = :municipality, province = :province, region = :region "
+                    " municipality = :municipality, province_code = :province_code, region = :region "
                     "WHERE transect_id = :transect_id"
                 )
 
@@ -453,6 +473,7 @@ def edit_transect(transect_id):
                         "location": request.form["location"].strip(),
                         "municipality": request.form["municipality"].strip(),
                         "province": transect_province_name,
+                        "province_code": request.form["province_code"].upper(),
                         "region": transect_region,
                         "transect_id": transect_id,
                     },

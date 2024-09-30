@@ -15,7 +15,6 @@ from config import config
 from .dw_form import Dead_wolf
 
 import functions as fn
-# from italian_regions import regions
 
 app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
 

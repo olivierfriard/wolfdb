@@ -72,10 +72,10 @@
 {% for wa_code in wa_codes %}
 <th colspan="2"><a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a>
     
-{% if wa_code["wa_code"] == 'Dead wolf' %}
-(<a href="/view_dead_wolf_id/{{ wa_code["sample_id"] }}">{{ wa_code["sample_id"] }}</a>)
+{% if wa_code["sample_type"] == 'Dead wolf' %}
+(<a href="/view_tissue/{{ wa_code['sample_id'] }}">{{ wa_code["sample_id"] }}</a>)
 {% else %}
-(<a href="/view_scat/{{ wa_code["sample_id"] }}">{{ wa_code["sample_id"] }}</a>)
+(<a href="/view_scat/{{ wa_code['sample_id'] }}">{{ wa_code["sample_id"] }}</a>)
 {% endif %}
 
 </th><th></th>

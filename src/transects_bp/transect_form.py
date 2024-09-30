@@ -3,12 +3,6 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-
-"""
-WolfDB web service
-(c) Olivier Friard
-"""
-
 from markupsafe import Markup
 from wtforms import Form, StringField, TextAreaField
 
@@ -23,9 +17,7 @@ class Transect(Form):
             int(field.data)
             return
         except Exception:
-            raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
-            )
+            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
 
     transect_id = StringField(
         "Transect ID",
@@ -36,7 +28,7 @@ class Transect(Form):
     sector = StringField("Sector", validators=[integer_validator])
     location = StringField("Location", [])
     municipality = StringField("Municipality", [])
-    province = StringField("Province", [])
+    province_code = StringField("Province code", [])
     # regione = StringField("Regione", [])
 
     multilines = TextAreaField("MultiLineString (WKT)", [])
