@@ -9,13 +9,12 @@ from tempfile import NamedTemporaryFile
 
 
 def export_transects(paths: list):
-
     wb = Workbook()
 
     ws1 = wb.active
-    ws1.title = f"Transects"
+    ws1.title = "Transects"
 
-    header = ["Transect ID", "Sector", "Location", "Municipality", "Province", "Region"]
+    header = ["Transect ID", "Sector", "Location", "Municipality", "Province", "Province code", "Region"]
 
     ws1.append(header)
 
@@ -26,6 +25,7 @@ def export_transects(paths: list):
         out.append(row["location"])
         out.append(row["municipality"])
         out.append(row["province"])
+        out.append(row["province_code"])
         out.append(row["region"])
 
         ws1.append(out)
