@@ -2,10 +2,6 @@
 
 {% block content %}
 
-
-
-
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {% for message in messages %}
@@ -14,33 +10,30 @@
 {% endif %}
 {% endwith %}
 
-
 {% if results %}
 <h2>List of {{ n_transects }} transects</h2>
 
 <style>th { top: 0;  position: sticky;}</style>
 
 <table class="table table-striped">
-    <tr>
-        <th style="background-color: white;">Transect ID</th>
-        <th style="background-color: white;">Sector</th>
-        <th style="background-color: white;">Location</th>
-        <th style="background-color: white;">Municipality</th>
-        <th style="background-color: white;">Province</th>
-        <th style="background-color: white;">Region</th>
-
-    </tr>
-    {% for result in results %}
-    <tr>
-
-        <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
-        <td>{% if result["sector"] %}{{ result["sector"] }}{%endif%}</td>
-        <td>{{ result['location'] }}</td>
-        <td>{{ result['municipality'] }}</td>
-        <td>{{ result['province'] }}</td>
-        <td>{{ result['region'] }}</td>
-    </tr>
-    {% endfor %}
+<tr>
+    <th style="background-color: white;">Transect ID</th>
+    <th style="background-color: white;">Sector</th>
+    <th style="background-color: white;">Location</th>
+    <th style="background-color: white;">Municipality</th>
+    <th style="background-color: white;">Province</th>
+    <th style="background-color: white;">Region</th>
+</tr>
+{% for result in results %}
+<tr>
+    <td><a href="/view_transect/{{ result['transect_id'] }}">{{ result['transect_id'] }}</a></td>
+    <td>{% if result['sector'] %}{{ result['sector'] }}{%endif%}</td>
+    <td>{{ result['location'] }}</td>
+    <td>{{ result['municipality'] }}</td>
+    <td>{{ result['province'] }} ({{ result['province_code'] }})</td>
+    <td>{{ result['region'] }}</td>
+</tr>
+{% endfor %}
 </table>
 {% else %}
 
