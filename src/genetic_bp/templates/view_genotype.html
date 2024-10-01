@@ -2,7 +2,6 @@
 
 {% block content %}
 
-
 {% with messages = get_flashed_messages() %}
     {% if messages %}
         {{ messages[0] }}
@@ -41,7 +40,16 @@
 <br>
 
 <table class="table table-striped">
-<tr><td>Record status</td><td>{{ result["record_status"] }}</td></tr>
+<tr><td>Record status</td>
+<td>
+{% if result["record_status"] == 'OK' %}
+Definitive
+{% elif result["record_status"] == 'temp' %}
+Temporary
+{% else %}
+Deleted
+{%endif%}
+</td></tr>
 <tr><td>Other ID</td><td>{{ result["tmp_id"] }}</td></tr>
 <tr><td>Sex</td><td>{{ result["sex"] }}</td></tr>
 <tr><td>Mother</td><td>{{ result["mother"] if result["mother"] is not none else "" }}</td></tr>
