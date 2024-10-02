@@ -5,16 +5,13 @@ WolfDB web service
 flask blueprint for packs management
 """
 
-import flask
-from flask import (
-    render_template,
-)
+from flask import render_template, Blueprint, session
 from sqlalchemy import text
 from config import config
 
 import functions as fn
 
-app = flask.Blueprint("packs", __name__, template_folder="templates")
+app = Blueprint("packs", __name__, template_folder="templates")
 
 params = config()
 app.debug = params["debug"]
@@ -28,7 +25,11 @@ def packs():
     """
     with fn.conn_alchemy().connect() as con:
         packs_list = (
-            con.execute(text("SELECT pack FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack"))
+            con.execute(
+                text(
+                    "SELECT pack, REPLACE(pack, '?', '%3F') AS pack_url FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack"
+                ),
+            )
             .mappings()
             .all()
         )
@@ -50,8 +51,13 @@ def view_pack(pack_name):
     with fn.conn_alchemy().connect() as con:
         results = (
             con.execute(
-                text("SELECT * FROM genotypes_list_mat WHERE pack = :pack_name ORDER BY date_first_capture ASC"),
-                {"pack_name": pack_name},
+                text(
+                    "SELECT * FROM genotypes_list_mat "
+                    "WHERE pack = :pack_name "
+                    "AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL) "
+                    "ORDER BY date_first_capture ASC"
+                ),
+                {"pack_name": pack_name, "start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
             .all()
