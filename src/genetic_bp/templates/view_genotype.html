@@ -19,23 +19,22 @@
 <h2 style="padding-top:1em;">Genotype ID: {{ result["genotype_id"] }}</h2>
 
 <span class="dropdown">
-    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-    set ...
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-    <li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
-    <li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
-    <li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
-    <li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
-    <li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
-    <li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
-    <li><a href="/set_parent/{{ result['genotype_id'] }}/mother" class="dropdown-item">mother</a></li>
-    <li><a href="/set_parent/{{ result['genotype_id'] }}/father" class="dropdown-item">father</a></li>
-    
-    <li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
-    </ul>
-    </span>
-    
+<button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+set ...
+</button>
+<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+<li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
+<li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
+<li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
+<li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
+<li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
+<li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/set_parent/{{ result['genotype_id'] }}/mother" class="dropdown-item">mother</a></li>
+<li><a href="/set_parent/{{ result['genotype_id'] }}/father" class="dropdown-item">father</a></li>
+
+<li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
+</ul>
+</span>
 
 <br>
 

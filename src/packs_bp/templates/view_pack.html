@@ -6,13 +6,18 @@
 
 <h2>Composition of <b>{{ pack_name }}</b> pack</h2>
 
+<h3>{{ n_individuals }} individuals</h3>
+
 <br><br>
 <table class="table table-striped">
 
 <tr>
 <th>Genotype ID</th>
+<th></th>
 <th>Date first capture</th>
 <th>Sex</th>
+<th>Mother</th>
+<th>Father</th>
 <th>Dead recovery</th>
 <th>Status</th>
 <th>Dispersal</th>
@@ -22,8 +27,31 @@
 
 <tr>
 <td><a href="/view_genotype/{{ row['genotype_id'] }}">{{ row['genotype_id'] }}</a></td>
+<td>
+<span class="dropdown">
+<button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+set ...
+</button>
+<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+<li><a href="/set_status/{{ row['genotype_id'] }}" class="dropdown-item">status</a></li>
+<li><a href="/set_pack/{{ row['genotype_id'] }}" class="dropdown-item">pack</a></li>
+<li><a href="/set_sex/{{ row['genotype_id'] }}" class="dropdown-item">sex</a></li>
+<li><a href="/set_hybrid/{{ row['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
+<li><a href="/set_status_1st_recap/{{ row['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
+<li><a href="/set_dispersal/{{ row['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/set_parent/{{ row['genotype_id'] }}/mother" class="dropdown-item">mother</a></li>
+<li><a href="/set_parent/{{ row['genotype_id'] }}/father" class="dropdown-item">father</a></li>
+
+<li><a href="/genotype_note/{{ row['genotype_id'] }}" class="dropdown-item">notes</a></li>
+</ul>
+</span>
+</td>
+
 <td>{{ row['date_first_capture'] if row['date_first_capture'] is not none else ""}}</td>
 <td>{{ row['sex'] }}</td>
+<td>{{ row['mother'] if row['mother'] is not none else ''}}</td>
+<td>{{ row['father'] if row['father'] is not none else '' }}</td>
+
 <td>{{ row['dead_recovery'] if row['dead_recovery'] is not none else "" }}</td>
 <td>{{ row['position'] if row['position'] is not none else ""}}</td>
 <td>{{ row['dispersal'] if row['dispersal'] is not none else ""}}</td>
