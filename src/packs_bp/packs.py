@@ -8,7 +8,6 @@ flask blueprint for packs management
 from flask import render_template, Blueprint, session, render_template_string
 from sqlalchemy import text
 from markupsafe import Markup
-import folium
 
 from config import config
 import functions as fn
@@ -121,8 +120,6 @@ def view_pack(pack_name):
         popup_content.append(f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>""")
         popup_content.append(f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a>""")
 
-        print(f"{popup_content=}")
-
         sample_feature = {
             "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
             "type": "Feature",
@@ -160,6 +157,7 @@ def view_pack(pack_name):
     )
 
 
+'''
 @app.route("/folium")
 @fn.check_login
 def folium_():
@@ -211,3 +209,4 @@ def folium_():
         body_html=body_html,
         script=script,
     )
+'''
