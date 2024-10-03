@@ -748,7 +748,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
     }
 
 
-def leaflet_geojson(data: dict) -> str:
+def leaflet_geojson(data: dict, add_polygon: bool = False) -> str:
     """
     plot geoJSON features on Leaflet map
     """
@@ -761,18 +761,24 @@ def leaflet_geojson(data: dict) -> str:
 
     map = Template(
         """
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
  
+{% if add_polygon %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+{% endif %}
+
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-
+     crossorigin="">
+</script>
+{% if add_polygon %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+{% endif %}
 
 <script>
-
 var transects = {
     "type": "FeatureCollection",
     "features": {{ transects}}
@@ -830,7 +836,6 @@ function onEachFeature(feature, layer) {
     layer.bindPopup(popupContent);
 }
 
-
 L.geoJSON([dead_wolves], {
 
     style: function (feature) { return feature.properties && feature.properties.style; },
@@ -886,6 +891,53 @@ scale.addTo(map);
 var markerBounds = L.latLngBounds([{{ fit }}]);
 map.fitBounds(markerBounds);
 
+
+{% if add_polygon %}
+// Initialise draw tools
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+var drawControl = new L.Control.Draw({
+    edit: {
+        featureGroup: drawnItems
+    },
+    draw: {
+        polygon: true,  // Permet à l'utilisateur de dessiner des polygones
+        polyline: false,  // Désactive l'outil ligne
+        rectangle: false, // Désactive l'outil rectangle
+        circle: false,    // Désactive l'outil cercle
+        marker: false     // Désactive l'outil marqueur
+    }
+});
+map.addControl(drawControl);
+
+// event triggered wheun user finish a draw
+map.on('draw:created', function (event) {
+    var layer = event.layer;
+    drawnItems.addLayer(layer);
+
+    var coords = layer.getLatLngs()[0].map(function(latlng) {
+        return [latlng.lng, latlng.lat];
+    });
+
+    // send coordinates via POST AJAX
+    fetch('/select_on_map', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ coordinates: coords })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('server Response:', data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+{% endif %}
+
 </script>
 """
     )
@@ -903,6 +955,7 @@ map.fitBounds(markerBounds);
             "center": data.get("center", CENTER_DEFAULT),
             "zoom": data.get("zoom", 13),
             "fit": data.get("fit", ""),
+            "add_polygon": add_polygon,
         }
     )
 

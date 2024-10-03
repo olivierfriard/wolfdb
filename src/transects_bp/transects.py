@@ -17,7 +17,6 @@ import datetime as dt
 from .transect_form import Transect
 import functions as fn
 from . import transects_export
-from italian_regions import province_codes
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 

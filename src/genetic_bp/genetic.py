@@ -5,7 +5,7 @@ WolfDB web service
 flask blueprint for genetic data management
 """
 
-from flask import render_template, redirect, request, flash, session, make_response, Blueprint, current_app
+from flask import render_template, redirect, request, flash, session, make_response, Blueprint, current_app, jsonify
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -20,6 +20,7 @@ import pandas as pd
 import datetime as dt
 import time
 import jinja2
+from geojson import Polygon
 
 import functions as fn
 from . import export
@@ -516,13 +517,12 @@ def view_wa(wa_code: str):
 
 @app.route("/plot_all_wa")
 @fn.check_login
-def plot_all_wa():
+def plot_all_wa(add_polygon=True):
     """
     plot all WA codes (scats and dead wolves)
     """
 
     scat_features: list = []
-
     tot_min_lat, tot_min_lon = 90, 90
     tot_max_lat, tot_max_lon = -90, -90
 
@@ -533,7 +533,6 @@ def plot_all_wa():
                     "SELECT wa_code, sample_id, genotype_id, "
                     "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
                     "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
-                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                     "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
                     "AND date BETWEEN :start_date AND :end_date "
@@ -546,9 +545,6 @@ def plot_all_wa():
             .mappings()
             .all()
         ):
-            # scat_geojson = json.loads(row["scat_lonlat"])
-            # lon, lat = scat_geojson["coordinates"]
-
             tot_min_lat = min([tot_min_lat, row["latitude"]])
             tot_max_lat = max([tot_max_lat, row["latitude"]])
             tot_min_lon = min([tot_min_lon, row["longitude"]])
@@ -583,18 +579,17 @@ def plot_all_wa():
         title=Markup(f"<h3>Locations of {len(scat_features)} samples WA codes.</h3>"),
         map=Markup(
             fn.leaflet_geojson(
-                {
+                data={
                     "scats": scat_features,
                     "scats_color": params["scat_color"],
                     "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
-                }
+                },
+                add_polygon=add_polygon,
             )
         ),
         distance=0,
         scat_color=params["scat_color"],
         dead_wolf_color=params["dead_wolf_color"],
-        transect_color=params["transect_color"],
-        track_color=params["track_color"],
     )
 
 
@@ -1770,7 +1765,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         if request.method == "POST":
             # check il allele value is numeric or -
 
-            if request.form["new_value"] != "":
+            if request.form.get("new_value", None):  # allele modifier
                 try:
                     new_value = int(request.form["new_value"])
                     if new_value < 0:
@@ -1788,8 +1783,26 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                         )
                     )
                     return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+
             else:
-                new_value = None
+                # get last value for locus / allele
+                last_note = (
+                    con.execute(
+                        text(
+                            "SELECT val "
+                            "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                            "ORDER BY timestamp DESC"
+                        ),
+                        data,
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+                if not last_note:
+                    flash(fn.alert_danger("Error with allele value"))
+                    return redirect(session["url_wa_list"])
+
+                new_value = last_note["val"]
 
             sql = text(
                 "INSERT INTO wa_locus "
@@ -2685,3 +2698,43 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
         all_data[index] = {**data, **loci_dict}
 
     return 0, "OK", all_data
+
+
+@app.route("/select_on_map", methods=["GET", "POST"])
+@fn.check_login
+def select_on_map():
+    if request.method == "GET":
+        # return render_template("draw_polygon2.html")
+        return plot_all_wa(add_polygon=True)  # render_template("draw_polygon.html")
+
+    if request.method == "POST":
+        # Retrieve coordinates
+        data = request.get_json()
+
+        if "coordinates" in data:
+            print("Coordinates received:", data["coordinates"])
+
+            # polygon_ = Polygon([data["coordinates"]])
+            with fn.conn_alchemy().connect() as con:
+                wa_codes = (
+                    con.execute(
+                        text(
+                            """SELECT wa_code, sample_type FROM wa_scat_dw_mat WHERE """
+                            """ST_Within(geometry_utm, st_transform(ST_GeomFromGeoJSON(:geojson_polygon), 32632))"""
+                        ),
+                        {"geojson_polygon": str(Polygon([data["coordinates"]]))},
+                    )
+                    .mappings()
+                    .all()
+                )
+
+            for wa_code in wa_codes:
+                print(wa_code["wa_code"])
+
+            """
+            st_transform(ST_GeomFromGeoJSON('{"coordinates": [[[7.590281, 45.192587], [7.752368, 45.194522], [7.639732, 45.105419]]], "type": "Polygon"}'), 32632)
+            """
+
+            return jsonify({"status": "success", "message": "OK"}), 200
+        else:
+            return jsonify({"status": "error", "message": "no coordinates"}), 400
