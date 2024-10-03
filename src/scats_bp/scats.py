@@ -179,7 +179,7 @@ def view_scat(scat_id):
         results=results,
         transect_id=transect_id,
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": scat_features,
                     "scats_color": scat_color,
@@ -245,7 +245,7 @@ def plot_all_scats():
             "plot_all_scats.html",
             header_title="Plot of scats",
             map=Markup(
-                fn.leaflet_geojson2(
+                fn.leaflet_geojson(
                     {
                         "scats": scat_features,
                         "scats_color": scats_color,
@@ -317,7 +317,7 @@ def plot_all_scats_markerclusters():
             "plot_all_scats.html",
             header_title="Plot of scats",
             map=Markup(
-                fn.leaflet_geojson3(
+                fn.leaflet_markercluster_geojson(
                     {
                         "scats": scat_features,
                         "scats_color": scats_color,
@@ -326,9 +326,6 @@ def plot_all_scats_markerclusters():
                 )
             ),
             scat_color=params["scat_color"],
-            dead_wolf_color=params["dead_wolf_color"],
-            transect_color=params["transect_color"],
-            track_color=params["track_color"],
             count_scats=count_scats,
         )
 
@@ -646,7 +643,7 @@ def edit_scat(scat_id):
                 date = f"20{date[:2]}-{date[2:4]}-{date[4:]}"
                 default_path_id = f"{transect_id} {date}"
             else:
-                default_path_id = default_values["path_id"] 
+                default_path_id = default_values["path_id"]
 
         form = Scat(
             path_id=default_path_id,
@@ -720,7 +717,7 @@ def edit_scat(scat_id):
                     )
 
             # check date in scat ID
-            '''
+            """
             DISABLED
             try:
                 year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
@@ -733,14 +730,14 @@ def edit_scat(scat_id):
                     return not_valid(form,"The date of the track ID is not valid. Use the YYMMDD format")
             except Exception:
                 return not_valid(form,"The scat_id value is not correct")
-            '''
+            """
 
             # path id
             if request.form["sampling_type"] == "Systematic":
                 # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
                 path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
             else:
-                path_id =   ""
+                path_id = ""
 
             """
             # check if province code exists
@@ -758,7 +755,7 @@ def edit_scat(scat_id):
                 # check province name
                 province_code = fn.province_name2code(request.form["province"])
                 if province_code is None:
-                    return not_valid(form,"The province was not found")
+                    return not_valid(form, "The province was not found")
 
             # add region from province code
             scat_region = fn.province_code2region(province_code)

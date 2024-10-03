@@ -397,103 +397,6 @@ def get_regions(provinces: list) -> str:
     return " ".join(list(set(transect_region)))
 
 
-def leaflet_geojson(center, scat_features, transect_features, fit="", zoom=13) -> str:
-    map = (
-        """
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
- 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-
-<script>
-
-var transects = {
-    "type": "FeatureCollection",
-    "features": ###TRANSECT_FEATURES###
-};
-
-
-var scats = {
-    "type": "FeatureCollection",
-    "features": ###SCAT_FEATURES###
-};
-
-
-var map = L.map('map').setView([###CENTER###], ###ZOOM###);
-
-/*
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-*/
-
-
-L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
-	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-}).addTo(map);
-
-
-function onEachFeature(feature, layer) {
-    var popupContent = "";
-
-    if (feature.properties && feature.properties.popupContent) {
-        popupContent += feature.properties.popupContent;
-    }
-
-    layer.bindPopup(popupContent);
-}
-
-L.geoJSON([scats], {
-
-    style: function (feature) {
-        return feature.properties && feature.properties.style;
-    },
-
-    onEachFeature: onEachFeature,
-
-    pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, {
-            radius: 8,
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.8
-        });
-    }
-}).addTo(map);
-
-
-L.geoJSON(transects, {
-    onEachFeature: onEachFeature,
-    style: function(){
-    return { color: 'red' }
-  }
-
-}).addTo(map);
-
-
-var scale = L.control.scale(); // Creating scale control
-         scale.addTo(map); // Adding scale control to the map
-
-
-var markerBounds = L.latLngBounds([###FIT###]);
-map.fitBounds(markerBounds);
-
-</script>
-
-    """.replace("###SCAT_FEATURES###", str(scat_features))
-        .replace("###CENTER###", center)
-        .replace("###TRANSECT_FEATURES###", str(transect_features))
-        .replace("###ZOOM###", str(zoom))
-        .replace("###FIT###", fit)
-    )
-
-    return map
-
-
 def reverse_geocoding(lon_lat: list) -> dict:
     """
     get place from GPS coordinates with nominatum (OSM)
@@ -845,7 +748,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
     }
 
 
-def leaflet_geojson2(data: dict) -> str:
+def leaflet_geojson(data: dict) -> str:
     """
     plot geoJSON features on Leaflet map
     """
@@ -890,6 +793,16 @@ var dead_wolves = {
     "features": {{ dead_wolves }}
 };
 
+var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+
+var Stadia_AlidadeSatellite = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
+	minZoom: 0,
+	maxZoom: 20,
+	attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+	ext: 'jpg'
+});
 
 var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'})
@@ -898,15 +811,16 @@ var opentopomap = L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', 
 	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
 })
 
-var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [osm, opentopomap]});
+var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [Esri_WorldImagery, Stadia_AlidadeSatellite, osm, opentopomap]});
 
 var baseMaps = {
+    "ESRI World Imagery": Esri_WorldImagery,
+    "Stadia map": Stadia_AlidadeSatellite,
     "OpenStreetMap": osm,
     "OpenTopoMap": opentopomap,
 };
 
 var layerControl = L.control.layers(baseMaps).addTo(map);
-
 
 function onEachFeature(feature, layer) {
     var popupContent = "";
@@ -993,7 +907,7 @@ map.fitBounds(markerBounds);
     )
 
 
-def leaflet_geojson3(data: dict) -> str:
+def leaflet_markercluster_geojson(data: dict) -> str:
     """
     plot geoJSON features  on Leaflet map using MarkerCluster
     """
@@ -1040,6 +954,18 @@ var dead_wolves = {
     "features": {{ dead_wolves }}
 };
 
+var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+
+var Stadia_AlidadeSatellite = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
+	minZoom: 0,
+	maxZoom: 20,
+	attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+	ext: 'jpg'
+});
+
+
 var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'})
 
@@ -1047,15 +973,16 @@ var opentopomap = L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', 
 	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
 })
 
-var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [osm, opentopomap]});
+var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [Esri_WorldImagery, Stadia_AlidadeSatellite, osm, opentopomap]});
 
 var baseMaps = {
+    "ESRI World Imagery": Esri_WorldImagery,
+    "Stadia map": Stadia_AlidadeSatellite,
     "OpenStreetMap": osm,
     "OpenTopoMap": opentopomap,
 };
 
 var layerControl = L.control.layers(baseMaps).addTo(map);
-
 
 
 function onEachFeature(feature, layer) {

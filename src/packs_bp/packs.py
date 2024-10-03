@@ -5,7 +5,7 @@ WolfDB web service
 flask blueprint for packs management
 """
 
-from flask import render_template, Blueprint, session, render_template_string
+from flask import render_template, Blueprint, session  # , render_template_string
 from sqlalchemy import text
 from markupsafe import Markup
 
@@ -28,7 +28,9 @@ def packs():
         packs_list = (
             con.execute(
                 text(
-                    "SELECT pack, REPLACE(pack, '?', '%3F') AS pack_url FROM genotypes WHERE pack is NOT NULL AND pack != '' GROUP BY pack ORDER BY pack"
+                    "SELECT pack, REPLACE(pack, '?', '%3F') AS pack_url, COUNT(*) AS n_individuals "
+                    "FROM genotypes WHERE pack is NOT NULL AND pack != '' "
+                    "GROUP BY pack ORDER BY pack"
                 ),
             )
             .mappings()
@@ -134,7 +136,7 @@ def view_pack(pack_name):
     if count_wa_code:
         center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
         map = Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": samples_features,
                     "scats_color": params["scat_color"],

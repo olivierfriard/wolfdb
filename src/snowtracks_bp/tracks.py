@@ -183,7 +183,7 @@ def view_track(snowtrack_id):
             has_coordinates=has_coordinates,
             n_scats=n_scats,
             map=Markup(
-                fn.leaflet_geojson2(
+                fn.leaflet_geojson(
                     {
                         "scats": scat_features,
                         "scats_color": params["scat_color"],
@@ -306,7 +306,7 @@ def plot_tracks():
             "plot_tracks.html",
             header_title="Plot of tracks",
             map=Markup(
-                fn.leaflet_geojson2(
+                fn.leaflet_geojson(
                     {
                         "tracks": features,
                         "tracks_color": params["track_color"],

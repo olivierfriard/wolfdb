@@ -219,7 +219,7 @@ def view_genotype(genotype_id: str):
     if count_wa_code:
         center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
         map = Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": samples_features,
                     "scats_color": params["scat_color"],
@@ -582,7 +582,7 @@ def plot_all_wa():
         header_title="Locations of WA codes",
         title=Markup(f"<h3>Locations of {len(scat_features)} samples WA codes.</h3>"),
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": scat_features,
                     "scats_color": params["scat_color"],
@@ -726,7 +726,7 @@ def plot_wa_clusters(distance: int):
         header_title=f"WA codes clusters ({distance} m)",
         title=Markup(f"Plot of {len(scat_features)} WA codes clusters"),
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": scat_features,
                     "scats_color": params["scat_color"],

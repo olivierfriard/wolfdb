@@ -10,10 +10,12 @@
 <table class="table table-striped">
 <tr>
 <th>Name</th>
+<th>Number of individuals</th>
 </tr>
-{% for result in packs_list %}
+{% for pack in packs_list %}
 <tr>
-<td><a href="/view_pack/{{ result['pack_url'] }}">{{ result['pack'] }}</a></td>
+<td><a href="/view_pack/{{ pack['pack_url'] }}">{{ pack['pack'] }}</a></td>
+<td>{{ pack['n_individuals'] }}</td>
 </tr>
 {% endfor %}
 </table>

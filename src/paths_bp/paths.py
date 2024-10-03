@@ -148,7 +148,7 @@ def view_path(path_id):
         n_tracks=n_tracks,
         path_id=path_id,
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": scat_features,
                     "scats_color": params["scat_color"],

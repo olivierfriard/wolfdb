@@ -25,14 +25,6 @@ params = config()
 app.debug = params["debug"]
 
 
-@app.route("/transects")
-def transects():
-    return render_template(
-        "transects.html",
-        header_title="Transects",
-    )
-
-
 @app.route("/view_transect/<transect_id>")
 @fn.check_login
 def view_transect(transect_id):
@@ -209,7 +201,7 @@ def view_transect(transect_id):
         transect_id=transect_id,
         n_scats=n_scats,
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "scats": scat_features,
                     "scats_color": scats_color,
@@ -523,7 +515,6 @@ def plot_transects():
     """
     Plot all transects
     """
-    transects_color = params["transect_color"]
 
     with fn.conn_alchemy().connect() as con:
         transects_features: list = []
@@ -531,7 +522,7 @@ def plot_transects():
         tot_max_lat, tot_max_lon = -90, -90
 
         for row in (
-            con.execute(text("SELECT transect_id, " "ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat " "FROM transects"))
+            con.execute(text("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects"))
             .mappings()
             .all()
         ):
@@ -565,18 +556,15 @@ def plot_transects():
         "plot_transects.html",
         header_title="Plot of transects",
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "transects": transects_features,
-                    "transects_color": transects_color,
+                    "transects_color": params["transect_color"],
                     "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
                 }
             )
         ),
-        scat_color=params["scat_color"],
-        dead_wolf_color=params["dead_wolf_color"],
         transect_color=params["transect_color"],
-        track_color=params["track_color"],
     )
 
 

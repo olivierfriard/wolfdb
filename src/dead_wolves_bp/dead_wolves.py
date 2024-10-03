@@ -109,7 +109,7 @@ def view_dead_wolf_id(id: int):
         dead_wolf=dead_wolf,
         dead_wolf_values=dead_wolf_values,
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "dead_wolves": dw_features,
                     "dead_wolves_color": params["dead_wolf_color"],
@@ -136,7 +136,10 @@ def plot_dead_wolves():
         for row in (
             con.execute(
                 text(
-                    "SELECT * FROM dead_wolves "
+                    "SELECT id, genotype_id, tissue_id, discovery_date,"
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
+                    "FROM dead_wolves "
                     "WHERE deleted is NULL "
                     "AND utm_east != '0' AND utm_north != '0' "
                     "AND discovery_date BETWEEN :start_date AND :end_date"
@@ -149,39 +152,42 @@ def plot_dead_wolves():
             .mappings()
             .all()
         ):
-            try:
-                lat, lon = utm.to_latlon(int(float(row["utm_east"])), int(float(row["utm_north"])), 32, "N")
+            # lat, lon = utm.to_latlon(int(float(row["utm_east"])), int(float(row["utm_north"])), 32, "N")
 
-                tot_min_lat = min([tot_min_lat, lat])
-                tot_max_lat = max([tot_max_lat, lat])
-                tot_min_lon = min([tot_min_lon, lon])
-                tot_max_lon = max([tot_max_lon, lon])
+            print(f"{row["latitude"]=}")
+            print(f"{row["longitude"]=}")
 
-                dw_geojson = {"type": "Point", "coordinates": [lon, lat]}
+            tot_min_lat = min([tot_min_lat, row["latitude"]])
+            tot_max_lat = max([tot_max_lat, row["latitude"]])
+            tot_min_lon = min([tot_min_lon, row["longitude"]])
+            tot_max_lon = max([tot_max_lon, row["longitude"]])
 
-                dw_feature = {
-                    "geometry": dict(dw_geojson),
-                    "type": "Feature",
-                    "properties": {
-                        "popupContent": (f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>""")
-                        + (
-                            f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>"""
-                            if row["genotype_id"]
-                            else "" f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>"""
-                        ),
-                    },
-                    "id": row["id"],
-                }
-                dw_features.append(dict(dw_feature))
+            popup_content: list = [f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>"""]
+            if row["genotype_id"]:
+                popup_content.append(
+                    f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>"""
+                )
+            else:
+                popup_content.append(f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>""")
 
-            except Exception:
-                pass
+            if row["discovery_date"]:
+                popup_content.append(f"""Discovery date: {row['discovery_date']}<br>""")
+
+            dw_feature = {
+                "geometry": dict({"type": "Point", "coordinates": [row["longitude"], row["latitude"]]}),
+                "type": "Feature",
+                "properties": {
+                    "popupContent": "".join(popup_content),
+                },
+                "id": row["id"],
+            }
+            dw_features.append(dict(dw_feature))
 
     return render_template(
         "plot_dead_wolves.html",
         header_title="Plot of dead wolves",
         map=Markup(
-            fn.leaflet_geojson2(
+            fn.leaflet_geojson(
                 {
                     "dead_wolves": dw_features,
                     "dead_wolves_color": params["dead_wolf_color"],
@@ -189,10 +195,7 @@ def plot_dead_wolves():
                 }
             )
         ),
-        scat_color=params["scat_color"],
         dead_wolf_color=params["dead_wolf_color"],
-        transect_color=params["transect_color"],
-        track_color=params["track_color"],
     )
 
 

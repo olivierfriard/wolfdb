@@ -1,10 +1,14 @@
 <svg width="700" height="70">
 
+{% if scat_color %}
 <circle cx="12" cy="20" r="10" stroke="{{ scat_color }}" stroke-width="0" fill="{{ scat_color }}" />
 <text fill="#000000" font-size="16" font-family="Helvetica" x="45" y="27">Scat sample</text>
+{% endif %}
 
+{% if dead_wolf_color %}
 <circle cx="200" cy="20" r="10" stroke="{{ dead_wolf_color }}" stroke-width="0" fill="{{ dead_wolf_color }}" />
 <text  x="233" y="27" fill="#000000" font-size="16" font-family="Helvetica">Dead wolf</text>
+{% endif %}
 
 {% if transect_color %}
 <rect x="360" y="20" width="30" height="5" style="fill:{{ transect_color }}; stroke-width:0; stroke:{{ transect_color }}" />
