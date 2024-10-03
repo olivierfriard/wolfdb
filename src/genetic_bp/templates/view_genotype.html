@@ -3,9 +3,9 @@
 {% block content %}
 
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
 
 {% if 'url_wa_list' in session %}

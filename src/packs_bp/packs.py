@@ -66,16 +66,87 @@ def view_pack(pack_name):
         )
 
         # map
-        map_data = con.execute(
-            text(
-                "select geometry_utm, genotype_id AS genotype_id, scat_id AS sample_id, wa_results.wa_code from scats, wa_results "
-                "WHERE scats.wa_code = wa_results.wa_code and wa_results.genotype_id in (SELECT genotype_id FROM genotypes WHERE pack = :pack AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL)) "
-                "UNION"
-                "select geometry_utm, wa_results.genotype_id AS genotype_id, tissue_id AS sample_id, wa_results.wa_code from dead_wolves, wa_results "
-                "WHERE dead_wolves.wa_code = wa_results.wa_code and wa_results.genotype_id in (SELECT genotype_id FROM genotypes WHERE pack = :pack AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL))"
-            ),
-            {"pack_name": pack_name, "start_date": session["start_date"], "end_date": session["end_date"]},
+        wa_codes = (
+            con.execute(
+                text(
+                    "SELECT "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude, "
+                    "genotype_id,"
+                    "scat_id AS sample_id,"
+                    "'scat' AS sample_type,"
+                    "wa_results.wa_code "
+                    "FROM scats, wa_results "
+                    "WHERE scats.wa_code = wa_results.wa_code "
+                    "      AND wa_results.genotype_id in (SELECT genotype_id FROM genotypes_list_mat WHERE pack = :pack_name "
+                    "                                                                             AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL)) "
+                    "UNION "
+                    "SELECT "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude, "
+                    "wa_results.genotype_id AS genotype_id,"
+                    "tissue_id AS sample_id,"
+                    "'Dead wolf' AS sample_type,"
+                    "wa_results.wa_code "
+                    "FROM dead_wolves, wa_results "
+                    "WHERE dead_wolves.wa_code = wa_results.wa_code "
+                    "       AND wa_results.genotype_id in (SELECT genotype_id FROM genotypes_list_mat WHERE pack = :pack_name "
+                    "                                                                              AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL))"
+                ),
+                {"pack_name": pack_name, "start_date": session["start_date"], "end_date": session["end_date"]},
+            )
+            .mappings()
+            .all()
         )
+
+    samples_features: list = []
+    sum_lon: float = 0.0
+    sum_lat: float = 0.0
+    count_wa_code: int = 0
+    for row in wa_codes:
+        count_wa_code += 1
+        sum_lon += row["longitude"]
+        sum_lat += row["latitude"]
+
+        popup_content: list = []
+        if row["sample_type"] == "scat":
+            color = params["scat_color"]
+            popup_content.append(f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>""")
+        elif row["sample_type"] == "Dead wolf":
+            color = params["dead_wolf_color"]
+            popup_content.append(f"""Tissue ID: <a href="/view_tissue/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>""")
+        else:
+            color = "red"
+
+        popup_content.append(f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>""")
+        popup_content.append(f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a>""")
+
+        print(f"{popup_content=}")
+
+        sample_feature = {
+            "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
+            "type": "Feature",
+            "properties": {
+                "style": {"color": color, "fillColor": color, "fillOpacity": 1},
+                "popupContent": "".join(popup_content),
+            },
+            "id": row["sample_id"],
+        }
+        samples_features.append(sample_feature)
+
+    if count_wa_code:
+        center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
+        map = Markup(
+            fn.leaflet_geojson2(
+                {
+                    "scats": samples_features,
+                    "scats_color": params["scat_color"],
+                    "center": center,
+                }
+            )
+        )
+    else:
+        map = ""
 
     return render_template(
         "view_pack.html",
@@ -83,6 +154,9 @@ def view_pack(pack_name):
         pack_name=pack_name,
         results=results,
         n_individuals=len(results),
+        map=map,
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
     )
 
 

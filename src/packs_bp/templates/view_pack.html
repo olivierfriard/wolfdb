@@ -52,15 +52,25 @@ set ...
 <td>{{ row['mother'] if row['mother'] is not none else ''}}</td>
 <td>{{ row['father'] if row['father'] is not none else '' }}</td>
 
-<td>{{ row['dead_recovery'] if row['dead_recovery'] is not none else "" }}</td>
-<td>{{ row['position'] if row['position'] is not none else ""}}</td>
-<td>{{ row['dispersal'] if row['dispersal'] is not none else ""}}</td>
+<td>{{ row['dead_recovery'] if row['dead_recovery'] is not none else '' }}</td>
+<td>{{ row['status'] if row['status'] is not none else ''}}</td>
+<td>{{ row['dispersal'] if row['dispersal'] is not none else ''}}</td>
 </tr>
 
 
 {% endfor %}
 
 </table>
+
+
+<hr>
+<h2 style="padding-top:1em;">Localization of WA codes</h2>
+
+<div id="map" style="width: 1200px; height: 800px;"></div>
+
+{{ map }}
+
+{% include 'legend.html' %}
 
 {% endblock %}
 

@@ -227,7 +227,6 @@ def view_genotype(genotype_id: str):
                 }
             )
         )
-
     else:
         map = ""
 
