@@ -51,6 +51,7 @@ Deleted
 </td></tr>
 <tr><td>Other ID</td><td>{{ result["tmp_id"] }}</td></tr>
 <tr><td>Sex</td><td>{{ result["sex"] }}</td></tr>
+<tr><td>Hybrid</td><td>{{ result["hybrid"] if result["hybrid"] is not none else "" }}</td></tr>
 <tr><td>Mother</td><td>{{ result["mother"] if result["mother"] is not none else "" }}</td></tr>
 <tr><td>Father</td><td>{{ result["father"] if result["father"] is not none else "" }}</td></tr>
 <tr><td>Status</td><td>{{ result["status"] if result["status"] is not none else "" }}</td></tr>
@@ -59,6 +60,7 @@ Deleted
 <tr><td>Age at first capture</td><td>{{ result["age_first_capture"]  if result["age_first_capture"] is not none else ""}}</td></tr>
 <tr><td>Status at first capture</td><td>{{ result["status_first_capture"]  if result["status_first_capture"] is not none else ""}}</td></tr>
 <tr><td>Dispersal</td><td>{{ result["dispersal"]  if result["dispersal"] is not none else ""}}</td></tr>
+
 <tr><td>number of recaptures</td><td>{{ n_recap }}</td></tr>
 <tr><td>Dead recovery</td><td>{{ result["dead_recovery"] if result["dead_recovery"] is not none else ""}}</td></tr>
 <tr><td>Working notes</td><td>{{ result["working_notes"] if result["working_notes"] is not none else ""}}</td></tr>

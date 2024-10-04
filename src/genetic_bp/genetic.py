@@ -138,24 +138,6 @@ def view_genotype(genotype_id: str):
         genotype_loci = json.loads(rdis.get(genotype_id))
 
         # samples
-        """
-        wa_codes = (
-            con.execute(
-                text(
-                    "SELECT wa_code, sample_id, sample_type, "
-                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
-                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
-                    "FROM wa_scat "
-                    "WHERE genotype_id = :genotype_id "
-                    "ORDER BY wa_code"
-                ),
-                {"genotype_id": genotype_id},
-            )
-            .mappings()
-            .all()
-        )
-        """
-
         wa_codes = (
             con.execute(
                 text(
@@ -293,19 +275,6 @@ def update_redis_with_wa_loci():
     flash(fn.alert_danger("Redis updating with WA loci in progress"))
 
     return redirect("/admin")
-
-
-def run_colony(data_file: str):
-    """
-    run colony
-
-    !require the colony software
-    """
-    _ = subprocess.Popen(["/opt/colony/colony2s.ifort.out", f"IFN:{data_file}"])
-
-    flash(fn.alert_danger("Colony is running"))
-
-    return redirect("/")
 
 
 @app.route(
@@ -1379,7 +1348,11 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         with open(f"{input_file_name}.dat", "w") as file_out:
             file_out.write("\n".join(colony_out))
 
-        process = subprocess.Popen(["/opt/colony/colony2s.ifort.out", f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"])
+        if not pl.Path(params["colony_path"]).is_file():
+            flash(fn.alert_danger("The Colony program was not found. Please contact the administrator."))
+            return redirect(f"/wa_analysis_group/web/{distance}/{cluster_id}")
+
+        _ = subprocess.Popen([params["colony_path"], f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"])
 
         flash(fn.alert_danger("Colony is running. Reload the page continuously until the results are displayed."))
 
@@ -2470,8 +2443,8 @@ def set_hybrid(genotype_id):
 @fn.check_login
 def load_definitive_genotypes_xlsx():
     """
-    Ask for loading new definitive genotypes from XLSX file
-    parse XLSX file and load the confirm page
+    allow user to load definitive genotypes from XLSX/ODS file
+    parse XLSX/ODS file and load the confirm page
     """
 
     if request.method == "GET":
