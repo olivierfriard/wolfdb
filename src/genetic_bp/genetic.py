@@ -231,12 +231,6 @@ def view_genotype(genotype_id: str):
     )
 
 
-@app.route("/genotypes")
-@fn.check_login
-def genotypes():
-    return render_template("genotypes.html", header_title="Genotypes")
-
-
 def update_redis_with_genotypes_loci():
     """
     update redis with the genotypes loci values
