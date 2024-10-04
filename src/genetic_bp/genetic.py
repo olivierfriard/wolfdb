@@ -2460,9 +2460,7 @@ def load_definitive_genotypes_xlsx():
 
         try:
             filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
-
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
-
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect("/load_definitive_genotypes_xlsx")
@@ -2471,6 +2469,8 @@ def load_definitive_genotypes_xlsx():
         loci_list = fn.get_loci_list()
 
         r, msg, data = extract_genotypes_data_from_xlsx(filename, loci_list)
+
+        print(data)
 
         if r:
             flash(msg)
@@ -2563,9 +2563,26 @@ def confirm_load_definitive_genotypes_xlsx(filename):
 
     with fn.conn_alchemy().connect() as con:
         for idx in data:
-            d = dict(data[idx])
+            values = dict(data[idx])
 
+            for field in values:
+                if values[field]:
+                    print(
+                        (
+                            f"INSERT INTO genotypes (genotype_id, {field}) VALUES (:value) ON CONFLICT (genotype_id) "
+                            f"SET {field} = EXCLUDED.{field}"
+                        )
+                    )
+
+                    sql = text(
+                        f"INSERT INTO genotypes (genotype_id, {field}) VALUES (:value) ON CONFLICT (genotype_id) "
+                        f"SET {field} = EXCLUDED.{field}"
+                    )
+                    # con.execute(sql, {"value": values[field]})
+
+            """
             con.execute(sql, d)
+            
 
             # insert loci
             for locus in loci_list:
@@ -2577,12 +2594,14 @@ def confirm_load_definitive_genotypes_xlsx(filename):
                         con.execute(sql_loci, {"genotype_id": d["genotype_id"], "locus": locus, "allele": allele, "val": d[locus][allele]})
 
         con.execute(text("CALL refresh_materialized_views()"))
+        
 
     update_redis_with_genotypes_loci()
+    """
 
     flash(fn.alert_danger("Updating the new genotypes in progress. Wait for 5 minutes..."))
 
-    return redirect("/genotypes")
+    return redirect("/")
 
 
 def extract_genotypes_data_from_xlsx(filename, loci_list):
@@ -2605,68 +2624,71 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
     except Exception:
         return True, fn.alert_danger("Error reading the file. Check your XLSX/ODS file"), {}
 
-    for column in [
+    # convert all dataframe columns to upper
+    df.columns = [x.upper() for x in df.columns]
+
+    expected_columns: tuple = (
         "genotype_id",
-        "date",
-        "pack",
-        "sex",
-        "age_first_capture",
-        "status_first_capture",
-        "dispersal",
-        "n_recaptures",
-        "dead_recovery",
         "tmp_id",
-        "notes",
-        "status",
-        "changed_status",
-        "hybrid",
+        "date",
+        "sex",
         "mtdna",
-    ]:
-        if column not in list(df.columns):
+        "pack",
+        "status",
+        "status_first_capture",
+        "age_first_capture",
+        "dispersal",
+        # "changed_status",
+        # "n_recaptures",
+        "dead_recovery",
+        "hybrid",
+        "notes",
+    )
+
+    for column in expected_columns:
+        if column.upper() not in list(df.columns):
             return True, fn.alert_danger(f"Column {column} is missing"), {}
 
-    all_data = {}
+    all_data: dict = {}
     for index, row in df.iterrows():
-        data = {}
-        for column in [
-            "genotype_id",
-            "date",
-            "pack",
-            "sex",
-            "age_first_capture",
-            "status_first_capture",
-            "dispersal",
-            "n_recaptures",
-            "dead_recovery",
-            "tmp_id",
-            "notes",
-            "status",
-            "changed_status",
-            "hybrid",
-            "mtdna",
-        ]:
-            if column == "date":
-                if str(row[column]) == "nan" or str(row[column]) == "NaT":
+        data: dict = {}
+        for column in expected_columns:
+            col_up = column.upper()
+            if col_up == "date".upper():
+                if str(row[col_up]) == "nan" or str(row[col_up]) == "NaT":
                     data[column] = None
                 else:
-                    data[column] = str(row[column])
+                    data[column] = str(row[col_up])
             else:
-                if isinstance(row[column], float) and str(row[column]) == "nan":
+                if isinstance(row[col_up], float) and str(row[col_up]) == "nan":
                     data[column] = ""
                 else:
-                    data[column] = str(row[column])
+                    data[column] = str(row[col_up])
 
-        loci_dict = {}
+        loci_dict: dict = {}
+        problems: list = []
         for locus in loci_list:
             if locus in row:
+                if test_nan(row[locus]):
+                    problems.append(
+                        f"For <b>{data['genotype_id']}</b> the value for allele <b>a</b> for locus <b>{locus}</b> cannot be empty (choose 0 or -)"
+                    )
+
                 loci_dict[locus] = {}
                 loci_dict[locus]["a"] = row[locus] if not test_nan(row[locus]) else None
 
             if loci_list[locus] == 2:
                 if locus + ".1" in row:
+                    if test_nan(row[locus]):
+                        problems.append(
+                            f"For <b>{data['genotype_id']}</b> the value for allele <b>b</b> for locus <b>{locus}</b> cannot be empty (choose 0 or -)"
+                        )
                     if locus not in loci_dict:
                         loci_dict[locus] = {}
                     loci_dict[locus]["b"] = row[locus + ".1"] if not test_nan(row[locus + ".1"]) else None
+
+        if problems:
+            return True, fn.alert_danger(f"Check the input file!<br><br>{'<br>'.join(problems)}"), {}
 
         all_data[index] = {**data, **loci_dict}
 

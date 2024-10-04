@@ -2,13 +2,8 @@
 
 {% block content %}
 
-
-<h1>Insert new definitive genotypes</h1>
+<h1>Insert/update definitive genotypes</h1>
 <hr>
-
-<a href="/" class="btn btn-primary">Home</a>&nbsp;
-
-<a href="/genotypes" class="btn btn-primary">Genotypes</a>
 
 <br><br>
 
@@ -23,17 +18,14 @@
 {% endwith %}
 {% block body %}{% endblock %}
 
-<a href="/confirm_load_definitive_genotypes_xlsx/{{ filename }}"  class="btn btn-primary">Confirm insertion (genotype ID already presents will be updated)</a>
+<a href="/confirm_load_definitive_genotypes_xlsx/{{ filename }}"  class="btn btn-danger btn-primary">Confirm insertion (genotype ID already presents will be updated)</a>
 
-<!--
-<a href="/confirm_load_xlsx/{{ filename }}/new"  class="btn btn-primary">Insert only new scat ID</a>
--->
 
 <a href="/genotypes"  class="btn btn-primary">Cancel insertion</a>
 <br>
 <br>
 
-<div class="alert alert-danger" role="alert"><b>The genotypes with red background already exists in the database.</b></div>
+<div class="alert alert-danger" role="alert"><b>The genotypes with red background already exists in the database.<br>Their values will be updated.</b></div>
 
 <br>
 <br>
@@ -41,10 +33,20 @@
 
 <tr>
 <th>Genotype ID</th>
-<th>Other ID (tmp ID)</th>
+<th>tmp ID</th>
+<th>Date</th>
 <th>Sex</th>
+<th>mtDNA</th>
 <th>Pack</th>
 <th>Status</th>
+<th>Status first capture</th>
+<th>Age first capture</th>
+<th>Dispersal</th>
+<th>Dead recovery</th>
+<th>hybrid</th>
+<th>notes</th>
+
+
 {% for locus in loci_list %}<th>{{ locus }}</th>{% endfor %}
 </tr>
 
@@ -57,9 +59,17 @@
 {% endif %}
 <td>{{ data[idx]['genotype_id'] }}</td>
 <td>{{ data[idx]['tmp_id'] }}</td>
+<td>{{ data[idx]['date'] }}</td>
 <td>{{ data[idx]['sex'] }}</td>
+<td>{{ data[idx]['mtdna'] }}</td>
 <td>{{ data[idx]['pack'] }}</td>
 <td>{{ data[idx]['status'] }}</td>
+<td>{{ data[idx]['status_first_capture'] }}</td>
+<td>{{ data[idx]['age_first_capture'] }}</td>
+<td>{{ data[idx]['dispersal'] }}</td>
+<td>{{ data[idx]['dead_recovery'] }}</td>
+<td>{{ data[idx]['hybrid'] }}</td>
+<td>{{ data[idx]['notes'] }}</td>
 
 {% for locus in loci_list %}<td>{{ data[idx][locus]['a'] }}{% if 'b' in data[idx][locus] %}<br>{{ data[idx][locus]['b'] }}{%endif%}</td>{% endfor %}
 
