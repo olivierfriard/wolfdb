@@ -2464,8 +2464,6 @@ def load_definitive_genotypes_xlsx():
 
         r, msg, data = extract_genotypes_data_from_xlsx(filename, loci_list)
 
-        print(data)
-
         if r:
             flash(msg)
             return redirect("/load_definitive_genotypes_xlsx")
@@ -2503,10 +2501,11 @@ def confirm_load_definitive_genotypes_xlsx(filename):
 
     _, _, data = extract_genotypes_data_from_xlsx(filename, loci_list)
 
-    sql = text(
+    insert_sql = text(
         "INSERT INTO genotypes ("
         "genotype_id,"
         "date,"
+        "record_status,"
         "pack,"
         "sex,"
         "age_first_capture,"
@@ -2516,13 +2515,13 @@ def confirm_load_definitive_genotypes_xlsx(filename):
         "status,"
         "tmp_id,"
         "notes,"
-        "changed_status,"
+        # "changed_status,"
         "hybrid,"
-        "mtdna,"
-        "record_status"
+        "mtdna"
         ") VALUES ("
         ":genotype_id,"
         ":date,"
+        ":record_status,"
         ":pack,"
         ":sex,"
         ":age_first_capture,"
@@ -2532,14 +2531,14 @@ def confirm_load_definitive_genotypes_xlsx(filename):
         ":status,"
         ":tmp_id,"
         ":notes,"
-        ":changed_status,"
+        # ":changed_status,"
         ":hybrid,"
-        ":mtdna,"
-        "'OK'"
+        ":mtdna"
         ") "
         "ON CONFLICT (genotype_id) DO UPDATE "
         "SET "
         "date = EXCLUDED.date,"
+        "record_status = EXCLUDED.record_status,"
         "pack = EXCLUDED.pack,"
         "sex = EXCLUDED.sex,"
         "age_first_capture = EXCLUDED.age_first_capture,"
@@ -2549,34 +2548,39 @@ def confirm_load_definitive_genotypes_xlsx(filename):
         "status = EXCLUDED.status,"
         "tmp_id = EXCLUDED.tmp_id,"
         "notes = EXCLUDED.notes,"
-        "changed_status = EXCLUDED.changed_status,"
+        # "changed_status = EXCLUDED.changed_status,"
         "hybrid = EXCLUDED.hybrid,"
-        "mtdna = EXCLUDED.mtdna,"
-        "record_status = 'OK'"
+        "mtdna = EXCLUDED.mtdna"
     )
 
     with fn.conn_alchemy().connect() as con:
+        # check if genotype_id already in DB
+        genotypes_list = "','".join([data[idx]["genotype_id"] for idx in data])
+        sql = text(f"SELECT genotype_id FROM genotypes WHERE genotype_id IN ('{genotypes_list}')")
+        genotypes_to_update = [row["genotype_id"] for row in con.execute(sql).mappings().all()]
+
         for idx in data:
             values = dict(data[idx])
 
-            for field in values:
-                if values[field]:
-                    print(
-                        (
-                            f"INSERT INTO genotypes (genotype_id, {field}) VALUES (:value) ON CONFLICT (genotype_id) "
-                            f"SET {field} = EXCLUDED.{field}"
-                        )
-                    )
+            print()
+            print(values)
+            print()
+            print(loci_list)
 
-                    sql = text(
-                        f"INSERT INTO genotypes (genotype_id, {field}) VALUES (:value) ON CONFLICT (genotype_id) "
-                        f"SET {field} = EXCLUDED.{field}"
-                    )
-                    # con.execute(sql, {"value": values[field]})
+            if values["genotype_id"] in genotypes_to_update:
+                for field in values:
+                    if field in loci_list or field.replace(".1", "") in loci_list:
+                        continue
+                    if not values[field]:
+                        continue
 
-            """
-            con.execute(sql, d)
-            
+                    print(f"UPDATE genotypes SET {field} = '{values[field]}' WHERE genotype_id = '{values["genotype_id"]}'")
+
+                    sql = text(f"UPDATE genotypes SET {field} = :value WHERE genotype_id = :genotype_id_")
+                    con.execute(sql, {"value": values[field], "genotype_id_": values["genotype_id"]})
+
+            else:  # insert new
+                con.execute(insert_sql, values)
 
             # insert loci
             for locus in loci_list:
@@ -2584,16 +2588,19 @@ def confirm_load_definitive_genotypes_xlsx(filename):
                     "INSERT INTO genotype_locus (genotype_id, locus, allele, val, timestamp) VALUES (:genotype_id, :locus, :allele, :val, NOW())"
                 )
                 for allele in ("a", "b"):
-                    if allele in d[locus]:
-                        con.execute(sql_loci, {"genotype_id": d["genotype_id"], "locus": locus, "allele": allele, "val": d[locus][allele]})
+                    if allele in values[locus]:
+                        con.execute(
+                            sql_loci, {"genotype_id": values["genotype_id"], "locus": locus, "allele": allele, "val": values[locus][allele]}
+                        )
 
-        con.execute(text("CALL refresh_materialized_views()"))
-        
+            # update redis
+            rdis.set(values["genotype_id"], json.dumps(fn.get_genotype_loci_values(values["genotype_id"], loci_list)))
 
-    update_redis_with_genotypes_loci()
-    """
+    after_genotype_modif()
 
-    flash(fn.alert_danger("Updating the new genotypes in progress. Wait for 5 minutes..."))
+    # update_redis_with_genotypes_loci()
+
+    # flash(fn.alert_danger("Updating the new genotypes in progress. Wait for 5 minutes..."))
 
     return redirect("/")
 
@@ -2625,6 +2632,7 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
         "genotype_id",
         "tmp_id",
         "date",
+        "record_status",
         "sex",
         "mtdna",
         "pack",
@@ -2639,28 +2647,41 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
         "notes",
     )
 
+    mandatory_columns: tuple = ("genotype_id", "record_status")
+
+    accepted_values: dict = {"record_status": ["OK", "temp"], "sex": ("F", "M", "")}
+
     for column in expected_columns:
         if column.upper() not in list(df.columns):
             return True, fn.alert_danger(f"Column {column} is missing"), {}
 
     all_data: dict = {}
+    problems: list = []
     for index, row in df.iterrows():
         data: dict = {}
         for column in expected_columns:
             col_up = column.upper()
-            if col_up == "date".upper():
-                if str(row[col_up]) == "nan" or str(row[col_up]) == "NaT":
+            if col_up == "DATE":
+                if str(row[col_up]) in ("nan", "NaT"):
                     data[column] = None
                 else:
-                    data[column] = str(row[col_up])
+                    data[column] = str(row[col_up]).strip()
             else:
-                if isinstance(row[col_up], float) and str(row[col_up]) == "nan":
+                # check if value present for mandatory column
+
+                if col_up in [x.upper() for x in mandatory_columns] and str(row[col_up]) in ("nan", "NaT"):
+                    problems.append(f"Row {index+1}: the {column} value is mandatory")
+
+                if column in accepted_values:
+                    if str(row[col_up]).strip() not in accepted_values[column]:
+                        problems.append(f"Row {index+1}: the value for {column} must be {' or '.join(accepted_values[column])}")
+
+                if str(row[col_up]) in ("nan", "NaT"):
                     data[column] = ""
                 else:
-                    data[column] = str(row[col_up])
+                    data[column] = str(row[col_up]).strip()
 
         loci_dict: dict = {}
-        problems: list = []
         for locus in loci_list:
             if locus in row:
                 if test_nan(row[locus]):
@@ -2669,7 +2690,16 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
                     )
 
                 loci_dict[locus] = {}
-                loci_dict[locus]["a"] = row[locus] if not test_nan(row[locus]) else None
+                if test_nan(row[locus]) or str(row[locus]).strip() == "-":
+                    loci_dict[locus]["a"] = None
+                else:
+                    try:
+                        int(row[locus])
+                        loci_dict[locus]["a"] = row[locus]
+                    except Exception:
+                        problems.append(
+                            f"For <b>{data['genotype_id']}</b> the value for allele <b>a</b> for locus <b>{locus}</b> ({row[locus]}) is wrong"
+                        )
 
             if loci_list[locus] == 2:
                 if locus + ".1" in row:
@@ -2677,14 +2707,24 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
                         problems.append(
                             f"For <b>{data['genotype_id']}</b> the value for allele <b>b</b> for locus <b>{locus}</b> cannot be empty (choose 0 or -)"
                         )
-                    if locus not in loci_dict:
-                        loci_dict[locus] = {}
-                    loci_dict[locus]["b"] = row[locus + ".1"] if not test_nan(row[locus + ".1"]) else None
+                    if test_nan(row[locus + ".1"]) or str(row[locus + ".1"]).strip() == "-":
+                        loci_dict[locus]["b"] = None
+                    else:
+                        try:
+                            int(row[locus + ".1"])
+                            loci_dict[locus]["b"] = row[locus + ".1"]
+                        except Exception:
+                            raise
+                            problems.append(
+                                f"For <b>{data['genotype_id']}</b> the value for allele <b>b</b> for locus <b>{locus}</b> is wrong"
+                            )
 
-        if problems:
-            return True, fn.alert_danger(f"Check the input file!<br><br>{'<br>'.join(problems)}"), {}
+                    # loci_dict[locus]["b"] = row[locus + ".1"] if not test_nan(row[locus + ".1"]) else None
 
         all_data[index] = {**data, **loci_dict}
+
+    if problems:
+        return True, fn.alert_danger(f"Check the input file!<br><br>{'<br>'.join(problems)}"), {}
 
     return 0, "OK", all_data
 

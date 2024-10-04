@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h1>Insert/update definitive genotypes</h1>
+<h1>Insert/update genotypes</h1>
 <hr>
 
 <br><br>
@@ -25,7 +25,8 @@
 <br>
 <br>
 
-<div class="alert alert-danger" role="alert"><b>The genotypes with red background already exists in the database.<br>Their values will be updated.</b></div>
+<div class="alert alert-danger" role="alert"><b>The genotypes with red background already exists in the database.<br>
+The current values will be updated if new values are available.</b></div>
 
 <br>
 <br>
@@ -35,6 +36,7 @@
 <th>Genotype ID</th>
 <th>tmp ID</th>
 <th>Date</th>
+<th>Record status</th>
 <th>Sex</th>
 <th>mtDNA</th>
 <th>Pack</th>
@@ -60,6 +62,8 @@
 <td>{{ data[idx]['genotype_id'] }}</td>
 <td>{{ data[idx]['tmp_id'] }}</td>
 <td>{{ data[idx]['date'] }}</td>
+<td>{{ data[idx]['record_status'] }}</td>
+
 <td>{{ data[idx]['sex'] }}</td>
 <td>{{ data[idx]['mtdna'] }}</td>
 <td>{{ data[idx]['pack'] }}</td>
