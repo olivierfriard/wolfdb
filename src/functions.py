@@ -878,7 +878,7 @@ L.geoJSON([scats], {
             radius: 8,
             weight: 1,
             opacity: 1,
-            fillOpacity: 1
+            fillOpacity: 1,
         });
     }
 }).addTo(map);

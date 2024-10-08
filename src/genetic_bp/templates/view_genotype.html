@@ -92,16 +92,15 @@ Deleted
 </tr>
 <tr>
 <td><b>Allele</b></td>
-<th>a</th><th>b</th><th></th>
+<th style="border-left: 1px solid black;">a</th><th style="border-right: 1px solid black;">b</th><th></th>
 {% for wa_code in wa_codes %}
-<th>a</th><th>b</th><th></th>
+<th>a</th><th style="border-right: 1px solid black;">b</th><th></th>
 {%  endfor %}
 </tr>
 </thead>
 
 <tbody>
 {% for locus in loci_list %}
-
 <tr>
 <td><b>{{ locus }}</b></td>
 <td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>

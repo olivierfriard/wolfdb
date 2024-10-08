@@ -53,10 +53,13 @@ Working notes:<br>
 
 
 <hr>
+{#
 <h4>Insert a new value</h4>
-
+#}
 <form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
-{% if not data['allele_modifier'] %}<fieldset disabled>{%endif%}
+
+{# disabled
+  {% if not data['allele_modifier'] %}<fieldset disabled>{%endif%}
   <div class="row g-3 align-items-center">
       <div class="col-auto">
         <label for="new_value" class="col-form-label">New allele value</label>
@@ -71,14 +74,17 @@ Working notes:<br>
       </div>
     </div>
 {% if not data['allele_modifier'] %}</fieldset>{%endif%}
+#}
 
 <div class="mb-3">
-    <label for="notes" class="form-label">Note</label>
+    <label for="notes" class="form-label">Insert a note</label>
     <textarea class="form-control" id="notes"  name="notes" rows="3"></textarea>
+
+<!--
     <div id="passwordHelpBlock" class="form-text">
         Optional
       </div>
-    
+    -->    
 </div>
 <br>
 <button type="submit" class="btn btn-primary" >Submit</button>

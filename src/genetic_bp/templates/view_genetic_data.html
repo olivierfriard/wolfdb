@@ -3,7 +3,7 @@
 {% block content %}
 
 
-<h2>View genetic data</h2><hr>
+<h2>View genetic data for WA code <a href="/view_wa/{{ wa_code }}"><b>{{wa_code}}</b></a></h2><hr>
 
 <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
 
@@ -11,23 +11,24 @@
 <br>
 <br>
 
-<h3>WA code: <a href="/view_wa/{{ wa_code }}"><b>{{wa_code}}</b></a></h3>
+<h3>Genotype id: <b><a href="/view_genotype/{{ genotype_id }}">{{ genotype_id }}</a></b> sex: <b>{{ sex }}</b></h3>
 
-<span style="font-size: larger;">Genotype id: <b><a href="/view_genotype/{{ genotype_id }}">{{ genotype_id }}</a></b>
-<br>Sex: <b>{{ sex }}</b></span>
 <br>
-<br>
-
+<span style="font-size:24px">&#128312;</span><small>The WA code locus is distinct from the genotype locus.</small>
 
 <table class="table table-striped">
     <tr>
         <th>Locus</th>
+{% if genotype_id %}
+<th colspan="2">{{ genotype_id }}</th>
+<th style="border-left: 1px solid black;"></th>
+{% endif %}
         <th>Allele a</th>
         <th>Date</th>
         <th>Notes</th>
         <th>User</th>
         <th></th>
-        <th>Allele b</th>
+        <th style="border-left: 1px solid black;">Allele b</th>
         <th>Date</th>
         <th>Notes</th>
         <th>User</th>
@@ -38,11 +39,22 @@
     <tr>
         <td>{{ locus }}</td>
 
+{% if genotype_id %}
+<td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
+<td style="border-right: 1px solid black;">{{ genotype_loci[locus]['b']['value'] }}</td>
+<td></td>
+{% endif %}
+
 {% for allele in ('a', 'b') %}
 
-<td
+<td {% if allele == 'b' %}style="border-left: 1px solid black;"{%endif%}
 style="background:{{ data[locus][allele]['bgcolor'] }}">
-{{ data[locus][allele]['value'] }}&nbsp;{{ data[locus][allele]['divergent_allele'] }}
+{{ data[locus][allele]['value'] }}
+{% if data[locus][allele]['value'] != genotype_loci[locus][allele]['value'] and data[locus][allele]['value'] not in (0, '-')%}
+<span>&#128312;</span>
+{% endif %}
+
+{# &nbsp;{{ data[locus][allele]['divergent_allele'] }} #}
 </td>
 
 <td><small>{{ data[locus][allele]['date'] }}</small></td>

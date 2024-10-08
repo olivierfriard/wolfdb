@@ -5,18 +5,14 @@
 
 
 <a href="/view_genetic_data/{{ wa_code }}" class="btn btn-primary">Return to {{ wa_code }} genetic data</a>&nbsp;
-<br><br>
+
 <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">WA samples list</a>
 
 <br>
 <br>
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
-<span style="font-size: larger;">
-Genotype id: <b>{{ genotype_id }}</b><br>
-Current sex: <b>{{ sex }}</b>
-</span>
-<br>
+<h3>Genotype id: <b>{{ genotype_id }}</b> current sex: <b>{{ sex }}</b></h3>
 <br>
 <form method="POST" action="/add_genetic_data/{{ wa_code }}">
 
@@ -30,6 +26,8 @@ Current sex: <b>{{ sex }}</b>
     </span>
     <br>
     <br>
+
+    <button type="button" class="btn btn-warning btn-sm">Locus value of the associated genotype</button>
 
     <table class="table table-striped">
         <tr>

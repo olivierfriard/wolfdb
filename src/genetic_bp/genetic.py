@@ -1436,6 +1436,7 @@ def view_genetic_data(wa_code: str):
             sex=sex,
             genotype_id=genotype_id,
             data=wa_loci,
+            genotype_loci=genotype_loci,
         )
 
 
@@ -1730,7 +1731,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             )
 
         if request.method == "POST":
-            # check il allele value is numeric or -
+            # check if allele value is numeric or -
 
             if request.form.get("new_value", None):  # allele modifier
                 try:
@@ -1795,7 +1796,6 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
             rdis.set(wa_code, json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]))
 
-            # return redirect(session["url_wa_list"])
             return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
 
 
@@ -1890,19 +1890,21 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
         if request.method == "POST":
             sql = text(
                 "INSERT INTO genotype_locus "
-                "(genotype_id, locus, allele, val, timestamp, notes, user_id) "
+                "(genotype_id, locus, allele, "
+                "val, "
+                "timestamp, notes, user_id) "
                 "VALUES ("
                 ":genotype_id,"
                 ":locus,"
                 ":allele,"
-                ":new_value,"
+                ":value,"
                 "NOW(),"
                 ":notes,"
                 ":user_id"
                 ")"
             )
 
-            data["new_value"] = request.form["new_value"]
+            # data["new_value"] = request.form["new_value"]
             data["notes"] = request.form["notes"]
             data["user_id"] = session.get("user_name", session["email"])
 
@@ -2020,7 +2022,7 @@ def after_wa_results_modif() -> None:
     ),
 )
 @fn.check_login
-def set_wa_genotype(wa_code):
+def set_wa_genotype(wa_code: str):
     """
     set wa genotype
     """
@@ -2050,6 +2052,20 @@ def set_wa_genotype(wa_code):
             )
 
         if request.method == "POST":
+            # check if genotype exists
+            with fn.conn_alchemy().connect() as con:
+                genotype_exists = (
+                    con.execute(
+                        text("SELECT genotype_id FROM genotypes WHERE genotype_id = :genotype_id"),
+                        {"genotype_id": request.form["genotype_id"].strip()},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+                if genotype_exists is not None:
+                    flash(fn.alert_danger(f"The genotype {request.form["genotype_id"]} does not exits."))
+                    return redirect(session["url_wa_list"])
+
             with fn.conn_alchemy().connect() as con:
                 sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
                 con.execute(sql, {"genotype_id": request.form["genotype_id"].strip(), "wa_code": wa_code})
