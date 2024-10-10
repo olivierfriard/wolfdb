@@ -17,20 +17,32 @@ from config import config
 params = config()
 if not params:
     print("Parameters not found")
-    sys.exit()
+    sys.exit(1)
 
-# dev version use db #1
-rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
-# empty db
-# rdis.flushdb()
+def update_redis_genotypes_loci():
+    """
+    update Redis with loci values of WA codes
+    from PostgreSQL
+    """
 
-# loci list
-loci_list: dict = fn.get_loci_list()
+    print("Updating REDIS with genotypes loci")
 
-with fn.conn_alchemy().connect() as con:
-    for row in con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all():
-        print(f'{row["genotype_id"]=}')
-        rdis.set(row["genotype_id"], json.dumps(fn.get_genotype_loci_values(row["genotype_id"], loci_list)))
+    # dev version use db #1
+    rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
-rdis.set("UPDATE GENOTYPES LOCI", datetime.now().isoformat())
+    # loci list
+    loci_list: dict = fn.get_loci_list()
+
+    with fn.conn_alchemy().connect() as con:
+        for row in con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all():
+            # print(f'{row["genotype_id"]=}')
+            rdis.set(row["genotype_id"], json.dumps(fn.get_genotype_loci_values(row["genotype_id"], loci_list)))
+
+    rdis.set("UPDATE GENOTYPES LOCI", datetime.now().isoformat())
+
+    print("REDIS updated with genotypes loci")
+
+
+if __name__ == "__main__":
+    update_redis_genotypes_loci()

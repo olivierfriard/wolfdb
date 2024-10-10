@@ -15,6 +15,7 @@ import psycopg2.extras
 from config import config
 import urllib.request
 import json
+import redis
 from typing import Union
 from sqlalchemy import create_engine
 from jinja2 import Template
@@ -22,6 +23,8 @@ from jinja2 import Template
 from italian_regions import regions, prov_name2prov_code
 
 params = config()
+
+rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
 
 def check_login(f):
@@ -52,11 +55,26 @@ def conn_alchemy():
 
 
 def get_loci_list() -> dict:
+    """
+    get list of loci
+    """
+
     with conn_alchemy().connect() as con:
         loci_list: dict = {}
         for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
             loci_list[row["name"]] = row["n_alleles"]
     return loci_list
+
+
+def get_wa_loci_values_redis(wa_code: str) -> dict | None:
+    """
+    get WA code loci values from redis
+    """
+    r = rdis.get(wa_code)
+    if r is not None:
+        return json.loads(r)
+    else:
+        return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 
 def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
@@ -77,9 +95,15 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     con.execute(
                         text(
                             (
-                                "SELECT val, notes, extract(epoch from timestamp)::integer AS epoch, user_id, definitive, "
+                                "SELECT val, notes AS last_note, extract(epoch from timestamp)::integer AS epoch, user_id, definitive, "
                                 "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                                "(SELECT notes FROM wa_locus WHERE wa_code=wl.wa_code AND locus=wl.locus AND allele=wl.allele AND notes != '' AND notes IS NOT NULL ORDER BY timestamp DESC LIMIT 1) "
+                                "(SELECT notes FROM wa_locus "
+                                "WHERE wa_code=wl.wa_code "
+                                "      AND locus=wl.locus "
+                                "      AND allele=wl.allele "
+                                "      AND notes != '' "
+                                "      AND notes IS NOT NULL "
+                                "      ORDER BY timestamp DESC LIMIT 1) AS last_note "  # last note
                                 "FROM wa_locus wl "
                                 "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
                                 "ORDER BY timestamp DESC LIMIT 1"
@@ -96,9 +120,9 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     # notes = row["notes"] if not None else ""
                     # if notes:
                     #    has_loci_notes = True
-                    if row["notes"]:
+                    if row["last_note"]:
                         has_loci_notes = True
-                        notes = row["notes"]
+                        notes = row["last_note"]
                     else:
                         notes = ""
                     epoch = row["epoch"] if row["epoch"] is not None else ""
@@ -126,13 +150,24 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     return loci_values, has_loci_notes
 
 
+def get_genotype_loci_values_redis(genotype_id: str) -> dict | None:
+    """
+    get genotype loci values from redis
+    """
+    r = rdis.get(genotype_id)
+    if r is not None:
+        return json.loads(r)
+    else:
+        return get_genotype_loci_values(genotype_id, get_loci_list())
+
+
 def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
     """
     get genotype loci values from postgresql db
     """
 
     with conn_alchemy().connect() as con:
-        loci_values = {}
+        loci_values: dict = {}
         for locus in loci_list:
             loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 

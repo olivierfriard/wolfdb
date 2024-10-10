@@ -135,7 +135,7 @@ def view_genotype(genotype_id: str):
 
         session["view_genotype_id"] = genotype_id
 
-        genotype_loci = json.loads(rdis.get(genotype_id))
+        genotype_loci = fn.get_genotype_loci_values_redis(genotype_id)
 
         # samples
         wa_codes = (
@@ -193,11 +193,7 @@ def view_genotype(genotype_id: str):
         }
         samples_features.append(sample_feature)
 
-        loci_val = get_wa_loci_values_redis(row["wa_code"])
-        if loci_val is not None:
-            loci_values[row["wa_code"]] = loci_val
-        else:
-            loci_values[row["wa_code"]] = fn.get_wa_loci_values(row["wa_code"], loci_list)
+        loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
 
     if count_wa_code:
         center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
@@ -401,11 +397,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
 
     loci_values: dict = {}
     for row in results:
-        loci_val = rdis.get(row["genotype_id"])
-        if loci_val is not None:
-            loci_values[row["genotype_id"]] = json.loads(loci_val)
-        else:
-            loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+        loci_values[row["genotype_id"]] = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
     if mode == "export":
         file_content = export.export_genotypes_list(loci_list, results, loci_values)
@@ -637,11 +629,17 @@ def plot_wa_clusters(distance: int):
     min_lon, min_lat, max_lon, max_lat = 90, 90, -90, -90
     for row in results:
         # skip loci with value 0 or -
-        loci_val = rdis.get(row["wa_code"])
+
+        """loci_val = rdis.get(row["wa_code"])
         if loci_val is None:
             continue
-        flag_ok = False
         d = json.loads(loci_val)
+        """
+
+        flag_ok = False
+
+        d = fn.get_wa_loci_values_redis(row["wa_code"])
+
         for locus in d:
             for allele in d[locus]:
                 if d[locus][allele]["value"] not in ("-", 0):
@@ -696,20 +694,6 @@ def plot_wa_clusters(distance: int):
         minpoint=MINPOINT,
         clusters_number=len(cluster_id_count),
     )
-
-
-def get_wa_loci_values_redis(wa_code: str) -> dict | None:
-    r = rdis.get(wa_code)
-    if r is None:
-        return None
-    return json.loads(r)
-
-
-def get_genotype_loci_values_redis(genotype_id: str) -> dict | None:
-    r = rdis.get(genotype_id)
-    if r is None:
-        return None
-    return json.loads(r)
 
 
 @app.route(
@@ -841,18 +825,13 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         # genotype working notes
         has_genotype_notes = True if (row["notes"] is not None and row["notes"]) else False
 
-        # get loci values from redis cache
-        # loci_val = rdis.get(row["wa_code"])
-        loci_val = get_wa_loci_values_redis(row["wa_code"])
+        loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
+        # loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
+        loci_values[row["wa_code"]] = dict(loci_val)
 
         has_loci_notes = False
         has_orange_loci_notes = False
         has_loci_values = False
-
-        if loci_val is None:
-            loci_values[row["wa_code"]], has_loci_notes = fn.get_wa_loci_values(row["wa_code"], loci_list)
-        else:
-            loci_values[row["wa_code"]] = dict(loci_val)
 
         # check if loci have notes and values and corresponds to genotype loci
         for x in loci_values[row["wa_code"]]:
@@ -877,7 +856,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                     if mem_genotype_loci.get(row["genotype_id"], False):
                         genotype_loci_val = mem_genotype_loci[row["genotype_id"]]
                     else:
-                        genotype_loci_val = get_genotype_loci_values_redis(row["genotype_id"])
+                        genotype_loci_val = fn.get_genotype_loci_values_redis(row["genotype_id"])
                         if genotype_loci_val is not None:
                             mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
                         else:
@@ -1046,12 +1025,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         for loci in loci_list:
             has_loci_values: bool = False
             for row in wa_scats:
-                from_rdis = rdis.get(row["wa_code"])
-                if from_rdis is None:
-                    continue
-                loci_values[row["wa_code"]] = json.loads(from_rdis)
-                if loci_values[row["wa_code"]] is None:
-                    continue
+                loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
+
                 for allele in ("a", "b"):
                     if loci_values[row["wa_code"]][loci][allele]["value"] not in (0, "-"):
                         has_loci_values = True
@@ -1063,13 +1038,6 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 
         out: list = []
         for row in wa_scats:
-            """
-            from_rdis = rdis.get(row["wa_code"])
-            if from_rdis is None:
-                continue
-
-            loci_values[row["wa_code"]] = json.loads(from_rdis)
-            """
             if row["wa_code"] not in loci_values:
                 continue
 
@@ -1214,11 +1182,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             data[row["genotype_id"]]["n_recap"] = row["n_recap"]
             count_sex[result["sex"]] += 1
 
-            loci_val = rdis.get(row["genotype_id"])
-            if loci_val is not None:
-                loci_values[row["genotype_id"]] = json.loads(loci_val)
-            else:
-                loci_values[row["genotype_id"]] = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+            loci_values[row["genotype_id"]] = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
         # Genepop format (for ML-Relate)
         if mode == "ml-relate":
@@ -1409,9 +1373,10 @@ def view_genetic_data(wa_code: str):
         # loci list
         loci_list = fn.get_loci_list()
 
-        wa_loci, _ = fn.get_wa_loci_values(wa_code, loci_list)
+        wa_loci = fn.get_wa_loci_values_redis(wa_code)
 
-        genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+        # genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+        genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
         for locus in loci_list:
             for allele in ("a", "b"):
@@ -1465,11 +1430,10 @@ def add_genetic_data(wa_code: str):
         # loci list
         loci_list = fn.get_loci_list()
 
-        wa_loci = get_wa_loci_values_redis(wa_code)
-        if wa_loci is None:
-            wa_loci, _ = fn.get_wa_loci_values(wa_code, loci_list)
+        wa_loci = fn.get_wa_loci_values_redis(wa_code)
 
-        genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+        # genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
+        genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
         for locus in loci_list:
             for allele in ("a", "b"):
