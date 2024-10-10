@@ -36,13 +36,15 @@ Working notes:<br>
 <thead>
 <th>Timestamp</th>
 <th>Value</th>
+<th>Validated</th>
 <th>Notes</th>
 <th>User</th>
 </thead>
 {% for row in values_history %}
 <tr>
 <td>{{ row['timestamp'] }}</td>
-<td>{{ row['val'] }}</td>
+<td>{{ row['value'] }}</td>
+<td>{{ row['validated'] }}</td>
 <td>{{ row['notes'] }}</td>
 <td>{{ row['user_id'] }}</td>
 </tr>
@@ -53,9 +55,8 @@ Working notes:<br>
 
 
 <hr>
-{#
-<h4>Insert a new value</h4>
-#}
+{# <h4>Insert a new value</h4> #}
+
 <form method="POST" action="/genotype_locus_note/{{ data['genotype_id'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
 
 {# disabled
@@ -75,6 +76,14 @@ Working notes:<br>
     </div>
 {% if not data['allele_modifier'] %}</fieldset>{%endif%}
 #}
+
+{% if not data['allele_modifier'] %}<fieldset disabled>{%endif%}
+<div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" id="validated" name="validated" {% if data['validated'] %}CHECKED{% endif %}>
+  <label class="form-check-label" for="validated">Validated allele value</label>
+</div>
+{% if not data['allele_modifier'] %}</fieldset>{%endif%}
+<br>
 
 <div class="mb-3">
     <label for="notes" class="form-label">Insert a note</label>

@@ -1797,25 +1797,26 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
 
         data["allele"] = allele
         data["value"] = genotype_locus["val"]
+        data["validated"] = genotype_locus["validated"]
         data["notes"] = "" if genotype_locus["notes"] is None else genotype_locus["notes"]
         data["user_id"] = "" if genotype_locus["user_id"] is None else genotype_locus["user_id"]
+        # check if current user can modify allele value (allele modifier)
+        allele_modifier = (
+            con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
+            .mappings()
+            .fetchone()["allele_modifier"]
+        )
+        data["allele_modifier"] = allele_modifier
 
         if request.method == "GET":
-            # check if current user can modify allele value
-            allele_modifier = (
-                con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
-                .mappings()
-                .fetchone()["allele_modifier"]
-            )
-            data["allele_modifier"] = allele_modifier
-
             values_history = (
                 con.execute(
                     text(
-                        "SELECT val, "
+                        "SELECT val AS value, "
                         "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
                         "CASE WHEN user_id IS NULL THEN '' ELSE user_id END, "
-                        "date_trunc('second', timestamp) AS timestamp "
+                        "date_trunc('second', timestamp) AS timestamp, "
+                        "CASE WHEN validated IS TRUE THEN 'Yes' ELSE 'No' END AS validated "
                         "FROM genotype_locus "
                         "WHERE genotype_id = :genotype_id "
                         "AND locus = :locus "
@@ -1856,19 +1857,27 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
                 "INSERT INTO genotype_locus "
                 "(genotype_id, locus, allele, "
                 "val, "
-                "timestamp, notes, user_id) "
+                "validated, "
+                "timestamp, "
+                "notes, user_id) "
                 "VALUES ("
                 ":genotype_id,"
                 ":locus,"
                 ":allele,"
                 ":value,"
+                ":validated,"
                 "NOW(),"
                 ":notes,"
                 ":user_id"
-                ")"
+                ")",
             )
 
             # data["new_value"] = request.form["new_value"]
+            print(request.form)
+            data["validated"] = False
+            if data["allele_modifier"] and "validated" in request.form:
+                data["validated"] = True
+
             data["notes"] = request.form["notes"]
             data["user_id"] = session.get("user_name", session["email"])
 

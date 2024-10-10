@@ -11,7 +11,7 @@ export WOLFDB_CONFIG_PATH=PATH_TO/config.ini; python wolfdb.py
 from flask import Flask, render_template, redirect, request, flash, session
 from markupsafe import Markup
 from flask_session import Session
-
+from sqlalchemy import text
 from config import config
 import functions as fn
 import utm
@@ -119,13 +119,27 @@ def settings():
             return False
 
     if request.method == "GET":
+        # check if current user can modify allele value (allele modifier)
+        with fn.conn_alchemy().connect() as con:
+            allele_modifier = (
+                "Yes"
+                if (
+                    con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
+                    .mappings()
+                    .fetchone()["allele_modifier"]
+                )
+                else "No"
+            )
+
         return render_template(
-            "settings.html", header_title="Settings", default_start_date=DEFAULT_START_DATE, default_end_date=DEFAULT_END_DATE
+            "settings.html",
+            header_title="Settings",
+            default_start_date=DEFAULT_START_DATE,
+            default_end_date=DEFAULT_END_DATE,
+            allele_modifier=allele_modifier,
         )
 
     if request.method == "POST":
-        print(request.form)
-
         if "enable_date_interval" in request.form:
             if not iso_date_validator(request.form["start_date"]):
                 flash(fn.alert_danger(f"The start date <b>{request.form["start_date"]}</b> is not correct. Use the YYYY-MM-DD format."))
