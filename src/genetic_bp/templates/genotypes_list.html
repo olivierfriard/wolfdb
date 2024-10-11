@@ -148,7 +148,7 @@ set ...
 {% endif %}
 
 {% if result["record_status"] in ("deleted", "OK") %}
-<a href="/temp_genotype/{{ result.genotype_id }}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temp</a>
+<a href="/temp_genotype/{{ result.genotype_idview }}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temp</a>
 {% endif %}
 </td>
 

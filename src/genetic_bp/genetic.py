@@ -2668,6 +2668,10 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
 @app.route("/select_on_map", methods=["GET", "POST"])
 @fn.check_login
 def select_on_map():
+    """
+    allow user to select scats and dead wolves by drawing a polygon
+
+    """
     if request.method == "GET":
         # return render_template("draw_polygon2.html")
         return plot_all_wa(add_polygon=True)  # render_template("draw_polygon.html")
@@ -2684,8 +2688,8 @@ def select_on_map():
                 wa_codes = (
                     con.execute(
                         text(
-                            """SELECT wa_code, sample_type FROM wa_scat_dw_mat WHERE """
-                            """ST_Within(geometry_utm, st_transform(ST_GeomFromGeoJSON(:geojson_polygon), 32632))"""
+                            "SELECT wa_code, sample_type FROM wa_scat_dw_mat WHERE "
+                            "ST_Within(geometry_utm, st_transform(ST_GeomFromGeoJSON(:geojson_polygon), 32632))"
                         ),
                         {"geojson_polygon": str(Polygon([data["coordinates"]]))},
                     )
