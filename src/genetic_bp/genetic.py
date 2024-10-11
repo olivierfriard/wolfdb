@@ -917,6 +917,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 @fn.check_login
 def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     """
+    display cluster content
     excel add-in GenAIex
     """
     if mode not in ("web", "export", "ml-relate", "colony"):
@@ -1064,6 +1065,9 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 @app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
+    """
+    display cluster content
+    """
     accepted_mode = ("web", "export", "ml-relate", "colony", "run_colony")
     if mode not in accepted_mode:
         return f"mode error: mode must be {','.join(accepted_mode)}"
@@ -2697,13 +2701,22 @@ def select_on_map():
                     .all()
                 )
 
+            out = []
             for wa_code in wa_codes:
                 print(wa_code["wa_code"])
+                out.append(wa_code["wa_code"])
 
             """
             st_transform(ST_GeomFromGeoJSON('{"coordinates": [[[7.590281, 45.192587], [7.752368, 45.194522], [7.639732, 45.105419]]], "type": "Polygon"}'), 32632)
             """
-
-            return jsonify({"status": "success", "message": "OK"}), 200
+            return redirect(f"/selected_wa_analysis/{'|'.join(out)}")
+            # return jsonify({"status": "success", "message": "OK"}), 200
         else:
             return jsonify({"status": "error", "message": "no coordinates"}), 400
+
+
+@app.route("/selected_wa_analysis/<wa_codes>", methods=["GET", "POST"])
+@fn.check_login
+def selected_wa_analysis(wa_codes: str):
+    print(wa_codes)
+    return wa_codes
