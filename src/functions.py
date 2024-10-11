@@ -66,6 +66,19 @@ def get_loci_list() -> dict:
     return loci_list
 
 
+def get_allele_modifier(email: str) -> bool:
+    """
+    check if current user can modify allele value (allele modifier)
+    """
+
+    with conn_alchemy().connect() as con:
+        return (
+            con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": email})
+            .mappings()
+            .fetchone()["allele_modifier"]
+        )
+
+
 def get_wa_loci_values_redis(wa_code: str) -> dict | None:
     """
     get WA code loci values from redis
@@ -95,7 +108,10 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     con.execute(
                         text(
                             (
-                                "SELECT val, notes AS last_note, extract(epoch from timestamp)::integer AS epoch, user_id, definitive, "
+                                "SELECT val, notes AS last_note, "
+                                "extract(epoch from timestamp)::integer AS epoch, "
+                                "user_id, "
+                                "definitive, "
                                 "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
                                 "(SELECT notes FROM wa_locus "
                                 "WHERE wa_code=wl.wa_code "
@@ -166,19 +182,26 @@ def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
     get genotype loci values from postgresql db
     """
 
-    with conn_alchemy().connect() as con:
-        loci_values: dict = {}
-        for locus in loci_list:
-            loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
+    loci_values: dict = {}
+    for locus in loci_list:
+        loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
 
+    with conn_alchemy().connect() as con:
         for locus in loci_list:
             for allele in ("a", "b"):
                 locus_val = (
                     con.execute(
                         text(
                             (
-                                "SELECT val, notes, user_id, extract(epoch from timestamp)::integer AS epoch "
-                                "FROM genotype_locus "
+                                "SELECT val, notes, validated, user_id, extract(epoch from timestamp)::integer AS epoch, "
+                                "(SELECT notes FROM genotype_locus "
+                                "WHERE genotype_id=gl.genotype_id "
+                                "      AND locus=gl.locus "
+                                "      AND allele=gl.allele "
+                                "      AND notes != '' "
+                                "      AND notes IS NOT NULL "
+                                "      ORDER BY timestamp DESC LIMIT 1) AS last_note "  # last note
+                                "FROM genotype_locus gl "
                                 "WHERE genotype_id = :genotype_id AND locus = :locus AND allele = :allele "
                                 "ORDER BY timestamp DESC LIMIT 1"
                             )
@@ -189,18 +212,37 @@ def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
                     .fetchone()
                 )
 
+                # if genotype_id == "BI-18" and locus == "SRY":
+                #    print(f"{locus_val=}")
+                #    print(f"{locus_val["val"] is None=}")
+
                 if locus_val is None:
                     val: str = "-"
                     notes: str = ""
+                    last_note: str = ""
+                    validated: bool = False
                     user_id: str = ""
                     epoch: str = ""
+
                 else:
                     val = locus_val["val"] if locus_val["val"] is not None else "-"
                     notes = locus_val["notes"] if locus_val["notes"] is not None else ""
+                    last_note = locus_val["last_note"] if locus_val["last_note"] is not None else ""
+                    validated = locus_val["validated"] if locus_val["validated"] is not None else ""
                     user_id = locus_val["user_id"] if locus_val["user_id"] is not None else ""
                     epoch = locus_val["epoch"] if locus_val["epoch"] is not None else ""
 
-                loci_values[locus][allele] = {"value": val, "notes": notes, "user_id": user_id, "epoch": epoch}
+                loci_values[locus][allele] = {
+                    "value": val,
+                    "notes": notes,
+                    "last_note": last_note,
+                    "validated": validated,
+                    "user_id": user_id,
+                    "epoch": epoch,
+                }
+
+    # if genotype_id == "BI-18":
+    #    print(f"{loci_values=}")
 
     return loci_values
 

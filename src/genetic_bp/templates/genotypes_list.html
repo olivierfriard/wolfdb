@@ -111,8 +111,8 @@
 {% if results %}
 {% for result in results %}
 <tr>
-<td><a id="{{ result['genotype_id'] }}">
-<a href="/view_genotype/{{ result['genotype_id'] }}"><b>{{ result['genotype_id'] }}</b></a>
+<td><a id="{{ result.genotype_id }}">
+<a href="/view_genotype/{{ result.genotype_id }}"><b>{{ result.genotype_id }}</b></a>
 </a>
 </td>
 <td style="white-space: nowrap;">
@@ -121,34 +121,34 @@
 set ...
 </button>
 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-<li><a href="/set_status/{{ result['genotype_id'] }}" class="dropdown-item">status</a></li>
-<li><a href="/set_pack/{{ result['genotype_id'] }}" class="dropdown-item">pack</a></li>
-<li><a href="/set_sex/{{ result['genotype_id'] }}" class="dropdown-item">sex</a></li>
-<li><a href="/set_hybrid/{{ result['genotype_id'] }}" class="dropdown-item">hybrid</a></li>
-<li><a href="/set_status_1st_recap/{{ result['genotype_id'] }}" class="dropdown-item">status at 1st recap</a></li>
-<li><a href="/set_dispersal/{{ result['genotype_id'] }}" class="dropdown-item">dispersal</a></li>
-<li><a href="/set_parent/{{ result['genotype_id'] }}/mother" class="dropdown-item">mother</a></li>
-<li><a href="/set_parent/{{ result['genotype_id'] }}/father" class="dropdown-item">father</a></li>
+<li><a href="/set_status/{{ result.genotype_id }}" class="dropdown-item">status</a></li>
+<li><a href="/set_pack/{{ result.genotype_id }}" class="dropdown-item">pack</a></li>
+<li><a href="/set_sex/{{ result.genotype_id }}" class="dropdown-item">sex</a></li>
+<li><a href="/set_hybrid/{{ result.genotype_id }}" class="dropdown-item">hybrid</a></li>
+<li><a href="/set_status_1st_recap/{{ result.genotype_id }}" class="dropdown-item">status at 1st recap</a></li>
+<li><a href="/set_dispersal/{{ result.genotype_id }}" class="dropdown-item">dispersal</a></li>
+<li><a href="/set_parent/{{ result.genotype_id }}/mother" class="dropdown-item">mother</a></li>
+<li><a href="/set_parent/{{ result.genotype_id }}/father" class="dropdown-item">father</a></li>
 
-<li><a href="/genotype_note/{{ result['genotype_id'] }}" class="dropdown-item">notes</a></li>
+<li><a href="/genotype_note/{{ result.genotype_id }}" class="dropdown-item">notes</a></li>
 </ul>
 </span>
 
 {% if result["record_status"] != "deleted" %}
-<a href="/del_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete this genotype?')">Del</a>
+<a href="/del_genotype/{{ result.genotype_id }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete this genotype?')">Del</a>
 {% endif %}
 
 {% if result["record_status"] == "deleted" %}
-<a href="/undel_genotype/{{ result['genotype_id'] }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to undelete this genotype?')">Undelete</a>
+<a href="/undel_genotype/{{ result.genotype_id }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to undelete this genotype?')">Undelete</a>
 {% endif %}
 
 
 {% if result["record_status"] in ("deleted", "temp") %}
-<a href="/def_genotype/{{ result['genotype_id'] }}" class="btn btn-success btn-sm" onclick="return confirm('Are you sure to set this genotype definitive?')">Set def</a>
+<a href="/def_genotype/{{ result.genotype_id }}" class="btn btn-success btn-sm" onclick="return confirm('Are you sure to set this genotype definitive?')">Set def</a>
 {% endif %}
 
 {% if result["record_status"] in ("deleted", "OK") %}
-<a href="/temp_genotype/{{ result['genotype_id'] }}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temp</a>
+<a href="/temp_genotype/{{ result.genotype_id }}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure to set this genotype temporary?')">Set temp</a>
 {% endif %}
 </td>
 
@@ -183,31 +183,41 @@ set ...
 <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
 {% if loci_list %}
-{% for locus in loci_values[result['genotype_id']] %}
+{% for locus in loci_values[result.genotype_id] %}
 
 {% for allele in ('a', 'b') %}
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
 {% if result["record_status"] == "temp" %} 
 
-{#
-{% if loci_values[result['genotype_id']][locus][allele]['definitive'] %}background: #90ee90
+
+{% if loci_values[result.genotype_id][locus][allele]['last_note'] %}
+{% if loci_values[result.genotype_id][locus][allele]['validated'] %}
+background: #90ee90
 {% else %}
-{% if loci_values[result['genotype_id']][locus][allele]['notes'] %}background: #FF6461{% endif %}
+background: #FF6461
+{% endif %}
+
+{% else %}
+
+{% if loci_values[result.genotype_id][locus][allele]['validated'] %}
+background: #90ee90
+{% endif %}
+
+{% endif %}
+
+{#
+{% if 'OK|' in loci_values[result.genotype_id][locus][allele]['user_id'] %}background: #90ee90
+{% else %}
+{% if loci_values[result.genotype_id][locus][allele]['notes'] %}background: #FF6461
+{% endif %}
 {%endif%}
 #}
 
-{% if 'OK|' in loci_values[result['genotype_id']][locus][allele]['user_id'] %}background: #90ee90
-{% else %}
-{% if loci_values[result['genotype_id']][locus][allele]['notes'] %}background: #FF6461
-{% endif %}
-{%endif%}
-
-
 {%endif%}
 ">
-{{ loci_values[result['genotype_id']][locus][allele]['value'] }}
+{{ loci_values[result.genotype_id][locus][allele]['value'] }}
 <br>
-<small><a href="/genotype_locus_note/{{ result['genotype_id']}}/{{ locus }}/{{ allele }}">note</a></small>
+<small><a href="/genotype_locus_note/{{ result.genotype_id}}/{{ locus }}/{{ allele }}">note</a></small>
 </td>
 {% endfor %}
 

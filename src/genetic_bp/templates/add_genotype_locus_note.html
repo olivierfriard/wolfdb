@@ -43,8 +43,8 @@ Working notes:<br>
 {% for row in values_history %}
 <tr>
 <td>{{ row['timestamp'] }}</td>
-<td>{{ row['value'] }}</td>
-<td>{{ row['validated'] }}</td>
+<td>{{ row['value'] if row['value'] is not none else '-' }}</td>
+<td>{{ row['validated'] if row['validated'] is not none else '' }}</td>
 <td>{{ row['notes'] }}</td>
 <td>{{ row['user_id'] }}</td>
 </tr>

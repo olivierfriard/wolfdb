@@ -227,46 +227,6 @@ def view_genotype(genotype_id: str):
     )
 
 
-def update_redis_with_genotypes_loci():
-    """
-    update redis with the genotypes loci values
-
-    !require the update_redis_with_genotypes_loci_values file
-    """
-
-    _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_genotypes_loci_values.py"])
-
-
-@app.route("/update_redis_genotypes")
-@fn.check_login
-def web_update_redis_with_genotypes_loci():
-    """
-    web interface to update redis with the genotypes loci values
-
-    !require the update_redis_with_genotypes_loci_values file
-    """
-    update_redis_with_genotypes_loci()
-
-    flash(fn.alert_danger("Redis updating with genotypes loci in progress"))
-
-    return redirect("/admin")
-
-
-@app.route("/update_redis_wa")
-@fn.check_login
-def update_redis_with_wa_loci():
-    """
-    update redis with the WA loci values
-
-    !require the update_redis_with_wa_loci_values.py file
-    """
-    _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_wa_loci_values.py"])
-
-    flash(fn.alert_danger("Redis updating with WA loci in progress"))
-
-    return redirect("/admin")
-
-
 @app.route(
     "/genotypes_list/<int:offset>/<limit>/<type>",
     methods=(
@@ -464,8 +424,6 @@ def view_wa(wa_code: str):
 
         # check if genetic data available
         genetic_data = con.execute(text("SELECT wa_code FROM wa_results WHERE wa_code = :wa_code"), {"wa_code": wa_code}).mappings().all()
-
-        print(f"{genetic_data=}")
 
         return render_template("view_wa.html", header_title=f"{wa_code}", wa_code=wa_code, result=result[0], genetic_data=genetic_data)
 
@@ -1630,13 +1588,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         data = {"wa_code": wa_code, "locus": locus, "allele": allele}
 
         if request.method == "GET":
-            # check if current user can modify allele value
-            allele_modifier = (
-                con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
-                .mappings()
-                .fetchone()["allele_modifier"]
-            )
-            data["allele_modifier"] = allele_modifier
+            data["allele_modifier"] = fn.get_allele_modifier(session["email"])
 
             notes = (
                 con.execute(
@@ -1796,17 +1748,12 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
             return "Genotype ID / Locus / allele / timestamp not found"
 
         data["allele"] = allele
-        data["value"] = genotype_locus["val"]
-        data["validated"] = genotype_locus["validated"]
+        data["value"] = genotype_locus["val"] if genotype_locus["val"] is not None else "-"
+        data["validated"] = genotype_locus["validated"] if genotype_locus["validated"] is not None else ""
         data["notes"] = "" if genotype_locus["notes"] is None else genotype_locus["notes"]
         data["user_id"] = "" if genotype_locus["user_id"] is None else genotype_locus["user_id"]
-        # check if current user can modify allele value (allele modifier)
-        allele_modifier = (
-            con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
-            .mappings()
-            .fetchone()["allele_modifier"]
-        )
-        data["allele_modifier"] = allele_modifier
+
+        data["allele_modifier"] = fn.get_allele_modifier(session["email"])
 
         if request.method == "GET":
             values_history = (
@@ -1816,7 +1763,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
                         "CASE WHEN notes IS NULL THEN '' ELSE notes END, "
                         "CASE WHEN user_id IS NULL THEN '' ELSE user_id END, "
                         "date_trunc('second', timestamp) AS timestamp, "
-                        "CASE WHEN validated IS TRUE THEN 'Yes' ELSE 'No' END AS validated "
+                        "CASE WHEN validated IS TRUE THEN 'Yes' ELSE '' END AS validated "
                         "FROM genotype_locus "
                         "WHERE genotype_id = :genotype_id "
                         "AND locus = :locus "
@@ -1872,8 +1819,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
                 ")",
             )
 
-            # data["new_value"] = request.form["new_value"]
-            print(request.form)
+            # allele validation
             data["validated"] = False
             if data["allele_modifier"] and "validated" in request.form:
                 data["validated"] = True

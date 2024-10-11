@@ -5,20 +5,27 @@
 <h1>Administration page</h1>
 <hr>
 
-
-
-Mode: <b>{{mode}}</b><br>
-
-Debug: <b>{{ debug }}</b>
-
-
-
 {% with messages = get_flashed_messages() %}
 <br>
 {% if messages %}
 {{ messages[0] }}
 {% endif %}
 {% endwith %}
+<br>
+<br>
+
+
+<h3>Web service info</h3>
+
+Mode: <b>{{mode}}</b><br>
+Debug: <b>{{ debug }}</b>
+<br>
+<br>
+<hr>
+<h3>Redis cache</h3>
+
+
+<a href="/update_redis" class="btn btn-primary">Update Redis with WA and genotypes loci loci values</a>
 
 <br>
 <br>
@@ -29,7 +36,16 @@ Debug: <b>{{ debug }}</b>
 <a href="/update_redis_wa" class="btn btn-primary">Update WA Redis cache with loci values</a>
 
 
+<hr>
+<h3>List of users</h3>
+<table class="table table-striped">
+<tr><th>email</th><th>Institution</th><th>role</th><th>allele modifier</th></tr>
+{% for user in users %}
 
+<tr><td>{{ user.email }}</td><td>{{ user.institution }}</td><td>{{ user.role }}</td><td>{{ user.allele_modifier }}</td></tr>
+
+{% endfor %}
+</table>
 
 {% if mode == 'dev' %}
 
