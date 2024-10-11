@@ -3,18 +3,18 @@
 {% block content %}
 
 
-<h2>View genetic data history</h2><hr>
+<h2>View genetic data history for WA code <a href="/view_genetic_data/{{ wa_code }}" >{{ wa_code }}</a></h2><hr>
 
 
 
-<a href="/view_genetic_data/{{ wa_code }}" class="btn btn-primary">View {{ wa_code  }}</a>&nbsp;
+<a href="/view_wa/{{ wa_code }}" class="btn btn-primary">View {{ wa_code  }}</a>&nbsp;
 
 <br>
 <br>
 
 <h2>WA code: <b>{{wa_code}}</b></h2>
 
-<span style="font-size: larger;">Genotype id: <b>{{ genotype_id }}</b><br>Sex: <b>{{ sex }}</b></span>
+<h3>Genotype id: <b>{{ genotype_id }}</b> Sex: <b>{{ sex }}</b></h3>
 <br>
 <br>
 

@@ -1548,7 +1548,8 @@ def view_genetic_data_history(wa_code: str, locus: str):
             con.execute(
                 text(
                     (
-                        "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp, notes, user_id, definitive "
+                        "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp, notes, user_id, "
+                        "CASE WHEN definitive IS NULL THEN ''::text ELSE definitive::text END "
                         "FROM wa_locus WHERE wa_code = :wa_code and locus = :locus ORDER BY allele, timestamp ASC"
                     )
                 ),
