@@ -1007,7 +1007,17 @@ map.on('draw:created', function (event) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('server Response:', data);
+        if (data['status'] == 'error')
+            {
+            alert(data['message']);
+            console.log('server Response:', data);    
+            }
+        else
+            {
+            window.location.href = "/selected_wa_analysis/" + data['message'];  
+            };
+        
+
     })
     .catch(error => {
         console.error('Error:', error);

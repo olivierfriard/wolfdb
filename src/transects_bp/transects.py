@@ -312,17 +312,6 @@ def new_transect():
                 transect_province_name = row["province_name"]
                 transect_region = row["region"]
 
-                """
-                transect_province_code = fn.check_province_code(request.form["province"])
-                if transect_province_code is None:
-                    # check province name
-                    transect_province_code = fn.province_name2code(request.form["province"])
-                    if transect_province_code is None:
-                        return not_valid("The province was not found")
-
-                transect_region = fn.province_code2region(transect_province_code)
-                """
-
                 data = {
                     "transect_id": request.form["transect_id"].upper().strip(),
                     "sector": request.form["sector"].strip(),

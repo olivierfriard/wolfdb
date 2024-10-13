@@ -430,14 +430,16 @@ def view_wa(wa_code: str):
 
 @app.route("/plot_all_wa")
 @fn.check_login
-def plot_all_wa(add_polygon=True):
+def plot_all_wa(add_polygon=False):
     """
     plot all WA codes (scats and dead wolves)
     """
 
     scat_features: list = []
-    tot_min_lat, tot_min_lon = 90, 90
-    tot_max_lat, tot_max_lon = -90, -90
+    tot_min_lat: float = 90
+    tot_min_lon: float = 90
+    tot_max_lat: float = -90
+    tot_max_lon: float = -90
 
     with fn.conn_alchemy().connect() as con:
         for row in (
@@ -1062,6 +1064,68 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             )
 
 
+def get_genotypes_from_wa(wa_list: list):
+    """
+    get genotype info from list of WA codes
+    """
+    wa_list_str = "','".join(wa_list)
+    with fn.conn_alchemy().connect() as con:
+        # fetch grouped genotypes
+        genotype_id = (
+            con.execute(
+                text(
+                    "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
+                    "FROM wa_scat_dw_mat "
+                    f"WHERE wa_code in ('{wa_list_str}') "
+                    "GROUP BY genotype_id, sex_id "
+                    # "GROUP BY genotype_id "
+                    "ORDER BY genotype_id ASC"
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return genotype_id
+
+
+def get_genotypes_data(genotypes_info):
+    """
+    get info and loci values of genotypes
+    """
+
+    loci_values: dict = {}
+    data: dict = {}
+    count_sex: dict = {"M": 0, "F": 0, "": 0}
+
+    with fn.conn_alchemy().connect() as con:
+        for row in genotypes_info:
+            if row["genotype_id"] is None:
+                continue
+
+            result = (
+                con.execute(
+                    text(
+                        "SELECT *, "
+                        "(SELECT 'Yes' FROM wa_scat_dw_mat WHERE (sample_type = 'Dead wolf' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                        "FROM genotypes WHERE genotype_id = :genotype_id"
+                    ),
+                    {"genotype_id": row["genotype_id"]},
+                )
+                .mappings()
+                .fetchone()
+            )
+
+            if result is None:
+                continue
+            data[row["genotype_id"]] = dict(result)
+            data[row["genotype_id"]]["n_recap"] = row["n_recap"]
+            count_sex[result["sex"]] += 1
+
+            loci_values[row["genotype_id"]] = fn.get_genotype_loci_values_redis(row["genotype_id"])
+
+    return data, loci_values, count_sex
+
+
 @app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
 @fn.check_login
 def wa_analysis_group(mode: str, distance: int, cluster_id: int):
@@ -1101,50 +1165,11 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
         ):
             if row["cluster_id"] == int(cluster_id):
                 wa_list.append(row["wa_code"])
-        wa_list_str = "','".join(wa_list)
 
         # fetch grouped genotypes
-        genotype_id = (
-            con.execute(
-                text(
-                    "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
-                    "FROM wa_scat_dw_mat "
-                    f"WHERE wa_code in ('{wa_list_str}') "
-                    "GROUP BY genotype_id, sex_id "
-                    "ORDER BY genotype_id ASC"
-                )
-            )
-            .mappings()
-            .all()
-        )
+        genotypes_info = get_genotypes_from_wa(wa_list)
 
-        loci_values: dict = {}
-        data: dict = {}
-        count_sex: dict = {"M": 0, "F": 0, "": 0}
-        for row in genotype_id:
-            if row["genotype_id"] is None:
-                continue
-
-            result = (
-                con.execute(
-                    text(
-                        "SELECT *, "
-                        "(SELECT 'Yes' FROM wa_scat_dw_mat WHERE (sample_id like 'T%' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
-                        "FROM genotypes WHERE genotype_id = :genotype_id"
-                    ),
-                    {"genotype_id": row["genotype_id"]},
-                )
-                .mappings()
-                .fetchone()
-            )
-
-            if result is None:
-                continue
-            data[row["genotype_id"]] = dict(result)
-            data[row["genotype_id"]]["n_recap"] = row["n_recap"]
-            count_sex[result["sex"]] += 1
-
-            loci_values[row["genotype_id"]] = fn.get_genotype_loci_values_redis(row["genotype_id"])
+        data, loci_values, count_sex = get_genotypes_data(genotypes_info)
 
         # Genepop format (for ML-Relate)
         if mode == "ml-relate":
@@ -1298,7 +1323,7 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
             header_title=f"Genotypes matches (cluster ID: {cluster_id} distance: {distance} m))",
             title=Markup(f"Genotypes matches (cluster id: {cluster_id} distance: {distance} m)"),
             loci_list=loci_list,
-            genotype_id=genotype_id,
+            genotype_id=genotypes_info,
             data=data,
             loci_values=loci_values,
             distance=distance,
@@ -2676,6 +2701,17 @@ def select_on_map():
     allow user to select scats and dead wolves by drawing a polygon
 
     """
+
+    def close_polygon(geojson_polygon):
+        # Récupérer les coordonnées du premier anneau (le polygone externe)
+        coordinates = geojson_polygon["coordinates"][0]
+
+        # Vérifier si le premier et le dernier point sont identiques
+        if coordinates[0] != coordinates[-1]:
+            coordinates.append(coordinates[0])  # Ajouter le premier point à la fin
+
+        return geojson_polygon
+
     if request.method == "GET":
         # return render_template("draw_polygon2.html")
         return plot_all_wa(add_polygon=True)  # render_template("draw_polygon.html")
@@ -2687,36 +2723,88 @@ def select_on_map():
         if "coordinates" in data:
             print("Coordinates received:", data["coordinates"])
 
-            # polygon_ = Polygon([data["coordinates"]])
+            print(Polygon([data["coordinates"]]))
+
             with fn.conn_alchemy().connect() as con:
-                wa_codes = (
+                result = (
                     con.execute(
                         text(
-                            "SELECT wa_code, sample_type FROM wa_scat_dw_mat WHERE "
+                            "SELECT count(wa_code) AS wa_codes_number FROM wa_scat_dw_mat WHERE "
                             "ST_Within(geometry_utm, st_transform(ST_GeomFromGeoJSON(:geojson_polygon), 32632))"
                         ),
                         {"geojson_polygon": str(Polygon([data["coordinates"]]))},
                     )
                     .mappings()
-                    .all()
+                    .fetchone()
                 )
 
-            out = []
+            if result["wa_codes_number"] == 0:
+                return jsonify({"status": "error", "message": "No WA codes were found in polygon"}), 400
+
+            # convert polygon in WKT
+            with fn.conn_alchemy().connect() as con:
+                wkt_polygon = (
+                    con.execute(
+                        text("SELECT ST_AsText(ST_GeomFromGeoJSON(:geojson_polygon))"),
+                        {"geojson_polygon": str(close_polygon(Polygon([data["coordinates"]])))},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+
+            if wkt_polygon:
+                print(wkt_polygon["st_astext"])
+                return jsonify({"status": "success", "message": wkt_polygon["st_astext"]}), 200
+            else:
+                return jsonify({"status": "error", "message": "Error in polygon"}), 400
+
+            """
+            out:list = []
             for wa_code in wa_codes:
                 print(wa_code["wa_code"])
                 out.append(wa_code["wa_code"])
+            """
 
             """
             st_transform(ST_GeomFromGeoJSON('{"coordinates": [[[7.590281, 45.192587], [7.752368, 45.194522], [7.639732, 45.105419]]], "type": "Polygon"}'), 32632)
             """
-            return redirect(f"/selected_wa_analysis/{'|'.join(out)}")
-            # return jsonify({"status": "success", "message": "OK"}), 200
+            # return redirect(f"/selected_wa_analysis/{'|'.join(out)}")
+            return jsonify({"status": "success", "message": "OK"}), 200
         else:
             return jsonify({"status": "error", "message": "no coordinates"}), 400
 
 
-@app.route("/selected_wa_analysis/<wa_codes>", methods=["GET", "POST"])
+@app.route("/selected_wa_analysis/<polygon>", methods=["GET", "POST"])
 @fn.check_login
-def selected_wa_analysis(wa_codes: str):
+def selected_wa_analysis(polygon: str):
+    with fn.conn_alchemy().connect() as con:
+        wa_codes = (
+            con.execute(
+                text(
+                    "SELECT wa_code FROM wa_scat_dw_mat WHERE "
+                    "mtdna != 'Poor DNA' "
+                    "AND date BETWEEN :start_date AND :end_date "
+                    "AND ST_Within(geometry_utm, st_transform(ST_GeomFromText(:wkt_polygon, 4326), 32632))"
+                ),
+                {
+                    "wkt_polygon": polygon,
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+        if len(wa_codes) == 0:
+            return "No WA codes selected"
+
     print(wa_codes)
-    return wa_codes
+
+    # fetch grouped genotypes
+    genotypes_info = get_genotypes_from_wa([x["wa_code"] for x in wa_codes])
+
+    print(genotypes_info)
+
+    data, loci_values, count_sex = get_genotypes_data(genotypes_info)
+
+    return str(len(wa_codes))
