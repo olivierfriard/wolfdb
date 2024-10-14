@@ -5,7 +5,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
+{% if 'DBSCAN' in tool %}
 <a style="width:10%" href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
+{% endif %}
 
 <br>
 <br>
@@ -17,16 +19,16 @@
 {% endwith %}
 
 
-{% if genotype_id %}
+{% if genotypes_info %}
 
 <h3>{{ title }}</h3>
 
 <br>
 <table>
-    <tr><td><a href="/wa_analysis_group/export/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export XLSX</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/ml-relate/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/colony/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Export for Colony</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/run_colony/{{ distance }}/{{ cluster_id }}" class="btn btn-info btn-sm">Run Colony</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/{{ tool }}/export" class="btn btn-info btn-sm">Export XLSX</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/{{ tool }}/ml-relate" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/{{ tool }}/colony" class="btn btn-info btn-sm">Export for Colony</a></td></tr>
+    <tr><td><a href="/wa_analysis_group/{{ tool }}/run_colony" class="btn btn-info btn-sm">Run Colony</a></td></tr>
 {% if colony_result %}
     <tr><td><a href="{{ colony_result }}">Download Colony results</a></td></tr>
 {%  endif %}
@@ -124,23 +126,34 @@ set ...
 
 
 {% for locus in loci_values[genotype_id] %}
+{% for allele in ('a', 'b') %}
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
+{% if data[genotype_id]["record_status"] == "temp" %} 
 
-<td style="border-left: 1px solid black; {% if 'OK|' in loci_values[genotype_id][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[genotype_id][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
-{{ loci_values[genotype_id][locus]['a']['value'] }}
+
+{% if loci_values[genotype_id][locus][allele]['last_note'] %}
+{% if loci_values[genotype_id][locus][allele]['validated'] %}
+background: #90ee90
+{% else %}
+background: #FF6461
+{% endif %}
+
+{% else %}
+
+{% if loci_values[genotype_id][locus][allele]['validated'] %}
+background: #90ee90
+{% endif %}
+
+{% endif %}
+
+{%endif%}
+">
+{{ loci_values[genotype_id][locus][allele]['value'] }}
 <br>
-<small>
-<a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/a/{{ loci_values[genotype_id][locus]['a']['epoch'] }}">note</a>
-</small>
+<small><a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/{{ allele }}">note</a></small>
 </td>
+{% endfor %}
 
-
-<td style="{% if 'OK|' in loci_values[genotype_id][locus]['b']['user_id'] %}background: #90ee90{% else %}{% if loci_values[genotype_id][locus]['b']['notes'] %}background: #FF6461{%endif%}{% endif %}">
-{{ loci_values[genotype_id][locus]['b']['value'] }}
-<br>
-<small>
-<a href="/genotype_locus_note/{{ genotype_id }}/{{ locus }}/b/{{ loci_values[genotype_id][locus]['b']['epoch'] }}">note</a>
-</small>
-</td>
 
 {% endfor %}
 
@@ -154,7 +167,7 @@ set ...
 
 {% else %}
 
-<h2>No WA code found</h2>
+<h2>No genotypes were found</h2>
 
 {% endif %}
 

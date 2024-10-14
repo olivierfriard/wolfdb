@@ -271,6 +271,7 @@ for idx, row in genetic_df.iterrows():
             data[column] = ""
 
     for column in loci_list:
+        # DO NOT user and definitive columns !
         print(
             (
                 f"INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp) VALUES ("
@@ -286,6 +287,7 @@ for idx, row in genetic_df.iterrows():
 
         if str(row["Genotype ID"]) != "nan":
             if str(row["Genotype ID"]) in not_found_genotypes:
+                # DO NOT user and validated columns !
                 print(
                     (
                         f"INSERT INTO genotype_locus (genotype_id, locus, allele, val, timestamp) VALUES ("

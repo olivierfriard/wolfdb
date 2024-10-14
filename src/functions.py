@@ -98,28 +98,40 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
         has_loci_notes = False
 
         loci_values: dict = {}
+        """
         for locus in loci_list:
-            loci_values[locus] = {"a": {"value": "-", "notes": "", "user_id": ""}, "b": {"value": "-", "notes": "", "user_id": ""}}
+            loci_values[locus] = {
+                "a": {"value": "-", "notes": "", "user_id": "", "has_history": 0, "definitive"},
+                "b": {"value": "-", "notes": "", "user_id": "", "has_history": 0},
+            }
+        """
 
         for locus in loci_list:
             for allele in ("a", "b")[: loci_list[locus]]:  # select number of alleles
+                loci_values[locus] = {}
+
                 # get last locus value and the last notes (if any)
                 row = (
                     con.execute(
                         text(
                             (
-                                "SELECT val, notes AS last_note, "
+                                "SELECT val, notes, "
                                 "extract(epoch from timestamp)::integer AS epoch, "
                                 "user_id, "
                                 "definitive, "
                                 "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                                "(SELECT notes FROM wa_locus "
+                                "(SELECT COUNT(*) FROM wa_locus "
                                 "WHERE wa_code=wl.wa_code "
                                 "      AND locus=wl.locus "
                                 "      AND allele=wl.allele "
-                                "      AND notes != '' "
-                                "      AND notes IS NOT NULL "
-                                "      ORDER BY timestamp DESC LIMIT 1) AS last_note "  # last note
+                                "      AND user_id IS NOT NULL) AS has_history  "
+                                # "(SELECT notes FROM wa_locus "
+                                # "WHERE wa_code=wl.wa_code "
+                                # "      AND locus=wl.locus "
+                                # "      AND allele=wl.allele "
+                                # "      AND notes != '' "
+                                # "      AND notes IS NOT NULL "
+                                # "      ORDER BY timestamp DESC LIMIT 1) AS last_note "  # last note
                                 "FROM wa_locus wl "
                                 "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
                                 "ORDER BY timestamp DESC LIMIT 1"
@@ -133,14 +145,9 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
 
                 if row is not None:
                     val = row["val"] if row["val"] is not None else "-"
-                    # notes = row["notes"] if not None else ""
-                    # if notes:
-                    #    has_loci_notes = True
-                    if row["last_note"]:
-                        has_loci_notes = True
-                        notes = row["last_note"]
-                    else:
-                        notes = ""
+                    notes = row["notes"] if not None else ""
+                    has_history = row["has_history"]
+                    has_loci_notes = has_history != 0
                     epoch = row["epoch"] if row["epoch"] is not None else ""
                     date = row["formatted_timestamp"] if row["formatted_timestamp"] is not None else ""
                     user_id = row["user_id"] if row["user_id"] is not None else ""
@@ -149,6 +156,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                 else:
                     val = "-"
                     notes = ""
+                    has_history = 0
                     epoch = ""
                     user_id = ""
                     date = ""
@@ -157,6 +165,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                 loci_values[locus][allele] = {
                     "value": val,
                     "notes": notes,
+                    "has_history": has_history,
                     "epoch": epoch,
                     "user_id": user_id,
                     "date": date,
@@ -1014,7 +1023,7 @@ map.on('draw:created', function (event) {
             }
         else
             {
-            window.location.href = "/selected_wa_analysis/" + data['message'];  
+            window.location.href = "/wa_analysis_group/" + data['message'] + "/web";
             };
         
 

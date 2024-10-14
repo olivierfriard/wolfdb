@@ -529,9 +529,6 @@ def plot_wa_clusters(distance: int):
                     "coord_east, coord_north, "
                     "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
                     "ST_Y(st_transform(geometry_utm, 4326)) as latitude, "
-                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                    # "geometry_utm,"
-                    # "st_transform(geometry_utm, 4326) AS geometry_utm_4326,"
                     "ST_ClusterDBSCAN(geometry_utm, eps:=:distance, minpoints:=:minpoint) OVER(ORDER BY wa_code) AS cid "
                     "FROM wa_scat_dw_mat "
                     "WHERE mtdna != 'Poor DNA' "
@@ -629,7 +626,7 @@ def plot_wa_clusters(distance: int):
                     f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
                     f"""Genotype ID: <b>{row['genotype_id']}</b><br>"""
                     f"""Cluster ID {row['cid']}:<br><a href="/wa_analysis/{distance}/{row['cid']}">{cluster_id_count[row['cid']]} samples</a> """
-                    f"""<a href="/wa_analysis_group/web/{distance}/{row['cid']}">genotypes</a>"""
+                    f"""<a href="/wa_analysis_group/DBSCAN-{distance}-{row['cid']}/web">Genotypes</a>"""
                 ),
             },
             "id": row["sample_id"],
@@ -798,6 +795,16 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             for allele in ("a", "b"):
                 loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
 
+                print(f"{row["wa_code"]=}  {x=}  {allele=}")
+
+                if loci_values[row["wa_code"]][x][allele]["has_history"]:
+                    has_loci_notes = True
+                    if loci_values[row["wa_code"]][x][allele]["definitive"]:
+                        loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
+                    else:
+                        loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
+
+                """
                 if loci_values[row["wa_code"]][x][allele]["notes"]:
                     if not loci_values[row["wa_code"]][x][allele]["definitive"]:
                         has_loci_notes = True
@@ -806,6 +813,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                         loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
                 else:
                     loci_values[row["wa_code"]][x][allele]["color"] = "#ffffff00"
+                """
 
                 if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
                     has_loci_values = True
@@ -1126,9 +1134,40 @@ def get_genotypes_data(genotypes_info):
     return data, loci_values, count_sex
 
 
-@app.route("/wa_analysis_group/<mode>/<int:distance>/<int:cluster_id>")
+def create_ml_relate_input(title: str, loci_values) -> str:
+    """
+    create the input data for ML-Relate software
+    """
+    ml_relate: list = [title]
+    for locus in fn.get_loci_list():
+        locus_has_values: bool = False
+        for genotype in loci_values:
+            for allele in ("a", "b"):
+                if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
+                    locus_has_values = True
+        if locus_has_values:
+            ml_relate.append(locus)
+    ml_relate.append("Pop")
+    for genotype in loci_values:
+        mrl = genotype + "\t,\t"
+        for locus in loci_values[genotype]:
+            if locus not in ml_relate:  # no value for locus
+                continue
+            for allele in ("a", "b"):
+                if loci_values[genotype][locus][allele]["value"] in (0, "-"):
+                    mrl += "000"
+                else:
+                    mrl += f"{loci_values[genotype][locus][allele]["value"]:03}"
+            mrl += "\t"
+
+        ml_relate.append(mrl.strip())
+
+    return "\n".join(ml_relate)
+
+
+@app.route("/wa_analysis_group/<tool>/<mode>")
 @fn.check_login
-def wa_analysis_group(mode: str, distance: int, cluster_id: int):
+def wa_analysis_group(tool: str, mode: str):
     """
     display cluster content
     """
@@ -1136,100 +1175,130 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
     if mode not in accepted_mode:
         return f"mode error: mode must be {','.join(accepted_mode)}"
 
-    colony_output_directory = pl.Path(current_app.static_folder) / pl.Path("colony_output")
-    if not colony_output_directory.is_dir():
-        colony_output_directory.mkdir(parents=True, exist_ok=True)
-
     with fn.conn_alchemy().connect() as con:
         # loci list
         loci_list: dict = fn.get_loci_list()
 
+        distance = None
+        cluster_id = None
         # DBScan
-        wa_list: list = []
-        for row in (
-            con.execute(
-                text(
-                    "SELECT wa_code, "
-                    f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
-                    "FROM wa_scat_dw_mat "
-                    "WHERE mtdna != 'Poor DNA' "
-                    "AND date BETWEEN :start_date AND :end_date "
-                ),
-                {
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
+        if tool.startswith("DBSCAN"):
+            distance, cluster_id = [int(x) for x in tool.split("-")[1:]]
+            wa_list: list = []
+            for row in (
+                con.execute(
+                    text(
+                        "SELECT wa_code, "
+                        f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
+                        "FROM wa_scat_dw_mat "
+                        "WHERE mtdna != 'Poor DNA' "
+                        "AND date BETWEEN :start_date AND :end_date "
+                    ),
+                    {
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
+                )
+                .mappings()
+                .all()
+            ):
+                if row["cluster_id"] == cluster_id:
+                    wa_list.append(row["wa_code"])
+
+        if tool.startswith("POLYGON"):
+            wa_codes = (
+                con.execute(
+                    text(
+                        "SELECT wa_code FROM wa_scat_dw_mat WHERE "
+                        "mtdna != 'Poor DNA' "
+                        "AND date BETWEEN :start_date AND :end_date "
+                        "AND ST_Within(geometry_utm, st_transform(ST_GeomFromText(:wkt_polygon, 4326), 32632))"
+                    ),
+                    {
+                        "wkt_polygon": tool,
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
+                )
+                .mappings()
+                .all()
             )
-            .mappings()
-            .all()
-        ):
-            if row["cluster_id"] == int(cluster_id):
-                wa_list.append(row["wa_code"])
+            if len(wa_codes) == 0:
+                return "No WA codes selected"
 
-        # fetch grouped genotypes
-        genotypes_info = get_genotypes_from_wa(wa_list)
+            # get postgresql geometry
+            with fn.conn_alchemy().connect() as con:
+                text_geom_md5 = (
+                    con.execute(
+                        text("select MD5(ST_GeomFromText(:wkt_polygon)::text) AS geometry "),
+                        {
+                            "wkt_polygon": tool,
+                        },
+                    )
+                    .mappings()
+                    .fetchone()["geometry"]
+                )
 
-        data, loci_values, count_sex = get_genotypes_data(genotypes_info)
+            wa_list = [x["wa_code"] for x in wa_codes]
 
-        # Genepop format (for ML-Relate)
-        if mode == "ml-relate":
-            ml_relate: list = [f"Cluster id {cluster_id}"]
-            for locus in loci_list:
-                # print()
-                # print(f"{locus=}")
-                locus_has_values: bool = False
-                for genotype in loci_values:
-                    # print(f"{genotype=}")
-                    for allele in ("a", "b"):
-                        # print(f"{allele} {loci_values[genotype][locus][allele]=}")
-                        if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
-                            locus_has_values = True
-                if locus_has_values:
-                    ml_relate.append(locus)
-            # print(f"{ml_relate=}")
-            ml_relate.append("Pop")
+    # fetch grouped genotypes
+    genotypes_info = get_genotypes_from_wa(wa_list)
+
+    data, loci_values, count_sex = get_genotypes_data(genotypes_info)
+
+    colony_output_dir = pl.Path("colony_output")
+    colony_output_path = pl.Path(current_app.static_folder) / colony_output_dir
+
+    if not colony_output_path.is_dir():
+        colony_output_path.mkdir(parents=True, exist_ok=True)
+
+    if "colony" in mode:
+        with open("external_functions/colony_template.dat", "r") as file_in:
+            colony_template = jinja2.Template(file_in.read())
+
+        valid_locus: list = []
+        for locus in loci_list:
+            # print()
+            # print(f"{locus=}")
+            locus_has_values: bool = False
             for genotype in loci_values:
-                mrl = genotype + "\t,\t"
-                for locus in loci_values[genotype]:
-                    if locus not in ml_relate:  # no value for locus
-                        continue
-                    for allele in ("a", "b"):
-                        if loci_values[genotype][locus][allele]["value"] in (0, "-"):
-                            mrl += "000"
-                        else:
-                            mrl += f"{loci_values[genotype][locus][allele]["value"]:03}"
-                    mrl += "\t"
+                # print(f"{genotype=}")
+                for allele in ("a", "b"):
+                    # print(f"{allele} {loci_values[genotype][locus][allele]=}")
+                    if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
+                        locus_has_values = True
+            if locus_has_values:
+                valid_locus.append(locus)
 
-                ml_relate.append(mrl.strip())
+        allele_data = []
+        allele_data.append("     " + ("     ".join(valid_locus)))
+        allele_data.append("     " + ("     ".join(["0"] * len(valid_locus))))
+        allele_data.append("")
+        allele_data.append("  ".join(["0.01"] * len(valid_locus)))
+        allele_data.append("  ".join(["0.01"] * len(valid_locus)))
+        allele_data.extend(["", ""])
+        for genotype in loci_values:
+            row = genotype + " "
 
-        if "colony" in mode:
-            with open("external_functions/colony_template.dat", "r") as file_in:
-                colony_template = jinja2.Template(file_in.read())
+            for locus in loci_values[genotype]:
+                if locus not in valid_locus:  # no value for locus
+                    continue
+                for allele in ("a", "b"):
+                    if loci_values[genotype][locus][allele]["value"] in (0, "-"):
+                        row += "0 "
+                    else:
+                        row += f"{loci_values[genotype][locus][allele]["value"]:03} "
+                row += " "
 
-            valid_locus: list = []
-            for locus in loci_list:
-                # print()
-                # print(f"{locus=}")
-                locus_has_values: bool = False
-                for genotype in loci_values:
-                    # print(f"{genotype=}")
-                    for allele in ("a", "b"):
-                        # print(f"{allele} {loci_values[genotype][locus][allele]=}")
-                        if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
-                            locus_has_values = True
-                if locus_has_values:
-                    valid_locus.append(locus)
+            allele_data.append(row.strip())
 
-            allele_data = []
-            allele_data.append("     " + ("     ".join(valid_locus)))
-            allele_data.append("     " + ("     ".join(["0"] * len(valid_locus))))
-            allele_data.append("")
-            allele_data.append("  ".join(["0.01"] * len(valid_locus)))
-            allele_data.append("  ".join(["0.01"] * len(valid_locus)))
-            allele_data.extend(["", ""])
+        allele_sex: dict = {}
+        for sex in ("M", "F"):
+            allele_sex[sex] = []
             for genotype in loci_values:
+                if data[genotype]["sex"] != sex:
+                    continue
                 row = genotype + " "
-
                 for locus in loci_values[genotype]:
                     if locus not in valid_locus:  # no value for locus
                         continue
@@ -1240,90 +1309,112 @@ def wa_analysis_group(mode: str, distance: int, cluster_id: int):
                             row += f"{loci_values[genotype][locus][allele]["value"]:03} "
                     row += " "
 
-                allele_data.append(row.strip())
+                allele_sex[sex].append(row.strip())
 
-            allele_sex: dict = {}
-            for sex in ("M", "F"):
-                allele_sex[sex] = []
-                for genotype in loci_values:
-                    if data[genotype]["sex"] != sex:
-                        continue
-                    row = genotype + " "
-                    for locus in loci_values[genotype]:
-                        if locus not in valid_locus:  # no value for locus
-                            continue
-                        for allele in ("a", "b"):
-                            if loci_values[genotype][locus][allele]["value"] in (0, "-"):
-                                row += "0 "
-                            else:
-                                row += f"{loci_values[genotype][locus][allele]["value"]:03} "
-                        row += " "
-
-                    allele_sex[sex].append(row.strip())
-
-            colony_out = [
-                colony_template.render(
-                    dataset_name=f"genotypes_cluster_id{cluster_id}_distance{distance}",
-                    output_file_name=f"genotypes_cluster_id{cluster_id}_distance{distance}",
-                    offspring_number=len(allele_sex["M"]) + len(allele_sex["F"]),
-                    loci_number=len(valid_locus),
-                    alleles="\n".join(allele_data),
-                    n_male=count_sex["M"],
-                    n_female=count_sex["F"],
-                    male_alleles="\n".join(allele_sex["M"]),
-                    female_alleles="\n".join(allele_sex["F"]),
-                )
-            ]
+        colony_out = [
+            colony_template.render(
+                dataset_name=f"genotypes_cluster_id{cluster_id}_distance{distance}",
+                output_file_name=f"genotypes_cluster_id{cluster_id}_distance{distance}",
+                offspring_number=len(allele_sex["M"]) + len(allele_sex["F"]),
+                loci_number=len(valid_locus),
+                alleles="\n".join(allele_data),
+                n_male=count_sex["M"],
+                n_female=count_sex["F"],
+                male_alleles="\n".join(allele_sex["M"]),
+                female_alleles="\n".join(allele_sex["F"]),
+            )
+        ]
 
     if mode == "export":
         file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = f"attachment; filename=genotypes_matches_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-disposition"] = f"attachment; filename=genotypes_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
         return response
 
     elif mode == "colony":
         response = make_response("\n".join(colony_out), 200)
         response.headers["Content-type"] = "text/plain"
-        response.headers["Content-disposition"] = f"attachment; filename=genotypes_cluster_id{cluster_id}_distance{distance}.dat"
+
+        if tool.startswith("DBSCAN"):
+            default_file_name = f"genotypes_cluster_id{cluster_id}_distance{distance}.dat"
+            response.headers["Content-disposition"] = f"attachment; filename={default_file_name}"
+
+        if tool.startswith("POLYGON"):
+            default_file_name = f"{len(loci_values)}_genotypes_selected_on_map.dat"
+        response.headers["Content-disposition"] = f"attachment; filename={default_file_name}"
         return response
 
     elif mode == "run_colony":
-        input_file_name = colony_output_directory / pl.Path(f"{distance}_{cluster_id}")
-        with open(f"{input_file_name}.dat", "w") as file_out:
-            file_out.write("\n".join(colony_out))
+        if tool.startswith("DBSCAN"):
+            input_file_name = colony_output_path / pl.Path(f"{distance}_{cluster_id}")
+            with open(f"{input_file_name}.dat", "w") as file_out:
+                file_out.write("\n".join(colony_out))
+
+        if tool.startswith("POLYGON"):
+            input_file_name = colony_output_path / pl.Path(text_geom_md5)
+            with open(f"{input_file_name}.dat", "w") as file_out:
+                file_out.write("\n".join(colony_out))
 
         if not pl.Path(params["colony_path"]).is_file():
             flash(fn.alert_danger("The Colony program was not found. Please contact the administrator."))
-            return redirect(f"/wa_analysis_group/web/{distance}/{cluster_id}")
+            return redirect(f"/wa_analysis_group/{tool}/web")
 
         _ = subprocess.Popen([params["colony_path"], f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"])
 
-        flash(fn.alert_danger("Colony is running. Reload the page continuously until the results are displayed."))
+        flash(fn.alert_danger("Colony is running. Reload the page continuously (F5) until the results are displayed."))
 
-        return redirect(f"/wa_analysis_group/web/{distance}/{cluster_id}")
+        return redirect(f"/wa_analysis_group/{tool}/web")
 
+    # Genepop format (for ML-Relate)
     elif mode == "ml-relate":
-        response = make_response("\n".join(ml_relate), 200)
+        if tool.startswith("DBSCAN"):
+            title = f"Cluster id {cluster_id}"
+            default_file_name = f"ML-Relate_genotypes_cluster_id{cluster_id}_distance{distance}.txt"
+        else:
+            title = "selected on map"
+            default_file_name = f"ML-Relate_{len(loci_values)}_genotypes_selected_on_map.txt"
+
+        ml_relate = create_ml_relate_input(title, loci_values)
+
+        response = make_response(ml_relate, 200)
         response.headers["Content-type"] = "text/plain"
-        response.headers["Content-disposition"] = f"attachment; filename=genotypes_cluster_id{cluster_id}_distance{distance}.txt"
+        response.headers["Content-disposition"] = f"attachment; filename={default_file_name}"
         return response
 
     else:  # html
         colony_results_content: str = ""
         colony_result: str = ""
-        colony_output_path = colony_output_directory / pl.Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
-        if colony_output_path.is_file():
-            colony_result = f"/static/colony_output/{distance}_{cluster_id}.BestConfig_Ordered"
-            with open(colony_output_path, "r") as file_in:
+
+        if tool.startswith("DBSCAN"):
+            header_title = f"Genotype{"s" if len(loci_values)>1 else ""} for cluster ID: {cluster_id} distance: {distance} m))"
+            page_title = Markup(
+                f"DBSCAN cluster id: {cluster_id} distance: {distance} m - <b>{len(loci_values)}</b> genotype{"s" if len(loci_values)>1 else ""}"
+            )
+
+            colony_output_file = pl.Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
+            colony_output_file_path = colony_output_path / colony_output_file
+
+        if tool.startswith("POLYGON"):
+            header_title = f"Genotype{"s" if len(loci_values)>1 else ""} for selected WA codes"
+            page_title = Markup(f"{len(loci_values)} genotype{"s" if len(loci_values)>1 else ""} for selected WA codes")
+
+            colony_output_file = pl.Path(f"{text_geom_md5}.BestConfig_Ordered")
+            colony_output_file_path = colony_output_path / colony_output_file
+
+        # check colony results file already exists
+        if colony_output_file_path.is_file():
+            colony_result = "/static" / colony_output_dir / colony_output_file
+            with open(colony_output_file_path, "r") as file_in:
                 colony_results_content = file_in.read()
 
         return render_template(
             "wa_analysis_group.html",
-            header_title=f"Genotypes matches (cluster ID: {cluster_id} distance: {distance} m))",
-            title=Markup(f"Genotypes matches (cluster id: {cluster_id} distance: {distance} m)"),
+            header_title=header_title,
+            title=page_title,
+            tool=tool,
             loci_list=loci_list,
-            genotype_id=genotypes_info,
+            genotypes_info=genotypes_info,
             data=data,
             loci_values=loci_values,
             distance=distance,
@@ -2679,7 +2770,6 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
                             int(row[locus + ".1"])
                             loci_dict[locus]["b"] = row[locus + ".1"]
                         except Exception:
-                            raise
                             problems.append(
                                 f"For <b>{data['genotype_id']}</b> the value for allele <b>b</b> for locus <b>{locus}</b> is wrong"
                             )
@@ -2703,27 +2793,26 @@ def select_on_map():
     """
 
     def close_polygon(geojson_polygon):
-        # Récupérer les coordonnées du premier anneau (le polygone externe)
+        """
+        close polygon
+        """
         coordinates = geojson_polygon["coordinates"][0]
 
-        # Vérifier si le premier et le dernier point sont identiques
+        # check if first and last point are identical
         if coordinates[0] != coordinates[-1]:
-            coordinates.append(coordinates[0])  # Ajouter le premier point à la fin
+            coordinates.append(coordinates[0])  # Add first point at the end
 
         return geojson_polygon
 
     if request.method == "GET":
-        # return render_template("draw_polygon2.html")
-        return plot_all_wa(add_polygon=True)  # render_template("draw_polygon.html")
+        return plot_all_wa(add_polygon=True)
 
     if request.method == "POST":
         # Retrieve coordinates
         data = request.get_json()
 
         if "coordinates" in data:
-            print("Coordinates received:", data["coordinates"])
-
-            print(Polygon([data["coordinates"]]))
+            # print(Polygon([data["coordinates"]]))
 
             with fn.conn_alchemy().connect() as con:
                 result = (
@@ -2758,53 +2847,5 @@ def select_on_map():
             else:
                 return jsonify({"status": "error", "message": "Error in polygon"}), 400
 
-            """
-            out:list = []
-            for wa_code in wa_codes:
-                print(wa_code["wa_code"])
-                out.append(wa_code["wa_code"])
-            """
-
-            """
-            st_transform(ST_GeomFromGeoJSON('{"coordinates": [[[7.590281, 45.192587], [7.752368, 45.194522], [7.639732, 45.105419]]], "type": "Polygon"}'), 32632)
-            """
-            # return redirect(f"/selected_wa_analysis/{'|'.join(out)}")
-            return jsonify({"status": "success", "message": "OK"}), 200
         else:
             return jsonify({"status": "error", "message": "no coordinates"}), 400
-
-
-@app.route("/selected_wa_analysis/<polygon>", methods=["GET", "POST"])
-@fn.check_login
-def selected_wa_analysis(polygon: str):
-    with fn.conn_alchemy().connect() as con:
-        wa_codes = (
-            con.execute(
-                text(
-                    "SELECT wa_code FROM wa_scat_dw_mat WHERE "
-                    "mtdna != 'Poor DNA' "
-                    "AND date BETWEEN :start_date AND :end_date "
-                    "AND ST_Within(geometry_utm, st_transform(ST_GeomFromText(:wkt_polygon, 4326), 32632))"
-                ),
-                {
-                    "wkt_polygon": polygon,
-                    "start_date": session["start_date"],
-                    "end_date": session["end_date"],
-                },
-            )
-            .mappings()
-            .all()
-        )
-        if len(wa_codes) == 0:
-            return "No WA codes selected"
-
-    print(wa_codes)
-
-    # fetch grouped genotypes
-    genotypes_info = get_genotypes_from_wa([x["wa_code"] for x in wa_codes])
-
-    print(genotypes_info)
-
-    data, loci_values, count_sex = get_genotypes_data(genotypes_info)
-
-    return str(len(wa_codes))

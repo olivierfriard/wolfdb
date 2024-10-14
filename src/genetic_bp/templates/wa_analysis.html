@@ -92,24 +92,34 @@
 <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
 
 
-{% for locus in loci_values[result['wa_code']] %}
+{% for locus in loci_values[result.wa_code] %}
 
-<td style="border-left: 1px solid black; {% if 'OK|' in loci_values[result['wa_code']][locus]['a']['user_id'] %}background: #90ee90{%else%}{% if loci_values[result['wa_code']][locus]['a']['notes'] %}background: #FF6461{%endif%}{%endif%}">
+{% for allele in ('a', 'b') %}
+
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
+
+{% if loci_values[result.wa_code][locus][allele]['has_history'] %}
+    {% if loci_values[result.wa_code][locus][allele]['definitive'] %}
+        background:#90ee90
+    {% else %}
+        background:#FF6461
+    {% endif %}
+{#
+    {% else %}
+    {% if loci_values[result.wa_code][locus][allele]['definitive'] %}background:#90ee90{% endif %}
+#}
+{% endif %}
+
+">
+
 {{ loci_values[result['wa_code']][locus]['a']['value'] }}
 <br>
 <small>
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/a/{{ loci_values[result['wa_code']][locus]['a']['epoch'] }}">note</a>
-</small>
-
-</td>
-
-<td {% if 'OK|' in loci_values[result['wa_code']][locus]['b']['user_id'] %}style="background: #90ee90"{%else%}{% if loci_values[result['wa_code']][locus]['b']['notes'] %}style="background: #FF6461"{%endif%}{%endif%}>
-{{ loci_values[result['wa_code']][locus]['b']['value'] }}
-<br>
-<small>
-<a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/b/{{ loci_values[result['wa_code']][locus]['b']['epoch'] }}">note</a>
+<a href="/locus_note/{{ result.wa_code}}/{{ locus }}/{{ allele }}">note</a>
 </small>
 </td>
+
+{% endfor %}
 {% endfor %}
 </tr>
 {% endfor %}
