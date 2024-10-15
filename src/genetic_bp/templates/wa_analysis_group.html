@@ -13,29 +13,31 @@
 <br>
 
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {{ messages[0] }}
-    {% endif %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
 {% endwith %}
 
-
 {% if genotypes_info %}
-
+<div class="container">
 <h3>{{ title }}</h3>
 
 <br>
-<table>
-    <tr><td><a href="/wa_analysis_group/{{ tool }}/export" class="btn btn-info btn-sm">Export XLSX</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/{{ tool }}/ml-relate" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/{{ tool }}/colony" class="btn btn-info btn-sm">Export for Colony</a></td></tr>
-    <tr><td><a href="/wa_analysis_group/{{ tool }}/run_colony" class="btn btn-info btn-sm">Run Colony</a></td></tr>
+
+<a href="/wa_analysis_group/{{ tool }}/export" class="btn btn-info btn-sm">Export XLSX</a>
+<a href="/wa_analysis_group/{{ tool }}/ml-relate" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a>
+<a href="/wa_analysis_group/{{ tool }}/colony" class="btn btn-info btn-sm">Export for Colony</a>
+<a href="/wa_analysis_group/{{ tool }}/run_colony" class="btn btn-info btn-sm">Run Colony</a>
 {% if colony_result %}
-    <tr><td><a href="{{ colony_result }}">Download Colony results</a></td></tr>
+<br><br><b>Colony results:</b><br><br>
+<pre>{{ colony_results_content }}</pre>
+<a href="{{ colony_result }}" class="btn btn-info btn-sm">Download Colony results</a>
 {%  endif %}
-<tr><td><pre>{{ colony_results_content }}</pre></td></tr>
-</table>
+
 <br>
 <br>
+</div>
+
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
