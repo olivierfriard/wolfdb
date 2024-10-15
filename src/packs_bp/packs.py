@@ -156,6 +156,7 @@ def view_pack(pack_name):
         map=map,
         scat_color=params["scat_color"],
         dead_wolf_color=params["dead_wolf_color"],
+        count_wa_code=count_wa_code,
     )
 
 

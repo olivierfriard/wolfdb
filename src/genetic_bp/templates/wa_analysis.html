@@ -95,7 +95,7 @@
 {% for locus in loci_values[result.wa_code] %}
 
 {% for allele in ('a', 'b') %}
-
+{% if allele in loci_values[result.wa_code][locus] %}
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
 
 {% if loci_values[result.wa_code][locus][allele]['has_history'] %}
@@ -109,15 +109,17 @@
     {% if loci_values[result.wa_code][locus][allele]['definitive'] %}background:#90ee90{% endif %}
 #}
 {% endif %}
-
 ">
-
 {{ loci_values[result['wa_code']][locus]['a']['value'] }}
 <br>
 <small>
 <a href="/locus_note/{{ result.wa_code}}/{{ locus }}/{{ allele }}">note</a>
 </small>
 </td>
+
+{% else %}
+
+{% endif %}
 
 {% endfor %}
 {% endfor %}

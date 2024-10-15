@@ -41,7 +41,11 @@
 
 {% if genotype_id %}
 <td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
-<td style="border-right: 1px solid black;">{{ genotype_loci[locus]['b']['value'] }}</td>
+<td style="border-right: 1px solid black;">
+{% if 'b' in genotype_loci[locus] %}    
+{{ genotype_loci[locus].b.value }}
+{% endif %}
+</td>
 <td></td>
 {% endif %}
 

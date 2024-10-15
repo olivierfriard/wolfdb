@@ -999,6 +999,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
 
                 for allele in ("a", "b"):
+                    if allele not in loci_values[row["wa_code"]][loci]:
+                        continue
                     if loci_values[row["wa_code"]][loci][allele]["value"] not in (0, "-"):
                         has_loci_values = True
 
@@ -1016,6 +1018,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             has_loci_values = False
             for locus in loci_values[row["wa_code"]]:
                 for allele in ("a", "b"):
+                    if allele not in loci_values[row["wa_code"]][loci]:
+                        continue
                     if loci_values[row["wa_code"]][locus][allele]["value"] not in (0, "-"):
                         has_loci_values = True
                 if has_loci_values:
@@ -1027,7 +1031,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 if locus not in ml_relate:  # no value for locus
                     continue
                 for allele in ("a", "b"):
-                    if loci_values[row["wa_code"]][locus][allele]["value"] in (0, "-"):
+                    if allele not in loci_values[row["wa_code"]][locus] or loci_values[row["wa_code"]][locus][allele]["value"] in (0, "-"):
                         mrl += "000"
                     else:
                         mrl += f"{loci_values[row["wa_code"]][locus][allele]["value"]:03}"

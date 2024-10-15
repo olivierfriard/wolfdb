@@ -127,9 +127,9 @@ set ...
 
 {% for locus in loci_values[genotype_id] %}
 {% for allele in ('a', 'b') %}
+{% if allele in loci_values[genotype_id][locus] %}
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
 {% if data[genotype_id]["record_status"] == "temp" %} 
-
 
 {% if loci_values[genotype_id][locus][allele]['has_history'] %}
 {% if loci_values[genotype_id][locus][allele]['validated'] %}
@@ -152,6 +152,10 @@ background: #90ee90
 <br>
 <small><a href="/genotype_locus_note/{{ genotype_id}}/{{ locus }}/{{ allele }}">note</a></small>
 </td>
+{% else %}
+<td></td>
+{% endif %}
+
 {% endfor %}
 
 
