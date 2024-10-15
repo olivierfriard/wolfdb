@@ -1149,6 +1149,8 @@ def create_ml_relate_input(title: str, loci_values) -> str:
         locus_has_values: bool = False
         for genotype in loci_values:
             for allele in ("a", "b"):
+                if allele not in loci_values[genotype][locus]:
+                    continue
                 if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
                     locus_has_values = True
         if locus_has_values:
@@ -1270,6 +1272,8 @@ def wa_analysis_group(tool: str, mode: str):
             for genotype in loci_values:
                 # print(f"{genotype=}")
                 for allele in ("a", "b"):
+                    if allele not in loci_values[genotype][locus]:
+                        continue
                     # print(f"{allele} {loci_values[genotype][locus][allele]=}")
                     if loci_values[genotype][locus][allele]["value"] not in (0, "-"):
                         locus_has_values = True
@@ -1368,7 +1372,7 @@ def wa_analysis_group(tool: str, mode: str):
 
         _ = subprocess.Popen([params["colony_path"], f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"])
 
-        flash(fn.alert_danger("Colony is running. Reload the page continuously (F5) until the results are displayed."))
+        flash(fn.alert_success("<b>The Colony program is running</b>. Reload the page continuously (F5) until the results are displayed."))
 
         return redirect(f"/wa_analysis_group/{tool}/web")
 

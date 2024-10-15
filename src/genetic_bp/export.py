@@ -199,8 +199,8 @@ def export_wa_analysis_group(loci_list, data, loci_values):
                 [
                     loci_values[genotype_id][locus]["a"]["value"],
                     loci_values[genotype_id][locus]["a"]["notes"],
-                    loci_values[genotype_id][locus]["b"]["value"],
-                    loci_values[genotype_id][locus]["b"]["notes"],
+                    loci_values[genotype_id][locus]["b"]["value"] if "b" in loci_values[genotype_id][locus] else "",
+                    loci_values[genotype_id][locus]["b"]["notes"] if "b" in loci_values[genotype_id][locus] else "",
                 ]
             )
 
