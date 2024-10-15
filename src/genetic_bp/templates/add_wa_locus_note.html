@@ -19,26 +19,30 @@
 <br>
 
 <h3>
-WA code: <b>{{ data["wa_code"] }}</b><br>
-Locus: <b>{{ data["locus"] }}</b><br>
-Allele: <b>{{ data["allele"] }}</b><br>
-Current value: <b>{{ data["value"] }}</b><br>
-{% if data['definitive'] %}
+WA code: <b>{{ data.wa_code }}</b><br>
+Locus: <b>{{ data.locus }}</b><br>
+Allele: <b>{{ data.allele }}</b><br>
+Current value: <b>{{ data.value }}</b> Other allele value: {{ data.other_allele_value }}<br>
+{% if data.definitive %}
 DEFINITIVE
 {% else %}
-{% if data['user_id'] %}
+{% if data.user_id %}
 <span style="background:#FF6461">TO BE CHECKED</span>
 {% endif %}
 {% endif %}<br>
-<br>
-
-<small>
-Other allele value: {{ data["other_allele_value"] }}<br>
-Genotype ID: {{ data["genotype_id"] }}<br>
-</small>
-
-
 </h3>
+<h4>
+
+Genotype ID: {{ data.genotype_id }}  sex: {{ data.genotype_sex }}<br>
+Genotype allele value:
+
+<span {% if data.genotype_allele.value != data.value %}style="background:orange"{%endif%}>
+  {{ data.genotype_allele.value  }}
+</span>
+
+</h4>
+
+
 
 
 <p style="margin-bottom:2em;"><h4>Allele's notes</h4></p>

@@ -1707,6 +1707,7 @@ def view_genetic_data_history(wa_code: str, locus: str):
 def wa_locus_note(wa_code: str, locus: str, allele: str):
     """
     let authorized user to add a note on wa_code locus_name allele timestamp
+    user with 'allele modifier' permission can set 'definitive' value
     """
 
     session["view_wa_code"] = wa_code
@@ -1756,15 +1757,20 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             data["other_allele_value"] = other_allele["val"] if other_allele is not None else "-"
 
             # genotype id
-            genotype_id = (
+            query_result = (
                 con.execute(
-                    text("SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code "),
+                    text("SELECT genotype_id, sex_id FROM wa_results WHERE wa_code = :wa_code "),
                     data,
                 )
                 .mappings()
                 .fetchone()
             )
-            data["genotype_id"] = genotype_id["genotype_id"] if genotype_id is not None else ""
+            data["genotype_id"] = query_result["genotype_id"] if query_result is not None else ""
+            data["genotype_sex"] = query_result["sex_id"] if query_result is not None else ""
+
+            # genotype allele value
+            genotype_loci = fn.get_genotype_loci_values_redis(data["genotype_id"])
+            data["genotype_allele"] = genotype_loci[locus].get(allele, "")
 
             return render_template(
                 "add_wa_locus_note.html",
