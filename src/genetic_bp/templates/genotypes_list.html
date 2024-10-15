@@ -185,13 +185,13 @@ set ...
 
 {% for locus in loci_values[result.genotype_id] %}
 
-{% for allele in ('a', 'b') %}
+{% for allele in ('a', 'b') if allele in loci_values[result.genotype_id][locus] %}
 
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}
 {% if result.record_status == "temp" %} 
 
 
-{% if loci_values[result.genotype_id][locus][allele]['last_note'] %}
+{% if loci_values[result.genotype_id][locus][allele]['has_history'] %}
 {% if loci_values[result.genotype_id][locus][allele]['validated'] %}
 background: #90ee90
 {% else %}

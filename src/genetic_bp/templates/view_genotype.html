@@ -104,11 +104,21 @@ Deleted
 <tr>
 <td><b>{{ locus }}</b></td>
 <td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
+{% if 'b' in  genotype_loci[locus] %}
 <td>{{ genotype_loci[locus]['b']['value'] }}</td>
+{% else %}
+<td></td>
+{% endif %}
 <td style="border-left: 1px solid black;"></td>
 {% for wa_code in wa_codes %}
-{% for allele in ('a', 'b')%}
-<td style="background:{% if loci_values[wa_code['wa_code']][locus][allele]['value'] not in (0,'-') and loci_values[wa_code['wa_code']][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
+{% for allele in ('a', 'b')  %}
+{% if allele in genotype_loci[locus] %}
+<td style="background:{% if loci_values[wa_code['wa_code']][locus][allele]['value'] not in (0,'-') 
+and loci_values[wa_code['wa_code']][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">
+{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
+{% else %}
+<td></td>
+{% endif %}
 {% endfor %}
 <td style="border-left: 1px solid black;"></td>
 {%  endfor %}

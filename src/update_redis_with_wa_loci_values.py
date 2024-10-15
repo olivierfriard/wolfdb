@@ -45,7 +45,7 @@ def update_redis_wa_loci():
 
     rdis.set("UPDATE WA LOCI", datetime.now().isoformat())
 
-    print(f"REDIS updated with WA codes loci in {time.time() - t0}")
+    print(f"REDIS updated with WA codes loci in {round(time.time() - t0,1)} seconds")
 
 
 if __name__ == "__main__":

@@ -131,7 +131,7 @@ set ...
 {% if data[genotype_id]["record_status"] == "temp" %} 
 
 
-{% if loci_values[genotype_id][locus][allele]['last_note'] %}
+{% if loci_values[genotype_id][locus][allele]['has_history'] %}
 {% if loci_values[genotype_id][locus][allele]['validated'] %}
 background: #90ee90
 {% else %}

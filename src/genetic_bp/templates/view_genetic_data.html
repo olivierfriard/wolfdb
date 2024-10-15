@@ -45,7 +45,7 @@
 <td></td>
 {% endif %}
 
-{% for allele in ('a', 'b') %}
+{% for allele in ('a', 'b') if allele in data[locus] %}
 
 <td {% if allele == 'b' %}style="border-left: 1px solid black;"{%endif%}
 style="background:{{ data[locus][allele]['bgcolor'] }}">

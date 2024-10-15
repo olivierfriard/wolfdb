@@ -793,9 +793,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         # check if loci have notes and values and corresponds to genotype loci
         for x in loci_values[row["wa_code"]]:
             for allele in ("a", "b"):
-                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
-
+                if allele not in loci_values[row["wa_code"]][x]:
+                    continue
                 print(f"{row["wa_code"]=}  {x=}  {allele=}")
+
+                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
 
                 if loci_values[row["wa_code"]][x][allele]["has_history"]:
                     has_loci_notes = True
@@ -1458,6 +1460,8 @@ def view_genetic_data(wa_code: str):
 
         for locus in loci_list:
             for allele in ("a", "b"):
+                if allele not in wa_loci[locus]:
+                    continue
                 # check wa / genotype
                 if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
                     wa_loci[locus][allele]["divergent_allele"] = Markup(
@@ -1515,6 +1519,8 @@ def add_genetic_data(wa_code: str):
 
         for locus in loci_list:
             for allele in ("a", "b"):
+                if allele not in wa_loci[locus]:
+                    continue
                 # check wa / genotype
                 if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
                     wa_loci[locus][allele]["divergent_allele"] = Markup(

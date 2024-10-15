@@ -10,6 +10,7 @@ from sqlalchemy import text
 import functions as fn
 import json
 import redis
+import time
 from datetime import datetime
 
 from config import config
@@ -27,6 +28,7 @@ def update_redis_genotypes_loci():
     """
 
     print("Updating REDIS with genotypes loci")
+    t0 = time.time()
 
     # dev version use db #1
     rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
@@ -41,7 +43,7 @@ def update_redis_genotypes_loci():
 
     rdis.set("UPDATE GENOTYPES LOCI", datetime.now().isoformat())
 
-    print("REDIS updated with genotypes loci")
+    print(f"REDIS updated with genotypes loci in {round(time.time() - t0,1)} seconds")
 
 
 if __name__ == "__main__":
