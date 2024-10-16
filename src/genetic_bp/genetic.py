@@ -800,11 +800,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                 loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
 
                 if loci_values[row["wa_code"]][x][allele]["has_history"]:
-                    has_loci_notes = True
                     if loci_values[row["wa_code"]][x][allele]["definitive"]:
                         loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
                     else:
                         loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
+                        has_loci_notes = True
 
                 """
                 if loci_values[row["wa_code"]][x][allele]["notes"]:
