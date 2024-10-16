@@ -256,10 +256,10 @@ def plot_tracks():
     """
 
     with fn.conn_alchemy().connect() as con:
-        features = []
+        features: list = []
         tot_min_lat, tot_min_lon = 90, 90
         tot_max_lat, tot_max_lon = -90, -90
-
+        count_tracks: int = 0
         for row in (
             con.execute(
                 text(
@@ -299,6 +299,7 @@ def plot_tracks():
                 }
 
                 features.append(dict(feature))
+                count_tracks += 1
 
         return render_template(
             "plot_tracks.html",
@@ -312,10 +313,11 @@ def plot_tracks():
                     }
                 )
             ),
-            scat_color=params["scat_color"],
-            dead_wolf_color=params["dead_wolf_color"],
-            transect_color=params["transect_color"],
+            # scat_color=params["scat_color"],
+            # dead_wolf_color=params["dead_wolf_color"],
+            # transect_color=params["transect_color"],
             track_color=params["track_color"],
+            count_tracks=count_tracks,
         )
 
 

@@ -3,7 +3,7 @@
 {% block content %}
 
 
-<h3>Location of transects</h3>
+<h3>Location of {{ count_transects }} transects</h3>
 
 {% include 'legend.html' %}
 
@@ -20,10 +20,6 @@ width: 100%;
 </div>
 
 {{ map }}
-
-
-
-
 
 {% endblock %}
 

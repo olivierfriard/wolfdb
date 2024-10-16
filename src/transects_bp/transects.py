@@ -212,10 +212,10 @@ def view_transect(transect_id):
                 }
             )
         ),
-        scat_color=params["scat_color"],
-        dead_wolf_color=params["dead_wolf_color"],
+        # scat_color=params["scat_color"],
+        # dead_wolf_color=params["dead_wolf_color"],
         transect_color=params["transect_color"],
-        track_color=params["track_color"],
+        # track_color=params["track_color"],
     )
 
 
@@ -508,6 +508,7 @@ def plot_transects():
         transects_features: list = []
         tot_min_lat, tot_min_lon = 90, 90
         tot_max_lat, tot_max_lon = -90, -90
+        count_transects: int = 0
 
         for row in (
             con.execute(text("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects"))
@@ -536,6 +537,7 @@ def plot_transects():
                 }
 
                 transects_features.append(dict(transect_feature))
+                count_transects += 1
 
             else:
                 print(f"{row['transect_id']} WITHOUT coordinates")
@@ -553,6 +555,7 @@ def plot_transects():
             )
         ),
         transect_color=params["transect_color"],
+        count_transects=count_transects,
     )
 
 

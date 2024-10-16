@@ -9,6 +9,7 @@ import pandas as pd
 import utm
 from sqlalchemy import create_engine
 from sqlalchemy import text
+import tabulate
 import italian_regions
 
 
@@ -41,6 +42,8 @@ def sampling_season(date: str) -> str:
 
 
 def quote(s):
+    if not isinstance(s, str):
+        return s 
     if s == "":
         return "NULL"
     try:
@@ -53,7 +56,8 @@ def quote(s):
 
 
 filename = sys.argv[1]
-mode = sys.argv[2]  # INSERT / UPDATE
+
+# mode = sys.argv[2]  # INSERT / UPDATE
 
 if Path(filename).suffix.upper() == ".XLSX":
     engine = "openpyxl"
@@ -61,17 +65,19 @@ if Path(filename).suffix.upper() == ".ODS":
     engine = "odf"
 
 
-if len(sys.argv) == 4:
+'''
+if len(sys.argv) == 3:
     box_number = int(sys.argv[3])
 else:
     box_number = "NULL"
+'''
+
 
 out: str = ""
 
 scats_df = pd.read_excel(filename, sheet_name=0, engine=engine)
 
-# check columns
-for column in [
+required_columns = [
     "scat_id",
     "date",
     "wa_code",
@@ -93,7 +99,11 @@ for column in [
     "operator",
     "institution",
     "notes",
-]:
+    "box_number"
+]
+
+# check columns
+for column in required_columns:
     if column not in list(scats_df.columns):
         print(f"ERROR Column {column} is missing", file=sys.stderr)
         sys.exit()
@@ -162,20 +172,22 @@ for idx, date in enumerate(scats_df["date"]):
     try:
         dt.datetime.strptime(date, "%Y-%m-%d")
     except Exception:
-        print(f"{date} is not a date at row {idx+1}", file=sys.stderr)
+        print(f"'{date}' is not a valid date at row {idx + 2} (check date format)", file=sys.stderr)
 
 # check province code
 for idx, province in enumerate(scats_df["province"]):
     if isinstance(province, int):
         province = f"{province:02}"
     if province not in italian_regions.province_codes:
-        print(f"Province {province} not found {idx}", file=sys.stderr)
+        print(f"Province '{province}' not found at row {idx + 2}", file=sys.stderr)
 
-
+'''
 # TEST end
 if mode != "UPDATE":
     print("exiting...")
     sys.exit()
+'''
+
 
 # create output file
 output_dir = Path(filename).parent / Path(filename).stem
@@ -282,18 +294,26 @@ for _, row in scats_df.iterrows():
         # retrieve fields
         with conn_alchemy().connect() as con:
             scat = con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id "), {"scat_id": data["scat_id"]}).mappings().fetchone()
-        print(scat["scat_id"])
+        
         update_list = []
+        output = []
         for key in scat:
-            if (scat[key] is None or scat[key] == "") and (str(data.get(key, "nan")) not in ("nan", "")):
-                print(f"{key=}  {data[key]=}")
+            #if (scat[key] is None or scat[key] == "") and (str(data.get(key, "nan")) not in ("nan", "")):
+            
+            db_val = scat[key] if scat[key] is not None else ''
+            if key in required_columns and str(db_val) != str(data[key]):
+                output.append([key,db_val,data[key]])
+                #print(f"field '{key}'  current value: '{db_val}'   new value: '{data[key]}'")
                 update_list.append(f" {key} = {quote(data[key])} ")
 
-        if scat["box_number"] is None and box_number:
-            update_list.append(f" box_number = {box_number} ")
+        if update_list:
+            print(f"\nScat already in database: {scat["scat_id"]}")
+            print(tabulate.tabulate(output, ['field', 'current value', 'new value'], tablefmt="pretty"))
 
-        print(",".join(update_list))
-        print("-" * 80)
+
+            #print(",".join(update_list))
+            print()
+            print()
 
         print((f"""UPDATE scats SET {','.join(update_list)} WHERE scat_id = '{data["scat_id"]}';"""), file=f_out)
 
@@ -310,7 +330,7 @@ for _, row in scats_df.iterrows():
                 f"""'{data["date"]}',"""
                 f"""'{data["wa_code"]}',"""
                 f"""'{sampling_season(data["date"])}',"""
-                f"{quote(data["sampling_type"])}, "
+                f"{quote(data['sampling_type'])}, "
                 f"{quote(data['location'])}, "
                 f"{quote(data['municipality'])}, "
                 f"{quote(data['province'])}, "
@@ -326,7 +346,7 @@ for _, row in scats_df.iterrows():
                 f"{quote(data['operator'])}, "
                 f"{quote(data['institution'])}, "
                 f"{quote(data['notes'])}, "
-                f"{box_number}, "
+                f"{data['box_number']}, "
                 f"'SRID=32632;POINT({data['coord_east']} {data['coord_north']})'"
                 ");"
             ),

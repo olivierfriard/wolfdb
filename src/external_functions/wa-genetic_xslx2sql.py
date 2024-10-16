@@ -46,11 +46,13 @@ def quote(s):
 
 # read arguments
 filename = sys.argv[1]
-RECORD_STATUS = sys.argv[2]
+
+'''
+# disabled because record status is included in the spreadsheet
 if RECORD_STATUS not in ("OK", "temp"):
     print("record_status must be OK or temp")
     sys.exit()
-
+'''
 
 if Path(filename).suffix.upper() == ".XLSX":
     engine = "openpyxl"
@@ -125,6 +127,7 @@ columns_names = [
     "quality_genotype",
     "Other ID",
     "Genotype ID",
+    "record_status",
     "Sex ID",
     "Pack",
     "Note",
@@ -239,7 +242,7 @@ for idx, row in genetic_df.iterrows():
                     f"{quote(str(row["Sex ID"]))},"
                     f"{quote(str(row["mtDNA"]))},"
                     f"{quote(str(row["Other ID"] if row["Other ID"]==row["Other ID"] else 'NULL'))},"
-                    f"'{RECORD_STATUS}',"  # record status
+                    f"{quote(str(row["record_status"]))},"
                     f"{quote(str(row["Note"])) if row["Note"]==row["Note"] else 'NULL'}"
                     "); "
                     # " ON CONFLICT (genotype_id) "

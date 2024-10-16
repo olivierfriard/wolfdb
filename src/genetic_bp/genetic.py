@@ -795,7 +795,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             for allele in ("a", "b"):
                 if allele not in loci_values[row["wa_code"]][x]:
                     continue
-                print(f"{row["wa_code"]=}  {x=}  {allele=}")
 
                 loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
 
@@ -805,17 +804,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                     else:
                         loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
                         has_loci_notes = True
-
-                """
-                if loci_values[row["wa_code"]][x][allele]["notes"]:
-                    if not loci_values[row["wa_code"]][x][allele]["definitive"]:
-                        has_loci_notes = True
-                        loci_values[row["wa_code"]][x][allele]["color"] = params["red_note"]
-                    else:
-                        loci_values[row["wa_code"]][x][allele]["color"] = params["green_note"]
-                else:
-                    loci_values[row["wa_code"]][x][allele]["color"] = "#ffffff00"
-                """
 
                 if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
                     has_loci_values = True
@@ -846,14 +834,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                             # check if allele has already a color
                     except Exception:
                         pass
-                        """
-                        print(f'{row["genotype_id"]=}')
-                        print(f"{x=}")
-                        print(f"{allele=}")
-                        print(f"{genotype_loci_val[x][allele]=}")
-                        print()
-                        print(f"{loci_val[x][allele]=}")
-                        """
 
         if filter == "no_values":
             out.append(dict(row))
