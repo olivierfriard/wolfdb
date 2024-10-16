@@ -8,8 +8,6 @@ flask blueprint for tracks management
 import flask
 from flask import render_template, redirect, request, flash, make_response, session
 from markupsafe import Markup
-import psycopg2
-import psycopg2.extras
 from config import config
 import sys
 import os

@@ -101,13 +101,16 @@ def view_pack(pack_name):
         )
 
     samples_features: list = []
-    sum_lon: float = 0.0
-    sum_lat: float = 0.0
+    min_lat, max_lat = 90, -90
+    min_lon, max_lon = 90, -90
+
     count_wa_code: int = 0
     for row in wa_codes:
         count_wa_code += 1
-        sum_lon += row["longitude"]
-        sum_lat += row["latitude"]
+        min_lat = min(min_lat, row["latitude"])
+        max_lat = max(max_lat, row["latitude"])
+        min_lon = min(min_lon, row["longitude"])
+        max_lon = max(max_lon, row["longitude"])
 
         popup_content: list = []
         if row["sample_type"] == "scat":
@@ -134,13 +137,12 @@ def view_pack(pack_name):
         samples_features.append(sample_feature)
 
     if count_wa_code:
-        center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
         map = Markup(
             fn.leaflet_geojson(
                 {
                     "scats": samples_features,
                     "scats_color": params["scat_color"],
-                    "center": center,
+                    "fit": [[min_lat, min_lon], [max_lat, max_lon]],
                 }
             )
         )

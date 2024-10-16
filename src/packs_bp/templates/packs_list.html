@@ -1,28 +1,53 @@
-{% extends "bootstrap.html" %}
+{% extends "bootstrap_simple.html" %}
 
 {% block content %}
 
+<body>
 
+
+    
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@400&display=swap" rel="stylesheet">
+
+<style>
+    .condensed {
+        font-family: "Fira Sans Condensed";
+        font-size: 1.2em;
+    }</style>
+    
 
 
 {% if packs_list %}
-<h2>List of {{ n_packs }} packs</h2>
-<table class="table table-striped">
+<h3>List of {{ n_packs }} packs</h3>
+
+
+{% include "freeze_1stcolumn_1strow.html" %}
+<div class="frozen">
+<div class="condensed">
+
+<table id="pack_list" class="table table-striped table-hover w-auto">
+<thead>
 <tr>
 <th>Name</th>
 <th>Number of individuals</th>
 </tr>
+</thead>
+<tbody>
 {% for pack in packs_list %}
 <tr>
 <td><a href="/view_pack/{{ pack['pack_url'] }}">{{ pack['pack'] }}</a></td>
 <td>{{ pack['n_individuals'] }}</td>
 </tr>
 {% endfor %}
+</tbody>
 </table>
+</div>
+</div>
 {% else %}
 
 <h2>No packs found</h2>
 
 {% endif %}
+
+
 
 {% endblock %}

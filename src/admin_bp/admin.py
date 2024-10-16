@@ -52,7 +52,7 @@ def update_redis():
     """
     _ = subprocess.Popen(["../.venv/bin/python", "update_redis.py"])
 
-    flash(fn.alert_danger("Redis updating with WA and genotypes loci in progress.<br>It will take several minutes to complete."))
+    flash(fn.alert_success("Redis updating with WA and genotypes loci in progress.<br>It will take several minutes to complete."))
 
     return redirect("/admin")
 
@@ -77,7 +77,7 @@ def web_update_redis_with_genotypes_loci():
     """
     update_redis_with_genotypes_loci()
 
-    flash(fn.alert_danger("Redis updating with genotypes loci in progress.<br>It will take several minutes to complete."))
+    flash(fn.alert_success("Redis updating with genotypes loci in progress.<br>It will take several minutes to complete."))
 
     return redirect("/admin")
 
@@ -92,6 +92,6 @@ def update_redis_with_wa_loci():
     """
     _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_wa_loci_values.py"])
 
-    flash(fn.alert_danger("Redis updating with WA loci in progress.<br>It will take several minutes to complete."))
+    flash(fn.alert_success("Redis updating with WA loci in progress.<br>It will take several minutes to complete."))
 
     return redirect("/admin")

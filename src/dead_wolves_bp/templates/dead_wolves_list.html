@@ -1,9 +1,6 @@
-{% extends "bootstrap_no-body.html" %}
+{% extends "bootstrap_simple.html" %}
 
 {% block content %}
-<body>
-
-{% include "menu.html" %}
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -29,7 +26,7 @@
 <div class="frozen">
 <div class="condensed">
 
-<table id="dead_wolves_list" class="table table-striped">
+<table id="dead_wolves_list" class="table table-striped table-hover w-auto">
 <thead>
 <tr>
 <th>ID</th>
@@ -70,7 +67,6 @@
 
 {% endif %}
 
-</body>
 {% endblock %}
 
 
