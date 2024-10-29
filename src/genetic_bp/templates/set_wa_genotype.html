@@ -3,10 +3,20 @@
 
 {% block content %}
 
+
 <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
 
 <br>
 <br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+{{ message }}
+{% endfor %}
+{% endif %}
+{% endwith %}
+
 
 <h3>WA code: <b>{{ wa_code }}</b></h3>
 

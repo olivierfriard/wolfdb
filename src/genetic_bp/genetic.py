@@ -5,7 +5,7 @@ WolfDB web service
 flask blueprint for genetic data management
 """
 
-from flask import render_template, redirect, request, flash, session, make_response, Blueprint, current_app, jsonify
+from flask import render_template, redirect, request, flash, session, make_response, Blueprint, current_app, jsonify, url_for
 from markupsafe import Markup
 from sqlalchemy import text
 from config import config
@@ -2102,9 +2102,14 @@ def set_wa_genotype(wa_code: str):
                     .mappings()
                     .fetchone()
                 )
-                if genotype_exists is not None:
-                    flash(fn.alert_danger(f"The genotype {request.form["genotype_id"]} does not exits."))
-                    return redirect(session["url_wa_list"])
+
+                if genotype_exists is None:
+                    flash(
+                        fn.alert_danger(
+                            f"<strong>Attention!</strong><br>The genotype <strong>{request.form["genotype_id"]}</strong> does not exits."
+                        )
+                    )
+                    return redirect(url_for("genetic.set_wa_genotype", wa_code=wa_code))
 
             with fn.conn_alchemy().connect() as con:
                 sql = text("UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code")
