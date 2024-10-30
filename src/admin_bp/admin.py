@@ -5,6 +5,7 @@ WolfDB web service
 flask blueprint for service administration
 """
 
+import sys
 from flask import render_template, session, current_app, flash, redirect, Blueprint
 import subprocess
 from sqlalchemy import text
@@ -50,32 +51,22 @@ def update_redis():
 
     !require the update_redis.py file
     """
-    _ = subprocess.Popen(["../.venv/bin/python", "update_redis.py"])
+    _ = subprocess.Popen([sys.executable, "update_redis.py"])
 
     flash(fn.alert_success("Redis updating with WA and genotypes loci in progress.<br>It will take several minutes to complete."))
 
     return redirect("/admin")
 
 
-def update_redis_with_genotypes_loci():
-    """
-    update redis with the genotypes loci values
-
-    !require the update_redis_with_genotypes_loci_values file
-    """
-
-    _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_genotypes_loci_values.py"])
-
-
 @app.route("/update_redis_genotypes")
 @fn.check_login
-def web_update_redis_with_genotypes_loci():
+def update_redis_with_genotypes_loci():
     """
     web interface to update redis with the genotypes loci values
 
     !require the update_redis_with_genotypes_loci_values file
     """
-    update_redis_with_genotypes_loci()
+    _ = subprocess.Popen([sys.executable, "update_redis_with_genotypes_loci_values.py"])
 
     flash(fn.alert_success("Redis updating with genotypes loci in progress.<br>It will take several minutes to complete."))
 
@@ -90,7 +81,7 @@ def update_redis_with_wa_loci():
 
     !require the update_redis_with_wa_loci_values.py file
     """
-    _ = subprocess.Popen(["../.venv/bin/python", "update_redis_with_wa_loci_values.py"])
+    _ = subprocess.Popen([sys.executable, "update_redis_with_wa_loci_values.py"])
 
     flash(fn.alert_success("Redis updating with WA loci in progress.<br>It will take several minutes to complete."))
 
