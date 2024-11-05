@@ -53,7 +53,6 @@ def quote(s):
 
 
 filename = sys.argv[1]
-mode = sys.argv[2]  # INSERT / UPDATE
 
 if Path(filename).suffix.upper() == ".XLSX":
     engine = "openpyxl"
@@ -87,6 +86,7 @@ for column in (
     "operator",
     "institution",
     "notes",
+    "box_number"
 ):
     if column not in list(dw_df.columns):
         print(f"ERROR Column {column} is missing", file=sys.stderr)
@@ -171,10 +171,6 @@ for idx, province in enumerate(dw_df["province"]):
         print(f"Province {province} not found {idx}", file=sys.stderr)
 
 
-# TEST end
-if mode != "UPDATE":
-    print("exiting...")
-    sys.exit()
 
 # create output file
 output_dir = Path(filename).parent / Path(filename).stem
