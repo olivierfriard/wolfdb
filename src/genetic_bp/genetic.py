@@ -1061,6 +1061,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
 def get_genotypes_from_wa(wa_list: list):
     """
     get genotype info from list of WA codes
+    TODO: check if same genotype has 2 different sex
     """
     wa_list_str = "','".join(wa_list)
     with fn.conn_alchemy().connect() as con:
@@ -1072,7 +1073,6 @@ def get_genotypes_from_wa(wa_list: list):
                     "FROM wa_scat_dw_mat "
                     f"WHERE wa_code in ('{wa_list_str}') "
                     "GROUP BY genotype_id, sex_id "
-                    # "GROUP BY genotype_id "
                     "ORDER BY genotype_id ASC"
                 )
             )
@@ -1086,6 +1086,8 @@ def get_genotypes_data(genotypes_info):
     """
     get info and loci values of genotypes
     """
+
+    print(f"{genotypes_info=}")
 
     loci_values: dict = {}
     data: dict = {}
@@ -1108,6 +1110,8 @@ def get_genotypes_data(genotypes_info):
                 .mappings()
                 .fetchone()
             )
+
+            # print(result)
 
             if result is None:
                 continue
@@ -1241,11 +1245,23 @@ def wa_analysis_group(tool: str, mode: str):
         colony_output_path.mkdir(parents=True, exist_ok=True)
 
     if "colony" in mode:
+        # load the colony template
         with open("external_functions/colony_template.dat", "r") as file_in:
             colony_template = jinja2.Template(file_in.read())
 
+        # load the loci list to use with colony
+        colony_loci: set = set()
+        with fn.conn_alchemy().connect() as con:
+            for row in con.execute(text("SELECT name FROM loci WHERE use_with_colony = true")).mappings().all():
+                colony_loci.add(row["name"])
+
+        with open("external_functions/loci_to_use_with_colony.txt", "r") as file_in:
+            colony_loci = [x.strip().upper() for x in file_in.readlines()]
+
         valid_locus: list = []
         for locus in loci_list:
+            if locus.upper() not in colony_loci:
+                continue
             # print()
             # print(f"{locus=}")
             locus_has_values: bool = False
@@ -1308,7 +1324,7 @@ def wa_analysis_group(tool: str, mode: str):
                 offspring_number=len(allele_sex["M"]) + len(allele_sex["F"]),
                 loci_number=len(valid_locus),
                 alleles="\n".join(allele_data),
-                n_male=count_sex["M"],
+                n_male=count_sex["M"] + 12,
                 n_female=count_sex["F"],
                 male_alleles="\n".join(allele_sex["M"]),
                 female_alleles="\n".join(allele_sex["F"]),
@@ -1350,7 +1366,29 @@ def wa_analysis_group(tool: str, mode: str):
             flash(fn.alert_danger("The Colony program was not found. Please contact the administrator."))
             return redirect(f"/wa_analysis_group/{tool}/web")
 
-        _ = subprocess.Popen([params["colony_path"], f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"])
+        with open(f"{input_file_name}.stdout", "w") as colony_stdout:
+            _ = subprocess.Popen([params["colony_path"], f"IFN:{input_file_name}.dat", f"OFN:{input_file_name}"], stdout=colony_stdout)
+
+        # wait few seconds for errormessage
+        time.sleep(4)
+
+        # check if colony errormessage file exists
+        colony_error_message: str = ""
+        if pl.Path("Colony2.ErrorMessage").is_file():
+            # read file content
+            with open(pl.Path("Colony2.ErrorMessage"), "r") as file_in:
+                colony_error_message = file_in.read()
+            pl.Path("Colony2.ErrorMessage").unlink()
+            flash(
+                fn.alert_danger(
+                    (
+                        "<b>ERROR: Colony returns the following message</b>:<br>"
+                        f"<pre>{colony_error_message}</pre><br>"
+                        "Use the <b>Export for Colony</b> button to check the input file."
+                    )
+                )
+            )
+            return redirect(f"/wa_analysis_group/{tool}/web")
 
         flash(fn.alert_success("<b>The Colony program is running</b>. Reload the page continuously (F5) until the results are displayed."))
 
@@ -1395,6 +1433,7 @@ def wa_analysis_group(tool: str, mode: str):
         # check colony results file already exists
         if colony_output_file_path.is_file():
             colony_result = "/static" / colony_output_dir / colony_output_file
+            # read file content
             with open(colony_output_file_path, "r") as file_in:
                 colony_results_content = file_in.read()
 
@@ -2560,8 +2599,6 @@ def confirm_load_definitive_genotypes_xlsx(filename):
 
     thread = Thread(target=import_.import_definitive_genotypes, args=(filename,))
     thread.start()
-
-    # _ = subprocess.Popen([sys.executable, "update_redis_with_wa_loci_values.py"])
 
     flash(fn.alert_success("The genotypes are being updated.<br>It will take several minutes to complete."))
 
