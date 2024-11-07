@@ -34,9 +34,8 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
     ]
 
     for locus in loci_list:
-        header.extend([f"{locus} a", f"Notes for {locus} a"])
-        if loci_list[locus] == 2:
-            header.extend([f"{locus} b", f"Notes for {locus} b"])
+        for allele in ("a", "b")[: loci_list[locus]]:
+            header.extend([f"{locus} {allele}", f"Notes for {locus} {allele}"])
 
     ws1.append(header)
 
@@ -61,14 +60,13 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
 
         for locus in loci_list:
-            out.extend(
-                [
-                    loci_values[row["wa_code"]][locus]["a"]["value"],
-                    loci_values[row["wa_code"]][locus]["a"]["notes"],
-                    loci_values[row["wa_code"]][locus]["b"]["value"],
-                    loci_values[row["wa_code"]][locus]["b"]["notes"],
-                ]
-            )
+            for allele in ("a", "b")[: loci_list[locus]]:
+                out.extend(
+                    [
+                        loci_values[row["wa_code"]][locus][allele]["value"],
+                        loci_values[row["wa_code"]][locus][allele]["notes"],
+                    ]
+                )
 
         ws1.append(out)
 
@@ -233,9 +231,8 @@ def export_genotypes_list(loci_list, results, loci_values):
         "Dead recovery",
     ]
     for locus in loci_list:
-        header.extend([f"{locus} a", f"Notes for {locus} a"])
-        if loci_list[locus] == 2:
-            header.extend([f"{locus} b", f"Notes for {locus} b"])
+        for allele in ("a", "b")[: loci_list[locus]]:
+            header.extend([f"{locus} {allele}", f"Notes for {locus} {allele}"])
 
     ws1.append(header)
 
@@ -256,14 +253,19 @@ def export_genotypes_list(loci_list, results, loci_values):
         out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
 
         for locus in loci_list:
-            out.extend(
-                [
-                    loci_values[row["genotype_id"]][locus]["a"]["value"],
-                    loci_values[row["genotype_id"]][locus]["a"]["notes"],
-                    loci_values[row["genotype_id"]][locus]["b"]["value"],
-                    loci_values[row["genotype_id"]][locus]["b"]["notes"],
-                ]
-            )
+            """
+            print()
+            print(locus)
+            print(loci_list[locus])
+            print(f"{loci_values[row["genotype_id"]][locus]}=")
+            """
+            for allele in ("a", "b")[: loci_list[locus]]:
+                out.extend(
+                    [
+                        loci_values[row["genotype_id"]][locus][allele]["value"],
+                        loci_values[row["genotype_id"]][locus][allele]["notes"],
+                    ]
+                )
 
         ws1.append(out)
 
