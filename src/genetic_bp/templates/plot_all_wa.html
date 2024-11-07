@@ -37,8 +37,6 @@ Plot DBSCAN clusters
 
 <br><br>
 
-{% if session['start_year'] and session['end_year'] %}Analysis date interval: <strong>{{ session['start_year']}}</strong> - <strong>{{session['end_year']}}</strong><br><br>{% endif %}
-
 {{ title }}
 
 {% include 'legend.html' %}
@@ -51,10 +49,9 @@ width: 100%;
 }
 </style>
 
-<div class="col-md-12"><div id="map" ></div></div>
+<div class="col-md-12"><div id="map"></div></div>
 
 {{ map }}
-
 
 
 {% endblock %}

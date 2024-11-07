@@ -2663,7 +2663,7 @@ def select_on_map():
                 )
 
             if wkt_polygon:
-                print(wkt_polygon["st_astext"])
+                """print(wkt_polygon["st_astext"])"""
                 return jsonify({"status": "success", "message": wkt_polygon["st_astext"]}), 200
             else:
                 return jsonify({"status": "error", "message": "Error in polygon"}), 400

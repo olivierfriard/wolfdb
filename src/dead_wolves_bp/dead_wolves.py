@@ -141,7 +141,7 @@ def plot_dead_wolves():
                     "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
                     "FROM dead_wolves "
                     "WHERE deleted is NULL "
-                    "AND utm_east != '0' AND utm_north != '0' "
+                    "AND utm_east BETWEEN 166021 AND 833978 AND utm_north BETWEEN 1 AND 9329005 "
                     "AND discovery_date BETWEEN :start_date AND :end_date"
                 ),
                 {
@@ -154,13 +154,15 @@ def plot_dead_wolves():
         ):
             # lat, lon = utm.to_latlon(int(float(row["utm_east"])), int(float(row["utm_north"])), 32, "N")
 
-            print(f"{row["latitude"]=}")
-            print(f"{row["longitude"]=}")
+            print(f"{row["genotype_id"]=}  {row["latitude"]=}   {row["longitude"]=}")
 
             tot_min_lat = min([tot_min_lat, row["latitude"]])
             tot_max_lat = max([tot_max_lat, row["latitude"]])
             tot_min_lon = min([tot_min_lon, row["longitude"]])
             tot_max_lon = max([tot_max_lon, row["longitude"]])
+            print()
+            print(f"{tot_min_lat=}   {tot_max_lat=}")
+            print(f"{tot_min_lon=}   {tot_max_lon=}")
 
             popup_content: list = [f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>"""]
             if row["genotype_id"]:
@@ -183,9 +185,12 @@ def plot_dead_wolves():
             }
             dw_features.append(dict(dw_feature))
 
+    print()
+    print(f"{dw_features=}")
+
     return render_template(
         "plot_dead_wolves.html",
-        header_title="Plot of dead wolves",
+        header_title="Locations of dead wolves",
         map=Markup(
             fn.leaflet_geojson(
                 {

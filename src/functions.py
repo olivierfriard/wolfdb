@@ -918,7 +918,7 @@ function onEachFeature(feature, layer) {
         popupContent += feature.properties.popupContent;
     }
     layer.bindPopup(popupContent);
-}featureGroup: drawnItems
+}
 
 L.geoJSON([dead_wolves], {
 
