@@ -28,6 +28,15 @@
 <a href="/wa_analysis_group/{{ tool }}/ml-relate" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a>
 <a href="/wa_analysis_group/{{ tool }}/colony" class="btn btn-info btn-sm">Export for Colony</a>
 <a href="/wa_analysis_group/{{ tool }}/run_colony" class="btn btn-info btn-sm">Run Colony</a>
+
+{% if colony_error_message %}
+<div class="alert alert-danger" role="alert">
+<b>Colony error message:</b><br><br>
+<pre>{{ colony_error_message }}</pre>
+</div>
+{% endif %}
+
+
 {% if colony_result %}
 <br><br><b>Colony results:</b><br><br>
 <pre>{{ colony_results_content }}</pre>
