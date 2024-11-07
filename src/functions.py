@@ -918,7 +918,7 @@ function onEachFeature(feature, layer) {
         popupContent += feature.properties.popupContent;
     }
     layer.bindPopup(popupContent);
-}
+}featureGroup: drawnItems
 
 L.geoJSON([dead_wolves], {
 
@@ -990,12 +990,15 @@ var drawControl = new L.Control.Draw({
         polyline: false,  // Désactive l'outil ligne
         rectangle: false, // Désactive l'outil rectangle
         circle: false,    // Désactive l'outil cercle
-        marker: false     // Désactive l'outil marqueur
+        marker: false,     // Désactive l'outil marqueur
+        circlemarker: false, // Set circlemarker to false to remove it
+        edit: false,
+
     }
 });
 map.addControl(drawControl);
 
-// event triggered wheun user finish a draw
+// event triggered when user finish a draw
 map.on('draw:created', function (event) {
     var layer = event.layer;
     drawnItems.addLayer(layer);
@@ -1017,7 +1020,8 @@ map.on('draw:created', function (event) {
         if (data['status'] == 'error')
             {
             alert(data['message']);
-            console.log('server Response:', data);    
+            console.log('server Response:', data);
+            drawnItems.clearLayers();
             }
         else
             {
