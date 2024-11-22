@@ -2307,7 +2307,7 @@ def set_sex(genotype_id):
 
         if request.method == "POST":
             if request.form["sex"].upper().strip() not in ("F", "M", ""):
-                flash(fn.alert_danger(f"<big><b>Sex value not available ({request.form['sex'].upper().strip()})</b></big>"))
+                flash(fn.alert_danger(f"<big>Sex value <b>{request.form['sex'].upper().strip()}</b> not available.</big>"))
 
                 if "redirect_url" in session:
                     redirect_url = session["redirect_url"]
@@ -2474,13 +2474,33 @@ def set_parent(genotype_id, parent_type):
         if request.method == "POST":
             if parent_type not in ("father", "mother"):
                 flash(fn.alert_danger(f"Error in {parent_type} parameter (must be 'father' or 'mother')"))
-                return redirect(request.referrer)
+                if "redirect_url" in session:
+                    redirect_url = session["redirect_url"]
+                    del session["redirect_url"]
+                    return redirect(redirect_url)
+                else:
+                    return redirect("/")
+
+            # check if parent identical to genotype
+            if genotype_id.strip() == request.form["parent"].strip():
+                flash(fn.alert_danger(f"The parent genotype <b>{request.form["parent"].strip()}</b> cannot be the same genotype"))
+                if "redirect_url" in session:
+                    redirect_url = session["redirect_url"]
+                    del session["redirect_url"]
+                    return redirect(redirect_url)
+                else:
+                    return redirect("/")
 
             # check if parent genotype is present in genotypes table
             sql = text("SELECT genotype_id FROM genotypes WHERE genotype_id = :genotype_id")
             if con.execute(sql, {"genotype_id": request.form["parent"].strip()}).mappings().fetchone() is None:
                 flash(fn.alert_danger(f"The genotype <b>{request.form["parent"].strip()}</b> is not present in the genotypes table."))
-                return redirect(request.referrer)
+                if "redirect_url" in session:
+                    redirect_url = session["redirect_url"]
+                    del session["redirect_url"]
+                    return redirect(redirect_url)
+                else:
+                    return redirect("/")
 
             sql = text(f"UPDATE genotypes SET {parent_type} = :parent WHERE genotype_id = :genotype_id")
             con.execute(sql, {"parent": request.form["parent"].strip(), "genotype_id": genotype_id.strip()})
