@@ -74,6 +74,7 @@ function scroll_to_wa() {
 <th>Date</th>
 <th>Box number</th>
 <th>Municipality</th>
+<th>Province</th>
 <th>Coordinates WGS84 UTM zone 32N</th>
 <th>mtDNA result</th>
 <th>Genotype ID</th>
@@ -116,6 +117,8 @@ function scroll_to_wa() {
 <td>{% if result['box_number'] %}{{ result['box_number'] }}{% endif %}</td>
 
 <td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
+
+<td>{{ result['province'] if result['province'] else '' }}</td>
 
 <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}</td>
 

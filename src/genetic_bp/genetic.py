@@ -717,12 +717,21 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             values: dict = {}
             for idx, field_term in enumerate(search_term.split(";")):
                 field, value = [x.strip().lower() for x in field_term.split(":")]
-                if field not in ("wa", "date", "sample id", "municipality", "genotype id", "sex", "tmp id", "notes", "pack", "box"):
-                    flash(
-                        fn.alert_danger(
-                            "Search term not found. Must be 'wa', 'date', 'sample id', 'municipality', 'genotype id', 'sex', 'tmp id', 'notes', 'box' or 'pack'"
-                        )
-                    )
+                research_fields = (
+                    "wa",
+                    "date",
+                    "sample id",
+                    "municipality",
+                    "province",
+                    "genotype id",
+                    "sex",
+                    "tmp id",
+                    "notes",
+                    "pack",
+                    "box",
+                )
+                if field not in research_fields:
+                    flash(fn.alert_danger(f"Search term not found. Must be {'","'.join(research_fields)}"))
                     return redirect(session["url_wa_list"])
 
                 field = field.replace(" ", "_")
