@@ -2464,7 +2464,7 @@ def set_parent(genotype_id, parent_type):
 
             return render_template(
                 "set_parent.html",
-                header_title=f"Set dispersal for {genotype_id}",
+                header_title=f"Set {parent_type} of {genotype_id}",
                 genotype_id=genotype_id,
                 parent=parent_type,
                 current_parent="" if result[parent_type] is None else result[parent_type],
@@ -2476,8 +2476,14 @@ def set_parent(genotype_id, parent_type):
                 flash(fn.alert_danger(f"Error in {parent_type} parameter (must be 'father' or 'mother')"))
                 return redirect(request.referrer)
 
+            # check if parent genotype is present in genotypes table
+            sql = text("SELECT genotype_id FROM genotypes WHERE genotype_id = :genotype_id")
+            if con.execute(sql, {"genotype_id": request.form["parent"].strip()}).mappings().fetchone() is None:
+                flash(fn.alert_danger(f"The genotype <b>{request.form["parent"].strip()}</b> is not present in the genotypes table."))
+                return redirect(request.referrer)
+
             sql = text(f"UPDATE genotypes SET {parent_type} = :parent WHERE genotype_id = :genotype_id")
-            con.execute(sql, {"parent": request.form["parent"].strip(), "genotype_id": genotype_id})
+            con.execute(sql, {"parent": request.form["parent"].strip(), "genotype_id": genotype_id.strip()})
             after_genotype_modif()
             if "redirect_url" in session:
                 redirect_url = session["redirect_url"]

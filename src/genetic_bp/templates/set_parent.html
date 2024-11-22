@@ -5,6 +5,12 @@
 <a href="{{ back_url }}" class="btn btn-primary">Go back</a>
 <br><br>
 
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
+
 <h1>Set {{ parent }} of <b>{{ genotype_id }}</b></h1>
 <hr>
 
