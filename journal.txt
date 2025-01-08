@@ -1,4 +1,15 @@
-= 2024-09-03
+## 2024-12-13
+
+- add 'allele modifier' role to frolle 
+
+
+## 2024-11-22
+
+- added check for parent genotype: must be in genotype tables and different than current genotype
+- added province to wa list
+
+
+## 2024-09-03
 
 converted temp genotypes without red notes in OK:
 UPDATE genotypes SET record_status = 'OK' WHERE genotype_id NOT IN ('BI-18','BL-12','BL-21','CN-464','CN-519','CN-530','CN-561','CN-567','CN-568','CN-569','CN-597','PN-01','PN-03','PN-04','PN-05','TO-314','TO-320','TO-326','TO-328','TO-330','TO-331','TO-332','TO-333','TO-334','TO-335','TO-344','TO-348','TO-349','TO-351','TO-352','TO-353','TO-354','TO-355','TO-356','TO-357','TO-358','TO-359','TO-360','TO-361','TO-362','TO-365','TO-366','TO-367','TO-369','TO-372','TO-374','TO-375','TO-376','TO-377','TO-378','TO-379','TO-381','TO-383','VC-10','VI-19','VI-20','VI-21','VI-33');

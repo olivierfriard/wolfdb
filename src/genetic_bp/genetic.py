@@ -1267,6 +1267,8 @@ def wa_analysis_group(tool: str, mode: str):
         with open("external_functions/loci_to_use_with_colony.txt", "r") as file_in:
             colony_loci = [x.strip().upper() for x in file_in.readlines()]
 
+        print(f"{colony_loci=}")
+
         valid_locus: list = []
         for locus in loci_list:
             if locus.upper() not in colony_loci:
@@ -1333,7 +1335,7 @@ def wa_analysis_group(tool: str, mode: str):
                 offspring_number=len(allele_sex["M"]) + len(allele_sex["F"]),
                 loci_number=len(valid_locus),
                 alleles="\n".join(allele_data),
-                n_male=count_sex["M"] + 12,
+                n_male=count_sex["M"],
                 n_female=count_sex["F"],
                 male_alleles="\n".join(allele_sex["M"]),
                 female_alleles="\n".join(allele_sex["F"]),
