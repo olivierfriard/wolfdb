@@ -184,8 +184,8 @@ def view_genotype(genotype_id: str):
             "properties": {
                 "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                 "popupContent": (
-                    f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
-                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
+                    f"""Scat ID: <a href="/view_scat/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
+                    f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
                     # f"""Genotype ID: {row['genotype_id']}"""
                 ),
             },
@@ -430,7 +430,7 @@ def view_wa(wa_code: str):
 
 @app.route("/plot_all_wa")
 @fn.check_login
-def plot_all_wa(add_polygon=False):
+def plot_all_wa(add_polygon: bool = False, samples: str = "genotypes"):
     """
     plot all WA codes (scats and dead wolves)
     """
@@ -478,9 +478,9 @@ def plot_all_wa(add_polygon=False):
                 "properties": {
                     "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                     "popupContent": (
-                        f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
-                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                        f"""Genotype ID: {row['genotype_id']}"""
+                        f"""Scat ID: <a href="/view_scat/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+                        f"""Genotype ID: {row["genotype_id"]}"""
                     ),
                 },
                 "id": row["sample_id"],
@@ -500,8 +500,10 @@ def plot_all_wa(add_polygon=False):
                     "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
                 },
                 add_polygon=add_polygon,
+                samples=samples,
             )
         ),
+        add_polygon=add_polygon,
         distance=0,
         scat_color=params["scat_color"],
         dead_wolf_color=params["dead_wolf_color"],
@@ -622,11 +624,11 @@ def plot_wa_clusters(distance: int):
             "properties": {
                 "style": {"color": color, "fillColor": color, "fillOpacity": 1},
                 "popupContent": (
-                    f"""Sample ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>"""
-                    f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                    f"""Genotype ID: <b>{row['genotype_id']}</b><br>"""
-                    f"""Cluster ID {row['cid']}:<br><a href="/wa_analysis/{distance}/{row['cid']}">{cluster_id_count[row['cid']]} samples</a> """
-                    f"""<a href="/wa_analysis_group/DBSCAN-{distance}-{row['cid']}/web">Genotypes</a>"""
+                    f"""Sample ID: <a href="/view_scat/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
+                    f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+                    f"""Genotype ID: <b>{row["genotype_id"]}</b><br>"""
+                    f"""Cluster ID {row["cid"]}:<br><a href="/wa_analysis/{distance}/{row["cid"]}">{cluster_id_count[row["cid"]]} samples</a> """
+                    f"""<a href="/wa_analysis_group/DBSCAN-{distance}-{row["cid"]}/web">Genotypes</a>"""
                 ),
             },
             "id": row["sample_id"],
@@ -1023,7 +1025,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                     if allele not in loci_values[row["wa_code"]][locus] or loci_values[row["wa_code"]][locus][allele]["value"] in (0, "-"):
                         mrl += "000"
                     else:
-                        mrl += f"{loci_values[row["wa_code"]][locus][allele]["value"]:03}"
+                        mrl += f"{loci_values[row['wa_code']][locus][allele]['value']:03}"
                 mrl += "\t"
 
             if has_loci_values:
@@ -1055,7 +1057,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 title=Markup(
                     (
                         f"Matches (cluster id: {cluster_id} distance: {distance} m) "
-                        f"{count_samples_with_data} WA code{'s' if count_samples_with_data>1 else ''} with data ({len(wa_scats)} total)"
+                        f"{count_samples_with_data} WA code{'s' if count_samples_with_data > 1 else ''} with data ({len(wa_scats)} total)"
                     )
                 ),
                 loci_list=loci_list,
@@ -1158,12 +1160,19 @@ def create_ml_relate_input(title: str, loci_values) -> str:
                 if loci_values[genotype][locus][allele]["value"] in (0, "-"):
                     mrl += "000"
                 else:
-                    mrl += f"{loci_values[genotype][locus][allele]["value"]:03}"
+                    mrl += f"{loci_values[genotype][locus][allele]['value']:03}"
             mrl += "\t"
 
         ml_relate.append(mrl.strip())
 
     return "\n".join(ml_relate)
+
+
+@app.route("/view_wa_polygon/<tool>/<mode>")
+@fn.check_login
+def view_wa_polygon(tool: str, mode: str):
+    """ """
+    pass
 
 
 @app.route("/wa_analysis_group/<tool>/<mode>")
@@ -1304,7 +1313,7 @@ def wa_analysis_group(tool: str, mode: str):
                     if loci_values[genotype][locus][allele]["value"] in (0, "-"):
                         row += "0 "
                     else:
-                        row += f"{loci_values[genotype][locus][allele]["value"]:03} "
+                        row += f"{loci_values[genotype][locus][allele]['value']:03} "
                 row += " "
 
             allele_data.append(row.strip())
@@ -1323,7 +1332,7 @@ def wa_analysis_group(tool: str, mode: str):
                         if loci_values[genotype][locus][allele]["value"] in (0, "-"):
                             row += "0 "
                         else:
-                            row += f"{loci_values[genotype][locus][allele]["value"]:03} "
+                            row += f"{loci_values[genotype][locus][allele]['value']:03} "
                     row += " "
 
                 allele_sex[sex].append(row.strip())
@@ -1426,17 +1435,17 @@ def wa_analysis_group(tool: str, mode: str):
         colony_result: str = ""
 
         if tool.startswith("DBSCAN"):
-            header_title = f"Genotype{"s" if len(loci_values)>1 else ""} for cluster ID: {cluster_id} distance: {distance} m))"
+            header_title = f"Genotype{'s' if len(loci_values) > 1 else ''} for cluster ID: {cluster_id} distance: {distance} m))"
             page_title = Markup(
-                f"DBSCAN cluster id: {cluster_id} distance: {distance} m - <b>{len(loci_values)}</b> genotype{"s" if len(loci_values)>1 else ""}"
+                f"DBSCAN cluster id: {cluster_id} distance: {distance} m - <b>{len(loci_values)}</b> genotype{'s' if len(loci_values) > 1 else ''}"
             )
 
             colony_output_file = pl.Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
             colony_output_file_path = colony_output_path / colony_output_file
 
         if tool.startswith("POLYGON"):
-            header_title = f"Genotype{"s" if len(loci_values)>1 else ""} for selected WA codes"
-            page_title = Markup(f"{len(loci_values)} genotype{"s" if len(loci_values)>1 else ""} for selected WA codes")
+            header_title = f"Genotype{'s' if len(loci_values) > 1 else ''} for selected WA codes"
+            page_title = Markup(f"{len(loci_values)} genotype{'s' if len(loci_values) > 1 else ''} for selected WA codes")
 
             colony_output_file = pl.Path(f"{text_geom_md5}.BestConfig_Ordered")
             colony_output_file_path = colony_output_path / colony_output_file
@@ -1503,7 +1512,7 @@ def view_genetic_data(wa_code: str):
                 # check wa / genotype
                 if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
                     wa_loci[locus][allele]["divergent_allele"] = Markup(
-                        f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]['value']}</button>"""
+                        f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]["value"]}</button>"""
                     )
                 if wa_loci[locus][allele]["notes"]:
                     if not wa_loci[locus][allele]["definitive"]:
@@ -1562,7 +1571,7 @@ def add_genetic_data(wa_code: str):
                 # check wa / genotype
                 if genotype_loci and genotype_loci[locus][allele]["value"] != wa_loci[locus][allele]["value"]:
                     wa_loci[locus][allele]["divergent_allele"] = Markup(
-                        f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]['value']}</button>"""
+                        f"""<button type="button" class="btn btn-warning btn-sm">{genotype_loci[locus][allele]["value"]}</button>"""
                     )
                 if wa_loci[locus][allele]["notes"]:
                     if not wa_loci[locus][allele]["definitive"]:
@@ -2156,7 +2165,7 @@ def set_wa_genotype(wa_code: str):
                 if genotype_exists is None:
                     flash(
                         fn.alert_danger(
-                            f"<strong>Attention!</strong><br>The genotype <strong>{request.form["genotype_id"]}</strong> does not exits."
+                            f"<strong>Attention!</strong><br>The genotype <strong>{request.form['genotype_id']}</strong> does not exits."
                         )
                     )
                     return redirect(url_for("genetic.set_wa_genotype", wa_code=wa_code))
@@ -2485,7 +2494,7 @@ def set_parent(genotype_id, parent_type):
 
             # check if parent identical to genotype
             if genotype_id.strip() == request.form["parent"].strip():
-                flash(fn.alert_danger(f"The parent genotype <b>{request.form["parent"].strip()}</b> cannot be the same genotype"))
+                flash(fn.alert_danger(f"The parent genotype <b>{request.form['parent'].strip()}</b> cannot be the same genotype"))
                 if "redirect_url" in session:
                     redirect_url = session["redirect_url"]
                     del session["redirect_url"]
@@ -2496,7 +2505,7 @@ def set_parent(genotype_id, parent_type):
             # check if parent genotype is present in genotypes table
             sql = text("SELECT genotype_id FROM genotypes WHERE genotype_id = :genotype_id")
             if con.execute(sql, {"genotype_id": request.form["parent"].strip()}).mappings().fetchone() is None:
-                flash(fn.alert_danger(f"The genotype <b>{request.form["parent"].strip()}</b> is not present in the genotypes table."))
+                flash(fn.alert_danger(f"The genotype <b>{request.form['parent'].strip()}</b> is not present in the genotypes table."))
                 if "redirect_url" in session:
                     redirect_url = session["redirect_url"]
                     del session["redirect_url"]
@@ -2642,12 +2651,11 @@ def confirm_load_definitive_genotypes_xlsx(filename):
     return redirect("/")
 
 
-@app.route("/select_on_map", methods=["GET", "POST"])
+@app.route("/select_on_map/<samples>", methods=["GET", "POST"])
 @fn.check_login
-def select_on_map():
+def select_on_map(samples: str):
     """
     allow user to select scats and dead wolves by drawing a polygon
-
     """
 
     def close_polygon(geojson_polygon):
@@ -2663,7 +2671,7 @@ def select_on_map():
         return geojson_polygon
 
     if request.method == "GET":
-        return plot_all_wa(add_polygon=True)
+        return plot_all_wa(add_polygon=True, samples=samples)
 
     if request.method == "POST":
         # Retrieve coordinates
@@ -2686,7 +2694,7 @@ def select_on_map():
                 )
 
             if result["wa_codes_number"] == 0:
-                return jsonify({"status": "error", "message": "No WA codes were found in polygon"}), 400
+                return jsonify({"status": "error", "message": "No WA codes were found in the polygon"}), 400
 
             # convert polygon in WKT
             with fn.conn_alchemy().connect() as con:
@@ -2700,7 +2708,6 @@ def select_on_map():
                 )
 
             if wkt_polygon:
-                """print(wkt_polygon["st_astext"])"""
                 return jsonify({"status": "success", "message": wkt_polygon["st_astext"]}), 200
             else:
                 return jsonify({"status": "error", "message": "Error in polygon"}), 400

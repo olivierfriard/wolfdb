@@ -49,7 +49,7 @@ def get_connection():
 
 def conn_alchemy():
     return create_engine(
-        f'postgresql+psycopg://{params["user"]}:{params["password"]}@{params["host"]}:5432/{params["database"]}',
+        f"postgresql+psycopg://{params['user']}:{params['password']}@{params['host']}:5432/{params['database']}",
         isolation_level="AUTOCOMMIT",
     )
 
@@ -832,7 +832,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
     }
 
 
-def leaflet_geojson(data: dict, add_polygon: bool = False) -> str:
+def leaflet_geojson(data: dict, add_polygon: bool = False, samples: str = "genotypes") -> str:
     """
     plot geoJSON features on Leaflet map
     """
@@ -849,16 +849,14 @@ def leaflet_geojson(data: dict, add_polygon: bool = False) -> str:
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
  
-{% if add_polygon %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-{% endif %}
-
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin="">
 </script>
+
 {% if add_polygon %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 {% endif %}
 
@@ -986,12 +984,12 @@ var drawControl = new L.Control.Draw({
         featureGroup: drawnItems
     },
     draw: {
-        polygon: true,  // Permet à l'utilisateur de dessiner des polygones
-        polyline: false,  // Désactive l'outil ligne
-        rectangle: false, // Désactive l'outil rectangle
-        circle: false,    // Désactive l'outil cercle
-        marker: false,     // Désactive l'outil marqueur
-        circlemarker: false, // Set circlemarker to false to remove it
+        polygon: true,  
+        polyline: false, 
+        rectangle: false, 
+        circle: false,    
+        marker: false,     
+        circlemarker: false, 
         edit: false,
 
     }
@@ -1008,7 +1006,15 @@ map.on('draw:created', function (event) {
     });
 
     // send coordinates via POST AJAX
-    fetch('/select_on_map', {
+
+{% if samples == 'genotypes' %}
+    fetch('/select_on_map/genotypes',
+{% endif %}     
+{% if samples == 'wa' %}
+    fetch('/select_on_map/wa',
+{% endif %}     
+
+         {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1025,7 +1031,13 @@ map.on('draw:created', function (event) {
             }
         else
             {
+{% if samples == 'genotypes' %}
             window.location.href = "/wa_analysis_group/" + data['message'] + "/web";
+{% endif %}
+{% if samples == 'wa' %}
+            window.location.href = "/view_wa_polygon/" + data['message'] + "/web";
+{% endif %}
+
             };
         
 
@@ -1054,6 +1066,7 @@ map.on('draw:created', function (event) {
             "zoom": data.get("zoom", 13),
             "fit": data.get("fit", ""),
             "add_polygon": add_polygon,
+            "samples": samples,
         }
     )
 

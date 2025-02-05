@@ -19,6 +19,8 @@
 {% endif %}
 #}
 
+
+{% if not add_polygon %}
 <div class="btn-group dropend">
 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 Plot DBSCAN clusters
@@ -33,9 +35,9 @@ Plot DBSCAN clusters
 <li><a class="dropdown-item" href="/plot_wa_clusters/2500">2500 m</a></li>
 </ul>
 </div>
-    
 
 <br><br>
+{% endif %}
 
 {{ title }}
 
