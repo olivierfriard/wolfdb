@@ -7,8 +7,8 @@
 
 
 
-drop materialized view wa_genetic_samples_mat;
-create materialized view wa_genetic_samples_mat AS 
+DROP materialized view wa_genetic_samples_mat;
+CREATE materialized view wa_genetic_samples_mat AS 
  SELECT wa_scat_dw_mat.wa_code,
     wa_scat_dw_mat.sample_id,
     wa_scat_dw_mat.date,
@@ -40,3 +40,8 @@ create materialized view wa_genetic_samples_mat AS
   ORDER BY wa_scat_dw_mat.wa_code;
 
 
+
+
+
+
+CALL refresh_materialized_views();

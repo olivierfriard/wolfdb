@@ -1074,6 +1074,7 @@ def get_genotypes_from_wa(wa_list: list):
     get genotype info from list of WA codes
     TODO: check if same genotype has 2 different sex
     """
+
     wa_list_str = "','".join(wa_list)
     with fn.conn_alchemy().connect() as con:
         # fetch grouped genotypes
@@ -1098,8 +1099,6 @@ def get_genotypes_data(genotypes_info):
     get info and loci values of genotypes
     """
 
-    print(f"{genotypes_info=}")
-
     loci_values: dict = {}
     data: dict = {}
     count_sex: dict = {"M": 0, "F": 0, "": 0}
@@ -1113,7 +1112,9 @@ def get_genotypes_data(genotypes_info):
                 con.execute(
                     text(
                         "SELECT *, "
-                        "(SELECT 'Yes' FROM wa_scat_dw_mat WHERE (sample_type = 'Dead wolf' OR sample_id like 'M%') AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
+                        "(SELECT 'Yes' FROM wa_scat_dw_mat "
+                        "        WHERE (sample_type = 'Dead wolf' OR sample_id like 'M%') "
+                        "              AND genotype_id=genotypes.genotype_id LIMIT 1) AS dead_recovery "
                         "FROM genotypes WHERE genotype_id = :genotype_id"
                     ),
                     {"genotype_id": row["genotype_id"]},
@@ -1121,8 +1122,6 @@ def get_genotypes_data(genotypes_info):
                 .mappings()
                 .fetchone()
             )
-
-            # print(result)
 
             if result is None:
                 continue
@@ -1168,11 +1167,64 @@ def create_ml_relate_input(title: str, loci_values) -> str:
     return "\n".join(ml_relate)
 
 
-@app.route("/view_wa_polygon/<tool>/<mode>")
+@app.route("/view_wa_polygon/<polygon>/<mode>")
 @fn.check_login
-def view_wa_polygon(tool: str, mode: str):
-    """ """
-    pass
+def view_wa_polygon(polygon: str, mode: str):
+    """
+    Display the WA contained in polygon
+    """
+    accepted_mode: tuple = ("web", "export")
+    if mode not in accepted_mode:
+        return f"mode error: mode must be {','.join(accepted_mode)}"
+
+    with fn.conn_alchemy().connect() as con:
+        # loci list
+        loci_list: dict = fn.get_loci_list()
+
+        sql_all = text(
+            "SELECT * FROM wa_genetic_samples_mat "
+            "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+            "AND ST_Within(ST_SetSRID(ST_MakePoint(coord_east, coord_north), 32632), st_transform(ST_GeomFromText(:wkt_polygon, 4326), 32632))"
+        )
+
+        wa_list = (
+            con.execute(
+                sql_all,
+                {
+                    "wkt_polygon": polygon,
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+    n_wa = len(wa_list)
+    if n_wa == 0:
+        return "No WA codes in polygon"
+
+    loci_values: dict = {}
+    for wa in wa_list:
+        if wa["genotype_id"]:
+            loci_values[wa["wa_code"]] = fn.get_genotype_loci_values_redis(wa["genotype_id"])
+
+    if mode == "web":
+        return render_template(
+            "wa_list.html",
+            header_title="WA codes",
+            title=f"{n_wa} WA code{'s' if n_wa > 1 else ''}",
+            loci_list=loci_list,
+            n_wa=n_wa,
+            wa_list=wa_list,
+            loci_values=loci_values,
+            polygon=polygon,
+        )
+    if mode == "export":
+        file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-disposition"] = f"attachment; filename=genotypes_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        return response
 
 
 @app.route("/wa_analysis_group/<tool>/<mode>")
@@ -1181,7 +1233,7 @@ def wa_analysis_group(tool: str, mode: str):
     """
     display cluster content
     """
-    accepted_mode = ("web", "export", "ml-relate", "colony", "run_colony")
+    accepted_mode: tuple = ("web", "export", "ml-relate", "colony", "run_colony")
     if mode not in accepted_mode:
         return f"mode error: mode must be {','.join(accepted_mode)}"
 
