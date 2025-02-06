@@ -1,0 +1,141 @@
+{% extends "bootstrap_no-body.html" %}
+
+{% block content %}
+<body onload="scroll_to_wa()"> 
+<script>
+function scroll_to_wa() {
+    const element = document.getElementById("{{ view_wa_code }}");
+    if (element) {
+        element.scrollIntoView();
+        }
+    }
+</script>
+{% include "menu.html" %}
+
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
+
+
+<h3>{{ title }}</h3>
+
+<a style="width:10%" href="{{ url_for('genetic.view_wa_polygon', polygon=polygon, mode='export') }}" class="btn btn-secondary btn-sm">Export WA codes</a>
+
+{% include "freeze_1stcolumn_1strow.html" %}
+
+<div class="frozen">
+<div class="condensed">
+<table class="table table-striped" id="wa_table">
+<thead>
+<tr>
+<th>WA code</th>
+<th>Sample ID</th>
+<th>Date</th>
+<th>Box number</th>
+<th>Municipality</th>
+<th>Province</th>
+<th>Coordinates WGS84 UTM zone 32N</th>
+<th>mtDNA result</th>
+<th>Genotype ID</th>
+<th>Temp ID</th>
+<th>Sex</th>
+<th>Status</th>
+<th>Pack</th>
+<th>Dead recovery</th>
+{% for locus in loci_list %}
+{% if loci_list[locus] == 2%}
+<th style="border-left: 1px solid black;">{{ locus }} a</th>
+<th>{{ locus }} b</th>
+{% else %}
+<th style="border-left: 1px solid black;">{{ locus }}</th>
+<th></th>
+{% endif %}
+
+{% endfor %}
+
+</tr>
+</thead>
+
+<tbody>
+{% if wa_list %}
+
+{% for wa in wa_list %}
+<tr>
+<td style="white-space: nowrap;">
+<a id="{{ wa.wa_code }}"><a href="/view_wa/{{ wa.wa_code }}"><b>{{ wa.wa_code }}</b></a></a>
+<a href="/view_genetic_data/{{ wa.wa_code }}" class="btn btn-sm btn-primary">Genetic data</a>
+</td>
+
+<td>{% if wa.sample_id %}<a href="/view_sample/{{ wa.sample_id }}">{{ wa.sample_id }}</a>{% endif %}</td>
+
+<td>{% if wa['date'] %}{{ wa['date'] }}{% endif %}</td>
+
+<td>{% if wa['box_number'] %}{{ wa['box_number'] }}{% endif %}</td>
+
+<td>{% if wa['municipality'] %}{{ wa['municipality'] }}{% endif %}</td>
+
+<td>{{ wa['province'] if wa['province'] else '' }}</td>
+
+<td>{{ wa['coord_east'] }}, {{ wa['coord_north'] }}</td>
+
+<td>{% if wa['mtdna'] %}{{ wa['mtdna'] }}{% endif %}</td>
+
+<td>{% if wa['genotype_id'] %}<a href="/view_genotype/{{ wa['genotype_id'] }}">{{ wa['genotype_id'] }}</a>{% endif %}
+{% if wa['notes'] %}<br><a href="/genotype_note/{{ wa['genotype_id'] }}"
+class="btn btn-sm btn-outline-danger">{{ wa['notes'] }}</button>{% endif %}
+</td>
+
+<td>{% if wa['tmp_id'] %}{{ wa['tmp_id'] }}{% endif %}</td>
+
+<td>{% if wa['sex_id'] %}{{ wa['sex_id'] }}{% endif %}</td>
+
+<td>{% if wa['status'] %}{{ wa['status'] }}{% endif %}</td>
+
+<td>{% if wa['pack'] %}<a href="/view_pack/{{ wa['pack'] }}">{{ wa['pack'] }}</a>{% endif %}</td>
+
+<td>{% if wa['dead_recovery'] %}{{ wa['dead_recovery'] }}{% endif %}</td>
+
+{% if  wa.wa_code in loci_values %}
+{% for locus in loci_values[wa['wa_code']] %}
+{% for allele in ('a', 'b') if allele in loci_values[wa['wa_code']][locus] %}
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[wa['wa_code']][locus][allele]['color'] }}">
+{{ loci_values[wa['wa_code']][locus][allele]['value'] }}<br>
+<a href="/locus_note/{{ wa['wa_code']}}/{{ locus }}/{{ allele }}">note</a>
+{{ loci_values[wa['wa_code']][locus][allele]['divergent_allele'] }}
+</td>
+{% endfor %}
+{% endfor %}
+{% else %}
+{#  no loci values#}
+
+{% for locus in loci_list %}
+{% if loci_list[locus] == 2%}
+<th style="border-left: 1px solid black;"></th>
+<th></th>
+{% else %}
+<th style="border-left: 1px solid black;"></th>
+<th></th>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+</tr>
+{% endfor %}
+{% endif %}
+</tbody>
+</table>
+</div><!-- condensed -->
+</div><!-- frozen -->
+
+
+
+
+
+{% endblock %}
+
+</body>
