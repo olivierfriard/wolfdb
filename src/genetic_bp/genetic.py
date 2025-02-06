@@ -446,6 +446,7 @@ def plot_all_wa(add_polygon: bool = False, samples: str = "genotypes"):
     tot_max_lat: float = -90
     tot_max_lon: float = -90
 
+    t0 = time.time()
     with fn.conn_alchemy().connect() as con:
         for row in (
             con.execute(
@@ -493,6 +494,8 @@ def plot_all_wa(add_polygon: bool = False, samples: str = "genotypes"):
 
             scat_features.append(scat_feature)
 
+    print(time.time() - t0)
+
     return render_template(
         "plot_all_wa.html",
         header_title="Locations of WA codes",
@@ -534,6 +537,7 @@ def plot_all_wa2(add_polygon: bool = False, samples: str = "genotypes"):
     tot_max_lon: float = -90
     scat_markers: str = ""
 
+    t0 = time.time()
     with fn.conn_alchemy().connect() as con:
         wa_count: int = 0
         for row in (
@@ -581,6 +585,8 @@ def plot_all_wa2(add_polygon: bool = False, samples: str = "genotypes"):
                 f"""label:"{row["genotype_id"]}","""
                 f"""popup:'{popup_text}'}},"""
             )
+
+    print(time.time() - t0)
 
     return render_template(
         "plot_all_wa.html",
