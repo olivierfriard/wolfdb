@@ -835,6 +835,11 @@ def reverse_geocoding(lon_lat: list) -> dict:
 def leaflet_geojson(data: dict, add_polygon: bool = False, samples: str = "genotypes") -> str:
     """
     plot geoJSON features on Leaflet map
+
+    Args:
+        add_polygon (bool): True for adding tools for drawing polygon
+        samples (str): 'genotypes' show info about genotypes contained in polygon
+                       'wa' show info about wa contained in polygon
     """
 
     SCATS_COLOR_DEFAULT = params["scat_color"]
@@ -1059,6 +1064,285 @@ map.on('draw:created', function (event) {
             "tracks": data.get("tracks", []),
             "tracks_color": data.get("tracks_color", TRACKS_COLOR_DEFAULT),
             "scats": data.get("scats", []),
+            "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
+            "dead_wolves": data.get("dead_wolves", []),
+            "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),
+            "center": data.get("center", CENTER_DEFAULT),
+            "zoom": data.get("zoom", 13),
+            "fit": data.get("fit", ""),
+            "add_polygon": add_polygon,
+            "samples": samples,
+        }
+    )
+
+
+def leaflet_geojson_label(data: dict, add_polygon: bool = False, samples: str = "genotypes") -> str:
+    """
+    plot geoJSON features on Leaflet map
+
+    Args:
+        add_polygon (bool): True for adding tools for drawing polygon
+        samples (str): 'genotypes' show info about genotypes contained in polygon
+                       'wa' show info about wa contained in polygon
+    """
+
+    SCATS_COLOR_DEFAULT = params["scat_color"]
+    TRANSECTS_COLOR_DEFAULT = params["transect_color"]
+    TRACKS_COLOR_DEFAULT = params["track_color"]
+    DEAD_WOLVES_COLOR_DEFAULT = params["dead_wolf_color"]
+    CENTER_DEFAULT = "45, 7"
+
+    map = Template(
+        """
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+ 
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin="">
+</script>
+
+{% if add_polygon %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+{% endif %}
+
+<script>
+var transects = {
+    "type": "FeatureCollection",
+    "features": {{ transects}}
+};
+
+var tracks = {
+    "type": "FeatureCollection",
+    "features": {{ tracks}}
+};
+
+var scats = {
+    "type": "FeatureCollection",
+    "features": {{ scats }}
+};
+
+var scat_markers = {{ scat_markers }};
+
+var dead_wolves = {
+    "type": "FeatureCollection",
+    "features": {{ dead_wolves }}
+};
+
+var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+
+var Stadia_AlidadeSatellite = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
+	minZoom: 0,
+	maxZoom: 20,
+	attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+	ext: 'jpg'
+});
+
+var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'})
+
+var opentopomap = L.tileLayer('https://a.tile.opentopomap.org/{z}/{x}/{y}.png', {
+	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+})
+
+var map = L.map('map', {center: [{{ center }}], zoom: {{ zoom }}, layers: [Esri_WorldImagery, Stadia_AlidadeSatellite, osm, opentopomap]});
+
+var baseMaps = {
+    "ESRI World Imagery": Esri_WorldImagery,
+    "Stadia map": Stadia_AlidadeSatellite,
+    "OpenStreetMap": osm,
+    "OpenTopoMap": opentopomap,
+};
+
+var layerControl = L.control.layers(baseMaps).addTo(map);
+
+function onEachFeature(feature, layer) {
+    var popupContent = "";
+    if (feature.properties && feature.properties.popupContent) {
+        popupContent += feature.properties.popupContent;
+    }
+    layer.bindPopup(popupContent);
+}
+
+L.geoJSON([dead_wolves], {
+
+    style: function (feature) { return feature.properties && feature.properties.style; },
+
+    onEachFeature: onEachFeature,
+
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+            color: '{{ dead_wolves_color }}',
+            fillcolor: '{{ dead_wolves_color }}',
+            radius: 8,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+        });
+    }
+}).addTo(map);
+
+
+
+L.geoJSON(transects, {
+    style: function(feature) { return { color: '{{ transects_color }}' } },
+    onEachFeature: onEachFeature,
+}).addTo(map);
+
+
+L.geoJSON(tracks, {
+    style: function(feature) { return { color: '{{ tracks_color }}' } },
+    onEachFeature: onEachFeature,
+}).addTo(map);
+
+var markerLayers = [];
+// Ajouter les markers à la carte
+scat_markers.forEach(function(data) {
+    var marker = L.circleMarker(data.coords, {
+        color: '#ff00ff',
+        fillColor: '#ff00ff',
+        fillOpacity: 1,
+        weight: 1,
+        opacity: 1,
+        radius: 8 
+    }).addTo(map);
+
+    if (data.label) {
+    var tooltip = L.tooltip({
+        permanent: true,
+        direction: "top",
+        opacity: 1
+    }).setContent(data.label);
+    marker.bindTooltip(tooltip);
+}
+    var popup = L.popup().setContent(data.popup);
+    marker.bindPopup(popup);
+
+    markerLayers.push({ marker: marker, tooltip: tooltip });
+
+});
+
+
+
+ // Creating scale control
+var scale = L.control.scale();
+scale.addTo(map);
+
+var markerBounds = L.latLngBounds([{{ fit }}]);
+map.fitBounds(markerBounds);
+
+var zoomThreshold = 12;
+// Fonction pour afficher/masquer les étiquettes selon le niveau de zoom
+function updateTooltipVisibility() {
+    var currentZoom = map.getZoom();
+    markerLayers.forEach(function(layer) {
+        if (currentZoom >= zoomThreshold) {
+            layer.marker.openTooltip(); // Affiche l'étiquette
+        } else {
+            layer.marker.closeTooltip(); // Cache l'étiquette
+        }
+    });
+}
+
+// Vérifier l'affichage des étiquettes au chargement
+updateTooltipVisibility();
+
+// Écouter l'événement de zoom pour mettre à jour l'affichage
+map.on('zoomend', updateTooltipVisibility);
+
+
+
+{% if add_polygon %}
+// Initialise draw tools
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+var drawControl = new L.Control.Draw({
+    edit: {
+        featureGroup: drawnItems
+    },
+    draw: {
+        polygon: true,  
+        polyline: false, 
+        rectangle: false, 
+        circle: false,    
+        marker: false,     
+        circlemarker: false, 
+        edit: false,
+
+    }
+});
+map.addControl(drawControl);
+
+// event triggered when user finish a draw
+map.on('draw:created', function (event) {
+    var layer = event.layer;
+    drawnItems.addLayer(layer);
+
+    var coords = layer.getLatLngs()[0].map(function(latlng) {
+        return [latlng.lng, latlng.lat];
+    });
+
+    // send coordinates via POST AJAX
+
+{% if samples == 'genotypes' %}
+    fetch('/select_on_map/genotypes',
+{% endif %}     
+{% if samples == 'wa' %}
+    fetch('/select_on_map/wa',
+{% endif %}     
+
+         {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ coordinates: coords })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data['status'] == 'error')
+            {
+            alert(data['message']);
+            console.log('server Response:', data);
+            drawnItems.clearLayers();
+            }
+        else
+            {
+{% if samples == 'genotypes' %}
+            window.location.href = "/wa_analysis_group/" + data['message'] + "/web";
+{% endif %}
+{% if samples == 'wa' %}
+            window.location.href = "/view_wa_polygon/" + data['message'] + "/web";
+{% endif %}
+
+            };
+        
+
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+{% endif %}
+
+</script>
+"""
+    )
+
+    return map.render(
+        {
+            "transects": data.get("transects", []),
+            "transects_color": data.get("transects_color", TRANSECTS_COLOR_DEFAULT),
+            "tracks": data.get("tracks", []),
+            "tracks_color": data.get("tracks_color", TRACKS_COLOR_DEFAULT),
+            "scats": data.get("scats", []),
+            "scat_markers": data.get("scat_markers", ""),
             "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
             "dead_wolves": data.get("dead_wolves", []),
             "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),

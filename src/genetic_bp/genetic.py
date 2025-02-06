@@ -433,6 +433,11 @@ def view_wa(wa_code: str):
 def plot_all_wa(add_polygon: bool = False, samples: str = "genotypes"):
     """
     plot all WA codes (scats and dead wolves)
+
+    Args:
+        add_polygon (bool):
+        samples (str):
+
     """
 
     scat_features: list = []
@@ -498,6 +503,96 @@ def plot_all_wa(add_polygon: bool = False, samples: str = "genotypes"):
                     "scats": scat_features,
                     "scats_color": params["scat_color"],
                     "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                },
+                add_polygon=add_polygon,
+                samples=samples,
+            )
+        ),
+        add_polygon=add_polygon,
+        distance=0,
+        scat_color=params["scat_color"],
+        dead_wolf_color=params["dead_wolf_color"],
+    )
+
+
+@app.route("/plot_all_wa2")
+@fn.check_login
+def plot_all_wa2(add_polygon: bool = False, samples: str = "genotypes"):
+    """
+    plot all WA codes (scats and dead wolves)
+
+    Args:
+        add_polygon (bool):
+        samples (str):
+
+    """
+
+    scat_features: list = []
+    tot_min_lat: float = 90
+    tot_min_lon: float = 90
+    tot_max_lat: float = -90
+    tot_max_lon: float = -90
+    scat_markers: str = ""
+
+    with fn.conn_alchemy().connect() as con:
+        wa_count: int = 0
+        for row in (
+            con.execute(
+                text(
+                    "SELECT wa_code, sample_id, genotype_id, "
+                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
+                    "FROM wa_scat_dw_mat "
+                    "WHERE mtdna != 'Poor DNA' "
+                    "AND date BETWEEN :start_date AND :end_date "
+                ),
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        ):
+            wa_count += 1
+            tot_min_lat = min([tot_min_lat, row["latitude"]])
+            tot_max_lat = max([tot_max_lat, row["latitude"]])
+            tot_min_lon = min([tot_min_lon, row["longitude"]])
+            tot_max_lon = max([tot_max_lon, row["longitude"]])
+
+            if row["sample_id"].startswith("E"):
+                color = params["scat_color"]
+            elif row["sample_id"][0] in "TM":
+                color = params["dead_wolf_color"]
+            else:
+                color = "red"
+
+            popup_text = (
+                f"""Scat ID: <a href="/view_scat/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
+                f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+            )
+            if row["genotype_id"]:
+                popup_text += f"""Genotype ID: {row["genotype_id"]}"""
+            else:
+                popup_text += "No genotype"
+            # popup_text = "POPUP"
+            scat_markers += (
+                f"""{{coords:[{round(row["latitude"], 5)},{round(row["longitude"], 5)}],"""
+                f"""label:"{row["genotype_id"]}","""
+                f"""popup:'{popup_text}'}},"""
+            )
+
+    return render_template(
+        "plot_all_wa.html",
+        header_title="Locations of WA codes",
+        title=Markup(f"<h3>Locations of {wa_count} WA code{'s' if wa_count > 1 else ''}.</h3>"),
+        map=Markup(
+            fn.leaflet_geojson_label(
+                data={
+                    "scats": scat_features,
+                    "scats_color": params["scat_color"],
+                    "fit": [[tot_min_lat, tot_min_lon], [tot_max_lat, tot_max_lon]],
+                    "scat_markers": f"[{scat_markers}]",
                 },
                 add_polygon=add_polygon,
                 samples=samples,
