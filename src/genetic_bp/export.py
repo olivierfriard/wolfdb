@@ -78,7 +78,11 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         return stream
 
 
-def export_wa_analysis(loci_list, wa_scats, loci_values, distance, cluster_id):
+def export_wa_analysis(loci_list, wa_scats, loci_values, distance: int, cluster_id: int):
+    """
+    export cluster content in XLSX
+    """
+
     wb = Workbook()
 
     ws1 = wb.active
@@ -199,6 +203,84 @@ def export_wa_analysis_group(loci_list, data, loci_values):
                     loci_values[genotype_id][locus]["b"]["notes"] if "b" in loci_values[genotype_id][locus] else "",
                 ]
             )
+
+        ws1.append(out)
+
+    with NamedTemporaryFile() as tmp:
+        wb.save(tmp.name)
+        tmp.seek(0)
+        stream = tmp.read()
+
+        return stream
+
+
+def export_wa(loci_list, wa_list, loci_values):
+    """
+    export WA in XLSX
+    """
+
+    wb = Workbook()
+
+    ws1 = wb.active
+    ws1.title = "WA"
+
+    header = [
+        "WA code",
+        "Sample ID",
+        "Genotype ID",
+        "Date",
+        "Box number",
+        "Municipality",
+        "Province",
+        "Coordinates East WGS84 UTM",
+        "Coordinates North WGS84 UTM",
+        "UTM Zone",
+        "mtDNA result",
+        "Temporary ID",
+        "Sex",
+        "Status",
+        "Pack",
+        "Dead recovery",
+    ]
+    for locus in loci_list:
+        header.extend([f"{locus} a", f"Notes for {locus} a"])
+        if loci_list[locus] == 2:
+            header.extend([f"{locus} b", f"Notes for {locus} b"])
+
+    ws1.append(header)
+
+    for wa in wa_list:
+        out = []
+
+        out.append(wa["wa_code"])
+        out.append(wa["sample_id"])
+        out.append(wa["genotype_id"])
+        out.append(wa["date"])
+        out.append(wa["box_number"])
+        out.append(wa["municipality"])
+        out.append(wa["province"])
+        out.append(wa["coord_east"])
+        out.append(wa["coord_north"])
+        out.append("32N")
+        out.append(wa["mtdna"])
+        out.append(wa["tmp_id"])
+        out.append(wa["sex_id"])
+        out.append(wa["status"])
+        out.append(wa["pack"])
+        out.append(wa["dead_recovery"])
+
+        for locus in loci_list:
+            if wa["wa_code"] in loci_values:
+                out.extend(
+                    [
+                        loci_values[wa["wa_code"]][locus]["a"]["value"],
+                        loci_values[wa["wa_code"]][locus]["a"]["notes"],
+                        loci_values[wa["wa_code"]][locus]["b"]["value"] if "b" in loci_values[wa["wa_code"]][locus] else "",
+                        loci_values[wa["wa_code"]][locus]["b"]["notes"] if "b" in loci_values[wa["wa_code"]][locus] else "",
+                    ]
+                )
+            else:
+                out.extend(["", "", "", ""])
 
         ws1.append(out)
 

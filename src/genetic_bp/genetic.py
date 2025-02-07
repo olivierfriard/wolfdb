@@ -1320,11 +1320,12 @@ def view_wa_polygon(polygon: str, mode: str):
             loci_values=loci_values,
             polygon=polygon,
         )
+    # XLSX format
     if mode == "export":
-        file_content = export.export_wa_analysis_group(loci_list, data, loci_values)
+        file_content = export.export_wa(loci_list, wa_list, loci_values)
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = f"attachment; filename=genotypes_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-disposition"] = f"attachment; filename=wa_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
         return response
 
 
