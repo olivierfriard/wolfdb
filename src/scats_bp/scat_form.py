@@ -40,13 +40,13 @@ class Scat(Form):
         """
         if field.data == "":
             return
-        '''
+        """
         disabled
         m = re.match("WA.*", field.data)
         if m is None:
             raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. The WA code must begin with WA</div>'))
         return
-        '''
+        """
 
     scat_id = StringField(
         "Scat ID",
@@ -54,6 +54,8 @@ class Scat(Form):
             DataRequired(),
         ],
     )
+
+    date = StringField("Date", validators=[iso_date_validator])
 
     wa_code = StringField("WA code", validators=[wa_validator])
 
@@ -65,7 +67,14 @@ class Scat(Form):
 
     sample_type = SelectField(
         "Sample type",
-        choices=[("", ""), ("scat", "Excrement"), ("tissue", "Tissue"), ("saliva", "Saliva"), ("blood", "Blood"), ("hair", "Hair")],
+        choices=[
+            ("unknown", "Unknown"),
+            ("scat", "Excrement"),
+            ("tissue", "Tissue"),
+            ("saliva", "Saliva"),
+            ("blood", "Blood"),
+            ("hair", "Hair"),
+        ],
         default="",
     )
 

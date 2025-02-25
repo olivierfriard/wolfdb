@@ -118,13 +118,6 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                                 "      AND locus=wl.locus "
                                 "      AND allele=wl.allele "
                                 "      AND user_id IS NOT NULL) AS has_history  "
-                                # "(SELECT notes FROM wa_locus "
-                                # "WHERE wa_code=wl.wa_code "
-                                # "      AND locus=wl.locus "
-                                # "      AND allele=wl.allele "
-                                # "      AND notes != '' "
-                                # "      AND notes IS NOT NULL "
-                                # "      ORDER BY timestamp DESC LIMIT 1) AS last_note "  # last note
                                 "FROM wa_locus wl "
                                 "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
                                 "ORDER BY timestamp DESC LIMIT 1"

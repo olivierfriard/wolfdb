@@ -36,16 +36,14 @@ def update_redis_wa_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        sql = text("SELECT wa_code FROM wa_scat_dw_mat WHERE UPPER(mtdna) not like '%POOR DNA%' ")
+        sql = text("SELECT wa_code FROM wa_scat_dw_mat WHERE mtdna != '%Poor DNA%' ")
 
         for row in con.execute(sql).mappings().all():
-            # print(f'{row["wa_code"]=}')
-
             rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
 
     rdis.set("UPDATE WA LOCI", datetime.now().isoformat())
 
-    print(f"REDIS updated with WA codes loci in {round(time.time() - t0,1)} seconds")
+    print(f"REDIS updated with WA codes loci in {round(time.time() - t0, 1)} seconds")
 
 
 if __name__ == "__main__":

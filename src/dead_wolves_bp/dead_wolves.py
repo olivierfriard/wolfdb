@@ -132,7 +132,8 @@ def plot_dead_wolves():
         tot_min_lat, tot_min_lon = 90, 90
         tot_max_lat, tot_max_lon = -90, -90
 
-        dw_features = []
+        dw_features: list = []
+        dw_count: int = 0
         for row in (
             con.execute(
                 text(
@@ -164,16 +165,16 @@ def plot_dead_wolves():
             print(f"{tot_min_lat=}   {tot_max_lat=}")
             print(f"{tot_min_lon=}   {tot_max_lon=}")
 
-            popup_content: list = [f"""ID: <a href="/view_dead_wolf_id/{row['id']}" target="_blank">{row['id']}</a><br>"""]
+            popup_content: list = [f"""ID: <a href="/view_dead_wolf_id/{row["id"]}" target="_blank">{row["id"]}</a><br>"""]
             if row["genotype_id"]:
                 popup_content.append(
-                    f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a><br>"""
+                    f"""Genotype ID: <a href="/view_genotype/{row["genotype_id"]}" target="_blank">{row["genotype_id"]}</a><br>"""
                 )
             else:
-                popup_content.append(f"""Tissue ID: <a href="/view_tissue/{row['tissue_id']}" target="_blank">{row['tissue_id']}</a><br>""")
+                popup_content.append(f"""Tissue ID: <a href="/view_tissue/{row["tissue_id"]}" target="_blank">{row["tissue_id"]}</a><br>""")
 
             if row["discovery_date"]:
-                popup_content.append(f"""Discovery date: {row['discovery_date']}<br>""")
+                popup_content.append(f"""Discovery date: {row["discovery_date"]}<br>""")
 
             dw_feature = {
                 "geometry": dict({"type": "Point", "coordinates": [row["longitude"], row["latitude"]]}),
@@ -184,6 +185,8 @@ def plot_dead_wolves():
                 "id": row["id"],
             }
             dw_features.append(dict(dw_feature))
+
+            dw_count += 1
 
     print()
     print(f"{dw_features=}")
@@ -201,6 +204,7 @@ def plot_dead_wolves():
             )
         ),
         dead_wolf_color=params["dead_wolf_color"],
+        dw_count=dw_count,
     )
 
 

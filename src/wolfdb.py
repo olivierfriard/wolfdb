@@ -142,11 +142,11 @@ def settings():
     if request.method == "POST":
         if "enable_date_interval" in request.form:
             if not iso_date_validator(request.form["start_date"]):
-                flash(fn.alert_danger(f"The start date <b>{request.form["start_date"]}</b> is not correct. Use the YYYY-MM-DD format."))
+                flash(fn.alert_danger(f"The start date <b>{request.form['start_date']}</b> is not correct. Use the YYYY-MM-DD format."))
                 return render_template("settings.html", header_title="Settings")
 
             if not iso_date_validator(request.form["end_date"]):
-                flash(fn.alert_danger(f"The end date <b>{request.form["end_date"]}</b> is not correct. Use the YYYY-MM-DD format."))
+                flash(fn.alert_danger(f"The end date <b>{request.form['end_date']}</b> is not correct. Use the YYYY-MM-DD format."))
                 return render_template("settings.html", header_title="Settings")
 
             session["start_date"] = request.form["start_date"]

@@ -305,7 +305,7 @@ def plot_all_scats_markerclusters():
                 "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
                 "type": "Feature",
                 "properties": {
-                    "popupContent": f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a>""",
+                    "popupContent": f"""Scat ID: <a href="/view_scat/{row["scat_id"]}" target="_blank">{row["scat_id"]}</a>""",
                 },
                 "id": row["scat_id"],
             }
@@ -431,7 +431,7 @@ def scats_list_limit(offset: int, limit: int | str):
         del session["url_wa_list"]
 
     if results:
-        title = f"List of {results[0]['n_scats']} scat{'s' if results[0]['n_scats'] >1 else ''}"
+        title = f"List of {results[0]['n_scats']} scat{'s' if results[0]['n_scats'] > 1 else ''}"
     else:
         title = "No scat found"
 
@@ -629,10 +629,13 @@ def edit_scat(scat_id):
 
     if request.method == "GET":
         with fn.conn_alchemy().connect() as con:
-            default_values = con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}).mappings().fetchone()
+            default_values = dict(
+                con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}).mappings().fetchone()
+            )
 
-        if default_values["notes"] is None:
-            default_values["notes"] = ""
+        for field in ("notes", "location", "institution"):
+            if default_values[field] is None:
+                default_values[field] = ""
 
         # convert convert XX_NN|YYMMDD to XX_NN YYYY-MM-DD
         if default_values["path_id"] is None:
@@ -646,6 +649,7 @@ def edit_scat(scat_id):
                 default_path_id = default_values["path_id"]
 
         form = Scat(
+            date=default_values["date"],
             path_id=default_path_id,
             snowtrack_id=default_values["snowtrack_id"],
             sampling_type=default_values["sampling_type"],
@@ -713,7 +717,7 @@ def edit_scat(scat_id):
                 ):
                     return not_valid(
                         form,
-                        (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). " "Please check and submit again"),
+                        (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). Please check and submit again"),
                     )
 
             # check date in scat ID
@@ -778,7 +782,7 @@ def edit_scat(scat_id):
                 ):
                     return not_valid(
                         form,
-                        (f"Another sample has the same WA code ({request.form['wa_code']}). " "Please check and submit again"),
+                        (f"Another sample has the same WA code ({request.form['wa_code']}). Please check and submit again"),
                     )
 
             sql = text(
@@ -813,8 +817,8 @@ def edit_scat(scat_id):
                 {
                     "scat_id": request.form["scat_id"],
                     "wa_code": request.form["wa_code"],
-                    "date": date,
-                    "sampling_season": fn.sampling_season(date),
+                    "date": request.form["date"],
+                    "sampling_season": fn.sampling_season(request.form["date"]),
                     "sampling_type": request.form["sampling_type"] if request.form["sampling_type"] else None,
                     "sample_type": request.form["sample_type"],
                     "path_id": path_id,
@@ -1135,7 +1139,7 @@ def systematic_scats_transect_location():
                 / pl.Path(
                     (
                         f"location_of_systematic_scats_on_transects_and_tracks"
-                        f'_from_{session["start_date"]}_to_{session["end_date"]}'
+                        f"_from_{session['start_date']}_to_{session['end_date']}"
                         f"_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}.html"
                     )
                 )

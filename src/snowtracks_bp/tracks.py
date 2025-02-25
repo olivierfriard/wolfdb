@@ -73,10 +73,10 @@ def view_track(snowtrack_id):
                     text(
                         (
                             "SELECT *, "
-                            "case when (SELECT lower(mtdna) FROM wa_scat_dw_mat  "
+                            "CASE WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw_mat  "
                             " WHERE "
                             "   lower(mtdna) LIKE '%%wolf%%' "
-                            "   AND wa_code in (select wa_code from scats WHERE snowtrack_id = t.snowtrack_id)  "
+                            "   AND wa_code IN (SELECT wa_code FROM scats WHERE snowtrack_id = t.snowtrack_id)  "
                             "LIMIT 1 "
                             ") LIKE '%%wolf%%' THEN 'C1' "
                             "ELSE t.scalp_category "
@@ -165,9 +165,9 @@ def view_track(snowtrack_id):
                 "type": "Feature",
                 "properties": {
                     "popupContent": (
-                        f"""Sample ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
-                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                        f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a>"""
+                        f"""Sample ID: <a href="/view_scat/{row["scat_id"]}" target="_blank">{row["scat_id"]}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+                        f"""Genotype ID: <a href="/view_genotype/{row["genotype_id"]}" target="_blank">{row["genotype_id"]}</a>"""
                     ),
                 },
                 "id": row["scat_id"],
@@ -293,7 +293,7 @@ def plot_tracks():
                     "geometry": dict(geojson),
                     "type": "Feature",
                     "properties": {
-                        "popupContent": f"""Track ID: <a href="/view_track/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a>"""
+                        "popupContent": f"""Track ID: <a href="/view_track/{row["snowtrack_id"]}" target="_blank">{row["snowtrack_id"]}</a>"""
                     },
                     "id": row["snowtrack_id"],
                 }
