@@ -5,7 +5,6 @@ WolfDB web service
 
 from markupsafe import Markup
 import datetime
-import re
 
 from wtforms import Form, StringField, SelectField, TextAreaField
 
