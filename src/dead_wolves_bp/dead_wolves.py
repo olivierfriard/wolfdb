@@ -733,7 +733,7 @@ def dead_wolves_list():
                     "FROM dead_wolves "
                     "WHERE "
                     "deleted is NULL "
-                    "AND discovery_date BETWEEN :start_date AND :end_date "
+                    "AND (discovery_date BETWEEN :start_date AND :end_date OR discovery_date IS NULL) "
                     "ORDER BY id"
                 ),
                 {
