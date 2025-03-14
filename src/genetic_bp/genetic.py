@@ -3118,6 +3118,13 @@ def set_parent(genotype_id, parent_type):
                 },
             )
             after_genotype_modif()
+
+            flash(
+                fn.alert_success(
+                    f"The <b>{parent_type}</b> of the genotype <b>{genotype_id}</b> was changed to <b>{request.form['parent'].strip()}</b>."
+                )
+            )
+
             if "redirect_url" in session:
                 redirect_url = session["redirect_url"]
                 del session["redirect_url"]
