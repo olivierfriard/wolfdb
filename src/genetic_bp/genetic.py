@@ -451,7 +451,7 @@ def genotype_without_wa_loci():
           """)
     with fn.conn_alchemy().connect() as con:
         out: list = ['<table class="table">']
-        out.append("<thead><tr><th>Genontype ID</th><th>Number of recaptures</th><th>WA codes / mtDna</th></tr></thead>\n")
+        out.append("<thead><tr><th>Genotype ID</th><th>Number of recaptures</th><th>WA codes / mtDna</th></tr></thead>\n")
         out.append("<tbody>")
         for row in con.execute(sql).mappings().all():
             out.append("<tr>")
