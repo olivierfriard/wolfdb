@@ -1,0 +1,44 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+
+<h3>{{ title }}</h3>
+
+<form action="/query" method="POST">
+    <div class="form-group"></div>
+    <label for="sql">SQL</label><br>
+<textarea id="sql" name="sql" rows="10" cols="50" placeholder="Enter your SQL here...">
+{{ sql_query }}
+</textarea><br><br>
+    
+    <button type="submit" class="btn btn-primary">Submit</button>
+</div>
+</form>
+{% if error %}
+<pre>{{ error }}</pre>
+{% else %}
+<h2>Query Results:</h2>
+<table class="table">
+<thead>
+    <tr>
+        {% for column in columns %}
+            <th>{{ column }}</th>
+        {% endfor %}
+    </tr>
+</thead>
+<tbody>
+    {% for row in rows %}
+        <tr>
+            {% for col in row %}
+                <td>{{ row[col] }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+{% endif %}
+
+{% endblock %}
+
