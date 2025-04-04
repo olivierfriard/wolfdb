@@ -124,7 +124,10 @@ def settings():
             allele_modifier = (
                 "Yes"
                 if (
-                    con.execute(text("SELECT allele_modifier FROM users WHERE email = :email"), {"email": session["email"]})
+                    con.execute(
+                        text("SELECT allele_modifier FROM users WHERE email = :email"),
+                        {"email": session["email"]},
+                    )
                     .mappings()
                     .fetchone()["allele_modifier"]
                 )
@@ -142,11 +145,19 @@ def settings():
     if request.method == "POST":
         if "enable_date_interval" in request.form:
             if not iso_date_validator(request.form["start_date"]):
-                flash(fn.alert_danger(f"The start date <b>{request.form['start_date']}</b> is not correct. Use the YYYY-MM-DD format."))
+                flash(
+                    fn.alert_danger(
+                        f"The start date <b>{request.form['start_date']}</b> is not correct. Use the YYYY-MM-DD format."
+                    )
+                )
                 return render_template("settings.html", header_title="Settings")
 
             if not iso_date_validator(request.form["end_date"]):
-                flash(fn.alert_danger(f"The end date <b>{request.form['end_date']}</b> is not correct. Use the YYYY-MM-DD format."))
+                flash(
+                    fn.alert_danger(
+                        f"The end date <b>{request.form['end_date']}</b> is not correct. Use the YYYY-MM-DD format."
+                    )
+                )
                 return render_template("settings.html", header_title="Settings")
 
             session["start_date"] = request.form["start_date"]
@@ -164,7 +175,9 @@ def rev_geocoding(east: int, north: int, zone: str):
     get location info from UTM coordinates
     """
     try:
-        lat_lon = utm.to_latlon(int(east), int(north), int(zone.upper().replace("N", "")), zone[-1])
+        lat_lon = utm.to_latlon(
+            int(east), int(north), int(zone.upper().replace("N", "")), zone[-1]
+        )
     except Exception:
         return {
             "continent": "",
@@ -203,7 +216,11 @@ def my_results():
     display all result files
     """
 
-    results_path = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
+    results_path = (
+        pl.Path(pl.Path(app.static_url_path).name)
+        / pl.Path("results")
+        / pl.Path(session["email"])
+    )
     results_path.mkdir(parents=True, exist_ok=True)
     out = '<table class="table table-striped">'
     for f in sorted(list(results_path.glob("*"))):
@@ -215,6 +232,58 @@ def my_results():
         title="Analysis results",
         content=Markup(out),
     )
+
+
+@app.route("/query", methods=("GET", "POST"))
+@fn.check_login
+def query():
+    """
+    execute a SQL query and show results
+    """
+    if request.method == "GET":
+        return render_template("query.html")
+
+    if request.method == "POST":
+        sql_query = request.form["sql"]
+
+        # **Sanitize Input**: Check if the query is a SELECT query
+        if not sql_query.strip().lower().startswith("select"):
+            return render_template(
+                "query.html",
+                sql_query=sql_query,
+                error="Error: Only SELECT queries are allowed.",
+            )
+
+        if "delete " in sql_query.strip().lower():
+            return render_template(
+                "query.html",
+                sql_query=sql_query,
+                error="Error: The query cannot contain 'delete'",
+            )
+
+        if "update " in sql_query.strip().lower():
+            return render_template(
+                "query.html",
+                sql_query=sql_query,
+                error="Error: The query cannot contain 'update'",
+            )
+
+        with fn.conn_alchemy().connect() as con:
+            try:
+                error = ""
+                result = con.execute(text(sql_query))
+            except Exception as e:
+                error = e
+                return render_template("query.html", sql_query=sql_query, error=error)
+                # return f"SQL error: {error}"
+
+        return render_template(
+            "query.html",
+            sql_query=sql_query,
+            columns=result.keys(),
+            rows=result.mappings().fetchall(),
+            error=error,
+        )
 
 
 if __name__ == "__main__":
