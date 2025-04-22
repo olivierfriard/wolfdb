@@ -165,10 +165,13 @@ def get_genotype_loci_values_redis(genotype_id: str) -> dict | None:
     """
     get genotype loci values from redis
     """
-    r = rdis.get(genotype_id)
-    if r is not None:
-        return json.loads(r)
-    else:
+    try:
+        r = rdis.get(genotype_id)
+        if r is not None:
+            return json.loads(r)
+        else:
+            return get_genotype_loci_values(genotype_id, get_loci_list())
+    except redis.exceptions.ConnectionError:
         return get_genotype_loci_values(genotype_id, get_loci_list())
 
 
@@ -749,6 +752,8 @@ def reverse_geocoding(lon_lat: list) -> dict:
     response = urllib.request.urlopen(URL).read().strip().decode("utf-8")
 
     d = json.loads(response)
+
+    print(d)
 
     if "address" not in d:
         return None

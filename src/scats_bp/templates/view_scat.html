@@ -36,13 +36,23 @@
 <table class="table table-striped">
 
 
-<tr><td>WA code</td>
+<tr>
+<td>WA code</td>
 <td>
 {% if results["wa_code"] is not none %}
 <a href="/view_wa/{{ results['wa_code'] }}">{{ results["wa_code"] }}</a>
 {% endif %}
 </td>
 </tr>
+
+<tr>
+<td>ISPRA ID</td>
+<td>
+{{ results["ispra_id"] if results["ispra_id"] is not none else '' }}
+</td>
+</tr>
+    
+
 <tr><td>Genotype ID</td>
 <td>
 {% if results["genotype_id"] is not none %}
@@ -94,7 +104,7 @@
 <tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
 <tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
 
-<tr><td>Coordinates (WGS 84 / UTM zone 32N EPSG:32632)</td><td>East: {{ results["coord_east"] }}, North: {{ results["coord_north"] }}</td></tr>
+<tr><td>Coordinates (WGS 84 / UTM zone {{ results["coord_zone"] }})</td><td>Easting (X): {{ results["coord_east"] }}, Northing (Y): {{ results["coord_north"] }}</td></tr>
 <tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td><td>{{ results["longitude"] }}, {{ results["latitude"] }}</td></tr>
 <tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
 <tr><td>Institution</td><td>{{ results["institution"] if results["institution"] is not none else ''}}</td></tr>

@@ -510,7 +510,7 @@ def new_scat():
             title="New scat",
             action="/new_scat",
             form=form,
-            default_values={"coord_zone": "32N"},
+            default_values={},
         )
 
     if request.method == "POST":
@@ -525,6 +525,7 @@ def new_scat():
         if not form.validate():
             return not_valid("Some values are not set or are wrong. Please check and submit again")
         # date
+        ''' DISABLED
         try:
             year = int(request.form["scat_id"][1 : 2 + 1]) + 2000
             month = int(request.form["scat_id"][3 : 4 + 1])
@@ -537,10 +538,11 @@ def new_scat():
 
         except Exception:
             return not_valid("The scat ID value is not correct")
+        '''
+        # date
+        date = request.form["date"]
 
         # path id
-        # if "|" not in request.form["path_id"]:
-        #    return not_valid("The path ID does not have a correct value (must be XX_NN YYYY-MM-DD)")
         path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
 
         # check province code
@@ -555,19 +557,24 @@ def new_scat():
 
         # test the UTM to lat long conversion to validate the UTM coordiantes
         try:
-            _ = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), 32, "N")
+            _ = utm.to_latlon(int(request.form["coord_east"]), int(request.form["coord_north"]), int(request.form["coord_zone"]), request.form["hemisphere"])
         except Exception:
             return not_valid("Error in UTM coordinates")
 
+        if request.form["hemisphere"] == 'N':
+            SRID = 32600 + int(request.form["coord_zone"])
+        else:
+            SRID = 32700 + int(request.form["coord_zone"])
+
         with fn.conn_alchemy().connect() as con:
             sql = text(
-                "INSERT INTO scats (scat_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "
+                "INSERT INTO scats (scat_id, wa_code, date, sampling_season, sampling_type, path_id, snowtrack_id, "
                 "location, municipality, province, region, "
                 "deposition, matrix, collected_scat, scalp_category, "
                 "coord_east, coord_north, coord_zone, "
                 "observer, institution,"
                 "geometry_utm) "
-                "VALUES (:scat_id, :date, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
+                "VALUES (:scat_id, :wa_code, :date, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
                 ":location, :municipality, :province, :region, "
                 ":deposition, :matrix, :collected_scat, :scalp_category, "
                 ":coord_east, :coord_north, :coord_zone, "
@@ -578,6 +585,7 @@ def new_scat():
                 sql,
                 {
                     "scat_id": request.form["scat_id"],
+                    "wa_code": request.form["wa_code"],
                     "date": date,
                     "sampling_season": fn.sampling_season(date),
                     "sampling_type": request.form["sampling_type"],
@@ -593,10 +601,10 @@ def new_scat():
                     "scalp_category": request.form["scalp_category"],
                     "coord_east": request.form["coord_east"],
                     "coord_north": request.form["coord_north"],
-                    "coord_zone": "32N",
+                    "coord_zone": request.form["coord_zone"] + request.form["hemisphere"],
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
-                    "geometry_utm": f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
+                    "geometry_utm": f"SRID={SRID};POINT({request.form['coord_east']} {request.form['coord_north']})",
                 },
             )
 
@@ -612,7 +620,7 @@ def edit_scat(scat_id):
 
     def not_valid(form, msg):
         # default values
-        default_values = {}
+        default_values:dict = {}
         for k in request.form:
             default_values[k] = request.form[k]
 
@@ -633,7 +641,7 @@ def edit_scat(scat_id):
                 con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}).mappings().fetchone()
             )
 
-        for field in ("notes", "location", "institution"):
+        for field in ("notes", "location", "institution", 'ispra_id'):
             if default_values[field] is None:
                 default_values[field] = ""
 
@@ -658,6 +666,8 @@ def edit_scat(scat_id):
             matrix=default_values["matrix"],
             collected_scat=default_values["collected_scat"],
             scalp_category=default_values["scalp_category"],
+            coord_zone=default_values["coord_zone"][:-1],
+            hemisphere=default_values["coord_zone"][-1],
         )
 
         # get id of all paths
@@ -743,16 +753,6 @@ def edit_scat(scat_id):
             else:
                 path_id = ""
 
-            """
-            # check if province code exists
-            if request.form["province"].upper().strip() in fn.province_code_list():
-                province_code = request.form["province"].upper().strip()
-            elif request.form["province"].strip().upper() in fn.province_name_list():
-                province_code = fn.province_name2code(request.form["province"])
-            else:
-                return not_valid(f"Province {request.form['province']} not found")
-            """
-
             # check province code
             province_code = fn.check_province_code(request.form["province"])
             if province_code is None:
@@ -788,6 +788,7 @@ def edit_scat(scat_id):
             sql = text(
                 "UPDATE scats SET "
                 " scat_id = :scat_id, "
+                " ispra_id = :ispra_id, "
                 " wa_code = :wa_code,"
                 " date = :date,"
                 " sampling_season = :sampling_season,"
@@ -805,7 +806,7 @@ def edit_scat(scat_id):
                 " scalp_category = :scalp_category, "
                 " coord_east = :coord_east, "
                 " coord_north = :coord_north, "
-                #  coord_zone = %s, "
+                " coord_zone = :coord_zone, "
                 " observer = :observer, "
                 " institution = :institution, "
                 " notes = :notes, "
@@ -816,6 +817,7 @@ def edit_scat(scat_id):
                 sql,
                 {
                     "scat_id": request.form["scat_id"],
+                    "ispra_id": request.form["ispra_id"],
                     "wa_code": request.form["wa_code"],
                     "date": request.form["date"],
                     "sampling_season": fn.sampling_season(request.form["date"]),
@@ -832,7 +834,8 @@ def edit_scat(scat_id):
                     "collected_scat": request.form["collected_scat"],
                     "scalp_category": request.form["scalp_category"],
                     "coord_east": request.form["coord_east"],
-                    "coord_north": request.form["coord_north"],  # request.form["coord_zone"],
+                    "coord_north": request.form["coord_north"],  
+                    "coord_zone": request.form["coord_zone"] + request.form["hemisphere"],
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
                     "notes": request.form["notes"],

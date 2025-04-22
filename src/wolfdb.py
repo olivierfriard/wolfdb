@@ -172,11 +172,16 @@ def settings():
 @app.route("/rev_geocoding/<int:east>/<int:north>/<zone>")
 def rev_geocoding(east: int, north: int, zone: str):
     """
-    get location info from UTM coordinates
+    get location info from UTM coordinates, zone
     """
+
+    print(f"{east=}")
+    print(f"{north=}")
+    print(f"{zone=}")
+
     try:
         lat_lon = utm.to_latlon(
-            int(east), int(north), int(zone.upper().replace("N", "")), zone[-1]
+            int(east), int(north), int(zone[:-1]), zone[-1]
         )
     except Exception:
         return {
@@ -188,7 +193,27 @@ def rev_geocoding(east: int, north: int, zone: str):
             "municipality": "",
             "location": "",
         }
+
+    print(f"{lat_lon=}")
+
+    print(f"{lat_lon[::-1]=}")
+
+
     r = fn.reverse_geocoding(lat_lon[::-1])
+
+    if r is None:
+        return {
+            "continent": "",
+            "country": "",
+            "region": "",
+            "province": "",
+            "province_code": "",
+            "municipality": "",
+            "location": "",
+        }
+
+
+    print(f"{r=}")
 
     return r
 

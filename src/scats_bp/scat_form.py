@@ -30,7 +30,7 @@ class Scat(Form):
             return
         except ValueError:
             raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYY-MM-DD format</div>')
+                Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYYY-MM-DD format</div>')
             )
 
     def wa_validator(form, field):
@@ -54,13 +54,20 @@ class Scat(Form):
         ],
     )
 
-    date = StringField("Date", validators=[iso_date_validator])
+    date = StringField("Date", validators=[iso_date_validator],
+        render_kw={
+            "placeholder": "YYYY-MM-DD",
+            "pattern": r"\d{4}-\d{2}-\d{2}",
+            "inputmode": "numeric"
+        })
 
     wa_code = StringField("WA code", validators=[wa_validator])
 
+    ispra_id = StringField("ISPRA ID")
+
     sampling_type = SelectField(
         "Sampling type",
-        choices=[("", ""), ("Opportunistic", "Opportunistic"), ("Systematic", "Systematic")],
+        choices=[("Unknown", "Unknown"), ("Opportunistic", "Opportunistic"), ("Systematic", "Systematic")],
         default="",
     )
 
@@ -89,9 +96,10 @@ class Scat(Form):
     collected_scat = SelectField("Collected scat", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
     scalp_category = SelectField("SCALP category", choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")], default="C2")
     genetic_sample = SelectField("Genetic sample", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
-    coord_east = StringField("Coordinate East", validators=[DataRequired(), integer_validator])
-    coord_north = StringField("Coordinate North", validators=[DataRequired(), integer_validator])
-    coord_zone = SelectField("Zone", choices=[("32N", "32N"), ("33N", "33N")], default="32N")
+    coord_east = StringField("Easting (X)", validators=[DataRequired(), integer_validator])
+    coord_north = StringField("Northing (Y)", validators=[DataRequired(), integer_validator])
+    coord_zone = SelectField("Zone number", choices=[("32", "32"), ("33", "33")], default="32")
+    hemisphere = SelectField("Hemisphere", choices=[("N", "N"), ("S", "S")], default="N")
 
     observer = StringField("Operator", [])
     institution = StringField("Institution", [])
