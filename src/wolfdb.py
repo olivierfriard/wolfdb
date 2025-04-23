@@ -175,14 +175,8 @@ def rev_geocoding(east: int, north: int, zone: str):
     get location info from UTM coordinates, zone
     """
 
-    print(f"{east=}")
-    print(f"{north=}")
-    print(f"{zone=}")
-
     try:
-        lat_lon = utm.to_latlon(
-            int(east), int(north), int(zone[:-1]), zone[-1]
-        )
+        lat_lon = utm.to_latlon(int(east), int(north), int(zone[:-1]), zone[-1])
     except Exception:
         return {
             "continent": "",
@@ -193,11 +187,6 @@ def rev_geocoding(east: int, north: int, zone: str):
             "municipality": "",
             "location": "",
         }
-
-    print(f"{lat_lon=}")
-
-    print(f"{lat_lon[::-1]=}")
-
 
     r = fn.reverse_geocoding(lat_lon[::-1])
 
@@ -211,9 +200,6 @@ def rev_geocoding(east: int, north: int, zone: str):
             "municipality": "",
             "location": "",
         }
-
-
-    print(f"{r=}")
 
     return r
 
