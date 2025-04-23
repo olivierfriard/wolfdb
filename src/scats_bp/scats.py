@@ -606,7 +606,7 @@ def new_scat():
                 "coord_east, coord_north, coord_zone, "
                 "observer, institution,"
                 "geometry_utm) "
-                "VALUES (:scat_id, :wa_code, :date, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
+                "VALUES (:scat_id, :wa_code, :ispra_id, :date, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
                 ":location, :municipality, :province, :region, "
                 ":deposition, :matrix, :collected_scat, :scalp_category, "
                 ":coord_east, :coord_north, :coord_zone, "
