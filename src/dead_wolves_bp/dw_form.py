@@ -66,7 +66,16 @@ class Dead_wolf(Form):
 
     wa_code = StringField("WA code", [], default="")
 
-    discovery_date = StringField("Discovery Date", validators=[iso_date_validator], default="")
+    discovery_date = StringField(
+        "Discovery Date",
+        validators=[iso_date_validator],
+        render_kw={
+            "placeholder": "YYYY-MM-DD",
+            "pattern": r"\d{4}-\d{2}-\d{2}",
+            "inputmode": "numeric",
+        },
+        default="",
+    )
 
     location = StringField("Location", [], default="")
     municipality = StringField("Municipality", [], default="")
@@ -196,9 +205,11 @@ class Dead_wolf(Form):
         default="N.D.",
     )
 
+    # coordinates
     utm_east = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
     utm_north = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
-    utm_zone = StringField("UTM zone", [], default="32N")
+    utm_zone = StringField("UTM zone", validators=[integer_validator], default="32")
+    hemisphere = SelectField("Hemisphere", choices=[("N", "N"), ("S", "S")], default="N")
 
     # SCALP category
     field230 = SelectField(
@@ -217,9 +228,27 @@ class Dead_wolf(Form):
     field5 = StringField("Reminder on genetic sample collecting and documentation", [], default="")
 
     field7 = StringField("Additional Note on wolf recovery", [], default="")
-    field8 = StringField("Presumed death date", validators=[iso_date_validator], default="")
+    field8 = StringField(
+        "Presumed death date",
+        validators=[iso_date_validator],
+        render_kw={
+            "placeholder": "YYYY-MM-DD",
+            "pattern": r"\d{4}-\d{2}-\d{2}",
+            "inputmode": "numeric",
+        },
+        default="",
+    )
     field10 = StringField("Sampling season", validators=[sampling_season_validator], default="")
-    field11 = StringField("Necroscopy date", validators=[iso_date_validator], default="")
+    field11 = StringField(
+        "Necroscopy date",
+        validators=[iso_date_validator],
+        render_kw={
+            "placeholder": "YYYY-MM-DD",
+            "pattern": r"\d{4}-\d{2}-\d{2}",
+            "inputmode": "numeric",
+        },
+        default="",
+    )
 
     field12 = SelectField(
         "Main cause of mortality",

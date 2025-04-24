@@ -1,3 +1,10 @@
+
+## 2025-04
+
+- added ispra_id field to scats table
+
+
+
 ## 2024-12-13
 
 - add 'allele modifier' role to frolle 

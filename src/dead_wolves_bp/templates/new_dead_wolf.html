@@ -52,7 +52,8 @@
 <div class="col-2">{{ form.discovery_date.label }}</div>
 <div class="col-4">{{ form.discovery_date(class="form-control", value=default_values["discovery_date"]) }}{% for message in form.discovery_date.errors %}
 <div style="#770000">{{ message }}
-</div>{% endfor %}<span class="form-text">Date format: YYYY-MM-DD</span>
+</div>{% endfor %}
+<span class="form-text">Date format: YYYY-MM-DD</span>
 </div></div></div>
 
 {# location #}
@@ -91,22 +92,29 @@
 <div class="row g-3 align-items-top">
 <div class="col-2">UTM coordinates</div>
 
-<div class="col-1">East</div>
-<div class="col-2">{{ form.utm_east(class="form-control", value=default_values["utm_east"]) }}
+<div class="col-1">Easting (X)</div>
+<div class="col-1">{{ form.utm_east(class="form-control", value=default_values["utm_east"]) }}
 {% for message in form.utm_east.errors %}<div style="#770000">{{ message }}</div>{% endfor %}
-<span class="form-text">integer</span>
+<span class="form-text">in meters</span>
 </div>
 
-<div class="col-1">North</div>
-<div class="col-2">{{ form.utm_north(class="form-control", value=default_values["utm_north"]) }}{% for message in form.utm_north.errors %}
+<div class="col-1">Northing (Y)</div>
+<div class="col-1">{{ form.utm_north(class="form-control", value=default_values["utm_north"]) }}{% for message in form.utm_north.errors %}
 <div style="#770000">{{ message }}
-</div>{% endfor %}<span class="form-text">integer</span>
+</div>{% endfor %}
+<span class="form-text">in meters</span>
 </div>
 
-<div class="col-1">Zone</div>
+<div class="col-1">Zone number</div>
 <div class="col-1">{{ form.utm_zone(class="form-control", value=default_values["utm_zone"]) }}{% for message in form.utm_zone.errors %}
 <div style="#770000">{{ message }}
 </div>{% endfor %}<span class="form-text"></span>
+</div>
+
+<div class="col-1">{{ form.hemisphere.label }}</div>
+<div class="col-1">
+{{ form.hemisphere(class="form-control",  value=default_values["hemisphere"]) }}
+{% for message in form.hemisphere.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 </div>
 
 

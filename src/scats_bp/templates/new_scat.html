@@ -78,24 +78,15 @@ function check_geocoding() {
 
 </div></div>
 
-<!--
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.date.label }}</div>
-    <div class="col-8">
-    {{ form.date(size=15, class="form-control",  value=default_values["date"]) }}
-    {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div></div></div>
--->
 
 <div class="mb-3">
-    <div class="row g-3 align-items-top">
+<div class="row g-3 align-items-top">
         
 <div class="col-2">{{ form.wa_code.label }}</div>
 <div class="col-3">
 {{ form.wa_code(size=30, class="form-control",  value=default_values["wa_code"]) }}
 {% for message in form.wa_code.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
 </div>
-
 
 <div class="col-1">{{ form.ispra_id.label }}</div>
 <div class="col-3">
@@ -105,15 +96,6 @@ function check_geocoding() {
 
 </div></div>
 
-<!--
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-<div class="col-2">{{ form.ispra_id.label }}</div>
-<div class="col-8">
-{{ form.ispra_id(size=30, class="form-control",  value=default_values["ispra_id"]) }}
-{% for message in form.ispra_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div></div></div>
--->    
 
 <div class="mb-3">
     <div class="row g-3 align-items-top">
@@ -131,19 +113,16 @@ function check_geocoding() {
     <span class="form-text">in meters</span>
 </div>
 
-
 <div class="col-1">{{ form.coord_zone.label }}</div>
 <div class="col-1">
 {{ form.coord_zone(class="form-control",  value=default_values["coord_zone"]) }}
 {% for message in form.coord_zone.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-<span class="form-text">UTM Zone number</span>
 </div>
 
 <div class="col-1">{{ form.hemisphere.label }}</div>
 <div class="col-1">
 {{ form.hemisphere(class="form-control",  value=default_values["hemisphere"]) }}
 {% for message in form.hemisphere.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-<span class="form-text">Hemisphere</span>
 </div>
 
 
