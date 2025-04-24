@@ -354,7 +354,7 @@ def new_dead_wolf():
                         "utm_geometry": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
                         if request.form["utm_east"] and request.form["utm_north"]
                         else None,
-                        "srid": int(request.form["utm_zone"]) + (3600 if request.form["hemisphere"] == "N" else 3700),
+                        "srid": int(request.form["utm_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
                         "region": region if region else None,
                     },
                 )
