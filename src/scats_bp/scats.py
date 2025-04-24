@@ -591,7 +591,7 @@ def new_scat():
                 ":deposition, :matrix, :collected_scat, :scalp_category, "
                 ":coord_east, :coord_north, :coord_zone, "
                 ":observer, :institution, "
-                ":geometry_utm)"
+                "st_geomfromtext(:utm_geometry, :srid))"
             )
             con.execute(
                 sql,
@@ -618,6 +618,7 @@ def new_scat():
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
                     "geometry_utm": f"SRID={SRID};POINT({request.form['coord_east']} {request.form['coord_north']})",
+                    
                 },
             )
 
