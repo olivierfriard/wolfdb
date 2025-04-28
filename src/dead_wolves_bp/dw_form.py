@@ -206,8 +206,8 @@ class Dead_wolf(Form):
     )
 
     # coordinates
-    utm_east = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
-    utm_north = StringField("Coordinates East (WGS 84 / UTM zone 32N EPSG:32632)", validators=[integer_validator], default="")
+    utm_east = StringField("Easting (X)", validators=[integer_validator], default="")
+    utm_north = StringField("Northing (Y)", validators=[integer_validator], default="")
     utm_zone = StringField("UTM zone", validators=[integer_validator], default="32")
     hemisphere = SelectField("Hemisphere", choices=[("N", "N"), ("S", "S")], default="N")
 

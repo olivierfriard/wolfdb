@@ -1022,7 +1022,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                         if genotype_loci_val is not None:
                             mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
                         else:
-                            print(f'Loci not found {row["genotype_id"]=}  {row["wa_code"]=}')
+                            print(f"Loci not found {row["genotype_id"]=}  {row["wa_code"]=}")
 
                     try:
                         if (
@@ -1383,7 +1383,7 @@ def view_wa_polygon(polygon: str, mode: str):
         sql_all = text(
             "SELECT * FROM wa_genetic_samples_mat "
             "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
-            "AND ST_Within(ST_SetSRID(ST_MakePoint(coord_east, coord_north), 32632), st_transform(ST_GeomFromText(:wkt_polygon, 4326), 32632))"
+            "AND ST_Within(geometry_utm, st_transform(ST_GeomFromText(:wkt_polygon, 4326), ST_SRID(geometry_utm)))"
         )
 
         wa_list = (

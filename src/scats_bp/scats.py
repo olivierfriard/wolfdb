@@ -573,11 +573,6 @@ def new_scat():
         except Exception:
             return not_valid("Error in UTM coordinates")
 
-        if request.form["hemisphere"] == "N":
-            SRID = 32600 + int(request.form["coord_zone"])
-        else:
-            SRID = 32700 + int(request.form["coord_zone"])
-
         with fn.conn_alchemy().connect() as con:
             sql = text(
                 "INSERT INTO scats (scat_id, wa_code, ispra_id, date, sampling_season, sampling_type, path_id, snowtrack_id, "
@@ -589,9 +584,9 @@ def new_scat():
                 "VALUES (:scat_id, :wa_code, :ispra_id, :date, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
                 ":location, :municipality, :province, :region, "
                 ":deposition, :matrix, :collected_scat, :scalp_category, "
-                ":coord_east, :coord_north, :coord_zone, "
+                ":coord_east, :coord_north, :coord_zone, ST_GeomFromText(:wkt_point, :srid),"
                 ":observer, :institution, "
-                "st_geomfromtext(:utm_geometry, :srid))"
+                "ST_GeomFromText(:wkt_point, :srid))"
             )
             con.execute(
                 sql,
@@ -617,8 +612,8 @@ def new_scat():
                     "coord_zone": request.form["coord_zone"] + request.form["hemisphere"],
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
-                    "geometry_utm": f"SRID={SRID};POINT({request.form['coord_east']} {request.form['coord_north']})",
-                    
+                    "wkt_point": f"POINT({request.form['coord_east']} {request.form['coord_north']})",
+                    "srid": int(request.form["coord_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
                 },
             )
 
@@ -796,12 +791,13 @@ def edit_scat(scat_id):
 
             # check UTM coord conversion
             try:
-                utm.to_latlon(
+                _ = utm.to_latlon(
                     int(request.form["coord_east"]),
                     int(request.form["coord_north"]),
-                    32,
-                    "N",
+                    int(request.form["coord_zone"]),
+                    request.form["hemisphere"],
                 )
+
             except Exception:
                 return not_valid(
                     form,
@@ -848,7 +844,7 @@ def edit_scat(scat_id):
                 " observer = :observer, "
                 " institution = :institution, "
                 " notes = :notes, "
-                " geometry_utm = :geometry_utm "
+                " geometry_utm = ST_GeomFromText(:wkt_point, :srid) "
                 "WHERE scat_id = :scat_id"
             )
             con.execute(
@@ -877,7 +873,8 @@ def edit_scat(scat_id):
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
                     "notes": request.form["notes"],
-                    "geometry_utm": f"SRID=32632;POINT({request.form['coord_east']} {request.form['coord_north']})",
+                    "wkt_point": f"POINT({request.form['coord_east']} {request.form['coord_north']})",
+                    "srid": int(request.form["coord_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
                 },
             )
 

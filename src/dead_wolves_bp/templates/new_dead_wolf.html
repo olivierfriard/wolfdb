@@ -92,13 +92,13 @@
 <div class="row g-3 align-items-top">
 <div class="col-2">UTM coordinates</div>
 
-<div class="col-1">Easting (X)</div>
+<div class="col-1">{{ form.utm_east.label }}</div>
 <div class="col-1">{{ form.utm_east(class="form-control", value=default_values["utm_east"]) }}
 {% for message in form.utm_east.errors %}<div style="#770000">{{ message }}</div>{% endfor %}
 <span class="form-text">in meters</span>
 </div>
 
-<div class="col-1">Northing (Y)</div>
+<div class="col-1">{{ form.utm_north.label }}</div>
 <div class="col-1">{{ form.utm_north(class="form-control", value=default_values["utm_north"]) }}{% for message in form.utm_north.errors %}
 <div style="#770000">{{ message }}
 </div>{% endfor %}

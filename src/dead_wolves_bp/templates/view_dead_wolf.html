@@ -25,13 +25,17 @@
 <a href="/view_wa/{{ dead_wolf['wa_code'] }}">{{ dead_wolf["wa_code"] }}</a>
 {% endif %}
 </td></tr>
+
 <tr><td>Tissue ID</td><td>
 {% if dead_wolf["tissue_id"] %}
 <a href="/view_tissue/{{ dead_wolf['tissue_id'] }}">{{ dead_wolf["tissue_id"] }}</a>
 {% endif %}
 </td></tr>
 
-
+<tr><td>Discovery date</td><td>
+{{ dead_wolf["discovery_date"] }}</a>
+</td></tr>
+    
 
 <tr><td>Location</td><td>{{ dead_wolf["location"] if dead_wolf["location"] else ""}}</td></tr>
 <tr><td>Municipality</td><td>{{ dead_wolf["municipality"] if dead_wolf["municipality"] else ""}}</td></tr>
@@ -39,7 +43,7 @@
 <tr><td>Region</td><td>  {{ dead_wolf["region"] if dead_wolf["region"] else ""}}</td></tr>
 
 
-<tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf["utm_zone"] }} EPSG:32632)</td>
+<tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf["utm_zone"] }})</td>
 <td>
 {% if dead_wolf["utm_east"] and dead_wolf["utm_north"] %}
 East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}

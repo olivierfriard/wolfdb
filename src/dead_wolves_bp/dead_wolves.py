@@ -88,13 +88,15 @@ def view_dead_wolf_id(id: int):
     for row in rows:
         dead_wolf_values[row["name"]] = row["val"]
 
+    print(f"{dead_wolf=}")
+
     # coordinates
     lat_lon: list = []
     if dead_wolf["utm_east"] and dead_wolf["utm_north"] and dead_wolf["utm_zone"]:
         lat_lon = utm.to_latlon(
             dead_wolf["utm_east"],
             dead_wolf["utm_north"],
-            int(dead_wolf["utm_zone"].replace("N", "")),
+            int(dead_wolf["utm_zone"][:-1]),
             dead_wolf["utm_zone"][-1],
         )
 
@@ -334,7 +336,7 @@ def new_dead_wolf():
                             "(genotype_id, tissue_id, discovery_date, location, municipality, province, region, wa_code, utm_east, utm_north, utm_zone, geometry_utm) "
                             "VALUES "
                             "(:genotype_id, :tissue_id, :discovery_date, :location, :municipality, :province, :region, :wa_code, "
-                            ":utm_east, :utm_north, :utm_zone, st_geomfromtext(:utm_geometry, :srid))"
+                            ":utm_east, :utm_north, :utm_zone, ST_GeomFromText(:wkt_point, :srid))"
                         )
                     ),
                     {
@@ -351,7 +353,7 @@ def new_dead_wolf():
                         "utm_zone": (request.form["utm_zone"] + request.form["hemisphere"])
                         if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]
                         else None,
-                        "utm_geometry": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
+                        "wkt_point": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
                         if request.form["utm_east"] and request.form["utm_north"]
                         else None,
                         "srid": int(request.form["utm_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
@@ -404,7 +406,7 @@ def edit_dead_wolf(id: int):
 
     def not_valid(form, msg):
         # default values
-        default_values = {}
+        default_values: dict = {}
         for k in request.form:
             default_values[k] = request.form[k]
 
@@ -503,6 +505,20 @@ def edit_dead_wolf(id: int):
         if not form.validate():
             return not_valid(form, "Dead wolf form NOT validated. See details below.")
 
+        if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]:
+            try:
+                _ = utm.to_latlon(
+                    int(request.form["utm_east"]),
+                    int(request.form["utm_north"]),
+                    int(request.form["utm_zone"]),
+                    request.form["hemisphere"],
+                )
+            except Exception as error:
+                return not_valid(form, f"Check the UTM coordinates ({error.args[0]})")
+
+        if request.form["utm_east"] and request.form["utm_north"] and not request.form["utm_zone"]:
+            return not_valid(form, "UTM zone number is missing")
+
         with fn.conn_alchemy().connect() as con:
             # add region
             region: str = ""
@@ -531,7 +547,7 @@ def edit_dead_wolf(id: int):
                         "utm_east = :utm_east,"
                         "utm_north = :utm_north,"
                         "utm_zone = :utm_zone,"
-                        "geometry_utm = st_geomfromtext(:utm_geometry, 32632) "
+                        "geometry_utm = ST_GeomFromText(:wkt_point, :srid) "
                         "WHERE id = :dead_wolf_id "
                     )
                 ),
@@ -546,12 +562,13 @@ def edit_dead_wolf(id: int):
                     "wa_code": request.form["wa_code"] if request.form["wa_code"] else None,
                     "utm_east": request.form["utm_east"] if request.form["utm_east"] else None,
                     "utm_north": request.form["utm_north"] if request.form["utm_north"] else None,
-                    "utm_zone": request.form["utm_zone"]
+                    "utm_zone": (request.form["utm_zone"] + request.form["hemisphere"])
                     if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]
                     else None,
-                    "utm_geometry": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
+                    "wkt_point": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
                     if request.form["utm_east"] and request.form["utm_north"]
                     else None,
+                    "srid": int(request.form["utm_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
                     "region": region if region else None,
                 },
             )
