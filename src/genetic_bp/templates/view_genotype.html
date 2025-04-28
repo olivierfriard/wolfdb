@@ -138,6 +138,26 @@ and loci_values[wa_code['wa_code']][locus][allele]['value'] != genotype_loci[loc
 
 {% include 'legend.html' %}
 
+
+
+{% elif genotype_loci %}
+
+<h3>Genetic data (no WA code found)</h3>
+<table class="table table-striped">
+<thead><tr><th>Locus</th><th>Allele a</th><th>Allele b</th></tr></thead>
+{% for locus in loci_list %}
+<tr>
+    <td><b>{{ locus }}</b></td>
+    <td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
+    {% if 'b' in  genotype_loci[locus] %}
+    <td>{{ genotype_loci[locus]['b']['value'] }}</td>
+    {% else %}
+    <td></td>
+    {% endif %}
+</tr>
+{% endfor %}
+</table>
+
 {% else %}
 
 <h3>No genetic data</h3>

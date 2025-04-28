@@ -225,13 +225,12 @@ def view_genotype(genotype_id: str):
         loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
 
     if count_wa_code:
-        center = f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}"
         map = Markup(
             fn.leaflet_geojson(
                 {
                     "scats": samples_features,
                     "scats_color": params["scat_color"],
-                    "center": center,
+                    "center": f"{sum_lat / count_wa_code}, {sum_lon / count_wa_code}",
                 }
             )
         )
