@@ -208,7 +208,7 @@ class Dead_wolf(Form):
     # coordinates
     utm_east = StringField("Easting (X)", validators=[integer_validator], default="")
     utm_north = StringField("Northing (Y)", validators=[integer_validator], default="")
-    utm_zone = StringField("UTM zone", validators=[integer_validator], default="32")
+    utm_zone = StringField("UTM zone number", validators=[integer_validator], default="32")
     hemisphere = SelectField("Hemisphere", choices=[("N", "N"), ("S", "S")], default="N")
 
     # SCALP category
