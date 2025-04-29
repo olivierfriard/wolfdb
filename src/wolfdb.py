@@ -161,14 +161,11 @@ def settings():
                 return render_template("settings.html", header_title="Settings")
 
             # check if end < start
-            if datetime.datetime.strptime(request.form["end_date"], "%Y-%m-%d") < datetime.datetime.strptime(request.form["start_date"], "%Y-%m-%d"):
-                flash(
-                    fn.alert_danger(
-                        f"The end date cannot be before the start date."
-                    )
-                )
+            if datetime.datetime.strptime(
+                request.form["end_date"], "%Y-%m-%d"
+            ) < datetime.datetime.strptime(request.form["start_date"], "%Y-%m-%d"):
+                flash(fn.alert_danger("The end date cannot be before the start date."))
                 return render_template("settings.html", header_title="Settings")
-
 
             session["start_date"] = request.form["start_date"]
             session["end_date"] = request.form["end_date"]

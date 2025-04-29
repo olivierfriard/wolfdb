@@ -16,8 +16,50 @@
 }</style>
 
 
+{# search form #}
+<!--
+<span style="display:solid; padding-bottom: 2em;" >
+<form style="display:inline" method="POST" action="/dead_wolves_list">
+  
+<input type="search" name="search" placeholder="" value="{{ search_term }}">
+<button type="submit" class="btn btn-secondary btn-sm" >search</button>
+</form>
+</span>
+-->
+
+<span style="display:solid; padding-bottom: 2em;" >
+<form method="POST" action="/dead_wolves_list">
+    <div class="row">
+      <!-- First column - Select -->
+      <div class="col-md-2">
+        <label for="selectOption" class="form-label">Field</label>
+        <select class="form-select" id="selected_field"  name="selected_field" >
+
+            {% for option in options %}
+            <option value="{{ option.value }}" 
+                    {% if selected_value == option.value %}selected{% endif %}>
+              {{ option.text }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-2">
+        <label for="search" class="form-label">Value</label>
+        <input type="text" class="form-control" name="search"  id="search" placeholder="Enter value" value="{{ search_term }}">
+      </div>
+      
+      <!-- Empty space (remaining columns) -->
+      <div class="col-md-2">
+        <label for="btn" class="form-label"></label>
+        <button type="submit" id='btn' class="btn btn-secondary btn-sm" >search</button>
+      </div>
+    </div>
+  </form>
+</span>
+
 {% if results %}
-<h3>{{ header_title }} ({{ n_dead_wolves }})</h3>
+<h3>{{ header_title }}</h3>
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
@@ -31,6 +73,9 @@
 <th>Tissue ID</th>
 <th>Genotype ID</th>
 <th>WA code</th>
+<th>Discovery date</th>
+<th>Main cause of mortality</th>
+<th>Specific cause of mortality</th>
 </tr>
 </thead>
 <tbody>
@@ -50,9 +95,30 @@
 
 <td>
 {% if result['wa_code'] %}
-    <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
+<a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
 {%  endif %}
 </td>
+
+
+<td>
+{% if result['discovery_date'] %}
+{{ result['discovery_date'] }}
+{%  endif %}
+</td>
+    
+<td>
+{% if result['main_mortality'] %}
+{{ result['main_mortality'] }}
+{%  endif %}
+</td>
+    
+<td>
+    {% if result['specific_mortality'] %}
+    {{ result['specific_mortality'] }}
+    {%  endif %}
+    </td>
+    
+
 </tr>
 {% endfor %}
 </tbody>
@@ -61,7 +127,7 @@
 </div>
 {% else %}
 
-<h2>No dead wolf found</h2>
+<h3>No dead wolf found</h3>
 
 {% endif %}
 
