@@ -12,6 +12,8 @@ from sqlalchemy import text, exc
 import utm
 from openpyxl import Workbook
 from tempfile import NamedTemporaryFile
+import pandas as pd
+from io import BytesIO
 
 from config import config
 
@@ -737,6 +739,25 @@ def dead_wolves_list():
 
 
 def export_dead_wolves(results):
+    """
+    export results in XLXS
+    """
+
+    df = pd.DataFrame(results)
+    # order dataframe
+    df = df[list(results[0].keys())]
+
+    # Create an in-memory stream
+    output = BytesIO()
+
+    # Save to XLSX in the stream
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, sheet_name="Sheet1", index=False)
+
+    # Get the stream content (bytes)
+    return output.getvalue()
+
+    """
     wb = Workbook()
 
     ws = wb.active
@@ -757,3 +778,4 @@ def export_dead_wolves(results):
         stream = tmp.read()
 
         return stream
+    """
