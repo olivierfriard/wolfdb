@@ -22,7 +22,7 @@ alter table snow_tracks alter column multilines TYPE geometry(MultiLineString) U
 
 
 
-
+DROP view wa_dw;
 
 
 CREATE VIEW public.wa_dw AS
@@ -31,6 +31,7 @@ CREATE VIEW public.wa_dw AS
     dead_wolves.discovery_date AS date,
     dead_wolves.utm_east AS coord_east,
     dead_wolves.utm_north AS coord_north,
+    dead_wolves.utm_zone AS coord_zone,
     dead_wolves.geometry_utm,
     dead_wolves.location,
     dead_wolves.municipality,
@@ -54,12 +55,15 @@ ALTER VIEW public.wa_dw OWNER TO postgres;
 -- Name: wa_scat; Type: VIEW; Schema: public; Owner: postgres
 --
 
+drop view wa_scat;
+
 CREATE VIEW public.wa_scat AS
  SELECT wa_results.wa_code,
     scats.scat_id AS sample_id,
     scats.date,
     scats.coord_east,
     scats.coord_north,
+    scats.coord_zone,
     scats.geometry_utm,
     scats.location,
     scats.municipality,
@@ -89,6 +93,7 @@ CREATE MATERIALIZED VIEW public.wa_scat_dw_mat AS
     wa_scat.date,
     wa_scat.coord_east,
     wa_scat.coord_north,
+    wa_scat.coord_zone,
     wa_scat.geometry_utm,
     wa_scat.location,
     wa_scat.municipality,
@@ -108,6 +113,7 @@ UNION
     wa_dw.date,
     wa_dw.coord_east,
     wa_dw.coord_north,
+    wa_dw.coord_zone,
     wa_dw.geometry_utm,
     wa_dw.location,
     wa_dw.municipality,
@@ -226,6 +232,7 @@ CREATE MATERIALIZED VIEW public.wa_genetic_samples_mat AS
     province,
     coord_east,
     coord_north,
+    coord_zone,
     geometry_utm,
     genotype_id,
     tmp_id,

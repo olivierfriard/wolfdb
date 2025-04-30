@@ -1380,7 +1380,8 @@ def view_wa_polygon(polygon: str, mode: str):
         loci_list: dict = fn.get_loci_list()
 
         sql_all = text(
-            "SELECT * FROM wa_genetic_samples_mat "
+            "SELECT * "
+            "FROM wa_genetic_samples_mat "
             "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
             "AND ST_Within(geometry_utm, st_transform(ST_GeomFromText(:wkt_polygon, 4326), ST_SRID(geometry_utm)))"
         )

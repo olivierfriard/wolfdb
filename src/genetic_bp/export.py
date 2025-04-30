@@ -15,23 +15,25 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
     ws1 = wb.active
     ws1.title = "WA genetic samples"
 
-    header: list = [
-        "WA code",
-        "Sample ID",
-        "Date",
-        "Municipality",
-        "Coordinate WGS84 UTM East",
-        "Coordinate WGS84 UTM North",
-        "UTM Zone",
-        "mtDNA result",
-        "Genotype ID",
-        "Notes on genotype",
-        "Temp ID",
-        "Sex",
-        "Status",
-        "Pack",
-        "Dead recovery",
-    ]
+    fields = {
+        "wa_code": "WA code",
+        "sample_id": "Sample ID",
+        "date": "Date",
+        "municipality": "Municipality",
+        "coord_east": "Coordinate WGS84 UTM East",
+        "coord_north": "Coordinate WGS84 UTM North",
+        "coord_zone": "UTM Zone",
+        "mtdna": "mtDNA result",
+        "genotype_id": "Genotype ID",
+        "notes": "Notes on genotype",
+        "tmp_id": "Temp ID",
+        "sex_id": "Sex",
+        "status": "Status",
+        "pack": "Pack",
+        "dead_recovery": "Dead recovery",
+    }
+
+    header: list = list(fields.values())
 
     for locus in loci_list:
         for allele in ("a", "b")[: loci_list[locus]]:
@@ -40,24 +42,7 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
     ws1.append(header)
 
     for row in wa_scats:
-        out = []
-        out.append(row["wa_code"])
-        out.append(row["sample_id"] if row["sample_id"] is not None else "")
-        out.append(row["date"] if row["date"] is not None else "")
-        out.append(row["municipality"] if row["municipality"] is not None else "")
-
-        out.append(row["coord_east"])
-        out.append(row["coord_north"])
-        out.append("32N")
-
-        out.append(row["mtdna"] if row["mtdna"] is not None else "")
-        out.append(row["genotype_id"] if row["genotype_id"] is not None else "")
-        out.append(row["notes"] if row["notes"] is not None else "")
-        out.append(row["tmp_id"] if row["tmp_id"] is not None else "")
-        out.append(row["sex_id"] if row["sex_id"] is not None else "")
-        out.append(row["status"] if row["status"] is not None else "")
-        out.append(row["pack"] if row["pack"] is not None else "")
-        out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
+        out: list = [row[field] if row[field] is not None else "" for field in fields]
 
         for locus in loci_list:
             for allele in ("a", "b")[: loci_list[locus]]:
@@ -224,24 +209,27 @@ def export_wa(loci_list, wa_list, loci_values):
     ws1 = wb.active
     ws1.title = "WA"
 
-    header = [
-        "WA code",
-        "Sample ID",
-        "Genotype ID",
-        "Date",
-        "Box number",
-        "Municipality",
-        "Province",
-        "Coordinates East WGS84 UTM",
-        "Coordinates North WGS84 UTM",
-        "UTM Zone",
-        "mtDNA result",
-        "Temporary ID",
-        "Sex",
-        "Status",
-        "Pack",
-        "Dead recovery",
-    ]
+    fields = {
+        "wa_code": "WA code",
+        "sample_id": "Sample ID",
+        "genotype_id": "Genotype ID",
+        "date": "Date",
+        "box_number": "Box number",
+        "municipality": "Municipality",
+        "province": "Province",
+        "coord_east": "Coordinates East WGS84 UTM",
+        "coord_north": "Coordinates North WGS84 UTM",
+        "coord_zone": "UTM Zone",
+        "mtdna": "mtDNA result",
+        "tmp_id": "Temporary ID",
+        "sex_id": "Sex",
+        "status": "Status",
+        "pack": "Pack",
+        "dead_recovery": "Dead recovery",
+    }
+
+    header: list = list(fields.values())
+
     for locus in loci_list:
         header.extend([f"{locus} a", f"Notes for {locus} a"])
         if loci_list[locus] == 2:
@@ -250,9 +238,9 @@ def export_wa(loci_list, wa_list, loci_values):
     ws1.append(header)
 
     for wa in wa_list:
-        out = []
+        out: list = [wa[field] if wa[field] is not None else "" for field in fields]
 
-        out.append(wa["wa_code"])
+        """out.append(wa["wa_code"])
         out.append(wa["sample_id"])
         out.append(wa["genotype_id"])
         out.append(wa["date"])
@@ -268,6 +256,7 @@ def export_wa(loci_list, wa_list, loci_values):
         out.append(wa["status"])
         out.append(wa["pack"])
         out.append(wa["dead_recovery"])
+        """
 
         for locus in loci_list:
             if wa["wa_code"] in loci_values:
