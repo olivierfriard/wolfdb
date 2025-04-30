@@ -31,7 +31,7 @@
         <div class="card-body">
 
 
-<form method="POST" action="/dead_wolves_list">
+<form method="POST"  id="search_form" action="/dead_wolves_list">
 <div class="row">
 <!-- search fields -->
 <div class="col-md-4">
@@ -56,9 +56,20 @@
 <!-- search button -->
 <div class="col-md-2 d-flex align-items-end">
 <label for="btn" class="form-label"></label>
-<button type="submit" id='btn' class="btn btn-secondary btn-sm" >search</button>
+<button type="submit" id='btn' class="btn btn-secondary btn-sm" >Search</button>
+<button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSearch()">Clear</button>
 </div>
-</div>
+
+<script>
+  function clearSearch() {
+    document.getElementById('search').value = '';
+    document.getElementById('selected_field').value = 'all'; 
+    document.getElementById('search_form').submit();
+  }
+</script>
+
+
+</div><!-- row -->
 </form>
 
 </div>
