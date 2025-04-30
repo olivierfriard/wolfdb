@@ -133,21 +133,31 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
 
         # UTM coord conversion
         # check zone
+        """
         if data["coord_zone"].upper().replace(" ", "") != "32N":
             out += fn.alert_danger(
                 f"Row {index + 2}: the UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted. File contains: '{data['coord_zone']}'"
             )
-        data["coord_zone"] = "32N"
+        """
+        data["coord_zone"] = data["coord_zone"].upper().strip()
+
+        if data["coord_zone"][-1] not in ("S", "N"):
+            out += fn.alert_danger(f"Row {index + 2}: the UTM zone is not correct. File contains: '{data['coord_zone']}'")
+
+        hemisphere = data["coord_zone"][-1]
+
+        data["coord_zone"] = data["coord_zone"].replace(hemisphere, "")
 
         # check if coordinates are OK
         try:
-            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
+            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), data["coord_zone"], hemisphere)
         except Exception:
             out += fn.alert_danger(
-                f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]}"'
+                f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]} Zone: {data["coord_zone"]}"'
             )
 
-        data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
+        srid = int(data["coord_zone"]) + (32600 if hemisphere == "N" else 32700)
+        data["geometry_utm"] = f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -168,7 +178,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
             data["deposition"] = "Old"
         if data["deposition"] not in ["Fresh", "Old", ""]:
             out += fn.alert_danger(
-                f'The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}: found {data["deposition"]}'
+                f"The deposition value must be <b>Fresh</b>, <b>Old</b> or empty at row {index + 2}: found {data['deposition']}"
             )
 
         # matrix
@@ -178,7 +188,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         if data["matrix"] == "No":
             data["matrix"] = "No"
         if data["matrix"] not in ["Yes", "No", ""]:
-            out += fn.alert_danger(f'The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["matrix"]}')
+            out += fn.alert_danger(f"The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data['matrix']}")
 
         # collected_scat
         data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()
@@ -188,14 +198,14 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
             data["collected_scat"] = "No"
         if data["collected_scat"] not in ["Yes", "No", ""]:
             out += fn.alert_danger(
-                f'The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data["collected_scat"]}'
+                f"The collected_scat value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data['collected_scat']}"
             )
 
         # scalp_category
         data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
         if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
             out += fn.alert_danger(
-                f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'
+                f"The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data['scalp_category']}"
             )
 
         # genetic_sample
@@ -206,7 +216,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
             data["genetic_sample"] = "No"
         if data["genetic_sample"] not in ["Yes", "No", ""]:
             out += fn.alert_danger(
-                f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data["genetic_sample"]}'
+                f"The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data['genetic_sample']}"
             )
 
         # notes

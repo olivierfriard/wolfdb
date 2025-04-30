@@ -721,11 +721,14 @@ def dead_wolves_list():
             selected_value=request.form["selected_field"] if "selected_field" in request.form else "all",
         )
     elif action == "export":
+        if not results:
+            return "No dead wolves found"
         file_content = export_dead_wolves(results)
-
         response = make_response(file_content, 200)
         response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = f"attachment; filename=dead_wolves.xlsx"
+        response.headers["Content-disposition"] = (
+            f"attachment; filename=dead_wolves_{request.form['selected_field'] if 'selected_field' in request.form else 'all'}_{search_term}.xlsx"
+        )
 
         return response
 

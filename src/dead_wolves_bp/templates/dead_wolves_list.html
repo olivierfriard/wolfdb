@@ -59,11 +59,11 @@
 <button type="button" id='btn' class="btn btn-secondary btn-sm" onclick="submitForm('search')">Search</button>
 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSearch()">Clear</button>
 </div>
-
+{% if results %}
 <div class="col-md-2 d-flex align-items-end">
 <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export')">Export</button>
 </div>
-
+{%endif%}
 <input type="hidden" name="action" id="action_field" value="search">
 
 <script>

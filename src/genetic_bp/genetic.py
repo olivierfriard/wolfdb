@@ -1150,7 +1150,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
         wa_scats = (
             con.execute(
                 text(
-                    "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, "
+                    "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, coord_zone, "
                     "mtdna, genotype_id, tmp_id, sex_id, "
                     "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS notes, "
                     "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw_mat.genotype_id) AS status, "
