@@ -38,7 +38,7 @@
 <th>Sample ID</th>
 <th>Date</th>
 <th>Municipality</th>
-<th>Coordinates<br><small>WGS84 UTM zone 32N</small></th>
+<th>Coordinates<br><small>WGS84 UTM</small></th>
 <th>mtDNA result</th>
 <th>Genotype ID</th>
 <th>Temp ID</th>
@@ -73,7 +73,7 @@
 
 <td>{% if result['municipality'] %}<small>{{ result['municipality'] }}</small>{% endif %}</td>
 
-<td><small>East: {{ result['coord_east'] }}, North: {{ result['coord_north'] }}</small></td>
+<td><small>East: {{ result['coord_east'] }}, North: {{ result['coord_north'] }}<br>{{ result['coord_zone'] }}</small></td>
 
 <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
 

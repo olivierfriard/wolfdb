@@ -133,12 +133,6 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
 
         # UTM coord conversion
         # check zone
-        """
-        if data["coord_zone"].upper().replace(" ", "") != "32N":
-            out += fn.alert_danger(
-                f"Row {index + 2}: the UTM zone is not 32N. Only WGS 84 / UTM zone 32N are accepted. File contains: '{data['coord_zone']}'"
-            )
-        """
         data["coord_zone"] = data["coord_zone"].upper().strip()
 
         if data["coord_zone"][-1] not in ("S", "N"):
