@@ -56,16 +56,29 @@
 <!-- search button -->
 <div class="col-md-2 d-flex align-items-end">
 <label for="btn" class="form-label"></label>
-<button type="submit" id='btn' class="btn btn-secondary btn-sm" >Search</button>
+<button type="button" id='btn' class="btn btn-secondary btn-sm" onclick="submitForm('search')">Search</button>
 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSearch()">Clear</button>
 </div>
+
+<div class="col-md-2 d-flex align-items-end">
+<button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export')">Export</button>
+</div>
+
+<input type="hidden" name="action" id="action_field" value="search">
 
 <script>
   function clearSearch() {
     document.getElementById('search').value = '';
     document.getElementById('selected_field').value = 'all'; 
+    document.getElementById('action_field').value = 'search';
     document.getElementById('search_form').submit();
   }
+
+  function submitForm(action) {
+    document.getElementById('action_field').value = action;
+    document.getElementById('search_form').submit();
+}
+
 </script>
 
 

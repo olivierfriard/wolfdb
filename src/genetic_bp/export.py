@@ -298,20 +298,22 @@ def export_genotypes_list(loci_list, results, loci_values):
     ws1 = wb.active
     ws1.title = "Genotype matches"
 
-    header: list = [
-        "Genotype ID",
-        "Other ID",
-        "Date",
-        "Pack",
-        "Sex",
-        "Hybrid",
-        "Status",
-        "Age at first capture",
-        "status at first capture",
-        "Dispersal",
-        "Number of recaptures",
-        "Dead recovery",
-    ]
+    fields = {
+        "genotype_id": "Genotype ID",
+        "tmp_id": "Other ID",
+        "date": "Date",
+        "pack": "Pack",
+        "sex": "Sex",
+        "hybrid": "Hybrid",
+        "status": "Status",
+        "age_first_capture": "Age at first capture",
+        "status_first_capture": "status at first capture",
+        "dispersal": "Dispersal",
+        "n_recaptures": "Number of recaptures",
+        "dead_recovery": "Dead recovery",
+    }
+
+    header: list = list(fields.values())
     for locus in loci_list:
         for allele in ("a", "b")[: loci_list[locus]]:
             header.extend([f"{locus} {allele}", f"Notes for {locus} {allele}"])
@@ -319,28 +321,8 @@ def export_genotypes_list(loci_list, results, loci_values):
     ws1.append(header)
 
     for row in results:
-        out = []
-        out.append(row["genotype_id"])
-        out.append(row["tmp_id"] if row["tmp_id"] is not None else "")
-        out.append(row["date"] if row["date"] is not None else "")
-        out.append(row["pack"] if row["pack"] is not None else "")
-        out.append(row["sex"] if row["sex"] is not None else "")
-        out.append(row["hybrid"] if row["hybrid"] is not None else "")
-        out.append(row["status"] if row["status"] is not None else "")
-        out.append(row["age_first_capture"] if row["age_first_capture"] is not None else "")
-        out.append(row["status_first_capture"] if row["status_first_capture"] is not None else "")
-
-        out.append(row["dispersal"] if row["dispersal"] is not None else "")
-        out.append(row["n_recaptures"] if row["n_recaptures"] is not None else "")
-        out.append(row["dead_recovery"] if row["dead_recovery"] is not None else "")
-
+        out: list = [row[field] if row[field] is not None else "" for field in fields]
         for locus in loci_list:
-            """
-            print()
-            print(locus)
-            print(loci_list[locus])
-            print(f"{loci_values[row["genotype_id"]][locus]}=")
-            """
             for allele in ("a", "b")[: loci_list[locus]]:
                 out.extend(
                     [
