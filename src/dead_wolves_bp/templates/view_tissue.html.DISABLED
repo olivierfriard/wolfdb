@@ -25,7 +25,7 @@
 <tr><td>Data presunta morte</td><td>{{ dead_wolf["data_presunta_morte"] }}</td></tr>
 <tr><td>Causa morte</td><td>{{ dead_wolf["causa_morte"] }}</td></tr>
 <tr><td>Description</td><td>{{ dead_wolf["description"] }}</td></tr>
-<tr><td>Coordinates (WGS 84 / UTM zone 32N EPSG:32632)</td><td>East: {{ dead_wolf["coord_x"] }}, North: {{ dead_wolf["coord_y"] }}</td></tr>
+<tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf["coord_y"] }} EPSG:32632)</td><td>Easting (X): {{ dead_wolf["coord_x"] }}, Northing (Y): {{ dead_wolf["coord_y"] }}</td></tr>
 <tr><td>Location</td><td>{{ dead_wolf["location"] }}</td></tr>
 <tr><td>Municipality</td><td>{{ dead_wolf["municipality"] }}</td></tr>
 

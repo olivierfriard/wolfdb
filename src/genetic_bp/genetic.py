@@ -1528,14 +1528,15 @@ def wa_analysis_group(tool: str, mode: str):
         with open("external_functions/loci_to_use_with_colony.txt", "r") as file_in:
             colony_loci = [x.strip().upper() for x in file_in.readlines()]
 
-        print(f"{colony_loci=}")
+        """print(f"{colony_loci=}")"""
 
         valid_locus: list = []
         for locus in loci_list:
             if locus.upper() not in colony_loci:
                 continue
-            # print()
-            # print(f"{locus=}")
+            """ print()
+            print(f"{locus=}")
+            """
             locus_has_values: bool = False
             for genotype in loci_values:
                 # print(f"{genotype=}")
