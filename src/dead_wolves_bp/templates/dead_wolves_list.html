@@ -17,45 +17,55 @@
 
 
 {# search form #}
-<!--
-<span style="display:solid; padding-bottom: 2em;" >
-<form style="display:inline" method="POST" action="/dead_wolves_list">
-  
-<input type="search" name="search" placeholder="" value="{{ search_term }}">
-<button type="submit" class="btn btn-secondary btn-sm" >search</button>
-</form>
-</span>
--->
+
 
 <span style="display:solid; padding-bottom: 2em;" >
+
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-3">
+        <div class="card-header">
+          Search
+        </div>
+        <div class="card-body">
+
+
 <form method="POST" action="/dead_wolves_list">
-    <div class="row">
-      <!-- First column - Select -->
-      <div class="col-md-2">
-        <label for="selectOption" class="form-label">Field</label>
-        <select class="form-select" id="selected_field"  name="selected_field" >
+<div class="row">
+<!-- search fields -->
+<div class="col-md-4">
+<label for="selectOption" class="form-label">Field</label>
+<select class="form-select" id="selected_field"  name="selected_field" >
 
-            {% for option in options %}
-            <option value="{{ option.value }}" 
-                    {% if selected_value == option.value %}selected{% endif %}>
-              {{ option.text }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      
-      <div class="col-md-2">
-        <label for="search" class="form-label">Value</label>
-        <input type="text" class="form-control" name="search"  id="search" placeholder="Enter value" value="{{ search_term }}">
-      </div>
-      
-      <!-- Empty space (remaining columns) -->
-      <div class="col-md-2">
-        <label for="btn" class="form-label"></label>
-        <button type="submit" id='btn' class="btn btn-secondary btn-sm" >search</button>
-      </div>
-    </div>
-  </form>
+{% for option in options %}
+<option value="{{ option.value }}" 
+{% if selected_value == option.value %}selected{% endif %}>
+{{ option.text }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<!-- value -->
+<div class="col-md-4">
+<label for="search" class="form-label">Value</label>
+<input type="text" class="form-control" name="search"  id="search" placeholder="Enter value" value="{{ search_term }}">
+</div>
+
+<!-- search button -->
+<div class="col-md-2 d-flex align-items-end">
+<label for="btn" class="form-label"></label>
+<button type="submit" id='btn' class="btn btn-secondary btn-sm" >search</button>
+</div>
+</div>
+</form>
+
+</div>
+</div>
+</div>
+</div>
+
 </span>
 
 {% if results %}
