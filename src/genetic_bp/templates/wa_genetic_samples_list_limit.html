@@ -77,6 +77,7 @@ function scroll_to_wa() {
 <th>Province</th>
 <th>Coordinates WGS84 UTM</th>
 <th>mtDNA result</th>
+<th>Hybrid</th>
 <th>Genotype ID</th>
 <th>Temp ID</th>
 <th>Sex</th>
@@ -123,6 +124,8 @@ function scroll_to_wa() {
 <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}<br>{{ result['coord_zone'] }}</td>
 
 <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
+
+<td>{% if result.hybrid %}{{ result.hybrid }}{% endif %}</td>
 
 <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
 {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"

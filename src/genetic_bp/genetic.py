@@ -919,6 +919,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                     "province",
                     "genotype id",
                     "sex",
+                    "hybrid",
                     "tmp id",
                     "notes",
                     "pack",
@@ -952,6 +953,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                 "OR date::text ILIKE :search "
                 "OR municipality ILIKE :search "
                 "OR genotype_id ILIKE :search "
+                "OR hybrid ILIKE :search "
                 "OR tmp_id ILIKE :search "
                 "OR notes ILIKE :search "
                 "OR pack ILIKE :search "
