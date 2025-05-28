@@ -1,0 +1,38 @@
+digraph G {
+
+    // schema of database tables (square), views (diamond) and materialized views (ellipse)
+ {
+        rank=same;
+        scats [shape=square];
+        wa_results [shape=square];
+        dead_wolves_value [shape=square];
+        genotypes [shape=square];
+    }
+
+    wa_scat [shape=diamond];
+    wa_dw  [shape=diamond];
+
+    // Edges
+    scats -> scats_list_mat;
+    scats -> wa_scat;
+
+    wa_results -> wa_scat;
+    wa_results -> wa_dw;
+
+    wa_dw -> wa_scat_dw_mat;
+
+    wa_scat -> wa_scat_dw_mat;
+
+    dead_wolves_value -> dead_wolves_mat;
+
+    dead_wolves_mat -> wa_dw;
+    dead_wolves_mat -> wa_genetic_samples_mat;
+
+    wa_scat_dw_mat -> scats_list_mat;
+    wa_scat_dw_mat -> wa_genetic_samples_mat;
+    wa_scat_dw_mat -> genotypes_list_mat;
+
+    genotypes -> wa_genetic_samples_mat;
+    genotypes -> genotypes_list_mat;
+
+}

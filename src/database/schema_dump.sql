@@ -1,31 +1,21 @@
 
 
 
-
-
 drop view wa_scat CASCADE;
 
 
-alter table scats alter column geometry_utm TYPE geometry USING geometry_utm::geometry;
-
-
-
-alter table transects alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
-alter table transects drop column points_utm;
-
-alter table snow_tracks drop column geometry_utm;
-alter table snow_tracks alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
-
-
-
+# alter table scats alter column geometry_utm TYPE geometry USING geometry_utm::geometry;
+# alter table transects alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
+# alter table transects drop column points_utm;
+# alter table snow_tracks drop column geometry_utm;
+# alter table snow_tracks alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
 
 
 
 
 DROP view wa_dw;
 
-
-CREATE VIEW public.wa_dw AS
+CREATE VIEW wa_dw AS
  SELECT wa_results.wa_code,
     dead_wolves.tissue_id AS sample_id,
     dead_wolves.discovery_date AS date,
@@ -44,20 +34,16 @@ CREATE VIEW public.wa_dw AS
     wa_results.sex_id,
     'Dead wolf'::text AS sample_type,
     wa_results.box_number
-   FROM public.dead_wolves,
-    public.wa_results
+
+   FROM dead_wolves, wa_results
+
   WHERE ((wa_results.wa_code)::text = (dead_wolves.wa_code)::text);
 
 
-ALTER VIEW public.wa_dw OWNER TO postgres;
-
---
--- Name: wa_scat; Type: VIEW; Schema: public; Owner: postgres
---
 
 drop view wa_scat;
 
-CREATE VIEW public.wa_scat AS
+CREATE VIEW wa_scat AS
  SELECT wa_results.wa_code,
     scats.scat_id AS sample_id,
     scats.date,
@@ -76,18 +62,17 @@ CREATE VIEW public.wa_scat AS
     wa_results.sex_id,
     scats.sample_type,
     wa_results.box_number
-   FROM public.scats,
-    public.wa_results
+
+   FROM scats, wa_results
+
   WHERE ((scats.wa_code)::text = (wa_results.wa_code)::text);
 
 
-ALTER VIEW public.wa_scat OWNER TO postgres;
 
---
--- Name: wa_scat_dw_mat; Type: MATERIALIZED VIEW; Schema: public; Owner: postgres
---
 
-CREATE MATERIALIZED VIEW public.wa_scat_dw_mat AS
+drop view wa_scat_dw_mat;
+
+CREATE MATERIALIZED VIEW wa_scat_dw_mat AS
  SELECT wa_scat.wa_code,
     wa_scat.sample_id,
     wa_scat.date,
@@ -106,7 +91,9 @@ CREATE MATERIALIZED VIEW public.wa_scat_dw_mat AS
     wa_scat.sex_id,
     wa_scat.sample_type,
     wa_scat.box_number
-   FROM public.wa_scat
+
+   FROM wa_scat
+
 UNION
  SELECT wa_dw.wa_code,
     wa_dw.sample_id,
@@ -126,17 +113,17 @@ UNION
     wa_dw.sex_id,
     wa_dw.sample_type,
     wa_dw.box_number
-   FROM public.wa_dw
+
+   FROM wa_dw
+
   WITH NO DATA;
 
 
-ALTER MATERIALIZED VIEW public.wa_scat_dw_mat OWNER TO postgres;
 
---
--- Name: genotypes_list_mat; Type: MATERIALIZED VIEW; Schema: public; Owner: postgres
---
+drop view genotypes_list_mat;
 
-CREATE MATERIALIZED VIEW public.genotypes_list_mat AS
+
+CREATE MATERIALIZED VIEW genotypes_list_mat AS
  SELECT genotype_id,
     date,
     pack,
@@ -164,19 +151,16 @@ CREATE MATERIALIZED VIEW public.genotypes_list_mat AS
     ( SELECT min(wa_scat_dw_mat.date) AS min
            FROM public.wa_scat_dw_mat
           WHERE ((wa_scat_dw_mat.genotype_id)::text = (genotypes.genotype_id)::text)) AS date_first_capture
-   FROM public.genotypes
+   FROM genotypes
   ORDER BY genotype_id
   WITH NO DATA;
 
 
-ALTER MATERIALIZED VIEW public.genotypes_list_mat OWNER TO postgres;
 
---
--- Name: geo_info; Type: TABLE; Schema: public; Owner: postgres
---
+drop view scats_list_mat;
 
 
-CREATE MATERIALIZED VIEW public.scats_list_mat AS
+CREATE MATERIALIZED VIEW scats_list_mat AS
  SELECT scat_id,
     date,
     wa_code,
@@ -221,10 +205,10 @@ CREATE MATERIALIZED VIEW public.scats_list_mat AS
   WITH NO DATA;
 
 
-ALTER MATERIALIZED VIEW public.scats_list_mat OWNER TO postgres;
+drop view wa_genetic_samples_mat;
 
 
-CREATE MATERIALIZED VIEW public.wa_genetic_samples_mat AS
+CREATE MATERIALIZED VIEW wa_genetic_samples_mat AS
  SELECT wa_code,
     sample_id,
     date,
@@ -253,44 +237,31 @@ CREATE MATERIALIZED VIEW public.wa_genetic_samples_mat AS
            FROM public.dead_wolves
           WHERE (dead_wolves.tissue_id = (wa_scat_dw_mat.sample_id)::text)
          LIMIT 1) AS dead_recovery
-   FROM public.wa_scat_dw_mat
+   FROM wa_scat_dw_mat
   WHERE ((mtdna)::text <> 'Poor DNA'::text)
   ORDER BY wa_code
   WITH NO DATA;
 
 
-ALTER MATERIALIZED VIEW public.wa_genetic_samples_mat OWNER TO postgres;
+
 
 
 CREATE INDEX idx_scats_list_mat_date ON public.wa_scat_dw_mat USING btree (date);
 
 
---
--- Name: idx_wa_scat_dw_mat_date; Type: INDEX; Schema: public; Owner: postgres
---
 
 CREATE INDEX idx_wa_scat_dw_mat_date ON public.wa_scat_dw_mat USING btree (date);
 
 
---
--- Name: idx_wa_scat_dw_mat_genotypeid; Type: INDEX; Schema: public; Owner: postgres
---
 
 CREATE INDEX idx_wa_scat_dw_mat_genotypeid ON public.wa_scat_dw_mat USING btree (genotype_id);
 
 
---
--- Name: idx_wa_scat_dw_mat_mtdna; Type: INDEX; Schema: public; Owner: postgres
---
 
 CREATE INDEX idx_wa_scat_dw_mat_mtdna ON public.wa_scat_dw_mat USING btree (mtdna);
 
 
---
--- Name: idx_wa_scat_dw_mat_wa_code; Type: INDEX; Schema: public; Owner: postgres
---
-
 CREATE INDEX idx_wa_scat_dw_mat_wa_code ON public.wa_scat_dw_mat USING btree (wa_code);
 
 
-
+call refresh_materialized_views() ;
