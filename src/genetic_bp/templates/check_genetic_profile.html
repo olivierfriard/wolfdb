@@ -1,0 +1,54 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+
+
+<h2>Check genetic profile</h2>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{{ messages[0] }}
+{% endif %}
+{% endwith %}
+
+
+<hr>
+
+<form action="{{ url_for('genetic.check_genetic_profile') }}" method="post">
+    <div class="form-group">
+    <label for="message">Genetic profile</label><br>
+    <textarea id="genetic_profile" name="genetic_profile" rows="6" cols="200" placeholder="Paste the genetic profile here...">{{ default}}</textarea><br>
+    <small>The order of loci must be: {{ loci }}</small>
+    <br><br>
+    <button type="submit" class="btn btn-primary">Check</button>
+</div>  
+</form>
+
+<br>
+
+
+
+<hr>
+{% if genetic_profile %}
+Genetic profile:<br>
+
+{{ genetic_profile }}
+<hr>
+{%endif%}
+
+{% if out %}
+
+<h3>WA codes</h3>
+
+{% for wa_code in out %}
+<a href="/view_genetic_data/{{ wa_code }}">{{ wa_code }}</a><br>
+{%endfor%}
+
+{%endif %}
+
+{% endblock %}
+
+
+
+
