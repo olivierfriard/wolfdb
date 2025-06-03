@@ -3428,7 +3428,9 @@ def check_genetic_profile():
             separator = " "
         else:
             flash(
-                fn.alert_danger("The separator between values must be space or <TAB>")
+                fn.alert_danger(
+                    "The separator between values must be space or a TAB character"
+                )
             )
             return render_template(
                 "check_genetic_profile.html",
