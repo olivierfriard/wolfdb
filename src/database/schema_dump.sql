@@ -4,11 +4,11 @@
 drop view wa_scat CASCADE;
 
 
-# alter table scats alter column geometry_utm TYPE geometry USING geometry_utm::geometry;
-# alter table transects alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
-# alter table transects drop column points_utm;
-# alter table snow_tracks drop column geometry_utm;
-# alter table snow_tracks alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
+-- alter table scats alter column geometry_utm TYPE geometry USING geometry_utm::geometry;
+-- alter table transects alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
+-- alter table transects drop column points_utm;
+-- alter table snow_tracks drop column geometry_utm;
+-- alter table snow_tracks alter column multilines TYPE geometry(MultiLineString) USING multilines::geometry;
 
 
 
@@ -68,7 +68,7 @@ CREATE VIEW wa_scat AS
   WHERE ((scats.wa_code)::text = (wa_results.wa_code)::text);
 
 
-
+-- wa_scat_dw_mat
 
 drop view wa_scat_dw_mat;
 
@@ -119,6 +119,18 @@ UNION
   WITH NO DATA;
 
 
+CREATE INDEX idx_wa_scat_dw_mat_date ON wa_scat_dw_mat(date);
+CREATE INDEX idx_wa_scat_dw_mat_genotypeid ON wa_scat_dw_mat(genotype_id);
+CREATE INDEX idx_wa_scat_dw_mat_mtdna ON wa_scat_dw_mat(mtdna);
+CREATE INDEX idx_wa_scat_dw_mat_wa_code ON wa_scat_dw_mat(wa_code);
+
+
+
+
+
+
+-- genotypes_list_mat
+
 
 drop view genotypes_list_mat;
 
@@ -155,7 +167,16 @@ CREATE MATERIALIZED VIEW genotypes_list_mat AS
   ORDER BY genotype_id
   WITH NO DATA;
 
+CREATE INDEX idx_genotypes_list_mat_date ON genotypes_list_mat(date);
+CREATE INDEX idx_genotypes_list_mat_genotype_id ON genotypes_list_mat(genotype_id);
+CREATE INDEX idx_genotypes_list_mat_pack ON genotypes_list_mat(pack);
+CREATE INDEX idx_genotypes_list_mat_date_first_capture ON genotypes_list_mat(date_first_capture);
 
+
+
+
+
+-- scats_list_mat
 
 drop view scats_list_mat;
 
@@ -205,6 +226,13 @@ CREATE MATERIALIZED VIEW scats_list_mat AS
   WITH NO DATA;
 
 
+CREATE INDEX idx_scats_list_mat_date ON scats_list_mat(date);
+
+
+
+
+-- wa_genetic_samples_mat
+
 drop view wa_genetic_samples_mat;
 
 
@@ -243,25 +271,10 @@ CREATE MATERIALIZED VIEW wa_genetic_samples_mat AS
   WITH NO DATA;
 
 
+CREATE INDEX idx_wa_genetic_samples_mat_date ON wa_genetic_samples_mat(date);
 
 
 
-CREATE INDEX idx_scats_list_mat_date ON public.wa_scat_dw_mat USING btree (date);
-
-
-
-CREATE INDEX idx_wa_scat_dw_mat_date ON public.wa_scat_dw_mat USING btree (date);
-
-
-
-CREATE INDEX idx_wa_scat_dw_mat_genotypeid ON public.wa_scat_dw_mat USING btree (genotype_id);
-
-
-
-CREATE INDEX idx_wa_scat_dw_mat_mtdna ON public.wa_scat_dw_mat USING btree (mtdna);
-
-
-CREATE INDEX idx_wa_scat_dw_mat_wa_code ON public.wa_scat_dw_mat USING btree (wa_code);
 
 
 call refresh_materialized_views() ;
