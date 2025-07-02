@@ -13,7 +13,7 @@ drop view wa_scat CASCADE;
 
 
 
-DROP view wa_dw;
+DROP view  IF EXISTS wa_dw;
 
 CREATE VIEW wa_dw AS
  SELECT wa_results.wa_code,
@@ -41,7 +41,7 @@ CREATE VIEW wa_dw AS
 
 
 
-drop view wa_scat;
+drop view  IF EXISTS wa_scat;
 
 CREATE VIEW wa_scat AS
  SELECT wa_results.wa_code,
@@ -70,7 +70,7 @@ CREATE VIEW wa_scat AS
 
 -- wa_scat_dw_mat
 
-drop view wa_scat_dw_mat;
+drop view  IF EXISTS  wa_scat_dw_mat;
 
 CREATE MATERIALIZED VIEW wa_scat_dw_mat AS
  SELECT wa_scat.wa_code,
@@ -132,7 +132,7 @@ CREATE INDEX idx_wa_scat_dw_mat_wa_code ON wa_scat_dw_mat(wa_code);
 -- genotypes_list_mat
 
 
-drop view genotypes_list_mat;
+drop view  IF EXISTS  genotypes_list_mat;
 
 
 CREATE MATERIALIZED VIEW genotypes_list_mat AS
@@ -178,7 +178,7 @@ CREATE INDEX idx_genotypes_list_mat_date_first_capture ON genotypes_list_mat(dat
 
 -- scats_list_mat
 
-drop view scats_list_mat;
+drop view  IF EXISTS scats_list_mat;
 
 
 CREATE MATERIALIZED VIEW scats_list_mat AS
@@ -233,7 +233,7 @@ CREATE INDEX idx_scats_list_mat_date ON scats_list_mat(date);
 
 -- wa_genetic_samples_mat
 
-drop view wa_genetic_samples_mat;
+drop view  IF EXISTS wa_genetic_samples_mat;
 
 
 CREATE MATERIALIZED VIEW wa_genetic_samples_mat AS
