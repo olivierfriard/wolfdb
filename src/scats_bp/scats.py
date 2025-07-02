@@ -985,64 +985,43 @@ def confirm_load_xlsx(filename, mode):
 
         scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
 
-        update_sql = text(
-            "UPDATE scats SET "
-            "date = :date,"
-            "wa_code = :wa_code,"
-            "genotype_id = :genotype_id,"
-            "sampling_season = :sampling_season,"
-            "sampling_type = :sampling_type,"
-            "path_id = :path_id, "
-            "snowtrack_id = :snowtrack_id, "
-            "location = :location, "
-            "municipality = :municipality, "
-            "province = :province, "
-            "region = :region, "
-            "deposition = :deposition, "
-            "matrix = :matrix, "
-            "collected_scat = :collected_scat, "
-            "scalp_category = :scalp_category, "
-            "genetic_sample = :genetic_sample, "
-            "coord_east = :coord_east, "
-            "coord_north = :coord_north, "
-            "coord_zone = :coord_zone, "
-            "observer = :operator, "
-            "institution = :institution, "
-            "geometry_utm = :geometry_utm, "
-            "notes = :notes, "
-            "sample_type = :sample_type,"
-            "box_number = :box_number "
-            "WHERE scat_id = :scat_id"
-        )
-
-        insert_sql = text(
-            "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
-            "location, municipality, province, region, "
-            "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
-            "coord_east, coord_north, coord_zone, "
-            "observer, institution,"
-            "geometry_utm, notes, sample_type, box_number) "
-            "SELECT :scat_id, :date, :wa_code, :genotype_id, "
-            ":sampling_season, :sampling_type, :path_id, :snowtrack_id, "
-            ":location, :municipality, :province, :region, "
-            ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
-            ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
-            ":geometry_utm, :notes, :sample_type, :box_number "
-            "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = :scat_id)"
-        )
-        count_added = 0
-        count_updated = 0
+        count_added: int = 0
+        count_updated: int = 0
+        # pause trigger
+        con.execute(text("ALTER TABLE scats DISABLE TRIGGER ALL"))
         for idx in all_data:
+            print(idx)
             data = dict(all_data[idx])
 
             if mode == "new" and (data["scat_id"] in scats_to_update):
                 continue
 
+            sql = text(
+                "INSERT INTO scats (scat_id, date, wa_code, sampling_season, sampling_type, path_id, snowtrack_id, "
+                "location, municipality, province, region, "
+                "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
+                "coord_east, coord_north, coord_zone, observer, institution,"
+                "geometry_utm, notes, sample_type, box_number) "
+                "VALUES("
+                ":scat_id, :date, :wa_code, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
+                ":location, :municipality, :province, :region, "
+                ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
+                ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
+                f"{data['geometry_utm']}, :notes, :sample_type, :box_number "
+                ") "
+                "ON CONFLICT (scat_id) "
+                "DO UPDATE SET "
+                "date = EXCLUDED.date, wa_code = EXCLUDED.wa_code, sampling_season = EXCLUDED.sampling_season, sampling_type = EXCLUDED.sampling_type, path_id = EXCLUDED.path_id, snowtrack_id = EXCLUDED.snowtrack_id, "
+                "location = EXCLUDED.location, municipality = EXCLUDED.municipality, province = EXCLUDED.province, region = EXCLUDED.region, "
+                "deposition = EXCLUDED.deposition, matrix = EXCLUDED.matrix, collected_scat = EXCLUDED.collected_scat, scalp_category = EXCLUDED.scalp_category, genetic_sample = EXCLUDED.genetic_sample,"
+                "coord_east = EXCLUDED.coord_east, coord_north = EXCLUDED.coord_east, coord_zone = EXCLUDED.coord_zone, observer = EXCLUDED.observer, institution = EXCLUDED.institution, "
+                "geometry_utm = EXCLUDED.geometry_utm, notes = EXCLUDED.notes, sample_type = EXCLUDED.sample_type, box_number = EXCLUDED.box_number "
+            )
+
             params = {
                 "scat_id": data["scat_id"].strip(),
                 "date": data["date"],
                 "wa_code": data["wa_code"].strip(),
-                "genotype_id": data["genotype_id"].strip(),
                 "sampling_season": fn.sampling_season(data["date"]),
                 "sampling_type": data["sampling_type"],
                 "path_id": data["path_id"],
@@ -1069,18 +1048,15 @@ def confirm_load_xlsx(filename, mode):
 
             if data["scat_id"] in scats_to_update:
                 count_updated += 1
-                try:
-                    con.execute(update_sql, params)
-                except Exception:
-                    return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
             else:
                 count_added += 1
-                try:
-                    con.execute(insert_sql, params)
-                except Exception:
-                    return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
+            try:
+                con.execute(sql, params)
+            except Exception:
+                return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
+        con.execute(text("ALTER TABLE scats ENABLE TRIGGER ALL"))
         # paths
         """
         sql = text(

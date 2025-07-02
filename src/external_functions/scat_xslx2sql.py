@@ -143,6 +143,7 @@ with conn_alchemy().connect() as con:
 
 
 # check if genotype id already present in DB (must be)
+"""
 with conn_alchemy().connect() as con:
     results = con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all()
     genotype_id_list = [x["genotype_id"] for x in results]
@@ -154,7 +155,7 @@ with conn_alchemy().connect() as con:
         if genotype_id.strip() not in genotype_id_list:
             print(f"Genotype ID #{genotype_id.strip()}# not found in wolfDB", file=sys.stderr)
             flag_not_found = True
-
+"""
 
 # check date
 for idx, date in enumerate(scats_df["date"]):

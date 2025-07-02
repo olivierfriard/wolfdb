@@ -250,7 +250,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         # check if sample_type column is present
         if "sample_type" in row:
             if not isinstance(row["sample_type"], float):
-                data["sample_type"] = row["sample_type"]
+                data["sample_type"] = row["sample_type"].lower()
             else:
                 data["sample_type"] = None
         else:
