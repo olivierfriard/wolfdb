@@ -22,28 +22,27 @@
 {% block body %}{% endblock %}
 
 
-{{ n_scats }} scats found in XLSX file.<br>
-{{ n_scats_to_update|count }} are already present in the database (displayed with red background).<br>
+<b>{{ n_scats }}</b> samples found in spreadsheet file.<br>
+<b>{{ n_scats_to_update|count }}</b> are already present in the database (displayed with red background).<br>
 <br>
 
 <a href="/confirm_load_xlsx/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (scat ID already presents will be updated)</a>
 
 <a href="/confirm_load_xlsx/{{ filename }}/new"  class="btn btn-primary">Insert only new scat ID</a>
 
-<a href="/scats"  class="btn btn-primary">Cancel insertion</a>
+<a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
 
 <br>
 <br>
-<div class="alert alert-danger" role="alert"><b>The scats with red background already exists in the database.</b></div>
-<br>
-<br>
+{% if n_scats_to_update|count %}
+<div class="alert alert-danger" role="alert"><b>The scats with red background already exists in the database.</b></div><br><br>
+{% endif %}
 
 
 <table class="table table-striped">
 
 <tr>
-  <th>Scat ID</th>
-  <th>Path ID</th>
+<th>Scat ID</th>
 <th>Date</th>
 </tr>
 
@@ -54,9 +53,8 @@
 {% else %}
 <tr>
 {% endif %}
-  <td>{{ all_data[idx]['scat_id'] }}</td>
-  <td>{{ all_data[idx]['path_id'] }}</td>
-  <td>{{ all_data[idx]['date'] }}</td>
+<td>{{ all_data[idx]['scat_id'] }}</td>
+<td>{{ all_data[idx]['date'] }}</td>
 
 </tr>
 

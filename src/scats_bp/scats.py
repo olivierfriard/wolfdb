@@ -966,7 +966,7 @@ def load_scats_xlsx():
 @fn.check_login
 def confirm_load_xlsx(filename, mode):
     """
-    Confirm upload of scats from XLSX file
+    Confirm upload of scats from spreadsheet file
     """
 
     if mode not in ["new", "all"]:
@@ -985,47 +985,49 @@ def confirm_load_xlsx(filename, mode):
 
         scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
 
-        sql = text(
-            "UPDATE scats SET scat_id = :scat_id, "
-            "                date = :date,"
-            "                wa_code = :wa_code,"
-            "                genotype_id = :genotype_id,"
-            "                sampling_season = :sampling_season,"
-            "                sampling_type = :sampling_type,"
-            "                path_id = :path_id, "
-            "                snowtrack_id = :snowtrack_id, "
-            "                location = :location, "
-            "                municipality = :municipality, "
-            "                province = :province, "
-            "                region = :region, "
-            "                deposition = :deposition, "
-            "                matrix = :matrix, "
-            "                collected_scat = :collected_scat, "
-            "                scalp_category = :scalp_category, "
-            "                genetic_sample = :genetic_sample, "
-            "                coord_east = :coord_east, "
-            "                coord_north = :coord_north, "
-            "                coord_zone = :coord_zone, "
-            "                observer = :operator, "
-            "                institution = :institution, "
-            # "                geo = %(geo)s, "
-            "                geometry_utm = :geometry_utm, "
-            "                notes = :notes "
-            "WHERE scat_id = :scat_id;"
+        update_sql = text(
+            "UPDATE scats SET "
+            "date = :date,"
+            "wa_code = :wa_code,"
+            "genotype_id = :genotype_id,"
+            "sampling_season = :sampling_season,"
+            "sampling_type = :sampling_type,"
+            "path_id = :path_id, "
+            "snowtrack_id = :snowtrack_id, "
+            "location = :location, "
+            "municipality = :municipality, "
+            "province = :province, "
+            "region = :region, "
+            "deposition = :deposition, "
+            "matrix = :matrix, "
+            "collected_scat = :collected_scat, "
+            "scalp_category = :scalp_category, "
+            "genetic_sample = :genetic_sample, "
+            "coord_east = :coord_east, "
+            "coord_north = :coord_north, "
+            "coord_zone = :coord_zone, "
+            "observer = :operator, "
+            "institution = :institution, "
+            "geometry_utm = :geometry_utm, "
+            "notes = :notes, "
+            "sample_type = :sample_type,"
+            "box_number = :box_number "
+            "WHERE scat_id = :scat_id"
+        )
+
+        insert_sql = text(
             "INSERT INTO scats (scat_id, date, wa_code, genotype_id, sampling_season, sampling_type, path_id, snowtrack_id, "
             "location, municipality, province, region, "
             "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
             "coord_east, coord_north, coord_zone, "
             "observer, institution,"
-            # "geo, "
-            "geometry_utm, notes) "
+            "geometry_utm, notes, sample_type, box_number) "
             "SELECT :scat_id, :date, :wa_code, :genotype_id, "
             ":sampling_season, :sampling_type, :path_id, :snowtrack_id, "
             ":location, :municipality, :province, :region, "
             ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
             ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
-            # "%(geo)s, "
-            ":geometry_utm, :notes "
+            ":geometry_utm, :notes, :sample_type, :box_number "
             "WHERE NOT EXISTS (SELECT 1 FROM scats WHERE scat_id = :scat_id)"
         )
         count_added = 0
@@ -1035,127 +1037,158 @@ def confirm_load_xlsx(filename, mode):
 
             if mode == "new" and (data["scat_id"] in scats_to_update):
                 continue
+
+            params = {
+                "scat_id": data["scat_id"].strip(),
+                "date": data["date"],
+                "wa_code": data["wa_code"].strip(),
+                "genotype_id": data["genotype_id"].strip(),
+                "sampling_season": fn.sampling_season(data["date"]),
+                "sampling_type": data["sampling_type"],
+                "path_id": data["path_id"],
+                "snowtrack_id": data["snowtrack_id"].strip(),
+                "location": data["location"].strip(),
+                "municipality": data["municipality"].strip(),
+                "province": data["province"].strip().upper(),
+                "region": data["region"],
+                "deposition": data["deposition"],
+                "matrix": data["matrix"],
+                "collected_scat": data["collected_scat"],
+                "scalp_category": data["scalp_category"].strip(),
+                "genetic_sample": data["genetic_sample"],
+                "coord_east": data["coord_east"],
+                "coord_north": data["coord_north"],
+                "coord_zone": data["coord_zone"].strip(),
+                "operator": data["operator"],
+                "institution": data["institution"],
+                "geometry_utm": data["geometry_utm"],
+                "notes": data["notes"],
+                "sample_type": data["sample_type"],
+                "box_number": data["box_number"],
+            }
+
             if data["scat_id"] in scats_to_update:
                 count_updated += 1
+                try:
+                    con.execute(update_sql, params)
+                except Exception:
+                    return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
+
             else:
                 count_added += 1
+                try:
+                    con.execute(insert_sql, params)
+                except Exception:
+                    return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
+
+        # paths
+        """
+        sql = text(
+            "UPDATE paths SET path_id = :path_id, "
+            "                 transect_id = :transect_id, "
+            "                date = :date,"
+            "                sampling_season = :sampling_season,"
+            "                completeness = :completeness,"
+            "                observer = :operator,"
+            "                institution = :institution,"
+            "                notes = :notes "
+            "WHERE path_id = :path_id;"
+            "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
+            "observer, institution, notes) "
+            "SELECT :path_id, :transect_id, :date,"
+            ":sampling_season, :completeness, "
+            ":operator, :institution, :notes "
+            "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
+        )
+        """
+        sql = text(
+            "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, observer, institution, notes) "
+            "VALUES("
+            ":path_id,"
+            ":transect_id, "
+            ":date,"
+            ":sampling_season,"
+            ":completeness,"
+            ":operator,"
+            ":institution,"
+            ":notes "
+            ") "
+            "ON CONFLICT (path_id) "
+            "DO UPDATE SET "
+            "transect_id = EXCLUDED.transect_id, "
+            "date = EXCLUDED.date,"
+            "sampling_season = EXCLUDED.sampling_season,"
+            "completeness = EXCLUDED.completeness,"
+            "observer = EXCLUDED.operator,"
+            "institution = EXCLUDED.institution,"
+            "notes = EXCLUDED.notes "
+        )
+
+        for idx in all_paths:
+            data = dict(all_paths[idx])
+            try:
+                con.execute(
+                    sql,
+                    {
+                        "path_id": data["path_id"],
+                        "transect_id": data["transect_id"].strip(),
+                        "date": data["date"],
+                        "sampling_season": fn.sampling_season(data["date"]),
+                        "completeness": data["completeness"],
+                        "operator": data["operator"].strip(),
+                        "institution": data["institution"].strip(),
+                        "notes": data["notes"],
+                    },
+                )
+            except Exception:
+                return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
+
+        # snow tracks
+        sql = text(
+            "INSERT INTO snow_tracks (snowtrack_id, path_id, date, sampling_season, observer, institution, notes) "
+            "VALUES("
+            ":snowtrack_id, "
+            ":path_id, "
+            ":date, "
+            ":sampling_season, "
+            ":operator, "
+            ":institution, "
+            ":notes "
+            ")"
+            "ON CONFLICT (snowtrack_id) "
+            "DO UPDATE SET "
+            "path_id = EXCLUDED.path_id, "
+            "date = EXCLUDED.date, "
+            "sampling_season = EXCLUDED.sampling_season, "
+            "operator = EXCLUDED.operator, "
+            "institution = EXCLUDED.institution, "
+            "notes = EXCLUDED.notes "
+        )
+        for idx in all_tracks:
+            data = dict(all_paths[idx])
 
             try:
                 con.execute(
                     sql,
                     {
-                        "scat_id": data["scat_id"].strip(),
-                        "date": data["date"],
-                        "wa_code": data["wa_code"].strip(),
-                        "genotype_id": data["genotype_id"].strip(),
-                        "sampling_season": fn.sampling_season(data["date"]),
-                        "sampling_type": data["sampling_type"],
                         "path_id": data["path_id"],
                         "snowtrack_id": data["snowtrack_id"].strip(),
-                        "location": data["location"].strip(),
-                        "municipality": data["municipality"].strip(),
-                        "province": data["province"].strip().upper(),
-                        "region": data["region"],
-                        "deposition": data["deposition"],
-                        "matrix": data["matrix"],
-                        "collected_scat": data["collected_scat"],
-                        "scalp_category": data["scalp_category"].strip(),
-                        "genetic_sample": data["genetic_sample"],
-                        "coord_east": data["coord_east"],
-                        "coord_north": data["coord_north"],
-                        "coord_zone": data["coord_zone"].strip(),
-                        "operator": data["operator"],
-                        "institution": data["institution"],
-                        # "geo": data["coord_latlon"],
-                        "geometry_utm": data["geometry_utm"],
+                        "date": data["date"],
+                        "sampling_season": fn.sampling_season(data["date"]),
+                        "operator": data["operator"].strip(),
+                        "institution": data["institution"].strip(),
                         "notes": data["notes"],
                     },
                 )
             except Exception:
-                return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
-
-        # paths
-        if all_paths:
-            sql = text(
-                "UPDATE paths SET path_id = :path_id, "
-                "                 transect_id = :transect_id, "
-                "                date = :date,"
-                "                sampling_season = :sampling_season,"
-                "                completeness = :completeness,"
-                "                observer = :operator,"
-                "                institution = :institution,"
-                "                notes = :notes "
-                "WHERE path_id = :path_id;"
-                "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
-                "observer, institution, notes) "
-                "SELECT :path_id, :transect_id, :date,"
-                ":sampling_season, :completeness, "
-                ":operator, :institution, :notes "
-                "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
-            )
-            for idx in all_paths:
-                data = dict(all_paths[idx])
-                try:
-                    con.execute(
-                        sql,
-                        {
-                            "path_id": data["path_id"],
-                            "transect_id": data["transect_id"].strip(),
-                            "date": data["date"],
-                            "sampling_season": fn.sampling_season(data["date"]),
-                            "completeness": data["completeness"],
-                            "operator": data["operator"].strip(),
-                            "institution": data["institution"].strip(),
-                            "notes": data["notes"],
-                        },
-                    )
-                except Exception:
-                    return "An error occured during the loading of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
-
-        # snow tracks
-        if all_tracks:
-            sql = text(
-                "UPDATE snow_tracks SET snowtrack_id = :snowtrack_id, "
-                "                 path_id = :path_id, "
-                "                date = :date, "
-                "                sampling_season = :sampling_season,"
-                "                observer = :operator,"
-                "                institution = :institution,"
-                "                notes = :notes "
-                "WHERE snow_tracks = :snow_tracks;"
-                "INSERT INTO snow_tracks (snowtrack_id, path_id, date, "
-                "sampling_season,  "
-                "observer, institution, notes) "
-                "SELECT :snowtrack_id, :path_id, :date, "
-                "       :sampling_season, "
-                "       :operator, :institution, :notes "
-                "WHERE NOT EXISTS (SELECT 1 FROM snow_tracks WHERE snowtrack_id = :snowtrack_id)"
-            )
-            for idx in all_tracks:
-                data = dict(all_paths[idx])
-
-                try:
-                    con.execute(
-                        sql,
-                        {
-                            "path_id": data["path_id"],
-                            "snowtrack_id": data["snowtrack_id"].strip(),
-                            "date": data["date"],
-                            "sampling_season": fn.sampling_season(data["date"]),
-                            "operator": data["operator"].strip(),
-                            "institution": data["institution"].strip(),
-                            "notes": data["notes"],
-                        },
-                    )
-                except Exception:
-                    return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+                return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
 
         con.execute(text("CALL refresh_materialized_views()"))
 
-    msg = f"XLSX/ODS file successfully loaded. {count_added} scats added, {count_updated} scats updated."
+    msg = f"Scats successfully loaded from spreadsheet file. {count_added} scats added, {count_updated} scats updated."
     flash(fn.alert_success(msg))
 
-    return redirect("/scats")
+    return redirect("/")
 
 
 @app.route("/systematic_scats_transect_location")
