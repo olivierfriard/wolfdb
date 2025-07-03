@@ -889,8 +889,8 @@ def confirm_load_tissue_spreadsheet(filename, mode):
             if data["operator"]:
                 sql = text(
                     "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 88, :operator)",
-                    {"new_id": new_id, "operator": data["operator"]},
                 )
+                con.execute(sql, {"new_id": new_id, "operator": data["operator"]})
 
         con.execute(text("ALTER TABLE dead_wolves ENABLE TRIGGER ALL"))
 
