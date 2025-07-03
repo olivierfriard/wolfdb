@@ -1,0 +1,65 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+<b>{{ n_tissues }}</b> tissues found in spreadsheet file.<br>
+<b>{{ tissues_to_update|count }}</b> are already present in the database (displayed with red background).<br>
+<br>
+
+<a href="/confirm_load_tissue_spreadsheet/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (tissue ID already present will be updated)</a>
+
+<a href="/confirm_load_tissue_spreadsheet/{{ filename }}/new"  class="btn btn-primary">Insert only new tissue ID</a>
+
+<a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
+
+<br>
+<br>
+{% if tissues_to_update|count %}
+<div class="alert alert-danger" role="alert"><b>The tissue with red background already exists in the database.</b></div><br><br>
+{% endif %}
+
+
+<table class="table table-striped">
+
+<tr>
+<th>Tissue ID</th>
+<th>Date</th>
+</tr>
+
+{% for idx in all_data %}
+
+{% if all_data[idx]['tissue_id'] in tissues_to_update %}
+<tr class="table-danger">
+{% else %}
+<tr>
+{% endif %}
+<td>{{ all_data[idx]['tissue_id'] }}</td>
+<td>{{ all_data[idx]['date'] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endblock %}
