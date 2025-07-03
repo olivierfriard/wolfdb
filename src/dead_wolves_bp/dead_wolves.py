@@ -892,6 +892,13 @@ def confirm_load_tissue_spreadsheet(filename, mode):
                 )
                 con.execute(sql, {"new_id": new_id, "operator": data["operator"]})
 
+            # sampling season #10
+            if data["date"]:
+                sql = text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 10, :sampling_season)")
+                con.execute(sql, {"new_id": new_id, "sampling_season": fn.sampling_season(data["date"])})
+
+            # remain notes and scalp_category (maybe can be added in dead_wolves table as fields)
+
         con.execute(text("ALTER TABLE dead_wolves ENABLE TRIGGER ALL"))
 
     msg = f"Tissues successfully loaded from spreadsheet file. {count_added} tissue(s) added, {count_updated} tissue(s) updated."
