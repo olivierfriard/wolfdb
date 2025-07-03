@@ -12,9 +12,20 @@
 <a href="/del_dead_wolf/{{ dead_wolf["id"] }}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete dead wolf</a><br>
 <br>
 
+id <a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a><br><br>
+
 <table class="table table-striped">
 
-<tr><td>Dead wolf ID</td><td><a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a></td></tr>
+<tr><td>Tissue ID</td><td>
+{% if dead_wolf["tissue_id"] %}
+<a href="/view_tissue/{{ dead_wolf['tissue_id'] }}">{{ dead_wolf["tissue_id"] }}</a>
+{% endif %}
+</td></tr>
+
+<tr><td>Discovery date</td><td>
+{{ dead_wolf["discovery_date"] if dead_wolf["discovery_date"] else ""}}</a>
+</td></tr>
+
 <tr><td>Genotype ID</td><td>
 {% if dead_wolf["genotype_id"] %}    
 <a href="/view_genotype/{{ dead_wolf['genotype_id'] }}">{{ dead_wolf["genotype_id"] }}</a>
@@ -26,15 +37,12 @@
 {% endif %}
 </td></tr>
 
-<tr><td>Tissue ID</td><td>
-{% if dead_wolf["tissue_id"] %}
-<a href="/view_tissue/{{ dead_wolf['tissue_id'] }}">{{ dead_wolf["tissue_id"] }}</a>
+<tr><td>Box number</td><td>
+{% if dead_wolf["box_number"] %}    
+{{ dead_wolf["box_number"] }}
 {% endif %}
 </td></tr>
 
-<tr><td>Discovery date</td><td>
-{{ dead_wolf["discovery_date"] if dead_wolf["discovery_date"] else ""}}</a>
-</td></tr>
     
 
 <tr><td>Location</td><td>{{ dead_wolf["location"] if dead_wolf["location"] else ""}}</td></tr>

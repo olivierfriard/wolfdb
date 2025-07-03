@@ -1,5 +1,5 @@
 """
-import scats from XLSX file
+import scats from spredsheet file
 """
 
 from config import config
@@ -10,7 +10,6 @@ import pathlib as pl
 import pandas as pd
 import datetime as dt
 import utm
-from sqlalchemy import text
 from markupsafe import Markup
 
 DEBUG = False
@@ -19,7 +18,7 @@ params = config()
 
 def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
     """
-    Extract and check data from a XLSX file
+    Extract and check data from a spreadsheet file (XLSX or ODS)
     """
 
     if pl.Path(filename).suffix.upper() == ".XLSX":
@@ -193,7 +192,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
             data["path_id"] = None
 
         # check box number
-        if not isinstance(row["box_number"], float):
+        if not isinstance(row["box_number"], float) and not isinstance(row["box_number"], int):
             out += fn.alert_danger(Markup(f"Row {index + 2}: ERROR on box number <b>{row['box_number']}</b>. Must be an integer"))
         else:
             if pd.isna(row["box_number"]):

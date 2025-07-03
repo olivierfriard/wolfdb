@@ -70,13 +70,13 @@ out: str = ""
 dw_df = pd.read_excel(filename, sheet_name=0, engine=engine)
 print(dw_df.columns)
 
-# check columns
-for column in (
+required_columns = (
     "tissue_id",
     "date",
     "wa_code",
     "genotype_id",
     "sampling_type",
+    "scalp_category",
     "location",
     "municipality",
     "province",
@@ -86,8 +86,12 @@ for column in (
     "operator",
     "institution",
     "notes",
-    "box_number"
-):
+    "box_number",
+)
+
+
+# check columns
+for column in required_columns:
     if column not in list(dw_df.columns):
         print(f"ERROR Column {column} is missing", file=sys.stderr)
         sys.exit()
@@ -97,17 +101,17 @@ columns_list = list(dw_df.columns)
 
 # check if tissue_id are missing
 if dw_df["tissue_id"].isnull().any():
-    print(f'{dw_df["tissue_id"].isnull().sum()} scat id missing', file=sys.stderr)
+    print(f"{dw_df['tissue_id'].isnull().sum()} tissue id missing", file=sys.stderr)
     sys.exit()
 
 # check if date are missing
 if dw_df["date"].isnull().any():
-    print(f'{dw_df["date"].isnull().sum()} date missing', file=sys.stderr)
+    print(f"{dw_df['date'].isnull().sum()} date missing", file=sys.stderr)
     sys.exit()
 
 # check if sampling type are missing
 if dw_df["sampling_type"].isnull().any():
-    print(f'{dw_df["sampling_type"].isnull().sum()} sampling type missing', file=sys.stderr)
+    print(f"{dw_df['sampling_type'].isnull().sum()} sampling type missing", file=sys.stderr)
 
 # check if coordinates are missing
 if dw_df["coord_east"].isnull().any() or dw_df["coord_north"].isnull().any():
@@ -161,7 +165,7 @@ for idx, date in enumerate(dw_df["date"]):
     try:
         dt.datetime.strptime(date, "%Y-%m-%d")
     except Exception:
-        print(f"{date} is not a date at row {idx+1}", file=sys.stderr)
+        print(f"{date} is not a date at row {idx + 1}", file=sys.stderr)
 
 # check province code
 for idx, province in enumerate(dw_df["province"]):
@@ -169,7 +173,6 @@ for idx, province in enumerate(dw_df["province"]):
         province = f"{province:02}"
     if province not in italian_regions.province_codes:
         print(f"Province {province} not found {idx}", file=sys.stderr)
-
 
 
 # create output file
@@ -206,7 +209,7 @@ for _, row in dw_df.iterrows():
     try:
         _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
     except Exception:
-        print(f'ERROR on {row["tissue_id"]} for coordinates {data["coord_east"]= }   {data["coord_north"]=}', file=sys.stderr)
+        print(f"ERROR on {row['tissue_id']} for coordinates {data["coord_east"]= }   {data["coord_north"]=}", file=sys.stderr)
         # sys.exit()
 
     data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
@@ -215,7 +218,7 @@ for _, row in dw_df.iterrows():
     data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
     if data["sampling_type"] not in ["Opportunistic", "Systematic", ""]:
         print(
-            f'Row {index + 2}: Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty: found {data["sampling_type"]}',
+            f"Row {index + 2}: Sampling type must be <b>Opportunistic</b>, <b>Systematic</b> or empty: found {data['sampling_type']}",
             file=sys.stderr,
         )
         sys.exit()
@@ -227,7 +230,7 @@ for _, row in dw_df.iterrows():
     # scalp_category
     data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
     if data["scalp_category"] not in ("C1", "C2", "C3", "C4", ""):
-        out += f'The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data["scalp_category"]}'
+        out += f"The scalp category value must be <b>C1, C2, C3, C4</b> or empty at row {index + 2}: found {data['scalp_category']}"
 
     # genetic_sample
     data["genetic_sample"] = str(data["genetic_sample"]).capitalize().strip()
@@ -236,7 +239,7 @@ for _, row in dw_df.iterrows():
     if data["genetic_sample"] == "No":
         data["genetic_sample"] = "No"
     if data["genetic_sample"] not in ["Yes", "No", ""]:
-        out += f'The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data["genetic_sample"]}'
+        out += f"The genetic_sample value must be <b>Yes</b>, <b>No</b> or empty at row {index + 2}: found {data['genetic_sample']}"
 
     # notes
     data["notes"] = str(data["notes"]).strip()
@@ -264,7 +267,7 @@ for _, row in dw_df.iterrows():
         # print(",".join(update_list))
         # print("-" * 80)
         if update_list:
-            print((f"""UPDATE dead_wolves SET {','.join(update_list)} WHERE tissue_id = '{data["tissue_id"]}';"""), file=f_out)
+            print((f"""UPDATE dead_wolves SET {",".join(update_list)} WHERE tissue_id = '{data["tissue_id"]}';"""), file=f_out)
 
     else:
         print(
@@ -302,7 +305,7 @@ for _, row in dw_df.iterrows():
         # sampling season #10
         if data["date"]:
             print(
-                f"INSERT INTO dead_wolves_values (id, field_id, val) VALUES ((SELECT MAX(id) FROM dead_wolves), 10, '{sampling_season(data["date"])}');",
+                f"INSERT INTO dead_wolves_values (id, field_id, val) VALUES ((SELECT MAX(id) FROM dead_wolves), 10, '{sampling_season(data['date'])}');",
                 file=f_out,
             )
 

@@ -5,21 +5,20 @@ WolfDB web service
 flask blueprint for dead wolves management
 """
 
+import sys
 import flask
-from flask import render_template, redirect, request, flash, session, make_response
+from flask import render_template, redirect, request, flash, session, make_response, url_for
 from markupsafe import Markup
 from sqlalchemy import text, exc
 import utm
-from openpyxl import Workbook
-from tempfile import NamedTemporaryFile
 import pandas as pd
 from io import BytesIO
+from pathlib import Path
+import uuid
 
 from config import config
-
-
+from . import tissues_import
 from .dw_form import Dead_wolf
-
 import functions as fn
 
 app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
@@ -93,8 +92,6 @@ def view_dead_wolf_id(id: int):
     dead_wolf_values: dict = {}
     for row in rows:
         dead_wolf_values[row["name"]] = row["val"]
-
-    print(f"{dead_wolf=}")
 
     # coordinates
     lat_lon: list = []
@@ -757,25 +754,147 @@ def export_dead_wolves(results):
     # Get the stream content (bytes)
     return output.getvalue()
 
+
+@app.route(
+    "/load_tissue_from_spreadsheet",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def load_tissue_from_spreadsheet():
     """
-    wb = Workbook()
-
-    ws = wb.active
-    ws.title = "Dead wolves"
-
-    header: list = list(results[0].keys())
-    ws.append(header)
-
-    for result in results:
-        out = []
-        for field in header:
-            out.append(result[field])
-        ws.append(out)
-
-    with NamedTemporaryFile() as tmp:
-        wb.save(tmp.name)
-        tmp.seek(0)
-        stream = tmp.read()
-
-        return stream
+    Select a file for uploading tissues from spreadsheet (XLSX or ODS)
     """
+
+    if request.method == "GET":
+        return render_template("load_tissue_spreadsheet.html", header_title="Load tissues from spreadsheet file")
+
+    if request.method == "POST":
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+            return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
+
+        try:
+            filename = str(uuid.uuid4()) + str(Path(new_file.filename).suffix.upper())
+            new_file.save(Path(params["upload_folder"]) / Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file") + f"({fn.error_info(sys.exc_info())})")
+            return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
+
+        r, msg, all_data = tissues_import.extract_tissue_data_from_spreadsheet(filename)
+        if r:
+            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
+
+        else:
+            # check if tissue_id already in DB
+            with fn.conn_alchemy().connect() as con:
+                tissue_list = "','".join([all_data[idx]["tissue_id"] for idx in all_data])
+                sql = text(f"SELECT tissue_id FROM dead_wolves WHERE tissue_id IN ('{tissue_list}')")
+                tissues_to_update = [row["tissue_id"] for row in con.execute(sql).mappings().all()]
+
+            return render_template(
+                "confirm_load_tissue_spreadsheet.html",
+                n_tissues=len(all_data),
+                tissues_to_update=tissues_to_update,
+                all_data=all_data,
+                filename=filename,
+            )
+
+
+@app.route("/confirm_load_tissue_spreadsheet/<filename>/<mode>")
+@fn.check_login
+def confirm_load_tissue_spreadsheet(filename, mode):
+    """
+    Confirm upload of tissues from spreadsheet file
+    """
+    if mode not in ["new", "all"]:
+        flash(fn.alert_danger("Error: mode not allowed"))
+        return redirect("/load_tissue_from_spreadsheet")
+
+    r, msg, all_data = tissues_import.extract_tissue_data_from_spreadsheet(filename)
+    if r:
+        flash(msg)
+        return redirect(url_for("/load_tissue_from_spreadsheet"))
+
+    with fn.conn_alchemy().connect() as con:
+        # check if tissue already in DB
+        tissues_list = "','".join([all_data[idx]["tissue_id"] for idx in all_data])
+        sql = text(f"SELECT tissue_id FROM dead_wolves WHERE tissue_id in ('{tissues_list}')")
+
+        tissues_to_update = [row["tissue_id"] for row in con.execute(sql).mappings().all()]
+
+        count_added: int = 0
+        count_updated: int = 0
+        # pause trigger
+        con.execute(text("ALTER TABLE dead_wolves DISABLE TRIGGER ALL"))
+
+        for idx in all_data:
+            data = dict(all_data[idx])
+
+            if mode == "new" and (data["tissue_id"] in tissues_to_update):
+                continue
+
+            sql = text(
+                "INSERT INTO dead_wolves (tissue_id, discovery_date, wa_code, location, municipality, province, region, "
+                "utm_east, utm_north, utm_zone,"
+                "geometry_utm, box_number "
+                ")"
+                "VALUES("
+                ":tissue_id, :discovery_date, :wa_code, :location, :municipality, :province, :region, "
+                f":utm_east, :utm_north, :utm_zone, {data['geometry_utm']}, "
+                ":box_number"
+                ") "
+                "ON CONFLICT (tissue_id) "
+                "DO UPDATE SET "
+                "discovery_date = EXCLUDED.discovery_date, wa_code = EXCLUDED.wa_code, "
+                "location = EXCLUDED.location, municipality = EXCLUDED.municipality, province = EXCLUDED.province, region = EXCLUDED.region, "
+                "utm_east = EXCLUDED.utm_east, utm_north = EXCLUDED.utm_north, utm_zone = EXCLUDED.utm_zone, geometry_utm = EXCLUDED.geometry_utm, "
+                "box_number = EXCLUDED.box_number "
+                "RETURNING id "
+            )
+
+            params = {
+                "tissue_id": data["tissue_id"].strip(),
+                "discovery_date": data["date"],
+                "wa_code": data["wa_code"].strip(),
+                "location": data["location"].strip(),
+                "municipality": data["municipality"].strip(),
+                "province": data["province"].strip().upper(),
+                "region": data["region"],
+                "utm_east": data["coord_east"],
+                "utm_north": data["coord_north"],
+                "utm_zone": data["coord_zone"].strip(),
+                "box_number": data["box_number"],
+            }
+
+            if data["tissue_id"] in tissues_to_update:
+                count_updated += 1
+            else:
+                count_added += 1
+            try:
+                new_id = con.execute(sql, params).fetchone()[0]
+            except Exception:
+                return "An error occured during the loading of tissues. Contact the administrator.<br>" + fn.error_info(sys.exc_info())
+
+            print(f"{new_id=}")
+
+            # fields not in dead_wolves
+            # data collector (operator)
+            if data["operator"]:
+                sql = text(
+                    "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 88, :operator)",
+                    {"new_id": new_id, "operator": data["operator"]},
+                )
+
+        con.execute(text("ALTER TABLE dead_wolves ENABLE TRIGGER ALL"))
+
+    msg = f"Tissues successfully loaded from spreadsheet file. {count_added} tissue(s) added, {count_updated} tissue(s) updated."
+    flash(fn.alert_success(msg))
+
+    return redirect("/")

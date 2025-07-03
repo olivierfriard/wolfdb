@@ -19,6 +19,7 @@ import redis
 from typing import Union
 from sqlalchemy import create_engine
 from jinja2 import Template
+import os
 
 from italian_regions import regions, prov_name2prov_code
 
@@ -54,6 +55,26 @@ def conn_alchemy():
     )
 
 
+def error_info(exc_info: tuple) -> tuple:
+    """
+    return details about error
+    usage: error_info(sys.exc_info())
+
+    Args:
+        sys.exc_info() (tuple):
+
+    Returns:
+        tuple: error type, error file name, error line number
+    """
+
+    _, exc_obj, exc_tb = exc_info
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+
+    error_type, error_file_name, error_lineno = exc_obj, fname, exc_tb.tb_lineno
+
+    return f"Error {error_type} in {error_file_name} at line #{error_lineno}"
+
+
 def get_loci_list() -> dict:
     """
     get list of loci
@@ -65,11 +86,7 @@ def get_loci_list() -> dict:
 
     with conn_alchemy().connect() as con:
         loci_list: dict = {}
-        for row in (
-            con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC"))
-            .mappings()
-            .all()
-        ):
+        for row in con.execute(text("SELECT name, n_alleles FROM loci ORDER BY position ASC")).mappings().all():
             loci_list[row["name"]] = row["n_alleles"]
     return loci_list
 
@@ -146,11 +163,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     has_history = row["has_history"]
                     has_loci_notes = has_history != 0
                     epoch = row["epoch"] if row["epoch"] is not None else ""
-                    date = (
-                        row["formatted_timestamp"]
-                        if row["formatted_timestamp"] is not None
-                        else ""
-                    )
+                    date = row["formatted_timestamp"] if row["formatted_timestamp"] is not None else ""
                     user_id = row["user_id"] if row["user_id"] is not None else ""
                     definitive = row["definitive"]
 
@@ -246,14 +259,8 @@ def get_genotype_loci_values(genotype_id: str, loci_list: list) -> dict:
                     val = locus_val["val"] if locus_val["val"] is not None else "-"
                     notes = locus_val["notes"] if locus_val["notes"] is not None else ""
                     has_history = locus_val["has_history"]
-                    validated = (
-                        locus_val["validated"]
-                        if locus_val["validated"] is not None
-                        else ""
-                    )
-                    user_id = (
-                        locus_val["user_id"] if locus_val["user_id"] is not None else ""
-                    )
+                    validated = locus_val["validated"] if locus_val["validated"] is not None else ""
+                    user_id = locus_val["user_id"] if locus_val["user_id"] is not None else ""
                     epoch = locus_val["epoch"] if locus_val["epoch"] is not None else ""
 
                 loci_values[locus][allele] = {
@@ -299,12 +306,7 @@ def all_transect_id() -> list:
     """
     with conn_alchemy().connect() as con:
         return [
-            x["transect_id"].strip()
-            for x in con.execute(
-                text("SELECT transect_id FROM transects ORDER BY transect_id")
-            )
-            .mappings()
-            .all()
+            x["transect_id"].strip() for x in con.execute(text("SELECT transect_id FROM transects ORDER BY transect_id")).mappings().all()
         ]
 
 
@@ -332,11 +334,7 @@ def all_snow_tracks_id() -> list:
     with conn_alchemy().connect() as con:
         return [
             x["snowtrack_id"].strip()
-            for x in con.execute(
-                text("SELECT snowtrack_id FROM snow_tracks ORDER BY snowtrack_id")
-            )
-            .mappings()
-            .all()
+            for x in con.execute(text("SELECT snowtrack_id FROM snow_tracks ORDER BY snowtrack_id")).mappings().all()
         ]
 
 
@@ -364,12 +362,7 @@ def province_code_list() -> list:
     """
     with conn_alchemy().connect() as con:
         return [
-            row["province_code"]
-            for row in con.execute(
-                text("SELECT UPPER(province_code) AS province_code FROM geo_info")
-            )
-            .mappings()
-            .all()
+            row["province_code"] for row in con.execute(text("SELECT UPPER(province_code) AS province_code FROM geo_info")).mappings().all()
         ]
 
 
@@ -382,9 +375,7 @@ def check_province_code(province_code) -> Union[None, str]:
     with conn_alchemy().connect() as con:
         result = (
             con.execute(
-                text(
-                    "SELECT UPPER(province_code) AS province_code FROM geo_info WHERE UPPER(province_code) = :province_code"
-                ),
+                text("SELECT UPPER(province_code) AS province_code FROM geo_info WHERE UPPER(province_code) = :province_code"),
                 {"province_code": province_code.upper()},
             )
             .mappings()
@@ -400,9 +391,7 @@ def prov_code2prov_name(province_code: str) -> str:
     with conn_alchemy().connect() as con:
         result = (
             con.execute(
-                text(
-                    "SELECT province_name FROM geo_info WHERE UPPER(province_code) = :province_code"
-                ),
+                text("SELECT province_name FROM geo_info WHERE UPPER(province_code) = :province_code"),
                 {"province_code": province_code.upper().strip()},
             )
             .mappings()
@@ -417,11 +406,7 @@ def province_code2region_dict() -> dict:
         return dict(
             [
                 (row["province_code"].upper(), row["region"])
-                for row in con.execute(
-                    text("SELECT province_code, region FROM geo_info")
-                )
-                .mappings()
-                .all()
+                for row in con.execute(text("SELECT province_code, region FROM geo_info")).mappings().all()
             ]
         )
 
@@ -436,9 +421,7 @@ def province_code2region(province_code):
     with conn_alchemy().connect() as con:
         result = (
             con.execute(
-                text(
-                    "SELECT region FROM geo_info WHERE UPPER(province_code) = :province_code"
-                ),
+                text("SELECT region FROM geo_info WHERE UPPER(province_code) = :province_code"),
                 {"province_code": province_code.upper().strip()},
             )
             .mappings()
@@ -454,12 +437,7 @@ def province_name_list() -> list:
     (using geo_info table)
     """
     with conn_alchemy().connect() as con:
-        return [
-            row["province_name"].upper()
-            for row in con.execute(text("SELECT province_name FROM geo_info"))
-            .mappings()
-            .all()
-        ]
+        return [row["province_name"].upper() for row in con.execute(text("SELECT province_name FROM geo_info")).mappings().all()]
 
 
 def province_name2code(province_name: str) -> str:
@@ -470,9 +448,7 @@ def province_name2code(province_name: str) -> str:
     with conn_alchemy().connect() as con:
         result = (
             con.execute(
-                text(
-                    "SELECT province_code FROM geo_info WHERE UPPER(province_name) = :province_name"
-                ),
+                text("SELECT province_code FROM geo_info WHERE UPPER(province_name) = :province_name"),
                 {"province_name": province_name.upper().strip()},
             )
             .mappings()
@@ -492,9 +468,7 @@ def province_name2code_dict() -> dict:
             [
                 (row["province_name"], row["province_code"])
                 for row in con.execute(
-                    text(
-                        "SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info"
-                    )
+                    text("SELECT UPPER(province_name) as province_name, UPPER(province_code) as province_code FROM geo_info")
                 )
                 .mappings()
                 .all()
@@ -882,9 +856,7 @@ def reverse_geocoding(lon_lat: list) -> dict:
     }
 
 
-def leaflet_geojson(
-    data: dict, add_polygon: bool = False, samples: str = "genotypes"
-) -> str:
+def leaflet_geojson(data: dict, add_polygon: bool = False, samples: str = "genotypes") -> str:
     """
     plot geoJSON features on Leaflet map
 
@@ -1118,9 +1090,7 @@ map.on('draw:created', function (event) {
             "scats": data.get("scats", []),
             "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
             "dead_wolves": data.get("dead_wolves", []),
-            "dead_wolves_color": data.get(
-                "dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT
-            ),
+            "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),
             "center": data.get("center", CENTER_DEFAULT),
             "zoom": data.get("zoom", 13),
             "fit": data.get("fit", ""),
@@ -1130,9 +1100,7 @@ map.on('draw:created', function (event) {
     )
 
 
-def leaflet_geojson_label(
-    data: dict, add_polygon: bool = False, samples: str = "genotypes"
-) -> str:
+def leaflet_geojson_label(data: dict, add_polygon: bool = False, samples: str = "genotypes") -> str:
     """
     plot geoJSON features on Leaflet map
 
@@ -1401,9 +1369,7 @@ map.on('draw:created', function (event) {
             "scat_markers": data.get("scat_markers", ""),
             "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
             "dead_wolves": data.get("dead_wolves", []),
-            "dead_wolves_color": data.get(
-                "dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT
-            ),
+            "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),
             "center": data.get("center", CENTER_DEFAULT),
             "zoom": data.get("zoom", 13),
             "fit": data.get("fit", ""),
@@ -1581,9 +1547,7 @@ map.fitBounds(markerBounds);
             "scats": data.get("scats", []),
             "scats_color": data.get("scats_color", SCATS_COLOR_DEFAULT),
             "dead_wolves": data.get("dead_wolves", []),
-            "dead_wolves_color": data.get(
-                "dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT
-            ),
+            "dead_wolves_color": data.get("dead_wolves_color", DEAD_WOLVES_COLOR_DEFAULT),
             "center": data.get("center", CENTER_DEFAULT),
             "zoom": data.get("zoom", 13),
             "fit": data.get("fit", ""),

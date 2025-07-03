@@ -6,25 +6,23 @@ flask blueprint for scats management
 """
 
 import flask
-from flask import render_template, redirect, request, flash, make_response, session
+from flask import render_template, redirect, request, flash, make_response, session, url_for
 from markupsafe import Markup
 from sqlalchemy import text
-
-
-from .scat_form import Scat
-import functions as fn
 import utm
 import json
 import pathlib as pl
 import datetime as dt
-
 import uuid
 import os
 import sys
 import subprocess
 import datetime
-from . import scats_export, scats_import
 
+
+from .scat_form import Scat
+import functions as fn
+from . import scats_export, scats_import
 from config import config
 
 
@@ -973,10 +971,12 @@ def confirm_load_xlsx(filename, mode):
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect("/load_scats_xlsx")
 
+    # all_paths, all_tracks return empty from extract_data_from_xlsx
     r, msg, all_data, all_paths, all_tracks = scats_import.extract_data_from_xlsx(filename)
+
     if r:
         flash(msg)
-        return redirect("/load_scats_xlsx")
+        return redirect(url_for("load_scats_xlsx"))
 
     with fn.conn_alchemy().connect() as con:
         # check if scat_id already in DB
@@ -990,10 +990,7 @@ def confirm_load_xlsx(filename, mode):
         # pause trigger
         con.execute(text("ALTER TABLE scats DISABLE TRIGGER ALL"))
         for idx in all_data:
-            print(idx)
             data = dict(all_data[idx])
-
-            print(data)
 
             if mode == "new" and (data["scat_id"] in scats_to_update):
                 continue
@@ -1016,7 +1013,7 @@ def confirm_load_xlsx(filename, mode):
                 "date = EXCLUDED.date, wa_code = EXCLUDED.wa_code, sampling_season = EXCLUDED.sampling_season, sampling_type = EXCLUDED.sampling_type, path_id = EXCLUDED.path_id, snowtrack_id = EXCLUDED.snowtrack_id, "
                 "location = EXCLUDED.location, municipality = EXCLUDED.municipality, province = EXCLUDED.province, region = EXCLUDED.region, "
                 "deposition = EXCLUDED.deposition, matrix = EXCLUDED.matrix, collected_scat = EXCLUDED.collected_scat, scalp_category = EXCLUDED.scalp_category, genetic_sample = EXCLUDED.genetic_sample,"
-                "coord_east = EXCLUDED.coord_east, coord_north = EXCLUDED.coord_east, coord_zone = EXCLUDED.coord_zone, observer = EXCLUDED.observer, institution = EXCLUDED.institution, "
+                "coord_east = EXCLUDED.coord_east, coord_north = EXCLUDED.coord_north, coord_zone = EXCLUDED.coord_zone, observer = EXCLUDED.observer, institution = EXCLUDED.institution, "
                 "geometry_utm = EXCLUDED.geometry_utm, notes = EXCLUDED.notes, sample_type = EXCLUDED.sample_type, box_number = EXCLUDED.box_number "
             )
 
@@ -1042,7 +1039,6 @@ def confirm_load_xlsx(filename, mode):
                 "coord_zone": data["coord_zone"].strip(),
                 "operator": data["operator"],
                 "institution": data["institution"],
-                "geometry_utm": data["geometry_utm"],
                 "notes": data["notes"],
                 "sample_type": data["sample_type"],
                 "box_number": data["box_number"],
@@ -1058,26 +1054,9 @@ def confirm_load_xlsx(filename, mode):
                 return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
 
         con.execute(text("ALTER TABLE scats ENABLE TRIGGER ALL"))
+
+        """
         # paths
-        """
-        sql = text(
-            "UPDATE paths SET path_id = :path_id, "
-            "                 transect_id = :transect_id, "
-            "                date = :date,"
-            "                sampling_season = :sampling_season,"
-            "                completeness = :completeness,"
-            "                observer = :operator,"
-            "                institution = :institution,"
-            "                notes = :notes "
-            "WHERE path_id = :path_id;"
-            "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
-            "observer, institution, notes) "
-            "SELECT :path_id, :transect_id, :date,"
-            ":sampling_season, :completeness, "
-            ":operator, :institution, :notes "
-            "WHERE NOT EXISTS (SELECT 1 FROM paths WHERE path_id = :path_id)"
-        )
-        """
         sql = text(
             "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, observer, institution, notes) "
             "VALUES("
@@ -1159,10 +1138,11 @@ def confirm_load_xlsx(filename, mode):
                 )
             except Exception:
                 return "An error occured during the loading of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+        """
 
         con.execute(text("CALL refresh_materialized_views()"))
 
-    msg = f"Scats successfully loaded from spreadsheet file. {count_added} scats added, {count_updated} scats updated."
+    msg = f"Scats successfully loaded from spreadsheet file. {count_added} scat(s) added, {count_updated} scat(s) updated."
     flash(fn.alert_success(msg))
 
     return redirect("/")
