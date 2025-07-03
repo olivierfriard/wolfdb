@@ -158,7 +158,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
                 data[column] = f"{row[column]:02}"
             else:
                 data[column] = row[column]
-            if isinstance(data[column], float) and str(data[column]) == "nan":
+            if isinstance(data[column], float) and pd.isna(data[column]):
                 data[column] = ""
 
         # date
@@ -186,8 +186,8 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         data["date"] = date
 
         # path_id
-        if str(row["transect_id"]) != "nan":
-            path_id = fn.get_path_id(row["transect_id"], date)
+        if not pd.isna(row["transect_id"]):
+            path_id = fn.get_path_id(str(row["transect_id"]), date)
             data["path_id"] = path_id
         else:
             data["path_id"] = None
@@ -196,7 +196,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         if not isinstance(row["box_number"], float):
             out += fn.alert_danger(Markup(f"Row {index + 2}: ERROR on box number <b>{row['box_number']}</b>. Must be an integer"))
         else:
-            if str(row["box_number"]).upper() == "NAN":
+            if pd.isna(row["box_number"]):
                 data["box_number"] = None
             else:
                 data["box_number"] = int(row["box_number"])

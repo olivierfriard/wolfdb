@@ -993,6 +993,8 @@ def confirm_load_xlsx(filename, mode):
             print(idx)
             data = dict(all_data[idx])
 
+            print(data)
+
             if mode == "new" and (data["scat_id"] in scats_to_update):
                 continue
 
@@ -1048,7 +1050,6 @@ def confirm_load_xlsx(filename, mode):
 
             if data["scat_id"] in scats_to_update:
                 count_updated += 1
-
             else:
                 count_added += 1
             try:
