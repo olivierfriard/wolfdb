@@ -282,3 +282,6 @@ call refresh_materialized_views() ;
 
 -- update box_number in scats table
 -- update scats s SET box_number = (select box_number FROM wa_results WHERE wa_code=s.wa_code) WHERE box_number IS NULL;
+
+-- update box_number in dead_wolves table
+-- update dead_wolves d SET box_number = (select box_number FROM wa_results WHERE wa_code=d.wa_code) WHERE box_number IS NULL;
