@@ -7,7 +7,15 @@ flask blueprint for dead wolves management
 
 import sys
 import flask
-from flask import render_template, redirect, request, flash, session, make_response, url_for
+from flask import (
+    render_template,
+    redirect,
+    request,
+    flash,
+    session,
+    make_response,
+    url_for,
+)
 from markupsafe import Markup
 from sqlalchemy import text, exc
 import utm
@@ -59,7 +67,9 @@ def view_dead_wolf_id(id: int):
     with fn.conn_alchemy().connect() as con:
         dead_wolf = (
             con.execute(
-                text("SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"),
+                text(
+                    "SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"
+                ),
                 {"dead_wolf_id": id},
             )
             .mappings()
@@ -72,7 +82,13 @@ def view_dead_wolf_id(id: int):
 
         # fields list
         fields_list = (
-            con.execute(text("SELECT * FROM dead_wolves_fields_definition WHERE visible = 'Y' ORDER BY position")).mappings().all()
+            con.execute(
+                text(
+                    "SELECT * FROM dead_wolves_fields_definition WHERE visible = 'Y' ORDER BY position"
+                )
+            )
+            .mappings()
+            .all()
         )
 
         rows = (
@@ -175,13 +191,17 @@ def plot_dead_wolves():
             tot_min_lon = min([tot_min_lon, row["longitude"]])
             tot_max_lon = max([tot_max_lon, row["longitude"]])
 
-            popup_content: list = [f"""ID: <a href="/view_dead_wolf_id/{row["id"]}" target="_blank">{row["id"]}</a><br>"""]
+            popup_content: list = [
+                f"""ID: <a href="/view_dead_wolf_id/{row["id"]}" target="_blank">{row["id"]}</a><br>"""
+            ]
             if row["genotype_id"]:
                 popup_content.append(
                     f"""Genotype ID: <a href="/view_genotype/{row["genotype_id"]}" target="_blank">{row["genotype_id"]}</a><br>"""
                 )
             else:
-                popup_content.append(f"""Tissue ID: <a href="/view_tissue/{row["tissue_id"]}" target="_blank">{row["tissue_id"]}</a><br>""")
+                popup_content.append(
+                    f"""Tissue ID: <a href="/view_tissue/{row["tissue_id"]}" target="_blank">{row["tissue_id"]}</a><br>"""
+                )
 
             if row["discovery_date"]:
                 popup_content.append(f"""Discovery date: {row["discovery_date"]}<br>""")
@@ -268,7 +288,9 @@ def new_dead_wolf():
             if request.form["tissue_id"]:
                 tissue_id = (
                     con.execute(
-                        text("SELECT tissue_id FROM dead_wolves WHERE tissue_id = :tissue_id"),
+                        text(
+                            "SELECT tissue_id FROM dead_wolves WHERE tissue_id = :tissue_id"
+                        ),
                         {"tissue_id": request.form["tissue_id"]},
                     )
                     .mappings()
@@ -284,7 +306,9 @@ def new_dead_wolf():
             if request.form["genotype_id"]:
                 genotype_id = (
                     con.execute(
-                        text("SELECT genotype_id FROM dead_wolves WHERE genotype_id = :genotype_id"),
+                        text(
+                            "SELECT genotype_id FROM dead_wolves WHERE genotype_id = :genotype_id"
+                        ),
                         {"genotype_id": request.form["genotype_id"]},
                     )
                     .mappings()
@@ -301,7 +325,11 @@ def new_dead_wolf():
             province_code = request.form["province"]
 
             # add location, municipality, province, region if not indicated
-            if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]:
+            if (
+                request.form["utm_zone"]
+                and request.form["utm_east"]
+                and request.form["utm_north"]
+            ):
                 try:
                     lat_lon = utm.to_latlon(
                         int(request.form["utm_east"]),
@@ -310,7 +338,9 @@ def new_dead_wolf():
                         request.form["hemisphere"],
                     )
                 except Exception as error:
-                    return not_valid(form, f"Check the UTM coordinates ({error.args[0]})")
+                    return not_valid(
+                        form, f"Check the UTM coordinates ({error.args[0]})"
+                    )
                 r = fn.reverse_geocoding(lat_lon[::-1])
                 if not location:
                     location = r["location"]
@@ -324,7 +354,9 @@ def new_dead_wolf():
             if province_code:
                 region = (
                     con.execute(
-                        text("SELECT region FROM geo_info WHERE province_code = :province_code"),
+                        text(
+                            "SELECT region FROM geo_info WHERE province_code = :province_code"
+                        ),
                         {"province_code": province_code},
                     )
                     .mappings()
@@ -344,22 +376,39 @@ def new_dead_wolf():
                     ),
                     {
                         # "new_id": new_id,
-                        "genotype_id": request.form["genotype_id"] if request.form["genotype_id"] else None,
-                        "tissue_id": request.form["tissue_id"] if request.form["tissue_id"] else None,
-                        "discovery_date": request.form["discovery_date"] if request.form["discovery_date"] else None,
+                        "genotype_id": request.form["genotype_id"]
+                        if request.form["genotype_id"]
+                        else None,
+                        "tissue_id": request.form["tissue_id"]
+                        if request.form["tissue_id"]
+                        else None,
+                        "discovery_date": request.form["discovery_date"]
+                        if request.form["discovery_date"]
+                        else None,
                         "location": location if location else None,
                         "municipality": municipality if municipality else None,
                         "province": province_code if province_code else None,
-                        "wa_code": request.form["wa_code"] if request.form["wa_code"] else None,
-                        "utm_east": request.form["utm_east"] if request.form["utm_east"] else None,
-                        "utm_north": request.form["utm_north"] if request.form["utm_north"] else None,
-                        "utm_zone": (request.form["utm_zone"] + request.form["hemisphere"])
-                        if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]
+                        "wa_code": request.form["wa_code"]
+                        if request.form["wa_code"]
+                        else None,
+                        "utm_east": request.form["utm_east"]
+                        if request.form["utm_east"]
+                        else None,
+                        "utm_north": request.form["utm_north"]
+                        if request.form["utm_north"]
+                        else None,
+                        "utm_zone": (
+                            request.form["utm_zone"] + request.form["hemisphere"]
+                        )
+                        if request.form["utm_zone"]
+                        and request.form["utm_east"]
+                        and request.form["utm_north"]
                         else None,
                         "wkt_point": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
                         if request.form["utm_east"] and request.form["utm_north"]
                         else None,
-                        "srid": int(request.form["utm_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
+                        "srid": int(request.form["utm_zone"])
+                        + (32600 if request.form["hemisphere"] == "N" else 32700),
                         "region": region if region else None,
                     },
                 )
@@ -367,29 +416,50 @@ def new_dead_wolf():
                 return not_valid(form, f"field not unique: {error.args[0]}")
             except exc.InternalError as error:
                 if "invalid geometry" in error.args[0]:
-                    return not_valid(form, f"Check the UTM coordinates ({error.args[0]})")
+                    return not_valid(
+                        form, f"Check the UTM coordinates ({error.args[0]})"
+                    )
                 else:
                     return not_valid(form, f"Error {error.args[0]}")
 
             # get last id
-            row = con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves")).mappings().fetchone()
+            row = (
+                con.execute(text("SELECT MAX(id) AS max_id FROM dead_wolves"))
+                .mappings()
+                .fetchone()
+            )
             new_id = row["max_id"]
 
             # fields list
-            fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition ORDER BY position")).mappings().all()
+            fields_list = (
+                con.execute(
+                    text(
+                        "SELECT * FROM dead_wolves_fields_definition ORDER BY position"
+                    )
+                )
+                .mappings()
+                .all()
+            )
 
             for field in fields_list:
                 if f"field{field['field_id']}" in request.form:
                     # date
-                    if field["field_id"] in (8, 9, 11) and request.form[f"field{field['field_id']}"] == "":
+                    if (
+                        field["field_id"] in (8, 9, 11)
+                        and request.form[f"field{field['field_id']}"] == ""
+                    ):
                         con.execute(
-                            text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, NULL)"),
+                            text(
+                                "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, NULL)"
+                            ),
                             {"new_id": new_id, "field_id": field["field_id"]},
                         )
 
                     else:
                         con.execute(
-                            text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :value)"),
+                            text(
+                                "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, :field_id, :value)"
+                            ),
                             {
                                 "new_id": new_id,
                                 "field_id": field["field_id"],
@@ -428,7 +498,9 @@ def edit_dead_wolf(id: int):
         with fn.conn_alchemy().connect() as con:
             dead_wolf = (
                 con.execute(
-                    text("SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"),
+                    text(
+                        "SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"
+                    ),
                     {"dead_wolf_id": id},
                 )
                 .mappings()
@@ -453,15 +525,31 @@ def edit_dead_wolf(id: int):
             )
 
         default_values = {
-            "genotype_id": dead_wolf["genotype_id"] if dead_wolf["genotype_id"] is not None else "",
-            "tissue_id": dead_wolf["tissue_id"] if dead_wolf["tissue_id"] is not None else "",
-            "discovery_date": dead_wolf["discovery_date"] if dead_wolf["discovery_date"] is not None else "",
-            "location": dead_wolf["location"] if dead_wolf["location"] is not None else "",
-            "municipality": dead_wolf["municipality"] if dead_wolf["municipality"] is not None else "",
+            "genotype_id": dead_wolf["genotype_id"]
+            if dead_wolf["genotype_id"] is not None
+            else "",
+            "tissue_id": dead_wolf["tissue_id"]
+            if dead_wolf["tissue_id"] is not None
+            else "",
+            "discovery_date": dead_wolf["discovery_date"]
+            if dead_wolf["discovery_date"] is not None
+            else "",
+            "location": dead_wolf["location"]
+            if dead_wolf["location"] is not None
+            else "",
+            "municipality": dead_wolf["municipality"]
+            if dead_wolf["municipality"] is not None
+            else "",
             "wa_code": dead_wolf["wa_code"] if dead_wolf["wa_code"] is not None else "",
-            "utm_east": dead_wolf["utm_east"] if dead_wolf["utm_east"] is not None else "",
-            "utm_north": dead_wolf["utm_north"] if dead_wolf["utm_north"] is not None else "",
-            "utm_zone": dead_wolf["utm_zone"][:-1] if dead_wolf["utm_zone"] is not None else "",
+            "utm_east": dead_wolf["utm_east"]
+            if dead_wolf["utm_east"] is not None
+            else "",
+            "utm_north": dead_wolf["utm_north"]
+            if dead_wolf["utm_north"] is not None
+            else "",
+            "utm_zone": dead_wolf["utm_zone"][:-1]
+            if dead_wolf["utm_zone"] is not None
+            else "",
         }
 
         for row in rows:
@@ -508,7 +596,11 @@ def edit_dead_wolf(id: int):
         if not form.validate():
             return not_valid(form, "Dead wolf form NOT validated. See details below.")
 
-        if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]:
+        if (
+            request.form["utm_zone"]
+            and request.form["utm_east"]
+            and request.form["utm_north"]
+        ):
             try:
                 _ = utm.to_latlon(
                     int(request.form["utm_east"]),
@@ -519,7 +611,11 @@ def edit_dead_wolf(id: int):
             except Exception as error:
                 return not_valid(form, f"Check the UTM coordinates ({error.args[0]})")
 
-        if request.form["utm_east"] and request.form["utm_north"] and not request.form["utm_zone"]:
+        if (
+            request.form["utm_east"]
+            and request.form["utm_north"]
+            and not request.form["utm_zone"]
+        ):
             return not_valid(form, "UTM zone number is missing")
 
         with fn.conn_alchemy().connect() as con:
@@ -528,7 +624,9 @@ def edit_dead_wolf(id: int):
             if request.form["province"]:
                 region = (
                     con.execute(
-                        text("SELECT region FROM geo_info WHERE province_code = :province_code"),
+                        text(
+                            "SELECT region FROM geo_info WHERE province_code = :province_code"
+                        ),
                         {"province_code": request.form["province"]},
                     )
                     .mappings()
@@ -556,32 +654,64 @@ def edit_dead_wolf(id: int):
                 ),
                 {
                     "dead_wolf_id": id,
-                    "genotype_id": request.form["genotype_id"] if request.form["genotype_id"] else None,
-                    "tissue_id": request.form["tissue_id"] if request.form["tissue_id"] else None,
-                    "discovery_date": request.form["discovery_date"] if request.form["discovery_date"] else None,
-                    "location": request.form["location"] if request.form["location"] else None,
-                    "municipality": request.form["municipality"] if request.form["municipality"] else None,
-                    "province": request.form["province"] if request.form["province"] else None,
-                    "wa_code": request.form["wa_code"] if request.form["wa_code"] else None,
-                    "utm_east": request.form["utm_east"] if request.form["utm_east"] else None,
-                    "utm_north": request.form["utm_north"] if request.form["utm_north"] else None,
+                    "genotype_id": request.form["genotype_id"]
+                    if request.form["genotype_id"]
+                    else None,
+                    "tissue_id": request.form["tissue_id"]
+                    if request.form["tissue_id"]
+                    else None,
+                    "discovery_date": request.form["discovery_date"]
+                    if request.form["discovery_date"]
+                    else None,
+                    "location": request.form["location"]
+                    if request.form["location"]
+                    else None,
+                    "municipality": request.form["municipality"]
+                    if request.form["municipality"]
+                    else None,
+                    "province": request.form["province"]
+                    if request.form["province"]
+                    else None,
+                    "wa_code": request.form["wa_code"]
+                    if request.form["wa_code"]
+                    else None,
+                    "utm_east": request.form["utm_east"]
+                    if request.form["utm_east"]
+                    else None,
+                    "utm_north": request.form["utm_north"]
+                    if request.form["utm_north"]
+                    else None,
                     "utm_zone": (request.form["utm_zone"] + request.form["hemisphere"])
-                    if request.form["utm_zone"] and request.form["utm_east"] and request.form["utm_north"]
+                    if request.form["utm_zone"]
+                    and request.form["utm_east"]
+                    and request.form["utm_north"]
                     else None,
                     "wkt_point": f"POINT({request.form['utm_east']} {request.form['utm_north']})"
                     if request.form["utm_east"] and request.form["utm_north"]
                     else None,
-                    "srid": int(request.form["utm_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
+                    "srid": int(request.form["utm_zone"])
+                    + (32600 if request.form["hemisphere"] == "N" else 32700),
                     "region": region if region else None,
                 },
             )
 
-            fields_list = con.execute(text("SELECT * FROM dead_wolves_fields_definition ORDER BY position")).mappings().all()
+            fields_list = (
+                con.execute(
+                    text(
+                        "SELECT * FROM dead_wolves_fields_definition ORDER BY position"
+                    )
+                )
+                .mappings()
+                .all()
+            )
 
             for row in fields_list:
                 if f"field{row['field_id']}" in request.form:
                     # date
-                    if row["field_id"] in (8, 9, 11) and request.form[f"field{row['field_id']}"] == "":
+                    if (
+                        row["field_id"] in (8, 9, 11)
+                        and request.form[f"field{row['field_id']}"] == ""
+                    ):
                         con.execute(
                             text(
                                 "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:id, :field_id, NULL)"
@@ -717,14 +847,18 @@ def dead_wolves_list():
                 {"value": "province", "text": "Province"},
                 {"value": "mortality", "text": "Cause of mortality"},
             ],
-            selected_value=request.form["selected_field"] if "selected_field" in request.form else "all",
+            selected_value=request.form["selected_field"]
+            if "selected_field" in request.form
+            else "all",
         )
     elif action == "export":
         if not results:
             return "No dead wolves found"
         file_content = export_dead_wolves(results)
         response = make_response(file_content, 200)
-        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-type"] = (
+            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         response.headers["Content-disposition"] = (
             f"attachment; filename=dead_wolves_{request.form['selected_field'] if 'selected_field' in request.form else 'all'}_{search_term}.xlsx"
         )
@@ -769,34 +903,57 @@ def load_tissue_from_spreadsheet():
     """
 
     if request.method == "GET":
-        return render_template("load_tissue_spreadsheet.html", header_title="Load tissues from spreadsheet file")
+        return render_template(
+            "load_tissue_spreadsheet.html",
+            header_title="Load tissues from spreadsheet file",
+        )
 
     if request.method == "POST":
         new_file = request.files["new_file"]
 
         # check file extension
-        if Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+        if (
+            Path(new_file.filename).suffix.upper()
+            not in params["excel_allowed_extensions"]
+        ):
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
+                )
+            )
             return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
 
         try:
             filename = str(uuid.uuid4()) + str(Path(new_file.filename).suffix.upper())
             new_file.save(Path(params["upload_folder"]) / Path(filename))
         except Exception:
-            flash(fn.alert_danger("Error with the uploaded file") + f"({fn.error_info(sys.exc_info())})")
+            flash(
+                fn.alert_danger("Error with the uploaded file")
+                + f"({fn.error_info(sys.exc_info())})"
+            )
             return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
 
         r, msg, all_data = tissues_import.extract_tissue_data_from_spreadsheet(filename)
         if r:
-            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            flash(
+                Markup(f"File name: <b>{new_file.filename}</b>")
+                + Markup("<hr><br>")
+                + msg
+            )
             return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
 
         else:
             # check if tissue_id already in DB
             with fn.conn_alchemy().connect() as con:
-                tissue_list = "','".join([all_data[idx]["tissue_id"] for idx in all_data])
-                sql = text(f"SELECT tissue_id FROM dead_wolves WHERE tissue_id IN ('{tissue_list}')")
-                tissues_to_update = [row["tissue_id"] for row in con.execute(sql).mappings().all()]
+                tissue_list = "','".join(
+                    [all_data[idx]["tissue_id"] for idx in all_data]
+                )
+                sql = text(
+                    f"SELECT tissue_id FROM dead_wolves WHERE tissue_id IN ('{tissue_list}')"
+                )
+                tissues_to_update = [
+                    row["tissue_id"] for row in con.execute(sql).mappings().all()
+                ]
 
             return render_template(
                 "confirm_load_tissue_spreadsheet.html",
@@ -825,9 +982,13 @@ def confirm_load_tissue_spreadsheet(filename, mode):
     with fn.conn_alchemy().connect() as con:
         # check if tissue already in DB
         tissues_list = "','".join([all_data[idx]["tissue_id"] for idx in all_data])
-        sql = text(f"SELECT tissue_id FROM dead_wolves WHERE tissue_id in ('{tissues_list}')")
+        sql = text(
+            f"SELECT tissue_id FROM dead_wolves WHERE tissue_id in ('{tissues_list}')"
+        )
 
-        tissues_to_update = [row["tissue_id"] for row in con.execute(sql).mappings().all()]
+        tissues_to_update = [
+            row["tissue_id"] for row in con.execute(sql).mappings().all()
+        ]
 
         count_added: int = 0
         count_updated: int = 0
@@ -841,26 +1002,37 @@ def confirm_load_tissue_spreadsheet(filename, mode):
                 continue
 
             sql = text(
-                "INSERT INTO dead_wolves (tissue_id, discovery_date, wa_code, location, municipality, province, region, "
+                "INSERT INTO dead_wolves (tissue_id, genotype_id, discovery_date, wa_code, location, municipality, province, region, "
                 "utm_east, utm_north, utm_zone,"
-                "geometry_utm, box_number "
+                "geometry_utm, box_number, "
+                "scalp_category, notes, sampling_season,"
+                "operator, institution"
                 ")"
                 "VALUES("
-                ":tissue_id, :discovery_date, :wa_code, :location, :municipality, :province, :region, "
-                f":utm_east, :utm_north, :utm_zone, {data['geometry_utm']}, "
-                ":box_number"
+                ":tissue_id, :genotype_id, :discovery_date, :wa_code, :location, :municipality, :province, :region, "
+                ":utm_east, :utm_north, :utm_zone, "
+                f"{data['geometry_utm']}, :box_number, "
+                ":scalp_category, :notes, :sampling_season,"
+                ":operator, :institution"
                 ") "
                 "ON CONFLICT (tissue_id) "
                 "DO UPDATE SET "
+                "genotype_id = EXCLUDED.genotype_id, "
                 "discovery_date = EXCLUDED.discovery_date, wa_code = EXCLUDED.wa_code, "
                 "location = EXCLUDED.location, municipality = EXCLUDED.municipality, province = EXCLUDED.province, region = EXCLUDED.region, "
                 "utm_east = EXCLUDED.utm_east, utm_north = EXCLUDED.utm_north, utm_zone = EXCLUDED.utm_zone, geometry_utm = EXCLUDED.geometry_utm, "
-                "box_number = EXCLUDED.box_number "
+                "box_number = EXCLUDED.box_number, "
+                "scalp_category = EXCLUDED.scalp_category, "
+                "notes = EXCLUDED.notes, "
+                "sampling_season = EXCLUDED.sampling_season, "
+                "operator = EXCLUDED.operator, "
+                "institution = EXCLUDED.institution "
                 "RETURNING id "
             )
 
             params = {
                 "tissue_id": data["tissue_id"].strip(),
+                "genotype_id": data["genotype_id"].strip(),
                 "discovery_date": data["date"],
                 "wa_code": data["wa_code"].strip(),
                 "location": data["location"].strip(),
@@ -871,6 +1043,11 @@ def confirm_load_tissue_spreadsheet(filename, mode):
                 "utm_north": data["coord_north"],
                 "utm_zone": data["coord_zone"].strip(),
                 "box_number": data["box_number"],
+                "scalp_category": data["scalp_category"],
+                "notes": data["notes"],
+                "sampling_season": fn.sampling_season(data["date"]),
+                "operator": fn.sampling_season(data["operator"]),
+                "institution": fn.sampling_season(data["institution"]),
             }
 
             if data["tissue_id"] in tissues_to_update:
@@ -880,24 +1057,10 @@ def confirm_load_tissue_spreadsheet(filename, mode):
             try:
                 new_id = con.execute(sql, params).fetchone()[0]
             except Exception:
-                return "An error occured during the loading of tissues. Contact the administrator.<br>" + fn.error_info(sys.exc_info())
-
-            print(f"{new_id=}")
-
-            # fields not in dead_wolves
-            # data collector (operator)
-            if data["operator"]:
-                sql = text(
-                    "INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 88, :operator)",
+                return (
+                    "An error occured during the loading of tissues. Contact the administrator.<br>"
+                    + fn.error_info(sys.exc_info())
                 )
-                con.execute(sql, {"new_id": new_id, "operator": data["operator"]})
-
-            # sampling season #10
-            if data["date"]:
-                sql = text("INSERT INTO dead_wolves_values (id, field_id, val) VALUES (:new_id, 10, :sampling_season)")
-                con.execute(sql, {"new_id": new_id, "sampling_season": fn.sampling_season(data["date"])})
-
-            # remain notes and scalp_category (maybe can be added in dead_wolves table as fields)
 
         con.execute(text("ALTER TABLE dead_wolves ENABLE TRIGGER ALL"))
 

@@ -13,7 +13,7 @@ params = config()
 
 
 """
-import tissues from spredsheet file
+import tissues from spreadsheet file
 """
 
 
@@ -29,12 +29,18 @@ def extract_tissue_data_from_spreadsheet(filename: str):
     out: str = ""
 
     try:
-        dw_df = pd.read_excel(Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine)
+        dw_df = pd.read_excel(
+            Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine
+        )
     except Exception:
         try:
             dw_df = pd.read_excel(filename, sheet_name=0, engine=engine)
         except Exception:
-            return True, fn.alert_danger("Error reading the file. Check your XLSX/ODS file"), {}  # , {}, {}
+            return (
+                True,
+                fn.alert_danger("Error reading the file. Check your XLSX/ODS file"),
+                {},
+            )  # , {}, {}
 
     required_columns = (
         "tissue_id",
@@ -57,16 +63,30 @@ def extract_tissue_data_from_spreadsheet(filename: str):
     # check columns
     for column in required_columns:
         if column not in list(dw_df.columns):
-            return True, fn.alert_danger(Markup(f"ERROR Column <b>{column}</b> is missing")), {}  # , {}, {}
+            return (
+                True,
+                fn.alert_danger(Markup(f"ERROR Column <b>{column}</b> is missing")),
+                {},
+            )  # , {}, {}
 
     # check if tissue_id are missing
     if dw_df["tissue_id"].isnull().any():
         # print(f'{dw_df["tissue_id"].isnull().sum()} tissue id missing', file=sys.stderr)
-        return True, fn.alert_danger(Markup(f"{dw_df['tissue_id'].isnull().sum()} tissue id missing")), {}  # , {}, {}
+        return (
+            True,
+            fn.alert_danger(
+                Markup(f"{dw_df['tissue_id'].isnull().sum()} tissue id missing")
+            ),
+            {},
+        )  # , {}, {}
 
     # check if date are missing
     if dw_df["date"].isnull().any():
-        return True, fn.alert_danger(Markup(f"{dw_df['date'].isnull().sum()} date missing")), {}  # , {}, {}
+        return (
+            True,
+            fn.alert_danger(Markup(f"{dw_df['date'].isnull().sum()} date missing")),
+            {},
+        )  # , {}, {}
 
     # check if sampling type are missing
     """
@@ -84,7 +104,9 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         return (
             True,
             fn.alert_danger(
-                Markup(f"Some tissue_id are duplicated: <pre> {dw_df[si.isin(si[si.duplicated()])].sort_values('tissue_id')}</pre>")
+                Markup(
+                    f"Some tissue_id are duplicated: <pre> {dw_df[si.isin(si[si.duplicated()])].sort_values('tissue_id')}</pre>"
+                )
             ),
             {},
             # {},
@@ -97,7 +119,9 @@ def extract_tissue_data_from_spreadsheet(filename: str):
             if scalp != "C1":
                 return (
                     True,
-                    fn.alert_danger(Markup(f"SCALP category is <b>{scalp}</b> (should be C1)")),
+                    fn.alert_danger(
+                        Markup(f"SCALP category is <b>{scalp}</b> (should be C1)")
+                    ),
                     {},
                     {},
                     {},
@@ -110,14 +134,24 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         try:
             dt.datetime.strptime(date, "%Y-%m-%d")
         except Exception:
-            return True, fn.alert_danger(f"'{date}' is not a valid date at row {idx + 2} (check date format)"), {}  # , {}, {}
+            return (
+                True,
+                fn.alert_danger(
+                    f"'{date}' is not a valid date at row {idx + 2} (check date format)"
+                ),
+                {},
+            )  # , {}, {}
 
     # check province code
     for idx, province in enumerate(dw_df["province"]):
         if isinstance(province, int):
             province = f"{province:02}"
         if province not in fn.province_code_list():
-            return True, fn.alert_danger(f"Province '{province}' not found at row {idx + 2}"), {}  # , {}, {}
+            return (
+                True,
+                fn.alert_danger(f"Province '{province}' not found at row {idx + 2}"),
+                {},
+            )  # , {}, {}
 
     columns_list = list(dw_df.columns)
 
@@ -148,14 +182,10 @@ def extract_tissue_data_from_spreadsheet(filename: str):
             data["path_id"] = None
 
         # check box number
-        print(f"{row["box_number"]=} ", type(row["box_number"]))
-        if not isinstance(row["box_number"], float) and not isinstance(row["box_number"], int):
-            out += fn.alert_danger(Markup(f"Row {index + 2}: ERROR on box number <b>{row['box_number']}</b>. Must be an integer"))
+        if pd.isna(row["box_number"]):
+            data["box_number"] = None
         else:
-            if pd.isna(row["box_number"]):
-                data["box_number"] = None
-            else:
-                data["box_number"] = int(row["box_number"])
+            data["box_number"] = row["box_number"]
 
         # add region from province code
         data["region"] = fn.province_code2region(data["province"])
@@ -165,7 +195,9 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         data["coord_zone"] = data["coord_zone"].upper().strip()
 
         if len(data["coord_zone"]) != 3:
-            out += fn.alert_danger(f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters")
+            out += fn.alert_danger(
+                f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters"
+            )
 
         hemisphere = data["coord_zone"][-1]
         if hemisphere not in ("S", "N"):
@@ -178,17 +210,25 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         try:
             zone = int(row["coord_zone"][:2])
         except Exception:
-            out += fn.alert_danger(Markup(f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"))
+            out += fn.alert_danger(
+                Markup(
+                    f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"
+                )
+            )
 
         # check if coordinates are OK
         try:
-            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere)
+            _ = utm.to_latlon(
+                int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere
+            )
         except Exception:
             out += fn.alert_danger(
                 f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]} Zone: {data["coord_zone"]}"'
             )
         srid = zone + (32600 if hemisphere == "N" else 32700)
-        data["geometry_utm"] = f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
+        data["geometry_utm"] = (
+            f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
+        )
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -223,8 +263,15 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         # notes
         data["notes"] = str(data["notes"]).strip()
 
-        data["operator"] = str(data["operator"]).strip()
-        data["institution"] = str(data["institution"]).strip()
+        if pd.isna(row["operator"]):
+            data["operator"] = None
+        else:
+            data["operator"] = str(data["operator"]).strip()
+
+        if pd.isna(row["institution"]):
+            data["institution"] = None
+        else:
+            data["institution"] = str(data["institution"]).strip()
 
         tissues_data[index] = dict(data)
 

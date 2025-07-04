@@ -278,3 +278,7 @@ CREATE INDEX idx_wa_genetic_samples_mat_date ON wa_genetic_samples_mat(date);
 
 
 call refresh_materialized_views() ;
+
+
+-- update box_number in scats table
+-- update scats s SET box_number = (select box_number FROM wa_results WHERE wa_code=s.wa_code) WHERE box_number IS NULL;

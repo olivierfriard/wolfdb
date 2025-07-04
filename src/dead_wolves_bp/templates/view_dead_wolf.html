@@ -31,11 +31,29 @@ id <a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a><
 <a href="/view_genotype/{{ dead_wolf['genotype_id'] }}">{{ dead_wolf["genotype_id"] }}</a>
 {% endif %}
 </td></tr>
+
 <tr><td>WA code</td><td>
 {% if dead_wolf["wa_code"] %}    
 <a href="/view_wa/{{ dead_wolf['wa_code'] }}">{{ dead_wolf["wa_code"] }}</a>
 {% endif %}
 </td></tr>
+
+<tr><td>SCALP category</td><td>
+{% if dead_wolf["scalp_category"] %} 
+{{ dead_wolf["scalp_category"] }}
+{% endif %}
+</td></tr>
+    
+<tr><td>Operator</td><td>
+{{ dead_wolf["scalp_category"] if dead_wolf["operator"] else ""}}
+</td></tr>
+
+<tr><td>Institution</td><td>
+{{ dead_wolf["institution"] if dead_wolf["institution"] else ""}}
+</td></tr>
+    
+       
+
 
 <tr><td>Box number</td><td>
 {% if dead_wolf["box_number"] %}    
