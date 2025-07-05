@@ -795,11 +795,6 @@ def dead_wolves_list():
         else:
             search_term = request.args.get("search")
 
-        """
-        print(request.form["selected_field"])
-        print(f"{search_term=}")
-        """
-
     if search_term:
         if request.form["selected_field"] == "all":
             sql += (
