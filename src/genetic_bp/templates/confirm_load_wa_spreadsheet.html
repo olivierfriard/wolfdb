@@ -1,0 +1,63 @@
+{% extends "bootstrap.html" %}
+
+{% block content %}
+
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
+
+<main class="flex-shrink-0">
+
+<div class="container">
+
+
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <strong>{{ message }}</strong><br>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+
+
+<b>{{ n_wa }}</b> WA found in spreadsheet file.<br>
+<b>{{ wa_to_update|count }}</b> are already present in the database (displayed with red background).<br>
+<br>
+
+<a href="/confirm_load_wa_spreadsheet/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (WA already present will be updated)</a>
+
+<a href="/confirm_load_wa_spreadsheet/{{ filename }}/new"  class="btn btn-primary">Insert only new WA</a>
+
+<a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
+
+<br>
+<br>
+{% if wa_to_update|count %}
+<div class="alert alert-danger" role="alert"><b>The WA with red background already exists in the database.</b></div><br><br>
+{% endif %}
+
+
+<table class="table table-striped">
+
+<tr>
+<th>WA code</th>
+</tr>
+
+{% for idx in wa_results %}
+
+{% if wa_results[idx]['wa_code'] in wa_to_update %}
+<tr class="table-danger">
+{% else %}
+<tr>
+{% endif %}
+<td>{{ wa_results[idx]['wa_code'] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endblock %}
