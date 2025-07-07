@@ -47,12 +47,12 @@ def quote(s):
 # read arguments
 filename = sys.argv[1]
 
-'''
+"""
 # disabled because record status is included in the spreadsheet
 if RECORD_STATUS not in ("OK", "temp"):
     print("record_status must be OK or temp")
     sys.exit()
-'''
+"""
 
 if Path(filename).suffix.upper() == ".XLSX":
     engine = "openpyxl"
@@ -213,12 +213,12 @@ for idx, row in genetic_df.iterrows():
     print(
         (
             "INSERT INTO wa_results (wa_code, mtdna, quality_genotype, genotype_id, sex_id, notes) VALUES ("
-            f"{quote(str(row["WA code"]))},"
-            f"{quote(str(row["mtDNA"]))},"
+            f"{quote(str(row['WA code']))},"
+            f"{quote(str(row['mtDNA']))},"
             f"{quality_genotype},"
-            f"{quote(str(row["Genotype ID"] if row["Genotype ID"] == row["Genotype ID"] else ""))},"
-            f"{quote(str(row["Sex ID"] if row["Sex ID"] == row["Sex ID"] else ""))},"
-            f"{quote(str(row["Note"] if row["Note"] == row["Note"] else ""))}"
+            f"{quote(str(row['Genotype ID'] if row['Genotype ID'] == row['Genotype ID'] else ''))},"
+            f"{quote(str(row['Sex ID'] if row['Sex ID'] == row['Sex ID'] else ''))},"
+            f"{quote(str(row['Note'] if row['Note'] == row['Note'] else ''))}"
             ") "
             " ON CONFLICT (wa_code) "
             " DO UPDATE SET "
@@ -237,13 +237,13 @@ for idx, row in genetic_df.iterrows():
             print(
                 (
                     "INSERT INTO genotypes (genotype_id, pack, sex, mtdna, tmp_id, record_status, notes) VALUES ("
-                    f"{quote(str(row["Genotype ID"]))},"
-                    f"{quote(str(row["Pack"])) if row["Pack"]==row["Pack"] else 'NULL'},"
-                    f"{quote(str(row["Sex ID"]))},"
-                    f"{quote(str(row["mtDNA"]))},"
-                    f"{quote(str(row["Other ID"] if row["Other ID"]==row["Other ID"] else 'NULL'))},"
-                    f"{quote(str(row["record_status"]))},"
-                    f"{quote(str(row["Note"])) if row["Note"]==row["Note"] else 'NULL'}"
+                    f"{quote(str(row['Genotype ID']))},"
+                    f"{quote(str(row['Pack'])) if row['Pack'] == row['Pack'] else 'NULL'},"
+                    f"{quote(str(row['Sex ID']))},"
+                    f"{quote(str(row['mtDNA']))},"
+                    f"{quote(str(row['Other ID'] if row['Other ID'] == row['Other ID'] else 'NULL'))},"
+                    f"{quote(str(row['record_status']))},"
+                    f"{quote(str(row['Note'])) if row['Note'] == row['Note'] else 'NULL'}"
                     "); "
                     # " ON CONFLICT (genotype_id) "
                     # " DO UPDATE SET "
@@ -257,7 +257,7 @@ for idx, row in genetic_df.iterrows():
             )
         else:  # genotype already in table
             print(file=sys.stderr)
-            print(f"Genotype {str(row["Genotype ID"])} already in DB", file=sys.stderr)
+            print(f"Genotype {str(row['Genotype ID'])} already in DB", file=sys.stderr)
 
     data: dict = {}
 
@@ -322,9 +322,11 @@ for idx, row in genetic_df.iterrows():
                     )
                     if genotype_loci is None:
                         print(
-                            f"SELECT * FROM genotype_locus WHERE genotype_id = '{row["Genotype ID"].strip()}' and allele = '{column.split('_')[1]}' and UPPER(locus) = '{column.split('_')[0].upper()}'",
+                            f"SELECT * FROM genotype_locus WHERE genotype_id = '{row['Genotype ID'].strip()}' and allele = '{column.split('_')[1]}' and UPPER(locus) = '{column.split('_')[0].upper()}'",
                             file=sys.stderr,
                         )
+
+                    print(genotype_loci)
 
                     if (
                         genotype_loci["val"] != data[column]
@@ -333,8 +335,8 @@ for idx, row in genetic_df.iterrows():
                     ):
                         print(
                             (
-                                f"{row["Genotype ID"]} {genotype_loci["locus"]} {genotype_loci["allele"]}  "
-                                f"db value: {genotype_loci["val"]}  "
+                                f"{row['Genotype ID']} {genotype_loci['locus']} {genotype_loci['allele']}  "
+                                f"db value: {genotype_loci['val']}  "
                                 f"xlsx value: {data[column]} "
                                 "ERROR"
                             ),
@@ -346,5 +348,8 @@ for idx, row in genetic_df.iterrows():
     # print(file=sys.stderr)
 
 for handle in (f_genotype, f_genotype_loci, f_wa_results, f_wa_loci):
-    print("SET session_replication_role = DEFAULT;CALL refresh_materialized_views();", file=handle)
+    print(
+        "SET session_replication_role = DEFAULT;CALL refresh_materialized_views();",
+        file=handle,
+    )
     handle.close()
