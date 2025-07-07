@@ -29,9 +29,7 @@ def extract_tissue_data_from_spreadsheet(filename: str):
     out: str = ""
 
     try:
-        dw_df = pd.read_excel(
-            Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine
-        )
+        dw_df = pd.read_excel(Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine)
     except Exception:
         try:
             dw_df = pd.read_excel(filename, sheet_name=0, engine=engine)
@@ -74,9 +72,7 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         # print(f'{dw_df["tissue_id"].isnull().sum()} tissue id missing', file=sys.stderr)
         return (
             True,
-            fn.alert_danger(
-                Markup(f"{dw_df['tissue_id'].isnull().sum()} tissue id missing")
-            ),
+            fn.alert_danger(Markup(f"{dw_df['tissue_id'].isnull().sum()} tissue id missing")),
             {},
         )  # , {}, {}
 
@@ -98,15 +94,13 @@ def extract_tissue_data_from_spreadsheet(filename: str):
     if dw_df["coord_east"].isnull().any() or dw_df["coord_north"].isnull().any():
         return True, fn.alert_danger(Markup("coordinates missing")), {}  # , {}, {}
 
-    # check if tissue_id duplicated
+    # check if tissue_id duplicated in spreadsheet
     if dw_df["tissue_id"].duplicated().any():
         si = dw_df["tissue_id"]
         return (
             True,
             fn.alert_danger(
-                Markup(
-                    f"Some tissue_id are duplicated: <pre> {dw_df[si.isin(si[si.duplicated()])].sort_values('tissue_id')}</pre>"
-                )
+                Markup(f"Some tissue_id are duplicated: <pre> {dw_df[si.isin(si[si.duplicated()])].sort_values('tissue_id')}</pre>")
             ),
             {},
             # {},
@@ -119,9 +113,7 @@ def extract_tissue_data_from_spreadsheet(filename: str):
             if scalp != "C1":
                 return (
                     True,
-                    fn.alert_danger(
-                        Markup(f"SCALP category is <b>{scalp}</b> (should be C1)")
-                    ),
+                    fn.alert_danger(Markup(f"SCALP category is <b>{scalp}</b> (should be C1)")),
                     {},
                     {},
                     {},
@@ -136,9 +128,7 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         except Exception:
             return (
                 True,
-                fn.alert_danger(
-                    f"'{date}' is not a valid date at row {idx + 2} (check date format)"
-                ),
+                fn.alert_danger(f"'{date}' is not a valid date at row {idx + 2} (check date format)"),
                 {},
             )  # , {}, {}
 
@@ -195,9 +185,7 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         data["coord_zone"] = data["coord_zone"].upper().strip()
 
         if len(data["coord_zone"]) != 3:
-            out += fn.alert_danger(
-                f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters"
-            )
+            out += fn.alert_danger(f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters")
 
         hemisphere = data["coord_zone"][-1]
         if hemisphere not in ("S", "N"):
@@ -210,25 +198,17 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         try:
             zone = int(row["coord_zone"][:2])
         except Exception:
-            out += fn.alert_danger(
-                Markup(
-                    f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"
-                )
-            )
+            out += fn.alert_danger(Markup(f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"))
 
         # check if coordinates are OK
         try:
-            _ = utm.to_latlon(
-                int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere
-            )
+            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere)
         except Exception:
             out += fn.alert_danger(
                 f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]} Zone: {data["coord_zone"]}"'
             )
         srid = zone + (32600 if hemisphere == "N" else 32700)
-        data["geometry_utm"] = (
-            f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
-        )
+        data["geometry_utm"] = f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -278,7 +258,7 @@ def extract_tissue_data_from_spreadsheet(filename: str):
         index += 1
 
     if out:
-        return True, out, {}  # , {}, {}
+        return True, out, {}
 
     """
     # extract paths

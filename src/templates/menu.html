@@ -92,6 +92,8 @@ Genetic samples
 <li><a class="dropdown-item" href="/plot_wa_clusters/2500">DBSCAN clusters</a></li>
 <li><a class="dropdown-item" href="/select_on_map/genotypes">Select on map -> Genotypes</a></li>
 <li><a class="dropdown-item" href="/select_on_map/wa">Select on map -> WA</a></li>
+<li><div class="dropdown-divider"></div></li>
+<li><a class="dropdown-item" href="{{ url_for('genetic.load_wa_from_spreadsheet')}}">Import WA from a spreadsheet file</a></li>
 </ul>
 </li>
 
@@ -123,7 +125,8 @@ Dead wolves
 <li><a class="dropdown-item" href="/dead_wolves_list">List</a></li>
 <li><a class="dropdown-item" href="/plot_dead_wolves">Locations</a></li>
 <li><a class="dropdown-item" href="/new_dead_wolf">Insert</a></li>
-<li><a class="dropdown-item" href="{{ url_for('dead_wolves.load_tissue_from_spreadsheet') }}">Import tissues from spreadsheet</a></li>
+<li><div class="dropdown-divider"></div></li>
+<li><a class="dropdown-item" href="{{ url_for('dead_wolves.load_tissue_from_spreadsheet') }}">Import tissues from a spreadsheet file</a></li>
 </ul>
 </li>
     

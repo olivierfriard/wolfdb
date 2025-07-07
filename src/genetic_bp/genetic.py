@@ -25,7 +25,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import subprocess
 import redis
-import pathlib as pl
+from pathlib import Path
+import sys
 import uuid
 import datetime as dt
 import time
@@ -35,6 +36,7 @@ from geojson import Polygon
 import functions as fn
 from . import export
 from . import import_
+from . import wa_import
 
 app = Blueprint("genetic", __name__, template_folder="templates")
 
@@ -1510,8 +1512,8 @@ def wa_analysis_group(tool: str, mode: str):
 
     data, loci_values, count_sex = get_genotypes_data(genotypes_info)
 
-    colony_output_dir = pl.Path("colony_output")
-    colony_output_path = pl.Path(current_app.static_folder) / colony_output_dir
+    colony_output_dir = Path("colony_output")
+    colony_output_path = Path(current_app.static_folder) / colony_output_dir
 
     if not colony_output_path.is_dir():
         colony_output_path.mkdir(parents=True, exist_ok=True)
@@ -1628,16 +1630,16 @@ def wa_analysis_group(tool: str, mode: str):
 
     elif mode == "run_colony":
         if tool.startswith("DBSCAN"):
-            input_file_name = colony_output_path / pl.Path(f"{distance}_{cluster_id}")
+            input_file_name = colony_output_path / Path(f"{distance}_{cluster_id}")
             with open(f"{input_file_name}.dat", "w") as file_out:
                 file_out.write("\n".join(colony_out))
 
         if tool.startswith("POLYGON"):
-            input_file_name = colony_output_path / pl.Path(text_geom_md5)
+            input_file_name = colony_output_path / Path(text_geom_md5)
             with open(f"{input_file_name}.dat", "w") as file_out:
                 file_out.write("\n".join(colony_out))
 
-        if not pl.Path(params["colony_path"]).is_file():
+        if not Path(params["colony_path"]).is_file():
             flash(fn.alert_danger("The Colony program was not found. Please contact the administrator."))
             return redirect(f"/wa_analysis_group/{tool}/web")
 
@@ -1656,11 +1658,11 @@ def wa_analysis_group(tool: str, mode: str):
 
         # check if colony errormessage file exists
         colony_error_message: str = ""
-        if pl.Path("Colony2.ErrorMessage").is_file():
+        if Path("Colony2.ErrorMessage").is_file():
             # read file content
-            with open(pl.Path("Colony2.ErrorMessage"), "r") as file_in:
+            with open(Path("Colony2.ErrorMessage"), "r") as file_in:
                 colony_error_message = file_in.read()
-            pl.Path("Colony2.ErrorMessage").unlink()
+            Path("Colony2.ErrorMessage").unlink()
             flash(
                 fn.alert_danger(
                     (
@@ -1702,14 +1704,14 @@ def wa_analysis_group(tool: str, mode: str):
                 f"DBSCAN cluster id: {cluster_id} distance: {distance} m - <b>{len(loci_values)}</b> genotype{'s' if len(loci_values) > 1 else ''}"
             )
 
-            colony_output_file = pl.Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
+            colony_output_file = Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
             colony_output_file_path = colony_output_path / colony_output_file
 
         if tool.startswith("POLYGON"):
             header_title = f"Genotype{'s' if len(loci_values) > 1 else ''} for selected WA codes"
             page_title = Markup(f"{len(loci_values)} genotype{'s' if len(loci_values) > 1 else ''} for selected WA codes")
 
-            colony_output_file = pl.Path(f"{text_geom_md5}.BestConfig_Ordered")
+            colony_output_file = Path(f"{text_geom_md5}.BestConfig_Ordered")
             colony_output_file_path = colony_output_path / colony_output_file
 
         # check colony results file already exists
@@ -3004,13 +3006,13 @@ def load_definitive_genotypes_xlsx():
         new_file = request.files["new_file"]
 
         # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
+        if Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
             flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
             return redirect("/load_definitive_genotypes_xlsx")
 
         try:
-            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
-            new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
+            filename = str(uuid.uuid4()) + str(Path(new_file.filename).suffix.upper())
+            new_file.save(Path(params["upload_folder"]) / Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
             return redirect("/load_definitive_genotypes_xlsx")
@@ -3237,3 +3239,139 @@ def check_genetic_profile():
             out=out,
             loci=" ".join([x for x in fn.get_loci_list().keys() if x != "SRY"]),
         )
+
+
+@app.route(
+    "/load_wa_from_spreadsheet",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def load_wa_from_spreadsheet():
+    """
+    Select a file for uploading WA from spreadsheet (XLSX or ODS)
+    """
+
+    if request.method == "GET":
+        return render_template(
+            "load_wa_spreadsheet.html",
+            header_title="Load WA code from spreadsheet file",
+        )
+
+    if request.method == "POST":
+        new_file = request.files["new_file"]
+
+        # check file extension
+        if Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
+            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+            return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+        try:
+            filename = str(uuid.uuid4()) + str(Path(new_file.filename).suffix.upper())
+            new_file.save(Path(params["upload_folder"]) / Path(filename))
+        except Exception:
+            flash(fn.alert_danger("Error with the uploaded file") + f"({fn.error_info(sys.exc_info())})")
+            return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+        r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(filename)
+        if r:
+            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+        else:
+            # check if tissue_id already in DB
+            with fn.conn_alchemy().connect() as con:
+                wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
+                sql = text(f"SELECT wa_code FROM wa_results WHERE wa_code IN ('{wa_list}')")
+                wa_to_update = [row["wa_code"] for row in con.execute(sql).mappings().all()]
+
+            return render_template(
+                "confirm_load_wa_spreadsheet.html",
+                n_wa=len(wa_results),
+                wa_to_update=wa_to_update,
+                wa_results=wa_results,
+                filename=filename,
+            )
+
+
+@app.route("/confirm_load_wa_spreadsheet/<filename>/<mode>")
+@fn.check_login
+def confirm_load_wa_spreadsheet(filename, mode):
+    """
+    Confirm upload of wa from spreadsheet file
+    """
+
+    if mode not in ["new", "all"]:
+        flash(fn.alert_danger("Error: mode not allowed"))
+        return redirect("/load_tissue_from_spreadsheet")
+
+    r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(filename)
+    if r:
+        flash(msg)
+        return redirect(url_for("/load_wa_from_spreadsheet"))
+
+    with fn.conn_alchemy().connect() as con:
+        # check if wa already in DB
+        wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
+        sql = text(f"SELECT wa_code FROM wa_results WHERE wa_code in ('{wa_list}')")
+
+        wa_to_update = [row["wa_code"] for row in con.execute(sql).mappings().all()]
+
+        count_added: int = 0
+        count_updated: int = 0
+        # pause trigger
+        con.execute(text("ALTER TABLE wa_results DISABLE TRIGGER ALL"))
+
+        for idx in wa_results:
+            data = dict(wa_results[idx])
+
+            if mode == "new" and (data["wa_code"] in wa_to_update):
+                continue
+
+            sql = text(
+                "INSERT INTO wa_results (wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype "
+                ")"
+                "VALUES("
+                ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype "
+                ") "
+                "ON CONFLICT (wa_code) "
+                "DO UPDATE SET "
+                "pack = EXCLUDED.pack, "
+                "notes = EXCLUDED.notes, "
+                "genotype_id = EXCLUDED.genotype_id, "
+                "mtdna = EXCLUDED.mtdna, "
+                "sex_id = EXCLUDED.sex_id, "
+                "individual_id = EXCLUDED.individual_id, "
+                "quality_genotype = EXCLUDED.quality_genotype "
+            )
+
+            params = {
+                "wa_code": data["wa_code"],
+                "pack": data["pack"],
+                "notes": data["notes"],
+                "genotype_id": data["genotype_id"],
+                "mtdna": data["mtdna"],
+                "sex_id": data["sex_id"],
+                "individual_id": data["individual_id"],
+                "quality_genotype": data["quality_genotype"],
+            }
+
+            if data["wa_code"] in wa_to_update:
+                count_updated += 1
+            else:
+                count_added += 1
+            try:
+                con.execute(sql, params)
+            except Exception:
+                return "An error occured during the loading of tissues. Contact the administrator.<br>" + fn.error_info(sys.exc_info())
+
+        con.execute(text("ALTER TABLE wa_results ENABLE TRIGGER ALL"))
+
+        con.execute(text("CALL refresh_materialized_views()"))
+
+    msg = f"WA code successfully loaded from spreadsheet file. {count_added} wa code(s) added, {count_updated} wa code(s) updated."
+    flash(fn.alert_success(msg))
+
+    return redirect("/")
