@@ -105,6 +105,7 @@ def extract_wa_data_from_spreadsheet(filename: str):
         wa_results[index] = dict(data)
 
         data: dict = {}
+        data["wa_code"] = row["wa code"].strip()
 
         for locus, locus_lower in zip(loci_list, [x.lower() for x in loci_list]):
             if pd.isna(row[locus_lower]):

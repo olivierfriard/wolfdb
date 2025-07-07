@@ -3367,6 +3367,10 @@ def confirm_load_wa_spreadsheet(filename, mode):
             except Exception:
                 return "An error occured during the loading of tissues. Contact the administrator.<br>" + fn.error_info(sys.exc_info())
 
+        print(wa_loci[0])
+        for idx in wa_loci:
+            data = dict(wa_loci[idx])
+
         con.execute(text("ALTER TABLE wa_results ENABLE TRIGGER ALL"))
 
         con.execute(text("CALL refresh_materialized_views()"))
