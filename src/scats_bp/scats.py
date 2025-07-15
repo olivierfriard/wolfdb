@@ -6,7 +6,15 @@ flask blueprint for scats management
 """
 
 import flask
-from flask import render_template, redirect, request, flash, make_response, session, url_for
+from flask import (
+    render_template,
+    redirect,
+    request,
+    flash,
+    make_response,
+    session,
+    url_for,
+)
 from markupsafe import Markup
 from sqlalchemy import text
 import utm
@@ -26,7 +34,9 @@ from . import scats_export, scats_import
 from config import config
 
 
-app = flask.Blueprint("scats", __name__, template_folder="templates", static_url_path="/static")
+app = flask.Blueprint(
+    "scats", __name__, template_folder="templates", static_url_path="/static"
+)
 
 params = config()
 
@@ -158,7 +168,9 @@ def view_scat(scat_id):
             transect_feature = {
                 "type": "Feature",
                 "geometry": dict(transect_geojson),
-                "properties": {"popupContent": f"""Transect ID: <a href="/view_transect/{transect_id}">{transect_id}</a>"""},
+                "properties": {
+                    "popupContent": f"""Transect ID: <a href="/view_transect/{transect_id}">{transect_id}</a>"""
+                },
                 "id": 1,
             }
             transect_features = [transect_feature]
@@ -431,7 +443,9 @@ def scats_list_limit(offset: int, limit: int | str):
                 .all()
             )
 
-    session["url_scats_list"] = f"/scats_list_limit/{offset}/{limit}?search={search_term}"
+    session["url_scats_list"] = (
+        f"/scats_list_limit/{offset}/{limit}?search={search_term}"
+    )
     if "url_wa_list" in session:
         del session["url_wa_list"]
 
@@ -463,7 +477,9 @@ def export_scats():
     with fn.conn_alchemy().connect() as con:
         file_content = scats_export.export_scats(
             con.execute(
-                text("SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date"),
+                text(
+                    "SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date"
+                ),
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
@@ -471,8 +487,12 @@ def export_scats():
         )
 
     response = make_response(file_content, 200)
-    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    response.headers["Content-type"] = (
+        "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response.headers["Content-disposition"] = (
+        f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    )
 
     return response
 
@@ -507,7 +527,9 @@ def new_scat():
         # get id of all paths
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
         # get id of all snow tracks
-        form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+        form.snowtrack_id.choices = [("", "")] + [
+            (x, x) for x in fn.all_snow_tracks_id()
+        ]
 
         return render_template(
             "new_scat.html",
@@ -525,10 +547,14 @@ def new_scat():
         form.path_id.choices = [("", "")] + [(x, x) for x in fn.all_path_id()]
 
         # get id of all snow tracks
-        form.snowtrack_id.choices = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
+        form.snowtrack_id.choices = [("", "")] + [
+            (x, x) for x in fn.all_snow_tracks_id()
+        ]
 
         if not form.validate():
-            return not_valid("Some values are not set or are wrong. Please check and submit again")
+            return not_valid(
+                "Some values are not set or are wrong. Please check and submit again"
+            )
         # date
         """ DISABLED
         try:
@@ -548,7 +574,9 @@ def new_scat():
         date = request.form["date"]
 
         # path id
-        path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+        path_id = (
+            request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+        )
 
         # check province code
         province_code = fn.check_province_code(request.form["province"])
@@ -607,11 +635,13 @@ def new_scat():
                     "scalp_category": request.form["scalp_category"],
                     "coord_east": request.form["coord_east"],
                     "coord_north": request.form["coord_north"],
-                    "coord_zone": request.form["coord_zone"] + request.form["hemisphere"],
+                    "coord_zone": request.form["coord_zone"]
+                    + request.form["hemisphere"],
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
                     "wkt_point": f"POINT({request.form['coord_east']} {request.form['coord_north']})",
-                    "srid": int(request.form["coord_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
+                    "srid": int(request.form["coord_zone"])
+                    + (32600 if request.form["hemisphere"] == "N" else 32700),
                 },
             )
 
@@ -631,7 +661,9 @@ def edit_scat(scat_id):
         for k in request.form:
             default_values[k] = request.form[k]
 
-        flash(Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>'))
+        flash(
+            Markup(f'<div class="alert alert-danger" role="alert"><b>{msg}</b></div>')
+        )
 
         return render_template(
             "new_scat.html",
@@ -698,7 +730,9 @@ def edit_scat(scat_id):
             default_values["snowtrack_id"],
         ) not in all_tracks:
             # add current track_id to list
-            all_tracks = [(default_values["snowtrack_id"], default_values["snowtrack_id"])] + all_tracks
+            all_tracks = [
+                (default_values["snowtrack_id"], default_values["snowtrack_id"])
+            ] + all_tracks
             # all_tracks.append((default_values["snowtrack_id"], default_values["snowtrack_id"]))
 
         # print((default_values["snowtrack_id"], default_values["snowtrack_id"]) in all_tracks)
@@ -728,7 +762,9 @@ def edit_scat(scat_id):
 
         # get id of all snow tracks
         all_tracks = [("", "")] + [(x, x) for x in fn.all_snow_tracks_id()]
-        all_tracks = [(request.form["snowtrack_id"], request.form["snowtrack_id"])] + all_tracks
+        all_tracks = [
+            (request.form["snowtrack_id"], request.form["snowtrack_id"])
+        ] + all_tracks
         form.snowtrack_id.choices = list(all_tracks)
 
         if not form.validate():
@@ -750,7 +786,9 @@ def edit_scat(scat_id):
                 ):
                     return not_valid(
                         form,
-                        (f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). Please check and submit again"),
+                        (
+                            f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). Please check and submit again"
+                        ),
                     )
 
             # check date in scat ID
@@ -772,7 +810,11 @@ def edit_scat(scat_id):
             # path id
             if request.form["sampling_type"] == "Systematic":
                 # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
-                path_id = request.form["path_id"].split(" ")[0] + "|" + date[2:].replace("-", "")
+                path_id = (
+                    request.form["path_id"].split(" ")[0]
+                    + "|"
+                    + date[2:].replace("-", "")
+                )
             else:
                 path_id = ""
 
@@ -806,7 +848,9 @@ def edit_scat(scat_id):
             if request.form["wa_code"]:
                 if len(
                     con.execute(
-                        text("SELECT sample_id FROM wa_scat_dw_mat WHERE sample_id !=:scat_id AND wa_code = :wa_code"),
+                        text(
+                            "SELECT sample_id FROM wa_scat_dw_mat WHERE sample_id !=:scat_id AND wa_code = :wa_code"
+                        ),
                         {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
                     )
                     .mappings()
@@ -814,7 +858,9 @@ def edit_scat(scat_id):
                 ):
                     return not_valid(
                         form,
-                        (f"Another sample has the same WA code ({request.form['wa_code']}). Please check and submit again"),
+                        (
+                            f"Another sample has the same WA code ({request.form['wa_code']}). Please check and submit again"
+                        ),
                     )
 
             sql = text(
@@ -853,7 +899,9 @@ def edit_scat(scat_id):
                     "wa_code": request.form["wa_code"],
                     "date": request.form["date"],
                     "sampling_season": fn.sampling_season(request.form["date"]),
-                    "sampling_type": request.form["sampling_type"] if request.form["sampling_type"] else None,
+                    "sampling_type": request.form["sampling_type"]
+                    if request.form["sampling_type"]
+                    else None,
                     "sample_type": request.form["sample_type"],
                     "path_id": path_id,
                     "snowtrack_id": request.form["snowtrack_id"],
@@ -867,12 +915,14 @@ def edit_scat(scat_id):
                     "scalp_category": request.form["scalp_category"],
                     "coord_east": request.form["coord_east"],
                     "coord_north": request.form["coord_north"],
-                    "coord_zone": request.form["coord_zone"] + request.form["hemisphere"],
+                    "coord_zone": request.form["coord_zone"]
+                    + request.form["hemisphere"],
                     "observer": request.form["observer"],
                     "institution": request.form["institution"],
                     "notes": request.form["notes"],
                     "wkt_point": f"POINT({request.form['coord_east']} {request.form['coord_north']})",
-                    "srid": int(request.form["coord_zone"]) + (32600 if request.form["hemisphere"] == "N" else 32700),
+                    "srid": int(request.form["coord_zone"])
+                    + (32600 if request.form["hemisphere"] == "N" else 32700),
                 },
             )
 
@@ -886,7 +936,9 @@ def del_scat(scat_id):
     Delete scat
     """
     with fn.conn_alchemy().connect() as con:
-        con.execute(text("DELETE FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id})
+        con.execute(
+            text("DELETE FROM scats WHERE scat_id = :scat_id"), {"scat_id": scat_id}
+        )
 
     return redirect("/scats_list_limit/0/20")
 
@@ -922,34 +974,56 @@ def load_scats_xlsx():
     """
 
     if request.method == "GET":
-        return render_template("load_scats_xlsx.html", header_title="Load scats from XLSX/ODS file")
+        return render_template(
+            "load_scats_xlsx.html", header_title="Load scats from XLSX/ODS file"
+        )
 
     if request.method == "POST":
         new_file = request.files["new_file"]
 
         # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+        if (
+            pl.Path(new_file.filename).suffix.upper()
+            not in params["excel_allowed_extensions"]
+        ):
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
+                )
+            )
             return redirect("/load_scats_xlsx")
 
         try:
-            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            filename = str(uuid.uuid4()) + str(
+                pl.Path(new_file.filename).suffix.upper()
+            )
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
-            flash(fn.alert_danger("Error with the uploaded file") + f"({error_info(sys.exc_info())})")
+            flash(
+                fn.alert_danger("Error with the uploaded file")
+                + f"({error_info(sys.exc_info())})"
+            )
             return redirect("/load_scats_xlsx")
 
-        r, msg, all_data, _, _ = scats_import.extract_data_from_xlsx(filename)
+        r, msg, all_data, _, _ = scats_import.extract_data_from_spreadsheet(filename)
         if r:
-            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            flash(
+                Markup(f"File name: <b>{new_file.filename}</b>")
+                + Markup("<hr><br>")
+                + msg
+            )
             return redirect("/load_scats_xlsx")
 
         else:
             # check if scat_id already in DB
             with fn.conn_alchemy().connect() as con:
                 scats_list = "','".join([all_data[idx]["scat_id"] for idx in all_data])
-                sql = text(f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')")
-                scats_to_update = [row["scat_id"] for row in con.execute(sql).mappings().all()]
+                sql = text(
+                    f"SELECT scat_id FROM scats WHERE scat_id IN ('{scats_list}')"
+                )
+                scats_to_update = [
+                    row["scat_id"] for row in con.execute(sql).mappings().all()
+                ]
 
             return render_template(
                 "confirm_load_scats_xlsx.html",
@@ -971,8 +1045,9 @@ def confirm_load_xlsx(filename, mode):
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect("/load_scats_xlsx")
 
-    # all_paths, all_tracks return empty from extract_data_from_xlsx
-    r, msg, all_data, all_paths, all_tracks = scats_import.extract_data_from_xlsx(filename)
+    r, msg, all_data, all_paths, all_tracks = (
+        scats_import.extract_data_from_spreadsheet(filename)
+    )
 
     if r:
         flash(msg)
@@ -1010,11 +1085,30 @@ def confirm_load_xlsx(filename, mode):
                 ") "
                 "ON CONFLICT (scat_id) "
                 "DO UPDATE SET "
-                "date = EXCLUDED.date, wa_code = EXCLUDED.wa_code, sampling_season = EXCLUDED.sampling_season, sampling_type = EXCLUDED.sampling_type, path_id = EXCLUDED.path_id, snowtrack_id = EXCLUDED.snowtrack_id, "
-                "location = EXCLUDED.location, municipality = EXCLUDED.municipality, province = EXCLUDED.province, region = EXCLUDED.region, "
-                "deposition = EXCLUDED.deposition, matrix = EXCLUDED.matrix, collected_scat = EXCLUDED.collected_scat, scalp_category = EXCLUDED.scalp_category, genetic_sample = EXCLUDED.genetic_sample,"
-                "coord_east = EXCLUDED.coord_east, coord_north = EXCLUDED.coord_north, coord_zone = EXCLUDED.coord_zone, observer = EXCLUDED.observer, institution = EXCLUDED.institution, "
-                "geometry_utm = EXCLUDED.geometry_utm, notes = EXCLUDED.notes, sample_type = EXCLUDED.sample_type, box_number = EXCLUDED.box_number "
+                "date = CASE WHEN EXCLUDED.date IS NOT NULL THEN EXCLUDED.date ELSE scats.date END,"
+                "wa_code = CASE WHEN EXCLUDED.wa_code <> '' THEN EXCLUDED.wa_code ELSE scats.wa_code END,"
+                "sampling_season = CASE WHEN EXCLUDED.sampling_season <> '' THEN EXCLUDED.sampling_season ELSE scats.sampling_season END,"
+                "sampling_type = CASE WHEN EXCLUDED.sampling_type <> '' THEN EXCLUDED.sampling_type ELSE scats.sampling_type END,"
+                "path_id = CASE WHEN EXCLUDED.path_id <> '' THEN EXCLUDED.path_id ELSE scats.path_id END,"
+                "snowtrack_id = CASE WHEN EXCLUDED.snowtrack_id <> '' THEN EXCLUDED.snowtrack_id ELSE scats.snowtrack_id END,"
+                "location = CASE WHEN EXCLUDED.location <> '' THEN EXCLUDED.location ELSE scats.location END,"
+                "municipality = CASE WHEN EXCLUDED.municipality <> '' THEN EXCLUDED.municipality ELSE scats.municipality END,"
+                "province = CASE WHEN EXCLUDED.province <> '' THEN EXCLUDED.province ELSE scats.province END,"
+                "region = CASE WHEN EXCLUDED.region <> '' THEN EXCLUDED.region ELSE scats.region END,"
+                "deposition = CASE WHEN EXCLUDED.deposition <> '' THEN EXCLUDED.deposition ELSE scats.deposition END,"
+                "matrix = CASE WHEN EXCLUDED.matrix <> '' THEN EXCLUDED.matrix ELSE scats.matrix END,"
+                "collected_scat = CASE WHEN EXCLUDED.collected_scat <> '' THEN EXCLUDED.collected_scat ELSE scats.collected_scat END,"
+                "scalp_category = CASE WHEN EXCLUDED.scalp_category <> '' THEN EXCLUDED.scalp_category ELSE scats.scalp_category END,"
+                "genetic_sample = CASE WHEN EXCLUDED.genetic_sample <> '' THEN EXCLUDED.genetic_sample ELSE scats.genetic_sample END,"
+                "coord_east = CASE WHEN EXCLUDED.coord_east  IS NOT NULL  THEN EXCLUDED.coord_east ELSE scats.coord_east END,"
+                "coord_north = CASE WHEN EXCLUDED.coord_north  IS NOT NULL  THEN EXCLUDED.coord_north ELSE scats.coord_north END,"
+                "coord_zone = CASE WHEN EXCLUDED.coord_zone <> '' THEN EXCLUDED.coord_zone ELSE scats.coord_zone END,"
+                "observer = CASE WHEN EXCLUDED.observer <> '' THEN EXCLUDED.observer ELSE scats.observer END,"
+                "institution = CASE WHEN EXCLUDED.institution <> '' THEN EXCLUDED.institution ELSE scats.institution END,"
+                "geometry_utm = CASE WHEN EXCLUDED.geometry_utm <> '' THEN EXCLUDED.geometry_utm ELSE scats.geometry_utm END,"
+                "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE scats.notes END,"
+                "sample_type = CASE WHEN EXCLUDED.sample_type <> '' THEN EXCLUDED.sample_type ELSE scats.sample_type END,"
+                "box_number = CASE WHEN EXCLUDED.box_number <> '' THEN EXCLUDED.box_number ELSE scats.box_number END"
             )
 
             params = {
@@ -1051,7 +1145,10 @@ def confirm_load_xlsx(filename, mode):
             try:
                 con.execute(sql, params)
             except Exception:
-                return "An error occured during the loading of scats. Contact the administrator.<br>" + error_info(sys.exc_info())
+                return (
+                    "An error occured during the loading of scats. Contact the administrator.<br>"
+                    + error_info(sys.exc_info())
+                )
 
         con.execute(text("ALTER TABLE scats ENABLE TRIGGER ALL"))
 

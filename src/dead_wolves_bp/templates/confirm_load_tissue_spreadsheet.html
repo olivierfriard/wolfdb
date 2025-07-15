@@ -26,9 +26,12 @@
 <b>{{ tissues_to_update|count }}</b> are already present in the database (displayed with red background).<br>
 <br>
 
-<a href="/confirm_load_tissue_spreadsheet/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (tissue ID already present will be updated)</a>
+Note: During data insertion, existing records will only be updated with new values if those values are not empty.<br>
+<br>
 
-<a href="/confirm_load_tissue_spreadsheet/{{ filename }}/new"  class="btn btn-primary">Insert only new tissue ID</a>
+<a href="/confirm_load_tissue_spreadsheet/{{ filename }}/all"  class="btn btn-danger">Confirm insertion / update</a>
+
+<a href="/confirm_load_tissue_spreadsheet/{{ filename }}/new"  class="btn btn-danger">Insert only new tissue ID</a>
 
 <a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
 

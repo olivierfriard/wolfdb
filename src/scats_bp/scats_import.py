@@ -16,7 +16,7 @@ DEBUG = False
 params = config()
 
 
-def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
+def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict):
     """
     Extract and check data from a spreadsheet file (XLSX or ODS)
     """
@@ -29,14 +29,24 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
     out: str = ""
 
     try:
-        scats_df = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=0, engine=engine)
+        scats_df = pd.read_excel(
+            pl.Path(params["upload_folder"]) / pl.Path(filename),
+            sheet_name=0,
+            engine=engine,
+        )
     except Exception:
         if DEBUG:
             raise
         try:
             scats_df = pd.read_excel(filename, sheet_name=0, engine=engine)
         except Exception:
-            return True, fn.alert_danger("Error reading the file. Check your XLSX/ODS file"), {}, {}, {}
+            return (
+                True,
+                fn.alert_danger("Error reading the file. Check your XLSX/ODS file"),
+                {},
+                {},
+                {},
+            )
 
     required_columns = [
         "scat_id",
@@ -66,17 +76,35 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
     # check columns
     for column in required_columns:
         if column not in list(scats_df.columns):
-            return True, fn.alert_danger(Markup(f"Column <b>{column}</b> is missing")), {}, {}, {}
+            return (
+                True,
+                fn.alert_danger(Markup(f"Column <b>{column}</b> is missing")),
+                {},
+                {},
+                {},
+            )
 
     columns_list = list(scats_df.columns)
 
     # check if scat id are missing
     if scats_df["scat_id"].isnull().any():
-        return True, fn.alert_danger(f"{scats_df['scat_id'].isnull().sum()} scat id missing"), {}, {}, {}
+        return (
+            True,
+            fn.alert_danger(f"{scats_df['scat_id'].isnull().sum()} scat id missing"),
+            {},
+            {},
+            {},
+        )
 
     # check if date are missing
     if scats_df["date"].isnull().any():
-        return True, fn.alert_danger(f"{scats_df['date'].isnull().sum()} date missing"), {}, {}, {}
+        return (
+            True,
+            fn.alert_danger(f"{scats_df['date'].isnull().sum()} date missing"),
+            {},
+            {},
+            {},
+        )
 
     # check if sampling type are missing
     """
@@ -86,7 +114,7 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
 
     # check if coordinates are missing
     if scats_df["coord_east"].isnull().any() or scats_df["coord_north"].isnull().any():
-        return True, fn.alert_danger("coordinates missing"), {}, {}, {}
+        return True, fn.alert_danger("Some coordinates are missing"), {}, {}, {}
 
     # check if scat_id duplicated
     if scats_df["scat_id"].duplicated().any():
@@ -94,7 +122,9 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         return (
             True,
             fn.alert_danger(
-                Markup(f"Some scat_id are duplicated: <pre> {scats_df[si.isin(si[si.duplicated()])].sort_values('scat_id')}</pre>")
+                Markup(
+                    f"Some scat_id are duplicated: <pre> {scats_df[si.isin(si[si.duplicated()])].sort_values('scat_id')}</pre>"
+                )
             ),
             {},
             {},
@@ -137,14 +167,28 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         try:
             dt.datetime.strptime(date, "%Y-%m-%d")
         except Exception:
-            return True, fn.alert_danger(f"'{date}' is not a valid date at row {idx + 2} (check date format)"), {}, {}, {}
+            return (
+                True,
+                fn.alert_danger(
+                    f"'{date}' is not a valid date at row {idx + 2} (check date format)"
+                ),
+                {},
+                {},
+                {},
+            )
 
     # check province code
     for idx, province in enumerate(scats_df["province"]):
         if isinstance(province, int):
             province = f"{province:02}"
         if province not in fn.province_code_list():
-            return True, fn.alert_danger(f"Province '{province}' not found at row {idx + 2}"), {}, {}, {}
+            return (
+                True,
+                fn.alert_danger(f"Province '{province}' not found at row {idx + 2}"),
+                {},
+                {},
+                {},
+            )
 
     scats_data: dict = {}
     index = 0
@@ -192,8 +236,14 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
             data["path_id"] = None
 
         # check box number
-        if not isinstance(row["box_number"], float) and not isinstance(row["box_number"], int):
-            out += fn.alert_danger(Markup(f"Row {index + 2}: ERROR on box number <b>{row['box_number']}</b>. Must be an integer"))
+        if not isinstance(row["box_number"], float) and not isinstance(
+            row["box_number"], int
+        ):
+            out += fn.alert_danger(
+                Markup(
+                    f"Row {index + 2}: ERROR on box number <b>{row['box_number']}</b>. Must be an integer"
+                )
+            )
         else:
             if pd.isna(row["box_number"]):
                 data["box_number"] = None
@@ -208,7 +258,9 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         data["coord_zone"] = data["coord_zone"].upper().strip()
 
         if len(data["coord_zone"]) != 3:
-            out += fn.alert_danger(f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters")
+            out += fn.alert_danger(
+                f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters"
+            )
 
         hemisphere = data["coord_zone"][-1]
         if hemisphere not in ("S", "N"):
@@ -221,18 +273,26 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         try:
             zone = int(row["coord_zone"][:2])
         except Exception:
-            out += fn.alert_danger(Markup(f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"))
+            out += fn.alert_danger(
+                Markup(
+                    f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"
+                )
+            )
 
         # check if coordinates are OK
         try:
-            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere)
+            _ = utm.to_latlon(
+                int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere
+            )
         except Exception:
             out += fn.alert_danger(
                 f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]} Zone: {data["coord_zone"]}"'
             )
 
         srid = zone + (32600 if hemisphere == "N" else 32700)
-        data["geometry_utm"] = f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
+        data["geometry_utm"] = (
+            f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
+        )
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -277,7 +337,9 @@ def extract_data_from_xlsx(filename: str) -> (bool, str, dict, dict, dict):
         if data["matrix"] == "No":
             data["matrix"] = "No"
         if data["matrix"] not in ["Yes", "No", ""]:
-            out += fn.alert_danger(f"The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data['matrix']}")
+            out += fn.alert_danger(
+                f"The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data['matrix']}"
+            )
 
         # collected_scat
         data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()

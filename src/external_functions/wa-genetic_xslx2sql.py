@@ -326,8 +326,6 @@ for idx, row in genetic_df.iterrows():
                             file=sys.stderr,
                         )
 
-                    print(genotype_loci)
-
                     if (
                         genotype_loci["val"] != data[column]
                         and not (genotype_loci["val"] is None and data[column] == "-")

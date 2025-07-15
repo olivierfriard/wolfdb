@@ -2,12 +2,12 @@
 
 {% block content %}
 
-<script src="https://unpkg.com/htmx.org@1.6.0"></script>
 
 <main class="flex-shrink-0">
 
 <div class="container">
 
+  <h2>Upload scats from a spreadsheet file</h2>
 
 
 {% with messages = get_flashed_messages() %}
@@ -26,9 +26,13 @@
 <b>{{ n_scats_to_update|count }}</b> are already present in the database (displayed with red background).<br>
 <br>
 
-<a href="/confirm_load_xlsx/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (scat ID already presents will be updated)</a>
+Note: During data insertion, existing records will only be updated with new values if those values are not empty.<br>
+<br>
 
-<a href="/confirm_load_xlsx/{{ filename }}/new"  class="btn btn-primary">Insert only new scat ID</a>
+
+<a href="/confirm_load_xlsx/{{ filename }}/all"  class="btn btn-danger">Confirm insertion / update</a>
+
+<a href="/confirm_load_xlsx/{{ filename }}/new"  class="btn btn-danger">Insert only new scat ID</a>
 
 <a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
 
