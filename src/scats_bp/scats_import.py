@@ -122,9 +122,7 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
         return (
             True,
             fn.alert_danger(
-                Markup(
-                    f"Some scat_id are duplicated: <pre> {scats_df[si.isin(si[si.duplicated()])].sort_values('scat_id')}</pre>"
-                )
+                Markup(f"Some scat_id are duplicated: <pre> {scats_df[si.isin(si[si.duplicated()])].sort_values('scat_id')}</pre>")
             ),
             {},
             {},
@@ -169,9 +167,7 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
         except Exception:
             return (
                 True,
-                fn.alert_danger(
-                    f"'{date}' is not a valid date at row {idx + 2} (check date format)"
-                ),
+                fn.alert_danger(f"'{date}' is not a valid date at row {idx + 2} (check date format)"),
                 {},
                 {},
                 {},
@@ -236,6 +232,7 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
             data["path_id"] = None
 
         # check box number
+        """
         if not isinstance(row["box_number"], float) and not isinstance(
             row["box_number"], int
         ):
@@ -249,6 +246,11 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
                 data["box_number"] = None
             else:
                 data["box_number"] = int(row["box_number"])
+        """
+        if pd.isna(row["box_number"]):
+            data["box_number"] = None
+        else:
+            data["box_number"] = row["box_number"]
 
         # add region from province code
         data["region"] = fn.province_code2region(data["province"])
@@ -258,9 +260,7 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
         data["coord_zone"] = data["coord_zone"].upper().strip()
 
         if len(data["coord_zone"]) != 3:
-            out += fn.alert_danger(
-                f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters"
-            )
+            out += fn.alert_danger(f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters")
 
         hemisphere = data["coord_zone"][-1]
         if hemisphere not in ("S", "N"):
@@ -273,26 +273,18 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
         try:
             zone = int(row["coord_zone"][:2])
         except Exception:
-            out += fn.alert_danger(
-                Markup(
-                    f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"
-                )
-            )
+            out += fn.alert_danger(Markup(f"Row {index + 2}: Check the UTM coordinates zone <b>{data['coord_zone']}</b>"))
 
         # check if coordinates are OK
         try:
-            _ = utm.to_latlon(
-                int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere
-            )
+            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere)
         except Exception:
             out += fn.alert_danger(
                 f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]} Zone: {data["coord_zone"]}"'
             )
 
         srid = zone + (32600 if hemisphere == "N" else 32700)
-        data["geometry_utm"] = (
-            f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
-        )
+        data["geometry_utm"] = f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -337,9 +329,7 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
         if data["matrix"] == "No":
             data["matrix"] = "No"
         if data["matrix"] not in ["Yes", "No", ""]:
-            out += fn.alert_danger(
-                f"The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data['matrix']}"
-            )
+            out += fn.alert_danger(f"The matrix value must be <b>Yes</b> or <b>No</b> or empty at row {index + 2}: found {data['matrix']}")
 
         # collected_scat
         data["collected_scat"] = str(data["collected_scat"]).capitalize().strip()
