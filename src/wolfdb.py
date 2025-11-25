@@ -19,6 +19,7 @@ import logging
 import secrets
 import datetime
 import pathlib as pl
+import urllib.request
 
 # blueprints
 import google_auth
@@ -32,7 +33,7 @@ from dead_wolves_bp import dead_wolves
 from admin_bp import admin
 from analysis_bp import analysis
 
-__version__ = "2024-04-11"
+__version__ = "2025-11-25"
 
 DEFAULT_START_DATE = "1990-01-01"
 DEFAULT_END_DATE = "2030-12-31"
@@ -101,7 +102,12 @@ def home():
 
 @app.route("/version")
 def version():
-    return __version__
+    try:
+        external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+    except Exception:
+        external_ip = 'Not found'
+
+    return f"v. {__version__}<br>IP server: {external_ip}"
 
 
 @app.route("/settings", methods=("GET", "POST"))
