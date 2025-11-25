@@ -82,8 +82,8 @@ def view_track(snowtrack_id):
                             "ELSE t.scalp_category "
                             "END, "
                             "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson, "
-                            "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                            "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
+                            #"ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                            #"ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
                             "ROUND(ST_Length(multilines)) AS track_length "
                             "FROM snow_tracks t WHERE snowtrack_id = :track_id"
                         )
