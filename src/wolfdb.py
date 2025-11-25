@@ -103,7 +103,7 @@ def home():
 @app.route("/version")
 def version():
     try:
-        external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+        external_ip = urllib.request.urlopen('https://v4.ident.me').read().decode('utf8')
     except Exception:
         external_ip = 'Not found'
 
