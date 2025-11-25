@@ -50,12 +50,12 @@ def get_connection():
 
 def conn_alchemy():
     return create_engine(
-        f"postgresql+psycopg://{params['user']}:{params['password']}@{params['host']}:5432/{params['database']}",
+        f"postgresql+psycopg://{params['user']}@{params['host']}:5432/{params['database']}",
         isolation_level="AUTOCOMMIT",
     )
 
 
-def error_info(exc_info: tuple) -> tuple:
+def error_info(exc_info: tuple) -> str:
     """
     return details about error
     usage: error_info(sys.exc_info())
