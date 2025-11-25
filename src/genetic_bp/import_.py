@@ -31,9 +31,17 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
         engine = "odf"
 
     try:
-        df = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=0, engine=engine)
+        df = pd.read_excel(
+            pl.Path(params["upload_folder"]) / pl.Path(filename),
+            sheet_name=0,
+            engine=engine,
+        )
     except Exception:
-        return True, fn.alert_danger("Error reading the file. Check your XLSX/ODS file"), {}
+        return (
+            True,
+            fn.alert_danger("Error reading the file. Check your XLSX/ODS file"),
+            {},
+        )
 
     # convert all dataframe columns to upper
     df.columns = [x.upper() for x in df.columns]
@@ -79,13 +87,21 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
             else:
                 # check if value present for mandatory column
 
-                if col_up in [x.upper() for x in mandatory_columns] and str(row[col_up]) in ("nan", "NaT"):
+                if col_up in [x.upper() for x in mandatory_columns] and str(
+                    row[col_up]
+                ) in ("nan", "NaT"):
                     problems.append(f"Row {index + 2}: the {column} value is mandatory")
 
-                value = "" if str(row[col_up]).strip() in ("nan", "NaT") else str(row[col_up]).strip()
+                value = (
+                    ""
+                    if str(row[col_up]).strip() in ("nan", "NaT")
+                    else str(row[col_up]).strip()
+                )
                 if column in accepted_values:
                     if value not in accepted_values[column]:
-                        problems.append(f"Row {index + 2}: the value for {column} must be {' or '.join(accepted_values[column])}")
+                        problems.append(
+                            f"Row {index + 2}: the value for {column} must be {' or '.join(accepted_values[column])}"
+                        )
 
                 data[column] = value
 
@@ -115,7 +131,10 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
                         problems.append(
                             f"For <b>{data['genotype_id']}</b> the value for allele <b>b</b> for locus <b>{locus}</b> cannot be empty (choose 0 or -)"
                         )
-                    if test_nan(row[locus + ".1"]) or str(row[locus + ".1"]).strip() == "-":
+                    if (
+                        test_nan(row[locus + ".1"])
+                        or str(row[locus + ".1"]).strip() == "-"
+                    ):
                         loci_dict[locus]["b"] = None
                     else:
                         try:
@@ -131,7 +150,11 @@ def extract_genotypes_data_from_xlsx(filename, loci_list):
         all_data[index] = {**data, **loci_dict}
 
     if problems:
-        return True, fn.alert_danger(f"Check the input file!<br><br>{'<br>'.join(problems)}"), {}
+        return (
+            True,
+            fn.alert_danger(f"Check the input file!<br><br>{'<br>'.join(problems)}"),
+            {},
+        )
 
     return 0, "OK", all_data
 
@@ -197,8 +220,12 @@ def import_definitive_genotypes(filename):
     with fn.conn_alchemy().connect() as con:
         # check if genotype_id already in DB
         genotypes_list = "','".join([data[idx]["genotype_id"] for idx in data])
-        sql = text(f"SELECT genotype_id FROM genotypes WHERE genotype_id IN ('{genotypes_list}')")
-        genotypes_to_update = [row["genotype_id"] for row in con.execute(sql).mappings().all()]
+        sql = text(
+            f"SELECT genotype_id FROM genotypes WHERE genotype_id IN ('{genotypes_list}')"
+        )
+        genotypes_to_update = [
+            row["genotype_id"] for row in con.execute(sql).mappings().all()
+        ]
 
         for idx in data:
             values = dict(data[idx])
@@ -215,10 +242,17 @@ def import_definitive_genotypes(filename):
                     if not values[field]:
                         continue
 
-                    print(f"UPDATE genotypes SET {field} = '{values[field]}' WHERE genotype_id = '{values["genotype_id"]}'")
+                    print(
+                        f"UPDATE genotypes SET {field} = '{values[field]}' WHERE genotype_id = '{values['genotype_id']}'"
+                    )
 
-                    sql = text(f"UPDATE genotypes SET {field} = :value WHERE genotype_id = :genotype_id_")
-                    con.execute(sql, {"value": values[field], "genotype_id_": values["genotype_id"]})
+                    sql = text(
+                        f"UPDATE genotypes SET {field} = :value WHERE genotype_id = :genotype_id_"
+                    )
+                    con.execute(
+                        sql,
+                        {"value": values[field], "genotype_id_": values["genotype_id"]},
+                    )
 
             else:  # insert new
                 con.execute(insert_sql, values)
@@ -231,11 +265,22 @@ def import_definitive_genotypes(filename):
                 for allele in ("a", "b"):
                     if allele in values[locus]:
                         con.execute(
-                            sql_loci, {"genotype_id": values["genotype_id"], "locus": locus, "allele": allele, "val": values[locus][allele]}
+                            sql_loci,
+                            {
+                                "genotype_id": values["genotype_id"],
+                                "locus": locus,
+                                "allele": allele,
+                                "val": values[locus][allele],
+                            },
                         )
 
             # update redis
-            rdis.set(values["genotype_id"], json.dumps(fn.get_genotype_loci_values(values["genotype_id"], loci_list)))
+            rdis.set(
+                values["genotype_id"],
+                json.dumps(
+                    fn.get_genotype_loci_values(values["genotype_id"], loci_list)
+                ),
+            )
 
         con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
         con.execute(text("REFRESH MATERIALIZED VIEW wa_genetic_samples_mat"))

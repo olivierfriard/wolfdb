@@ -32,7 +32,10 @@ cursor.execute(
 )
 scats = cursor.fetchall()
 for row in scats:
-    print(f"scat ID: {row['scat_id']}, Coordinates UTM: {row['x']}, {row['y']}", file=sys.stderr)
+    print(
+        f"scat ID: {row['scat_id']}, Coordinates UTM: {row['x']}, {row['y']}",
+        file=sys.stderr,
+    )
 
     r = db.search(Row.xy == f"{row['x']} {row['y']}")
     # print(r)
@@ -68,11 +71,26 @@ for row in scats:
             # raise
         # print(d, file=sys.stderr)
 
-    print(d["region"], d["province_code"], d["municipality"], d["location"], file=sys.stderr)
+    print(
+        d["region"],
+        d["province_code"],
+        d["municipality"],
+        d["location"],
+        file=sys.stderr,
+    )
 
     sql = "UPDATE scats SET region_auto = %s, province_auto = %s, municipality_auto = %s, location_auto = %s WHERE scat_id = %s; "
 
-    out = cursor.mogrify(sql, [d["region"], d["province_code"], d["municipality"], d["location"], row["scat_id"]])
+    out = cursor.mogrify(
+        sql,
+        [
+            d["region"],
+            d["province_code"],
+            d["municipality"],
+            d["location"],
+            row["scat_id"],
+        ],
+    )
 
     print(out.decode("utf-8"))
 

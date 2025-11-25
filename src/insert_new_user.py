@@ -11,11 +11,12 @@ fn = sys.argv[2].replace("'", "''")
 ln = sys.argv[3].replace("'", "''")
 institution = sys.argv[4].replace("'", "''")
 
-passwd_sha256 = generate_password_hash(sys.argv[5], method='sha256')
+passwd_sha256 = generate_password_hash(sys.argv[5], method="sha256")
 
-out = ("insert into users (email, firstname, lastname, institution, password) "
- f"VALUES ('{email}', '{fn}', '{ln}', '{institution}', "
- f"'{passwd_sha256}');"
+out = (
+    "insert into users (email, firstname, lastname, institution, password) "
+    f"VALUES ('{email}', '{fn}', '{ln}', '{institution}', "
+    f"'{passwd_sha256}');"
 )
 
 print(f"\n{out}\n")

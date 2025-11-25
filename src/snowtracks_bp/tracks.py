@@ -23,7 +23,9 @@ import time
 from sqlalchemy import text
 
 
-app = flask.Blueprint("tracks", __name__, template_folder="templates", static_url_path="/static")
+app = flask.Blueprint(
+    "tracks", __name__, template_folder="templates", static_url_path="/static"
+)
 
 params = config()
 app.debug = params["debug"]
@@ -82,8 +84,8 @@ def view_track(snowtrack_id):
                             "ELSE t.scalp_category "
                             "END, "
                             "ST_AsGeoJSON(st_transform(multilines, 4326)) AS track_geojson, "
-                            #"ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                            #"ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
+                            # "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                            # "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude, "
                             "ROUND(ST_Length(multilines)) AS track_length "
                             "FROM snow_tracks t WHERE snowtrack_id = :track_id"
                         )
@@ -245,7 +247,12 @@ def tracks_list():
         # count tracks
         n_tracks = len(results)
 
-        return render_template("tracks_list.html", header_title="Tracks list", n_tracks=n_tracks, results=results)
+        return render_template(
+            "tracks_list.html",
+            header_title="Tracks list",
+            n_tracks=n_tracks,
+            results=results,
+        )
 
 
 @app.route("/plot_tracks")
@@ -386,28 +393,38 @@ def new_track():
                 # check if track already exists
                 rows = (
                     con.execute(
-                        text("SELECT snowtrack_id FROM snow_tracks WHERE UPPER(snowtrack_id) = UPPER(:track_id)"),
+                        text(
+                            "SELECT snowtrack_id FROM snow_tracks WHERE UPPER(snowtrack_id) = UPPER(:track_id)"
+                        ),
                         {"track_id": request.form["snowtrack_id"]},
                     )
                     .mappings()
                     .all()
                 )
                 if len(rows):
-                    return not_valid(f"The track ID {request.form['snowtrack_id']} already exists")
+                    return not_valid(
+                        f"The track ID {request.form['snowtrack_id']} already exists"
+                    )
 
                 # check sampling type
                 if request.form["sampling_type"] == "":
-                    return not_valid("You must select a sampling type (Systematic or Opportunistic)")
+                    return not_valid(
+                        "You must select a sampling type (Systematic or Opportunistic)"
+                    )
 
                 # check transect ID
                 if request.form["sampling_type"] == "Systematic":
                     if request.form["transect_id"] == "":
-                        return not_valid("You must specify a transect ID for a systematic sampling")
+                        return not_valid(
+                            "You must specify a transect ID for a systematic sampling"
+                        )
                     all_transects = fn.all_transect_id()
                     transects_id = request.form["transect_id"].upper().replace(" ", "")
                     for transect_id in transects_id.split(";"):
                         if transect_id not in all_transects:
-                            return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
+                            return not_valid(
+                                f"The transect ID <b>{transect_id}</b> is not in the database"
+                            )
 
                 if request.form["sampling_type"] == "Opportunistic":
                     transects_id = ""
@@ -421,7 +438,9 @@ def new_track():
                     try:
                         dt.datetime.strptime(date, "%Y-%m-%d")
                     except Exception:
-                        return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
+                        return not_valid(
+                            "The date of the track ID is not valid. Use the YYMMDD format"
+                        )
                 except Exception:
                     return not_valid("The track ID value is not correct")
 
@@ -467,7 +486,9 @@ def new_track():
                         "sampling_type": request.form["sampling_type"],
                         "track_type": request.form["track_type"],
                         "days_after_snowfall": request.form["days_after_snowfall"],
-                        "minimum_number_of_wolves": request.form["minimum_number_of_wolves"],
+                        "minimum_number_of_wolves": request.form[
+                            "minimum_number_of_wolves"
+                        ],
                         "track_format": request.form["track_format"],
                         "notes": request.form["notes"],
                     },
@@ -475,7 +496,9 @@ def new_track():
 
                 return redirect("/snowtracks_list")
         else:
-            return not_valid("Some values are not set or are wrong. Please check and submit again")
+            return not_valid(
+                "Some values are not set or are wrong. Please check and submit again"
+            )
 
 
 @app.route("/edit_snowtrack/<track_id>", methods=("GET", "POST"))
@@ -505,7 +528,9 @@ def edit_track(track_id):
         with fn.conn_alchemy().connect() as con:
             default_val = (
                 con.execute(
-                    text("SELECT *, ST_AsText(multilines) AS multilines  FROM snow_tracks WHERE snowtrack_id = :track_id"),
+                    text(
+                        "SELECT *, ST_AsText(multilines) AS multilines  FROM snow_tracks WHERE snowtrack_id = :track_id"
+                    ),
                     {"track_id": track_id},
                 )
                 .mappings()
@@ -566,24 +591,32 @@ def edit_track(track_id):
                 if request.form["snowtrack_id"] != track_id:
                     rows = (
                         con.execute(
-                            text("SELECT snowtrack_id FROM snow_tracks WHERE UPPER(snowtrack_id) = UPPER(:track_id)"),
+                            text(
+                                "SELECT snowtrack_id FROM snow_tracks WHERE UPPER(snowtrack_id) = UPPER(:track_id)"
+                            ),
                             {"track_id": request.form["snowtrack_id"]},
                         )
                         .mappings()
                         .all()
                     )
                     if len(rows):
-                        return not_valid(f"The snowtrack ID {request.form['snowtrack_id']} already exists")
+                        return not_valid(
+                            f"The snowtrack ID {request.form['snowtrack_id']} already exists"
+                        )
 
             # check transect ID
             if request.form["sampling_type"] == "Systematic":
                 if request.form["transect_id"] == "":
-                    return not_valid("You must specify a transect ID for a systematic sampling")
+                    return not_valid(
+                        "You must specify a transect ID for a systematic sampling"
+                    )
                 all_transects = fn.all_transect_id()
                 transects_id = request.form["transect_id"].upper().replace(" ", "")
                 for transect_id in transects_id.split(";"):
                     if transect_id not in all_transects:
-                        return not_valid(f"The transect ID <b>{transect_id}</b> is not in the database")
+                        return not_valid(
+                            f"The transect ID <b>{transect_id}</b> is not in the database"
+                        )
 
             else:
                 transects_id = ""
@@ -597,7 +630,9 @@ def edit_track(track_id):
                 try:
                     dt.datetime.strptime(date, "%Y-%m-%d")
                 except Exception:
-                    return not_valid("The date of the track ID is not valid. Use the YYMMDD format")
+                    return not_valid(
+                        "The date of the track ID is not valid. Use the YYMMDD format"
+                    )
 
             except Exception:
                 return not_valid("The track ID value is not correct")
@@ -657,7 +692,9 @@ def edit_track(track_id):
                         "scalp_category": request.form["scalp_category"],
                         "sampling_type": request.form["sampling_type"],
                         "days_after_snowfall": request.form["days_after_snowfall"],
-                        "minimum_number_of_wolves": request.form["minimum_number_of_wolves"],
+                        "minimum_number_of_wolves": request.form[
+                            "minimum_number_of_wolves"
+                        ],
                         "track_format": request.form["track_format"],
                         "notes": request.form["notes"],
                         "track_id": track_id,
@@ -681,7 +718,9 @@ def edit_track(track_id):
 
             return redirect(f"/view_snowtrack/{track_id}")
         else:
-            return not_valid("Some values are not set or are wrong. Please check and submit again")
+            return not_valid(
+                "Some values are not set or are wrong. Please check and submit again"
+            )
 
 
 @app.route("/del_snowtrack/<track_id>")
@@ -691,7 +730,10 @@ def del_snowtrack(track_id):
     Delete the track from table
     """
     with fn.conn_alchemy().connect() as con:
-        con.execute(text("DELETE FROM snow_tracks WHERE snowtrack_id = :track_id"), {"track_id": track_id})
+        con.execute(
+            text("DELETE FROM snow_tracks WHERE snowtrack_id = :track_id"),
+            {"track_id": track_id},
+        )
     return redirect("/snowtracks_list")
 
 
@@ -708,18 +750,29 @@ def load_tracks_xlsx():
     load tracks from xlsx file into DB
     """
     if request.method == "GET":
-        return render_template("load_tracks_xlsx.html", header_title="Load tracks from XLSX/ODS")
+        return render_template(
+            "load_tracks_xlsx.html", header_title="Load tracks from XLSX/ODS"
+        )
 
     if request.method == "POST":
         new_file = request.files["new_file"]
 
         # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+        if (
+            pl.Path(new_file.filename).suffix.upper()
+            not in params["excel_allowed_extensions"]
+        ):
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
+                )
+            )
             return redirect("/load_tracks_xlsx")
 
         try:
-            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            filename = str(uuid.uuid4()) + str(
+                pl.Path(new_file.filename).suffix.upper()
+            )
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
@@ -727,16 +780,26 @@ def load_tracks_xlsx():
 
         r, msg, tracks_data = tracks_import.extract_data_from_tracks_xlsx(filename)
         if r:
-            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            flash(
+                Markup(f"File name: <b>{new_file.filename}</b>")
+                + Markup("<hr><br>")
+                + msg
+            )
             return redirect("/load_tracks_xlsx")
 
         # check if scat_id already in DB
 
         with fn.conn_alchemy().connect() as con:
-            tracks_list = "','".join([tracks_data[idx]["snowtrack_id"] for idx in tracks_data])
-            sql = text(f"SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id IN ('{tracks_list}')")
+            tracks_list = "','".join(
+                [tracks_data[idx]["snowtrack_id"] for idx in tracks_data]
+            )
+            sql = text(
+                f"SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id IN ('{tracks_list}')"
+            )
 
-            tracks_to_update = [row["snowtrack_id"] for row in con.execute(sql).mappings().all()]
+            tracks_to_update = [
+                row["snowtrack_id"] for row in con.execute(sql).mappings().all()
+            ]
 
         return render_template(
             "confirm_load_tracks_xlsx.html",
@@ -766,9 +829,13 @@ def confirm_load_tracks_xlsx(filename, mode):
     with fn.conn_alchemy().connect() as con:
         # check if scat_id already in DB
         tracks_list = "','".join([all_data[idx]["snowtrack_id"] for idx in all_data])
-        sql = text(f"SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id IN ('{tracks_list}')")
+        sql = text(
+            f"SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id IN ('{tracks_list}')"
+        )
 
-        tracks_to_update = [row["snowtrack_id"] for row in con.execute(sql).mappings().all()]
+        tracks_to_update = [
+            row["snowtrack_id"] for row in con.execute(sql).mappings().all()
+        ]
 
         sql = text(
             "UPDATE snow_tracks SET "
@@ -861,7 +928,10 @@ def confirm_load_tracks_xlsx(filename, mode):
                     },
                 )
             except Exception:
-                return "An error occured during the import of tracks. Contact the administrator.<br>" + error_info(sys.exc_info())
+                return (
+                    "An error occured during the import of tracks. Contact the administrator.<br>"
+                    + error_info(sys.exc_info())
+                )
 
     msg = f"XLSX/ODS file successfully loaded. {count_added} tracks added, {count_updated} tracks updated."
     flash(fn.alert_success(msg))
@@ -878,7 +948,9 @@ def export_tracks():
     with fn.conn_alchemy().connect() as con:
         file_content = tracks_export.export_tracks(
             con.execute(
-                text("SELECT * FROM snow_tracks WHERE date BETWEEN :start_date AND :end_date OR date is NULL ORDER BY snowtrack_id ASC "),
+                text(
+                    "SELECT * FROM snow_tracks WHERE date BETWEEN :start_date AND :end_date OR date is NULL ORDER BY snowtrack_id ASC "
+                ),
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
@@ -889,8 +961,12 @@ def export_tracks():
         )
 
     response = make_response(file_content, 200)
-    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = f"attachment; filename=tracks_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    response.headers["Content-type"] = (
+        "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response.headers["Content-disposition"] = (
+        f"attachment; filename=tracks_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    )
 
     return response
 
@@ -910,7 +986,9 @@ def export_tracks_shapefile():
     time_stamp = f"{dt.datetime.now():%Y-%m-%d_%H%M%S}"
 
     zip_path = tracks_export.export_shapefile(
-        f"{params['temp_folder']}/tracks_{time_stamp}", f"static/tracks_{time_stamp}", "/tmp/tracks_shapefile.log"
+        f"{params['temp_folder']}/tracks_{time_stamp}",
+        f"static/tracks_{time_stamp}",
+        "/tmp/tracks_shapefile.log",
     )
 
     zip_file_name = pl.Path(zip_path).name

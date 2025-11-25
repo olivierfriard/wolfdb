@@ -46,7 +46,6 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
 
     crs = int(shapes.crs["init"].replace("epsg:", ""))
     for shape in shapes:
-
         id = shape["id"]
 
         data[id] = {}
@@ -73,7 +72,6 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
         n_transects[id] = len(transects) if transects is not None else 0
 
         for transect in transects:
-
             transect_geojson = json.loads(transect["transect_geojson"])
 
             cursor.execute(
@@ -102,7 +100,9 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
                 scat = cursor.fetchone()
                 data[id][path_date] += scat["count"]
 
-                completeness = path["completeness"] if path["completeness"] is not None else 100
+                completeness = (
+                    path["completeness"] if path["completeness"] is not None else 100
+                )
 
                 tot_dist = 0
                 for idx, point in enumerate(transect_geojson["coordinates"][0]):
@@ -110,11 +110,15 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
                         continue
                     d = (
                         (point[0] - transect_geojson["coordinates"][0][idx - 1][0]) ** 2
-                        + (point[1] - transect_geojson["coordinates"][0][idx - 1][1]) ** 2
+                        + (point[1] - transect_geojson["coordinates"][0][idx - 1][1])
+                        ** 2
                     ) ** 0.5
                     tot_dist += d
 
-                    if round((tot_dist / transect["transect_length"]) * 100) >= completeness:
+                    if (
+                        round((tot_dist / transect["transect_length"]) * 100)
+                        >= completeness
+                    ):
                         break
 
                 path_date = f"{path['date']:%Y-%m-%d}"
@@ -130,7 +134,7 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
 
     max_paths_number = max([len(data[id]) for id in data])
 
-    header += f"{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number))+1}}' for x in range(1, max_paths_number + 1)])}\n"
+    header += f"{sep.join([f'{year_init}-{x:0{int(math.log10(max_paths_number)) + 1}}' for x in range(1, max_paths_number + 1)])}\n"
 
     out_number, out_presence, out_dates, out_distances = header, header, header, header
 
@@ -139,10 +143,12 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
         # properties
         for property in shapes[int(id)]["properties"]:
             out_number += f"{shapes[int(id)]['properties'][property]}{sep}"
-        out_number += f"{sep.join([str(data[id][date]) for date in sorted(data[id].keys())])}"
+        out_number += (
+            f"{sep.join([str(data[id][date]) for date in sorted(data[id].keys())])}"
+        )
         if len(data[id]):
             out_number += sep
-        out_number += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
+        out_number += f"{sep.join(['NA'] * (max_paths_number - len(data[id])))}\n"
 
         out_presence += f"{id}{sep}"
         # properties
@@ -151,7 +157,7 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
         out_presence += f"{sep.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}"
         if len(data[id]):
             out_presence += sep
-        out_presence += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
+        out_presence += f"{sep.join(['NA'] * (max_paths_number - len(data[id])))}\n"
 
         out_dates += f"{id}{sep}"
         # properties
@@ -160,7 +166,7 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
         out_dates += f"{sep.join([date for date in sorted(data[id].keys())])}"
         if len(data[id]):
             out_dates += sep
-        out_dates += f"{sep.join(['NA'] * (max_paths_number - len(data[id])) )}\n"
+        out_dates += f"{sep.join(['NA'] * (max_paths_number - len(data[id])))}\n"
 
     for id in distances:
         out_distances += f"{id}{sep}"
@@ -170,7 +176,9 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
         out_distances += f"{sep.join([str(round(distances[id][date])) for date in sorted(distances[id].keys())])}"
         if len(distances[id]):
             out_distances += sep
-        out_distances += f"{sep.join(['NA'] * (max_paths_number - len(distances[id])) )}\n"
+        out_distances += (
+            f"{sep.join(['NA'] * (max_paths_number - len(distances[id])))}\n"
+        )
 
     # remove directory containing shapefile
     pl.Path(shp_path).parent
@@ -189,12 +197,17 @@ def get_cell_occupancy(shp_path: str, start_date: str, end_date: str, output_pat
 
 if __name__ == "__main__":
     result, msg = get_cell_occupancy(
-        shp_path=sys.argv[1], start_date=sys.argv[2], end_date=sys.argv[3], output_path=sys.argv[4]
+        shp_path=sys.argv[1],
+        start_date=sys.argv[2],
+        end_date=sys.argv[3],
+        output_path=sys.argv[4],
     )
     if result:
         with open(
             pl.Path(params["temp_folder"])
-            / pl.Path(f"cell_occupancy__from_{sys.argv[2]}_to_{sys.argv[3]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log"),
+            / pl.Path(
+                f"cell_occupancy__from_{sys.argv[2]}_to_{sys.argv[3]}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.log"
+            ),
             "w",
         ) as f_out:
             f_out.write(msg + "\n")

@@ -141,9 +141,9 @@ def view_transect(transect_id):
                 "properties": {
                     # "style": {"color": color, "fillColor": color },
                     "popupContent": (
-                        f"""Scat ID: <a href="/view_scat/{row['scat_id']}" target="_blank">{row['scat_id']}</a><br>"""
-                        f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>"""
-                        f"""Genotype ID: {row['genotype_id2']}"""
+                        f"""Scat ID: <a href="/view_scat/{row["scat_id"]}" target="_blank">{row["scat_id"]}</a><br>"""
+                        f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+                        f"""Genotype ID: {row["genotype_id2"]}"""
                     ),
                 },
                 "id": row["scat_id"],
@@ -184,7 +184,7 @@ def view_transect(transect_id):
                     "type": "Feature",
                     "properties": {
                         "popupContent": (
-                            f"""Track ID: <a href="/view_snowtrack/{row['snowtrack_id']}" target="_blank">{row['snowtrack_id']}</a><br>"""
+                            f"""Track ID: <a href="/view_snowtrack/{row["snowtrack_id"]}" target="_blank">{row["snowtrack_id"]}</a><br>"""
                         ),
                     },
                     "id": row["snowtrack_id"],
@@ -224,9 +224,18 @@ def view_transect(transect_id):
 def transects_list():
     # get all transects
     with fn.conn_alchemy().connect() as con:
-        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
+        transects = (
+            con.execute(text("SELECT * FROM transects ORDER BY transect_id"))
+            .mappings()
+            .all()
+        )
 
-        return render_template("transects_list.html", header_title="List of transects", n_transects=len(transects), results=transects)
+        return render_template(
+            "transects_list.html",
+            header_title="List of transects",
+            n_transects=len(transects),
+            results=transects,
+        )
 
 
 @app.route("/export_transects")
@@ -237,11 +246,19 @@ def export_transects():
     """
 
     with fn.conn_alchemy().connect() as con:
-        file_content = transects_export.export_transects(con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all())
+        file_content = transects_export.export_transects(
+            con.execute(text("SELECT * FROM transects ORDER BY transect_id"))
+            .mappings()
+            .all()
+        )
 
         response = make_response(file_content, 200)
-        response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-disposition"] = f"attachment; filename=transects_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        response.headers["Content-type"] = (
+            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response.headers["Content-disposition"] = (
+            f"attachment; filename=transects_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        )
 
         return response
 
@@ -289,19 +306,25 @@ def new_transect():
                 # check if transect_id already exists
                 rows = (
                     con.execute(
-                        text("SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(:transect_id)"),
+                        text(
+                            "SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(:transect_id)"
+                        ),
                         {"transect_id": request.form["transect_id"]},
                     )
                     .mappings()
                     .all()
                 )
                 if len(rows):
-                    return not_valid(f"The transect ID {request.form['transect_id']} already exists")
+                    return not_valid(
+                        f"The transect ID {request.form['transect_id']} already exists"
+                    )
 
                 # check province code
                 row = (
                     con.execute(
-                        text("SELECT * FROM geo_info WHERE province_code = :province_code"),
+                        text(
+                            "SELECT * FROM geo_info WHERE province_code = :province_code"
+                        ),
                         {"province_code": request.form["province_code"].upper()},
                     )
                     .mappings()
@@ -408,18 +431,24 @@ def edit_transect(transect_id):
                 if request.form["transect_id"] != transect_id:
                     if len(
                         con.execute(
-                            text("SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(:transect_id)"),
+                            text(
+                                "SELECT transect_id FROM transects WHERE UPPER(transect_id) = UPPER(:transect_id)"
+                            ),
                             {"transect_id": request.form["transect_id"]},
                         )
                         .mappings()
                         .all()
                     ):
-                        return not_valid(f"The transect ID {request.form['transect_id']} already exists")
+                        return not_valid(
+                            f"The transect ID {request.form['transect_id']} already exists"
+                        )
 
                 # extract province name and region
                 row = (
                     con.execute(
-                        text("SELECT * FROM geo_info WHERE province_code = :province_code"),
+                        text(
+                            "SELECT * FROM geo_info WHERE province_code = :province_code"
+                        ),
                         {"province_code": request.form["province_code"].upper()},
                     )
                     .mappings()
@@ -449,7 +478,9 @@ def edit_transect(transect_id):
                     sql,
                     {
                         "_new_transect_id": request.form["transect_id"].strip(),
-                        "sector": request.form["sector"] if request.form["sector"] else None,
+                        "sector": request.form["sector"]
+                        if request.form["sector"]
+                        else None,
                         "location": request.form["location"].strip(),
                         "municipality": request.form["municipality"].strip(),
                         "province": transect_province_name,
@@ -486,14 +517,22 @@ def del_transect(transect_id):
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
         result = (
-            con.execute(text("SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = :transect_id"), {"transect_id": transect_id})
+            con.execute(
+                text(
+                    "SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = :transect_id"
+                ),
+                {"transect_id": transect_id},
+            )
             .mappings()
             .all()
         )
         if result["n_paths"] > 0:
             return "Some paths are based on this transect. Please remove them before"
 
-        con.execute("DELETE FROM transects WHERE transect_id = :transect_id", {"transect_id": transect_id})
+        con.execute(
+            "DELETE FROM transects WHERE transect_id = :transect_id",
+            {"transect_id": transect_id},
+        )
         return redirect("/transects_list")
 
 
@@ -511,7 +550,11 @@ def plot_transects():
         count_transects: int = 0
 
         for row in (
-            con.execute(text("SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects"))
+            con.execute(
+                text(
+                    "SELECT transect_id, ST_AsGeoJSON(st_transform(multilines, 4326)) AS transect_lonlat FROM transects"
+                )
+            )
             .mappings()
             .all()
         ):
@@ -531,7 +574,7 @@ def plot_transects():
                     "geometry": dict(transect_geojson),
                     "type": "Feature",
                     "properties": {
-                        "popupContent": f"""Transect ID: <a href="/view_transect/{row['transect_id']}" target="_blank">{row['transect_id']}</a>"""
+                        "popupContent": f"""Transect ID: <a href="/view_transect/{row["transect_id"]}" target="_blank">{row["transect_id"]}</a>"""
                     },
                     "id": row["transect_id"],
                 }
@@ -564,7 +607,13 @@ def plot_transects():
 def transects_analysis():
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
-        transects = con.execute(text("SELECT * FROM transects ORDER BY region, province, transect_id")).mappings().all()
+        transects = (
+            con.execute(
+                text("SELECT * FROM transects ORDER BY region, province, transect_id")
+            )
+            .mappings()
+            .all()
+        )
 
         out = """<style>    table{    border-width: 0 0 1px 1px;    border-style: solid;} td{    border-width: 1px 1px 0 0;    border-style: solid;    margin: 0;    }</style>    """
 
@@ -586,7 +635,12 @@ def transects_analysis():
             completeness_list = {}
 
             for row_path in (
-                con.execute(text("SELECT * FROM paths WHERE transect_id = :transect_id"), {"transect_id": transect_id}).mappings().all()
+                con.execute(
+                    text("SELECT * FROM paths WHERE transect_id = :transect_id"),
+                    {"transect_id": transect_id},
+                )
+                .mappings()
+                .all()
             ):
                 # add date of path
                 path_date = str(row_path["date"])
@@ -603,7 +657,12 @@ def transects_analysis():
                 completeness_list[path_month].append(path_completeness)
 
                 for row_scat in (
-                    con.execute(text("SELECT * FROM scats WHERE path_id = :path_id "), {"path_id": row_path["path_id"]}).mappings().all()
+                    con.execute(
+                        text("SELECT * FROM scats WHERE path_id = :path_id "),
+                        {"path_id": row_path["path_id"]},
+                    )
+                    .mappings()
+                    .all()
                 ):
                     month = int(str(row_scat["date"]).split("-")[1])
 
@@ -612,7 +671,7 @@ def transects_analysis():
 
                     transect_month[month]["samples"] += 1
 
-            out += f'<tr><td>{row["region"]}</td><td>{row["province"]}</td><td>{transect_id}</td>'
+            out += f"<tr><td>{row['region']}</td><td>{row['province']}</td><td>{transect_id}</td>"
 
             for month in season:
                 flag_path = False
@@ -646,7 +705,11 @@ def transects_analysis():
 def transects_n_samples_by_month(year_init, year_end):
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
-        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
+        transects = (
+            con.execute(text("SELECT * FROM transects ORDER BY transect_id"))
+            .mappings()
+            .all()
+        )
 
         sampling_years = range(int(year_init), int(year_end) + 1)
         season_months: list = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
@@ -688,7 +751,11 @@ def transects_n_samples_by_month(year_init, year_end):
                                         "WHERE path_id IN (SELECT path_id FROM paths WHERE transect_id = :transect_id AND EXTRACT(YEAR FROM date) = :year AND EXTRACT(MONTH FROM date) = :month)"
                                     )
                                 ),
-                                {"transect_id": transect_id, "year": year, "month": month},
+                                {
+                                    "transect_id": transect_id,
+                                    "year": year,
+                                    "month": month,
+                                },
                             )
                             .mappings()
                             .fetchone()
@@ -702,6 +769,8 @@ def transects_n_samples_by_month(year_init, year_end):
 
         response = make_response(out_str, 200)
         response.headers["Content-type"] = "'text/tab-separated-values"
-        response.headers["Content-disposition"] = f"attachment; filename=transects_n-samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.tsv"
+        response.headers["Content-disposition"] = (
+            f"attachment; filename=transects_n-samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.tsv"
+        )
 
         return response

@@ -111,7 +111,10 @@ if dw_df["date"].isnull().any():
 
 # check if sampling type are missing
 if dw_df["sampling_type"].isnull().any():
-    print(f"{dw_df['sampling_type'].isnull().sum()} sampling type missing", file=sys.stderr)
+    print(
+        f"{dw_df['sampling_type'].isnull().sum()} sampling type missing",
+        file=sys.stderr,
+    )
 
 # check if coordinates are missing
 if dw_df["coord_east"].isnull().any() or dw_df["coord_north"].isnull().any():
@@ -141,7 +144,9 @@ with conn_alchemy().connect() as con:
     if found_tissue_id_list:
         for tissue_id in found_tissue_id_list:
             print(f"tissue_id {tissue_id} is already in wolfDB", file=sys.stderr)
-        print(f"Total number: {len(found_tissue_id_list)} tissue(s).\n", file=sys.stderr)
+        print(
+            f"Total number: {len(found_tissue_id_list)} tissue(s).\n", file=sys.stderr
+        )
 
 
 # check if genotype id already present in DB (must be)
@@ -154,7 +159,10 @@ with conn_alchemy().connect() as con:
         if str(genotype_id) == "nan":
             continue
         if genotype_id.strip() not in genotype_id_list:
-            print(f"Genotype ID #{genotype_id.strip()}# not found in wolfDB", file=sys.stderr)
+            print(
+                f"Genotype ID #{genotype_id.strip()}# not found in wolfDB",
+                file=sys.stderr,
+            )
             flag_not_found = True
 
 
@@ -209,10 +217,15 @@ for _, row in dw_df.iterrows():
     try:
         _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
     except Exception:
-        print(f"ERROR on {row['tissue_id']} for coordinates {data["coord_east"]= }   {data["coord_north"]=}", file=sys.stderr)
+        print(
+            f"ERROR on {row['tissue_id']} for coordinates {data["coord_east"]= }   {data["coord_north"]=}",
+            file=sys.stderr,
+        )
         # sys.exit()
 
-    data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
+    data["geometry_utm"] = (
+        f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
+    )
 
     # sampling_type
     data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -253,21 +266,31 @@ for _, row in dw_df.iterrows():
         # retrieve fields
         with conn_alchemy().connect() as con:
             tissue = (
-                con.execute(text("SELECT * FROM dead_wolves WHERE tissue_id = :tissue_id "), {"tissue_id": data["tissue_id"]})
+                con.execute(
+                    text("SELECT * FROM dead_wolves WHERE tissue_id = :tissue_id "),
+                    {"tissue_id": data["tissue_id"]},
+                )
                 .mappings()
                 .fetchone()
             )
         print(f"{tissue["tissue_id"]=}")
         update_list = []
         for key in tissue:
-            if (tissue[key] is None or tissue[key] == "") and (str(data.get(key, "nan")) not in ("nan", "")):
+            if (tissue[key] is None or tissue[key] == "") and (
+                str(data.get(key, "nan")) not in ("nan", "")
+            ):
                 print(f"{key=}  {data[key]=}")
                 update_list.append(f" {key} = {quote(data[key])} ")
 
         # print(",".join(update_list))
         # print("-" * 80)
         if update_list:
-            print((f"""UPDATE dead_wolves SET {",".join(update_list)} WHERE tissue_id = '{data["tissue_id"]}';"""), file=f_out)
+            print(
+                (
+                    f"""UPDATE dead_wolves SET {",".join(update_list)} WHERE tissue_id = '{data["tissue_id"]}';"""
+                ),
+                file=f_out,
+            )
 
     else:
         print(

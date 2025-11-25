@@ -4,10 +4,20 @@ regions = [
         "capoluoghi": ["Chieti", "L'Aquila", "Pescara", "Teramo"],
         "province": ["CH", "AQ", "PE", "TE"],
     },
-    {"nome": "Basilicata", "capoluoghi": ["Matera", "Potenza"], "province": ["MT", "PZ"]},
+    {
+        "nome": "Basilicata",
+        "capoluoghi": ["Matera", "Potenza"],
+        "province": ["MT", "PZ"],
+    },
     {
         "nome": "Calabria",
-        "capoluoghi": ["Catanzaro", "Cosenza", "Crotone", "Reggio Calabria", "Vibo Valentia"],
+        "capoluoghi": [
+            "Catanzaro",
+            "Cosenza",
+            "Crotone",
+            "Reggio Calabria",
+            "Vibo Valentia",
+        ],
         "province": ["CZ", "CS", "KR", "RC", "VV"],
     },
     {
@@ -61,14 +71,37 @@ regions = [
             "Sondrio",
             "Varese",
         ],
-        "province": ["BG", "BS", "CO", "CR", "LC", "LO", "MN", "MI", "MB", "PV", "SO", "VA"],
+        "province": [
+            "BG",
+            "BS",
+            "CO",
+            "CR",
+            "LC",
+            "LO",
+            "MN",
+            "MI",
+            "MB",
+            "PV",
+            "SO",
+            "VA",
+        ],
     },
     {
         "nome": "Marche",
-        "capoluoghi": ["Ancona", "Ascoli Piceno", "Fermo", "Macerata", "Pesaro e Urbino"],
+        "capoluoghi": [
+            "Ancona",
+            "Ascoli Piceno",
+            "Fermo",
+            "Macerata",
+            "Pesaro e Urbino",
+        ],
         "province": ["AN", "AP", "FM", "MC", "PU"],
     },
-    {"nome": "Molise", "capoluoghi": ["Campobasso", "Isernia"], "province": ["CB", "IS"]},
+    {
+        "nome": "Molise",
+        "capoluoghi": ["Campobasso", "Isernia"],
+        "province": ["CB", "IS"],
+    },
     {
         "nome": "Piemonte",
         "capoluoghi": [
@@ -85,7 +118,14 @@ regions = [
     },
     {
         "nome": "Puglia",
-        "capoluoghi": ["Bari", "Barletta-Andria-Trani", "Brindisi", "Lecce", "Foggia", "Taranto"],
+        "capoluoghi": [
+            "Bari",
+            "Barletta-Andria-Trani",
+            "Brindisi",
+            "Lecce",
+            "Foggia",
+            "Taranto",
+        ],
         "province": ["BA", "BT", "BR", "LE", "FG", "TA"],
     },
     {
@@ -133,12 +173,24 @@ regions = [
         ],
         "province": ["AR", "FI", "GR", "LI", "LU", "MS", "PI", "PT", "PO", "SI"],
     },
-    {"nome": "Trentino-Alto Adige", "capoluoghi": ["Bolzano", "Trento"], "province": ["BZ", "TN"]},
+    {
+        "nome": "Trentino-Alto Adige",
+        "capoluoghi": ["Bolzano", "Trento"],
+        "province": ["BZ", "TN"],
+    },
     {"nome": "Umbria", "capoluoghi": ["Perugia", "Terni"], "province": ["PG", "TR"]},
     {"nome": "Valle d'Aosta", "capoluoghi": ["Aosta"], "province": ["AO"]},
     {
         "nome": "Veneto",
-        "capoluoghi": ["Belluno", "Padova", "Rovigo", "Treviso", "Venezia", "Verona", "Vicenza"],
+        "capoluoghi": [
+            "Belluno",
+            "Padova",
+            "Rovigo",
+            "Treviso",
+            "Venezia",
+            "Verona",
+            "Vicenza",
+        ],
         "province": ["BL", "PD", "RO", "TV", "VE", "VR", "VI"],
     },
 ]

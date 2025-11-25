@@ -27,9 +27,16 @@ def extract_wa_data_from_spreadsheet(filename: str):
     out: str = ""
 
     try:
-        genetic_df = pd.read_excel(Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine)
+        genetic_df = pd.read_excel(
+            Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine
+        )
     except Exception:
-        return (True, fn.alert_danger("Error reading the file. Check your XLSX/ODS file"), {}, {})
+        return (
+            True,
+            fn.alert_danger("Error reading the file. Check your XLSX/ODS file"),
+            {},
+            {},
+        )
 
     # replace _A by _a in column names
     genetic_df.columns = genetic_df.columns.str.lower()
@@ -47,13 +54,27 @@ def extract_wa_data_from_spreadsheet(filename: str):
     )
 
     # check columns
-    for column, column_lower in zip(required_columns, [x.lower() for x in required_columns]):
+    for column, column_lower in zip(
+        required_columns, [x.lower() for x in required_columns]
+    ):
         if column_lower not in list(genetic_df.columns):
-            return (True, fn.alert_danger(Markup(f"ERROR Column <b>{column}</b> is missing")), {}, {})
+            return (
+                True,
+                fn.alert_danger(Markup(f"ERROR Column <b>{column}</b> is missing")),
+                {},
+                {},
+            )
 
     # check if WA code are missing
     if genetic_df["wa code"].isnull().any():
-        return (True, fn.alert_danger(Markup(f"{genetic_df['wa code'].isnull().sum()} WA code missing")), {}, {})
+        return (
+            True,
+            fn.alert_danger(
+                Markup(f"{genetic_df['wa code'].isnull().sum()} WA code missing")
+            ),
+            {},
+            {},
+        )
 
     # check if WA code duplicated in spreadsheet
     if genetic_df["wa code"].duplicated().any():
@@ -61,7 +82,9 @@ def extract_wa_data_from_spreadsheet(filename: str):
         return (
             True,
             fn.alert_danger(
-                Markup(f"Some tissue_id are duplicated: <pre> {genetic_df[si.isin(si[si.duplicated()])].sort_values('wa code')}</pre>")
+                Markup(
+                    f"Some tissue_id are duplicated: <pre> {genetic_df[si.isin(si[si.duplicated()])].sort_values('wa code')}</pre>"
+                )
             ),
             {},
             {},
@@ -85,10 +108,14 @@ def extract_wa_data_from_spreadsheet(filename: str):
         data["wa_code"] = row["wa code"].strip()
         data["pack"] = row["pack"].strip() if not pd.isna(row["pack"]) else None
         data["notes"] = row["note"].strip() if not pd.isna(row["note"]) else None
-        data["genotype_id"] = row["genotype id"].strip() if not pd.isna(row["genotype id"]) else None
+        data["genotype_id"] = (
+            row["genotype id"].strip() if not pd.isna(row["genotype id"]) else None
+        )
         data["mtdna"] = row["mtdna"].strip() if not pd.isna(row["mtdna"]) else None
         data["sex_id"] = row["sex id"].strip() if not pd.isna(row["sex id"]) else None
-        data["individual_id"] = row["other id"].strip() if not pd.isna(row["other id"]) else None
+        data["individual_id"] = (
+            row["other id"].strip() if not pd.isna(row["other id"]) else None
+        )
 
         # constraint on quality_genotype
         if pd.isna(row["quality_genotype"]):
@@ -109,7 +136,14 @@ def extract_wa_data_from_spreadsheet(filename: str):
 
         for locus, locus_lower in zip(loci_list, [x.lower() for x in loci_list]):
             if pd.isna(row[locus_lower]):
-                return True, fn.alert_danger(Markup(f"{locus} for {row['wa code']} has a NaN value")), {}, {}
+                return (
+                    True,
+                    fn.alert_danger(
+                        Markup(f"{locus} for {row['wa code']} has a NaN value")
+                    ),
+                    {},
+                    {},
+                )
             data[locus] = str(row[locus_lower])
 
         wa_loci[index] = dict(data)

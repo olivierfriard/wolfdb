@@ -9,13 +9,12 @@ from tempfile import NamedTemporaryFile
 
 
 def export_scats(scats):
-
     wb = Workbook()
 
     ws1 = wb.active
     ws1.title = f"Scats"
 
-    header:list = [
+    header: list = [
         "Scat ID",
         "Date",
         "Sampling season",

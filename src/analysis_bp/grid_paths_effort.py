@@ -33,7 +33,6 @@ distances = {}
 n_transects = {}
 
 for shape in shapes:
-
     id = shape["id"]
     print(f"cell ID: {id}", file=sys.stderr)
 
@@ -61,19 +60,19 @@ for shape in shapes:
 
     # iterate paths
     for transect in transects:
-        print(f'transect ID: {transect["transect_id"]}\t', file=sys.stderr)
+        print(f"transect ID: {transect['transect_id']}\t", file=sys.stderr)
         transect_geojson = json.loads(transect["transect_geojson"])
         if len(transect_geojson["coordinates"]) != 1:
             print(f"CHECK TRANSECT COORDINATES {transect['transect_id']}")
             sys.exit()
 
         cursor.execute(
-            "SELECT path_id, date::date, completeness FROM paths WHERE transect_id = %s", [transect["transect_id"]]
+            "SELECT path_id, date::date, completeness FROM paths WHERE transect_id = %s",
+            [transect["transect_id"]],
         )
         paths = cursor.fetchall()
         for path in paths:
             if path["completeness"]:
-
                 tot_dist = 0
                 new_list = []
                 for idx, point in enumerate(transect_geojson["coordinates"][0]):
@@ -81,15 +80,19 @@ for shape in shapes:
                         continue
                     d = (
                         (point[0] - transect_geojson["coordinates"][0][idx - 1][0]) ** 2
-                        + (point[1] - transect_geojson["coordinates"][0][idx - 1][1]) ** 2
+                        + (point[1] - transect_geojson["coordinates"][0][idx - 1][1])
+                        ** 2
                     ) ** 0.5
                     tot_dist += d
 
-                    if round((tot_dist / transect["transect_length"]) * 100) >= path["completeness"]:
+                    if (
+                        round((tot_dist / transect["transect_length"]) * 100)
+                        >= path["completeness"]
+                    ):
                         break
 
                 print(
-                    f'path_id: {path["path_id"]}  distance: {round((tot_dist / transect["transect_length"]) * 100)}',
+                    f"path_id: {path['path_id']}  distance: {round((tot_dist / transect['transect_length']) * 100)}",
                     file=sys.stderr,
                 )
 
@@ -110,7 +113,7 @@ if mode == "by_date":
     print("cell ID\ttransects number\tdistances (m)")
     for id in distances:
         print(
-            f"{id}{sep}{n_transects[id]}{sep}{ f'{sep}'.join([str(round(distances[id][date])) for date in sorted(distances[id].keys())])}"
+            f"{id}{sep}{n_transects[id]}{sep}{f'{sep}'.join([str(round(distances[id][date])) for date in sorted(distances[id].keys())])}"
         )
 
 if mode == "by_cell":

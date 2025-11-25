@@ -21,10 +21,11 @@ import json
 connection = fn.get_connection()
 cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-cursor.execute("SELECT transect_id, ST_AsGeoJSON(multilines) AS transect_geojson FROM transects")
+cursor.execute(
+    "SELECT transect_id, ST_AsGeoJSON(multilines) AS transect_geojson FROM transects"
+)
 transects = cursor.fetchall()
 for row in transects:
-
     print(file=sys.stderr)
 
     geojson = json.loads(row["transect_geojson"])
@@ -91,8 +92,8 @@ for row in transects:
 
     print(
         (
-            f'Region: {d["region"]}\tprovince: {d["province_code"]}\t'
-            f'Municipality: {d["municipality"]}\tLocation: {d["location"]}'
+            f"Region: {d['region']}\tprovince: {d['province_code']}\t"
+            f"Municipality: {d['municipality']}\tLocation: {d['location']}"
         ),
         file=sys.stderr,
     )
@@ -103,7 +104,16 @@ for row in transects:
 
     sql = "UPDATE transect SET region = %s, province = %s, municipality = %s, location = %s WHERE transect_id = %s; "
 
-    out = cursor.mogrify(sql, [d["region"], d["province"], d["municipality"], d["location"], row["transect_id"]])
+    out = cursor.mogrify(
+        sql,
+        [
+            d["region"],
+            d["province"],
+            d["municipality"],
+            d["location"],
+            row["transect_id"],
+        ],
+    )
 
     print(out.decode("utf-8"))
 

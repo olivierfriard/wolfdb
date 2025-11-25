@@ -37,13 +37,18 @@ def update_redis_genotypes_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        for row in con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all():
+        for row in (
+            con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all()
+        ):
             # print(f'{row["genotype_id"]=}')
-            rdis.set(row["genotype_id"], json.dumps(fn.get_genotype_loci_values(row["genotype_id"], loci_list)))
+            rdis.set(
+                row["genotype_id"],
+                json.dumps(fn.get_genotype_loci_values(row["genotype_id"], loci_list)),
+            )
 
     rdis.set("UPDATE GENOTYPES LOCI", datetime.now().isoformat())
 
-    print(f"REDIS updated with genotypes loci in {round(time.time() - t0,1)} seconds")
+    print(f"REDIS updated with genotypes loci in {round(time.time() - t0, 1)} seconds")
 
 
 if __name__ == "__main__":

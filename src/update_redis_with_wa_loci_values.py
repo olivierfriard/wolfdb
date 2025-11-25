@@ -39,7 +39,10 @@ def update_redis_wa_loci():
         sql = text("SELECT wa_code FROM wa_scat_dw_mat WHERE mtdna != '%Poor DNA%' ")
 
         for row in con.execute(sql).mappings().all():
-            rdis.set(row["wa_code"], json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]))
+            rdis.set(
+                row["wa_code"],
+                json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
+            )
 
     rdis.set("UPDATE WA LOCI", datetime.now().isoformat())
 

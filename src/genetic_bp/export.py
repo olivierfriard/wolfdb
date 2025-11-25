@@ -63,7 +63,9 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         return stream
 
 
-def export_wa_analysis(loci_list, wa_scats, loci_values, distance: int, cluster_id: int):
+def export_wa_analysis(
+    loci_list, wa_scats, loci_values, distance: int, cluster_id: int
+):
     """
     export cluster content in XLSX
     """
@@ -242,8 +244,12 @@ def export_wa(loci_list, wa_list, loci_values):
                     [
                         loci_values[wa["wa_code"]][locus]["a"]["value"],
                         loci_values[wa["wa_code"]][locus]["a"]["notes"],
-                        loci_values[wa["wa_code"]][locus]["b"]["value"] if "b" in loci_values[wa["wa_code"]][locus] else "",
-                        loci_values[wa["wa_code"]][locus]["b"]["notes"] if "b" in loci_values[wa["wa_code"]][locus] else "",
+                        loci_values[wa["wa_code"]][locus]["b"]["value"]
+                        if "b" in loci_values[wa["wa_code"]][locus]
+                        else "",
+                        loci_values[wa["wa_code"]][locus]["b"]["notes"]
+                        if "b" in loci_values[wa["wa_code"]][locus]
+                        else "",
                     ]
                 )
             else:

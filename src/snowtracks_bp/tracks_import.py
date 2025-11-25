@@ -25,7 +25,11 @@ def extract_data_from_tracks_xlsx(filename: str):
     out = ""
 
     try:
-        df_all = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=None, engine=engine)
+        df_all = pd.read_excel(
+            pl.Path(params["upload_folder"]) / pl.Path(filename),
+            sheet_name=None,
+            engine=engine,
+        )
     except Exception:
         return (
             True,
@@ -88,7 +92,7 @@ def extract_data_from_tracks_xlsx(filename: str):
                 datetime.datetime.strptime(date, "%Y-%m-%d")
             except Exception:
                 out += fn.alert_danger(
-                    f'Row {index + 2}: the date ({date}) of the track ID {data["snowtrack_id"]} is not valid. Use the YYMMDD format'
+                    f"Row {index + 2}: the date ({date}) of the track ID {data['snowtrack_id']} is not valid. Use the YYMMDD format"
                 )
 
         except Exception:
@@ -115,7 +119,9 @@ def extract_data_from_tracks_xlsx(filename: str):
             # check province name
             province = fn.province_name2code(data["province"])
             if province is None:
-                out += fn.alert_danger(f"Row {index + 2}: The province {data['province']} was not found")
+                out += fn.alert_danger(
+                    f"Row {index + 2}: The province {data['province']} was not found"
+                )
         data["province"] = province
 
         # add region from province code
@@ -137,19 +143,23 @@ def extract_data_from_tracks_xlsx(filename: str):
 
         # check if coordinates are OK
         try:
-            _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), 32, "N")
+            _ = utm.to_latlon(
+                int(data["coord_east"]), int(data["coord_north"]), 32, "N"
+            )
         except Exception:
             out += fn.alert_danger(
-                f'Row {index + 2}: check the UTM coordinates: {data["coord_east"]} {data["coord_north"]} {data["coord_zone"]}'
+                f"Row {index + 2}: check the UTM coordinates: {data['coord_east']} {data['coord_north']} {data['coord_zone']}"
             )
 
-        data["geometry_utm"] = f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
+        data["geometry_utm"] = (
+            f"SRID=32632;POINT({data['coord_east']} {data['coord_north']})"
+        )
 
         # sampling_type
         data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
         if data["sampling_type"] not in ["Opportunistic", "Systematic"]:
             out += fn.alert_danger(
-                f'Row {index + 2}: Sampling type must be <i>Opportunistic</i> or <i>Systematic</i>: found <b>{data["sampling_type"]}</b>'
+                f"Row {index + 2}: Sampling type must be <i>Opportunistic</i> or <i>Systematic</i>: found <b>{data['sampling_type']}</b>"
             )
 
         # no path ID if scat is opportunistic
@@ -160,7 +170,7 @@ def extract_data_from_tracks_xlsx(filename: str):
         data["scalp_category"] = str(data["scalp_category"]).capitalize().strip()
         if data["scalp_category"] not in ["C1", "C2", "C3", "C4", ""]:
             out += fn.alert_danger(
-                f'Row {index + 2}: The scalp category value must be <b>C1, C2, C3, C4</b> or empty: found {data["scalp_category"]}'
+                f"Row {index + 2}: The scalp category value must be <b>C1, C2, C3, C4</b> or empty: found {data['scalp_category']}"
             )
 
         data["operator"] = str(data["operator"]).strip()

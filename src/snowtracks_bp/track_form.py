@@ -3,7 +3,6 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-
 from markupsafe import Markup
 
 import datetime
@@ -21,7 +20,9 @@ class Track(Form):
             return
         except Exception:
             raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Not a valid integer value</div>'
+                )
             )
 
     def iso_date_validator(form, field):
@@ -58,11 +59,19 @@ class Track(Form):
     observer = StringField("Operator", [])
     institution = StringField("Institution", [])
 
-    scalp_category = SelectField("SCALP category", choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")], default="C2")
+    scalp_category = SelectField(
+        "SCALP category",
+        choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")],
+        default="C2",
+    )
 
     sampling_type = SelectField(
         "Sampling type",
-        choices=[("", ""), ("Opportunistic", "Opportunistic"), ("Systematic", "Systematic")],
+        choices=[
+            ("", ""),
+            ("Opportunistic", "Opportunistic"),
+            ("Systematic", "Systematic"),
+        ],
         default="",
     )
 
@@ -71,7 +80,9 @@ class Track(Form):
 
     track_format = StringField("Track format", [])
 
-    track_type = SelectField("Track type", choices=[("", ""), ("Snow", "Snow"), ("Mud", "Mud")], default="")
+    track_type = SelectField(
+        "Track type", choices=[("", ""), ("Snow", "Snow"), ("Mud", "Mud")], default=""
+    )
 
     notes = TextAreaField("Notes", [])
 

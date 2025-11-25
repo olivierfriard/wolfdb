@@ -27,7 +27,9 @@ output_file_path = sys.argv[3]
 LOCK_FILE_NAME_PATH = "check_location.lock"
 
 # verify if lock exist and age of lock file
-if os.path.exists(LOCK_FILE_NAME_PATH) and (time.time() - os.path.getctime(LOCK_FILE_NAME_PATH) < 1800):
+if os.path.exists(LOCK_FILE_NAME_PATH) and (
+    time.time() - os.path.getctime(LOCK_FILE_NAME_PATH) < 1800
+):
     print("Check systematic locations already running. Exiting")
     sys.exit()
 
@@ -66,7 +68,9 @@ with fn.conn_alchemy().connect() as con:
             transect_id_to_search = row["path_id"].split("|")[0]
             row2 = (
                 con.execute(
-                    text("SELECT transect_id FROM transects WHERE transect_id = :transect_id_to_search"),
+                    text(
+                        "SELECT transect_id FROM transects WHERE transect_id = :transect_id_to_search"
+                    ),
                     {"transect_id_to_search": transect_id_to_search},
                 )
                 .mappings()
@@ -83,7 +87,9 @@ with fn.conn_alchemy().connect() as con:
         track_id_to_search = row["snowtrack_id"]
         row3 = (
             con.execute(
-                text("SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = :track_id_to_search"),
+                text(
+                    "SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = :track_id_to_search"
+                ),
                 {"track_id_to_search": track_id_to_search},
             )
             .mappings()
@@ -125,46 +131,59 @@ with fn.conn_alchemy().connect() as con:
             out2 += '<tr class="table-danger">'
 
             sql = text("SELECT path_id FROM paths WHERE path_id = :transect_scat")
-            results = con.execute(sql, {"transect_scat": transect["transect_id"] + "|" + row["scat_id"][1:7]}).mappings().fetchone()
+            results = (
+                con.execute(
+                    sql,
+                    {
+                        "transect_scat": transect["transect_id"]
+                        + "|"
+                        + row["scat_id"][1:7]
+                    },
+                )
+                .mappings()
+                .fetchone()
+            )
             if results is not None:
                 new_path_id = results["path_id"]
             else:
-                new_path_id = f"""path ID {transect['transect_id'] + "|" + row['scat_id'][1:7]} NOT FOUND"""
+                new_path_id = f"""path ID {transect["transect_id"] + "|" + row["scat_id"][1:7]} NOT FOUND"""
 
             transect["transect_id"]
 
         if match == "NO":
             if "NOT FOUND" in new_path_id:
                 out2 += (
-                    f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
-                    f"""<td>{row['sampling_type']}</td>"""
-                    f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
-                    f"""<td>{'<b>NOT FOUND</b>' if transect_id_found == '' else transect_id_found}</td>"""
-                    f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
-                    f"""<td>{transect['distance']}</td>"""
+                    f"""<td><a href="/view_scat/{row["scat_id"]}">{row["scat_id"]}</a></td>"""
+                    f"""<td>{row["sampling_type"]}</td>"""
+                    f"""<td><a href="/view_path/{row["path_id"]}">{path_id}</a></td>"""
+                    f"""<td>{"<b>NOT FOUND</b>" if transect_id_found == "" else transect_id_found}</td>"""
+                    f"""<td><a href="/view_transect/{transect["transect_id"]}">{transect["transect_id"]}</a></td>"""
+                    f"""<td>{transect["distance"]}</td>"""
                     f"""<td>{new_path_id}</td>"""
                 )
 
             else:
                 out2 += (
-                    f"""<td><a href="/view_scat/{row['scat_id']}">{row['scat_id']}</a></td>"""
-                    f"""<td>{row['sampling_type']}</td>"""
-                    f"""<td><a href="/view_path/{row['path_id']}">{path_id}</a></td>"""
-                    f"""<td>{'<b>NOT FOUND</b>' if transect_id_found == '' else transect_id_found}</td>"""
-                    f"""<td><a href="/view_transect/{transect['transect_id']}">{transect['transect_id']}</a></td>"""
-                    f"""<td>{transect['distance']}</td>"""
-                    f"""<td><a class="btn btn-danger btn-small" href="/set_path_id/{row['scat_id']}/{new_path_id}" onclick="return confirm('Are you sure to set the path ID?')">Set {new_path_id} as path ID</a></td>"""
+                    f"""<td><a href="/view_scat/{row["scat_id"]}">{row["scat_id"]}</a></td>"""
+                    f"""<td>{row["sampling_type"]}</td>"""
+                    f"""<td><a href="/view_path/{row["path_id"]}">{path_id}</a></td>"""
+                    f"""<td>{"<b>NOT FOUND</b>" if transect_id_found == "" else transect_id_found}</td>"""
+                    f"""<td><a href="/view_transect/{transect["transect_id"]}">{transect["transect_id"]}</a></td>"""
+                    f"""<td>{transect["distance"]}</td>"""
+                    f"""<td><a class="btn btn-danger btn-small" href="/set_path_id/{row["scat_id"]}/{new_path_id}" onclick="return confirm('Are you sure to set the path ID?')">Set {new_path_id} as path ID</a></td>"""
                 )
 
             if track_id_found:
-                out2 += f"""<td><a href="/view_track/{row['snowtrack_id']}">{row['snowtrack_id']}</a></td>"""
+                out2 += f"""<td><a href="/view_track/{row["snowtrack_id"]}">{row["snowtrack_id"]}</a></td>"""
             else:
                 if row["snowtrack_id"]:
-                    out2 += f"""<td>{row['snowtrack_id']} NOT FOUND IN DB</a></td>"""
+                    out2 += f"""<td>{row["snowtrack_id"]} NOT FOUND IN DB</a></td>"""
                 else:
                     out2 += "<td></td>"
 
-            out2 += f"""<td>{track['snowtrack_id']}</td>""" f"<td>{track['distance']}</td>"
+            out2 += (
+                f"""<td>{track["snowtrack_id"]}</td>""" f"<td>{track['distance']}</td>"
+            )
 
 
 output += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"

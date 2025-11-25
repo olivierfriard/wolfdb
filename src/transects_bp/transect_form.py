@@ -17,7 +17,11 @@ class Transect(Form):
             int(field.data)
             return
         except Exception:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Not a valid integer value</div>'
+                )
+            )
 
     transect_id = StringField(
         "Transect ID",

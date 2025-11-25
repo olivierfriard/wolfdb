@@ -23,7 +23,9 @@ app.debug = params["debug"]
 @app.route("/admin")
 @fn.check_login
 def admin():
-    current_app.db_log.info(f"{session.get('user_name', session['email'])} accessed to admin page")
+    current_app.db_log.info(
+        f"{session.get('user_name', session['email'])} accessed to admin page"
+    )
 
     if session.get("role", "").lower() == "administrator":
         # users list
@@ -53,7 +55,11 @@ def update_redis():
     """
     _ = subprocess.Popen([sys.executable, "update_redis.py"])
 
-    flash(fn.alert_success("Redis updating with WA and genotypes loci in progress.<br>It will take several minutes to complete."))
+    flash(
+        fn.alert_success(
+            "Redis updating with WA and genotypes loci in progress.<br>It will take several minutes to complete."
+        )
+    )
 
     return redirect("/admin")
 
@@ -68,7 +74,11 @@ def update_redis_with_genotypes_loci():
     """
     _ = subprocess.Popen([sys.executable, "update_redis_with_genotypes_loci_values.py"])
 
-    flash(fn.alert_success("Redis updating with genotypes loci in progress.<br>It will take several minutes to complete."))
+    flash(
+        fn.alert_success(
+            "Redis updating with genotypes loci in progress.<br>It will take several minutes to complete."
+        )
+    )
 
     return redirect("/admin")
 
@@ -83,6 +93,10 @@ def update_redis_with_wa_loci():
     """
     _ = subprocess.Popen([sys.executable, "update_redis_with_wa_loci_values.py"])
 
-    flash(fn.alert_success("Redis updating with WA loci in progress.<br>It will take several minutes to complete."))
+    flash(
+        fn.alert_success(
+            "Redis updating with WA loci in progress.<br>It will take several minutes to complete."
+        )
+    )
 
     return redirect("/admin")

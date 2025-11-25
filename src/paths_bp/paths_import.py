@@ -25,7 +25,11 @@ def extract_data_from_paths_xlsx(filename: str):
     out = ""
 
     try:
-        df_all = pd.read_excel(pl.Path(params["upload_folder"]) / pl.Path(filename), sheet_name=None, engine=engine)
+        df_all = pd.read_excel(
+            pl.Path(params["upload_folder"]) / pl.Path(filename),
+            sheet_name=None,
+            engine=engine,
+        )
     except Exception:
         return (
             True,
@@ -73,7 +77,9 @@ def extract_data_from_paths_xlsx(filename: str):
         try:
             datetime.datetime.strptime(date, "%Y-%m-%d")
         except Exception:
-            out += fn.alert_danger(f"Row {index + 2}: the date ({date}) is not valid. Use the YYYY-MM-DD format")
+            out += fn.alert_danger(
+                f"Row {index + 2}: the date ({date}) is not valid. Use the YYYY-MM-DD format"
+            )
 
         data["path_id"] = fn.get_path_id(data["transect_id"], date)
 

@@ -14,7 +14,12 @@ import pathlib as pl
 import functions as fn
 
 
-def paths_completeness_shapefile(dir_path: str, log_file: str, start_date: str = "1900-01-01", end_date: str = "2100-01-01") -> str:
+def paths_completeness_shapefile(
+    dir_path: str,
+    log_file: str,
+    start_date: str = "1900-01-01",
+    end_date: str = "2100-01-01",
+) -> str:
     log = open(log_file, "w")
 
     con = fn.conn_alchemy().connect()
@@ -46,7 +51,9 @@ def paths_completeness_shapefile(dir_path: str, log_file: str, start_date: str =
         ],
     }
 
-    with fiona.open(dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632") as layer:
+    with fiona.open(
+        dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632"
+    ) as layer:
         for path in paths:
             print(file=log)
             print(path, file=log)
@@ -84,17 +91,31 @@ def paths_completeness_shapefile(dir_path: str, log_file: str, start_date: str =
                         if idx == 0:
                             continue
                         d = (
-                            (point[0] - transect_geojson["coordinates"][0][idx - 1][0]) ** 2
-                            + (point[1] - transect_geojson["coordinates"][0][idx - 1][1]) ** 2
+                            (point[0] - transect_geojson["coordinates"][0][idx - 1][0])
+                            ** 2
+                            + (
+                                point[1]
+                                - transect_geojson["coordinates"][0][idx - 1][1]
+                            )
+                            ** 2
                         ) ** 0.5
                         tot_dist += d
 
                         new_list.append(point)
-                        if round((tot_dist / transect["transect_length"]) * 100) >= path["completeness"]:
+                        if (
+                            round((tot_dist / transect["transect_length"]) * 100)
+                            >= path["completeness"]
+                        ):
                             break
 
-                    if round((tot_dist / transect["transect_length"]) * 100) >= path["completeness"]:
-                        print(f'{path["completeness"]} COMPLETE OK  {tot_dist / transect["transect_length"]}', file=log)
+                    if (
+                        round((tot_dist / transect["transect_length"]) * 100)
+                        >= path["completeness"]
+                    ):
+                        print(
+                            f"{path['completeness']} COMPLETE OK  {tot_dist / transect['transect_length']}",
+                            file=log,
+                        )
 
                         rowDict = {
                             "geometry": {"type": "LineString", "coordinates": new_list},
@@ -113,7 +134,10 @@ def paths_completeness_shapefile(dir_path: str, log_file: str, start_date: str =
                         layer.write(rowDict)
 
                     else:
-                        print(f'{path["completeness"]} NOT COMPLETE {tot_dist / transect["transect_length"]}', file=log)
+                        print(
+                            f"{path['completeness']} NOT COMPLETE {tot_dist / transect['transect_length']}",
+                            file=log,
+                        )
 
     log.close()
 

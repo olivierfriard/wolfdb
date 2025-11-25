@@ -115,7 +115,10 @@ if scats_df["date"].isnull().any():
 
 # check if sampling type are missing
 if scats_df["sampling_type"].isnull().any():
-    print(f"{scats_df['sampling_type'].isnull().sum()} sampling type missing", file=sys.stderr)
+    print(
+        f"{scats_df['sampling_type'].isnull().sum()} sampling type missing",
+        file=sys.stderr,
+    )
 
 # check if coordinates are missing
 if scats_df["coord_east"].isnull().any() or scats_df["coord_north"].isnull().any():
@@ -125,7 +128,10 @@ if scats_df["coord_east"].isnull().any() or scats_df["coord_north"].isnull().any
 if scats_df["scat_id"].duplicated().any():
     print("scat id duplicated", file=sys.stderr)
     si = scats_df["scat_id"]
-    print(scats_df[si.isin(si[si.duplicated()])].sort_values("scat_id")["scat_id"], file=sys.stderr)
+    print(
+        scats_df[si.isin(si[si.duplicated()])].sort_values("scat_id")["scat_id"],
+        file=sys.stderr,
+    )
 
 # check if scat id is not already present in DB
 with conn_alchemy().connect() as con:
@@ -164,7 +170,10 @@ for idx, date in enumerate(scats_df["date"]):
     try:
         dt.datetime.strptime(date, "%Y-%m-%d")
     except Exception:
-        print(f"'{date}' is not a valid date at row {idx + 2} (check date format)", file=sys.stderr)
+        print(
+            f"'{date}' is not a valid date at row {idx + 2} (check date format)",
+            file=sys.stderr,
+        )
 
 # check province code
 for idx, province in enumerate(scats_df["province"]):
@@ -203,11 +212,17 @@ for _, row in scats_df.iterrows():
     data["path_id"] = row["transect_id"]
 
     if len(row["coord_zone"].strip()) != 3:
-        print(f"ERROR on coordonates zone {row['coord_zone']}. Must be 3 characters", file=sys.stderr)
+        print(
+            f"ERROR on coordonates zone {row['coord_zone']}. Must be 3 characters",
+            file=sys.stderr,
+        )
         sys.exit()
 
     if row["coord_zone"].strip()[-1].upper() not in ("N", "S"):
-        print(f"ERROR on coordinates zone {row['coord_zone']}. Must end with N or S", file=sys.stderr)
+        print(
+            f"ERROR on coordinates zone {row['coord_zone']}. Must end with N or S",
+            file=sys.stderr,
+        )
         sys.exit()
 
     data["coord_zone"] = row["coord_zone"].strip()
@@ -229,7 +244,9 @@ for _, row in scats_df.iterrows():
     try:
         hemisphere = row["coord_zone"][-1].upper()
         zone = int(row["coord_zone"][:2])
-        _ = utm.to_latlon(int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere)
+        _ = utm.to_latlon(
+            int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere
+        )
     except Exception:
         print(
             f"ERROR on {row['scat_id']} for coordinates {data["coord_east"]= }   {data["coord_north"]=}  {data["coord_zone"]=}",
@@ -238,7 +255,9 @@ for _, row in scats_df.iterrows():
 
     srid = zone + (32600 if hemisphere == "N" else 32700)
 
-    data["geometry_utm"] = f"SRID={srid};POINT({data['coord_east']} {data['coord_north']})"
+    data["geometry_utm"] = (
+        f"SRID={srid};POINT({data['coord_east']} {data['coord_north']})"
+    )
 
     # sampling_type
     data["sampling_type"] = str(data["sampling_type"]).capitalize().strip()
@@ -314,7 +333,14 @@ for _, row in scats_df.iterrows():
     if data["scat_id"] in found_scat_list:
         # retrieve fields
         with conn_alchemy().connect() as con:
-            scat = con.execute(text("SELECT * FROM scats WHERE scat_id = :scat_id "), {"scat_id": data["scat_id"]}).mappings().fetchone()
+            scat = (
+                con.execute(
+                    text("SELECT * FROM scats WHERE scat_id = :scat_id "),
+                    {"scat_id": data["scat_id"]},
+                )
+                .mappings()
+                .fetchone()
+            )
 
         update_list = []
         output = []
@@ -327,13 +353,22 @@ for _, row in scats_df.iterrows():
 
         if update_list:
             print(f"\nScat already in database: {scat['scat_id']}")
-            print(tabulate.tabulate(output, ["field", "current value", "new value"], tablefmt="pretty"))
+            print(
+                tabulate.tabulate(
+                    output, ["field", "current value", "new value"], tablefmt="pretty"
+                )
+            )
 
             # print(",".join(update_list))
             print()
             print()
 
-        print((f"""UPDATE scats SET {",".join(update_list)} WHERE scat_id = '{data["scat_id"]}';"""), file=f_out)
+        print(
+            (
+                f"""UPDATE scats SET {",".join(update_list)} WHERE scat_id = '{data["scat_id"]}';"""
+            ),
+            file=f_out,
+        )
 
     else:
         query = sql.SQL(

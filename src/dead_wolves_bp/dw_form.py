@@ -24,7 +24,11 @@ class Dead_wolf(Form):
             int(field.data)
             return
         except Exception:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Not a valid integer value</div>'
+                )
+            )
 
     def iso_date_validator(form, field):
         """
@@ -37,7 +41,9 @@ class Dead_wolf(Form):
             return
         except ValueError:
             raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">The date is not valid. Use the YYYY-MM-DD format</div>')
+                Markup(
+                    '<div class="alert alert-danger" role="alert">The date is not valid. Use the YYYY-MM-DD format</div>'
+                )
             )
 
     def sampling_season_validator(form, field):
@@ -49,13 +55,25 @@ class Dead_wolf(Form):
             return
         m = re.match("(\d{4})-(\d{4})", field.data)
         if m is None:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Wrong format. Use the YYYY-YYYY format</div>'))
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Wrong format. Use the YYYY-YYYY format</div>'
+                )
+            )
         try:
             y1, y2 = m.group().split("-")
             if int(y1) >= int(y2):
-                raise ValidationError(Markup('<div class="alert alert-danger" role="alert">First year must be < than second year</div>'))
+                raise ValidationError(
+                    Markup(
+                        '<div class="alert alert-danger" role="alert">First year must be < than second year</div>'
+                    )
+                )
         except Exception:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Check the format (YYYY-YYYY)</div>'))
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Check the format (YYYY-YYYY)</div>'
+                )
+            )
         return
 
     field1 = StringField("ID", [], default="")
@@ -201,15 +219,23 @@ class Dead_wolf(Form):
     field22 = StringField("Country", [], default="")
     field26 = SelectField(
         "Georeference",
-        choices=[("Accurata", "Accurata"), ("N.D.", "N.D."), ("Dedotta, non accurata", "Dedotta, non accurata")],
+        choices=[
+            ("Accurata", "Accurata"),
+            ("N.D.", "N.D."),
+            ("Dedotta, non accurata", "Dedotta, non accurata"),
+        ],
         default="N.D.",
     )
 
     # coordinates
     utm_east = StringField("Easting (X)", validators=[integer_validator], default="")
     utm_north = StringField("Northing (Y)", validators=[integer_validator], default="")
-    utm_zone = StringField("UTM zone number", validators=[integer_validator], default="32")
-    hemisphere = SelectField("Hemisphere", choices=[("N", "N"), ("S", "S")], default="N")
+    utm_zone = StringField(
+        "UTM zone number", validators=[integer_validator], default="32"
+    )
+    hemisphere = SelectField(
+        "Hemisphere", choices=[("N", "N"), ("S", "S")], default="N"
+    )
 
     # SCALP category
     field230 = SelectField(
@@ -220,12 +246,21 @@ class Dead_wolf(Form):
 
     field2 = SelectField(
         "Necroscopy done",
-        choices=[("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO"), ("In attesa", "In attesa")],
+        choices=[
+            ("N.D.", "N.D."),
+            ("SI", "SI"),
+            ("NO", "NO"),
+            ("In attesa", "In attesa"),
+        ],
         default="N.D.",
     )
-    field3 = SelectField("Definitive data", choices=[("NO", "NO"), ("SI", "SI")], default="NO")
+    field3 = SelectField(
+        "Definitive data", choices=[("NO", "NO"), ("SI", "SI")], default="NO"
+    )
     field4 = StringField("Genetic sample to recover", [], default="")
-    field5 = StringField("Reminder on genetic sample collecting and documentation", [], default="")
+    field5 = StringField(
+        "Reminder on genetic sample collecting and documentation", [], default=""
+    )
 
     field7 = StringField("Additional Note on wolf recovery", [], default="")
     field8 = StringField(
@@ -238,7 +273,9 @@ class Dead_wolf(Form):
         },
         default="",
     )
-    field10 = StringField("Sampling season", validators=[sampling_season_validator], default="")
+    field10 = StringField(
+        "Sampling season", validators=[sampling_season_validator], default=""
+    )
     field11 = StringField(
         "Necroscopy date",
         validators=[iso_date_validator],
@@ -377,9 +414,17 @@ class Dead_wolf(Form):
     field80 = StringField("Carcass Embalbed", [], default="")
     field81 = StringField("skeleton assembled", [], default="")
 
-    field82 = SelectField("Skull cleaned", choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")], default="")
+    field82 = SelectField(
+        "Skull cleaned",
+        choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")],
+        default="",
+    )
 
-    field83 = SelectField("Recoverable for embalming", choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")], default="")
+    field83 = SelectField(
+        "Recoverable for embalming",
+        choices=[("", ""), ("N.D.", "N.D."), ("SI", "SI"), ("NO", "NO")],
+        default="",
+    )
 
     field84 = StringField("Placed in", [], default="")
     field85 = StringField("CITES Code", [], default="")

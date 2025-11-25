@@ -57,7 +57,9 @@ def get_user_info():
     """
     credentials = build_credentials()
 
-    oauth2_client = googleapiclient.discovery.build("oauth2", "v2", credentials=credentials)
+    oauth2_client = googleapiclient.discovery.build(
+        "oauth2", "v2", credentials=credentials
+    )
 
     return oauth2_client.userinfo().get().execute()
 
@@ -66,7 +68,9 @@ def no_cache(view):
     @functools.wraps(view)
     def no_cache_impl(*args, **kwargs):
         response = flask.make_response(view(*args, **kwargs))
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "-1"
         return response
@@ -110,7 +114,9 @@ def google_auth_redirect():
         redirect_uri=AUTH_REDIRECT_URI,
     )
 
-    oauth2_tokens = session.fetch_access_token(ACCESS_TOKEN_URI, authorization_response=flask.request.url)
+    oauth2_tokens = session.fetch_access_token(
+        ACCESS_TOKEN_URI, authorization_response=flask.request.url
+    )
 
     flask.session[AUTH_TOKEN_KEY] = oauth2_tokens
 
@@ -119,10 +125,19 @@ def google_auth_redirect():
 
     # check if email contained in email field of users table
     with fn.conn_alchemy().connect() as con:
-        row = con.execute(text("SELECT * FROM users WHERE email = :email"), {"email": user_info["email"]}).mappings().fetchone()
+        row = (
+            con.execute(
+                text("SELECT * FROM users WHERE email = :email"),
+                {"email": user_info["email"]},
+            )
+            .mappings()
+            .fetchone()
+        )
         if row is None:
             flask.session.clear()
-            flask.flash(fn.alert_danger("<h2>You are not allowed to access this resource</h2>"))
+            flask.flash(
+                fn.alert_danger("<h2>You are not allowed to access this resource</h2>")
+            )
             return flask.redirect("/")
 
         flask.session["role"] = row["role"]

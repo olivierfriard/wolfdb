@@ -9,7 +9,6 @@ from tempfile import NamedTemporaryFile
 
 
 def export_paths(paths):
-
     wb = Workbook()
 
     ws1 = wb.active

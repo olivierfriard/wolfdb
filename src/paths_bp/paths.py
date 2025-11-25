@@ -67,9 +67,21 @@ def view_path(path_id):
     """
 
     with fn.conn_alchemy().connect() as con:
-        path = con.execute(text("SELECT * FROM paths WHERE path_id = :path_id"), {"path_id": path_id}).mappings().fetchone()
+        path = (
+            con.execute(
+                text("SELECT * FROM paths WHERE path_id = :path_id"),
+                {"path_id": path_id},
+            )
+            .mappings()
+            .fetchone()
+        )
         if path is None:
-            return render_template("view_path.html", header_title=f"{path_id} not found", path={"path_id": ""}, path_id=path_id)
+            return render_template(
+                "view_path.html",
+                header_title=f"{path_id} not found",
+                path={"path_id": ""},
+                path_id=path_id,
+            )
 
         # relative transect
         transect_id = path["transect_id"]
@@ -124,7 +136,7 @@ def view_path(path_id):
                 "geometry": dict(scat_geojson),
                 "type": "Feature",
                 "properties": {
-                    "popupContent": f"""Scat ID: <a href="/view_scat/{scat['scat_id']}" target="_blank">{scat['scat_id']}</a>"""
+                    "popupContent": f"""Scat ID: <a href="/view_scat/{scat["scat_id"]}" target="_blank">{scat["scat_id"]}</a>"""
                 },
                 "id": scat["scat_id"],
             }
@@ -134,7 +146,12 @@ def view_path(path_id):
 
         # n tracks
         n_tracks = (
-            con.execute(text("SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = :transect_id"), {"transect_id": path_id})
+            con.execute(
+                text(
+                    "SELECT COUNT(*) AS n_tracks FROM snow_tracks WHERE transect_id = :transect_id"
+                ),
+                {"transect_id": path_id},
+            )
             .mappings()
             .fetchone()["n_tracks"]
         )
@@ -231,8 +248,12 @@ def export_paths():
         )
 
     response = make_response(file_content, 200)
-    response.headers["Content-type"] = "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    response.headers["Content-disposition"] = f"attachment; filename=paths_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    response.headers["Content-type"] = (
+        "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response.headers["Content-disposition"] = (
+        f"attachment; filename=paths_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+    )
 
     return response
 
@@ -281,19 +302,26 @@ def new_path():
         if form.validate():
             with fn.conn_alchemy().connect() as con:
                 # path_id
-                path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
+                path_id = f"{request.form['transect_id']}|{request.form['date'][2:].replace('-', '')}"
 
                 # check if path_id already exists
 
                 if (
-                    con.execute(text("SELECT path_id FROM paths WHERE path_id = :path_id"), {"path_id": path_id}).mappings().fetchone()
+                    con.execute(
+                        text("SELECT path_id FROM paths WHERE path_id = :path_id"),
+                        {"path_id": path_id},
+                    )
+                    .mappings()
+                    .fetchone()
                     is not None
                 ):
                     return not_valid(f"The path ID {path_id} already exists")
 
                 # check if 0 < completeness <= 100
                 if not (0 < int(request.form["completeness"]) <= 100):
-                    return not_valid("Completeness must be an integer like 0 < completeness <= 100")
+                    return not_valid(
+                        "Completeness must be an integer like 0 < completeness <= 100"
+                    )
 
                 sql = text(
                     "INSERT INTO paths (path_id, transect_id, date, sampling_season, completeness, "
@@ -308,7 +336,9 @@ def new_path():
                         "transect_id": request.form["transect_id"],
                         "date": request.form["date"],
                         "sampling_season": fn.sampling_season(request.form["date"]),
-                        "completeness": request.form["completeness"] if request.form["completeness"] else None,
+                        "completeness": request.form["completeness"]
+                        if request.form["completeness"]
+                        else None,
                         "observer": request.form["observer"],
                         "institution": request.form["institution"],
                         "notes": request.form["notes"],
@@ -319,7 +349,9 @@ def new_path():
             return redirect("/paths_list")
 
         else:
-            return not_valid("Some values are not set or are wrong. Please check and submit again")
+            return not_valid(
+                "Some values are not set or are wrong. Please check and submit again"
+            )
 
 
 @app.route("/edit_path/<path_id>", methods=("GET", "POST"))
@@ -327,7 +359,14 @@ def new_path():
 def edit_path(path_id):
     with fn.conn_alchemy().connect() as con:
         if request.method == "GET":
-            default_values = con.execute(text("SELECT * FROM paths WHERE path_id = :path_id"), {"path_id": path_id}).mappings().fetchone()
+            default_values = (
+                con.execute(
+                    text("SELECT * FROM paths WHERE path_id = :path_id"),
+                    {"path_id": path_id},
+                )
+                .mappings()
+                .fetchone()
+            )
 
             if default_values["category"] is None:
                 default_values["category"] = ""
@@ -338,7 +377,9 @@ def edit_path(path_id):
                 category=default_values["category"],
             )
             # get id of all transects
-            form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+            form.transect_id.choices = [("", "")] + [
+                (x, x) for x in fn.all_transect_id()
+            ]
             form.notes.data = default_values["notes"]
 
             return render_template(
@@ -354,16 +395,23 @@ def edit_path(path_id):
             form = Path(request.form)
 
             # get id of all transects
-            form.transect_id.choices = [("", "")] + [(x, x) for x in fn.all_transect_id()]
+            form.transect_id.choices = [("", "")] + [
+                (x, x) for x in fn.all_transect_id()
+            ]
 
             if form.validate():
                 # path_id
-                new_path_id = f'{request.form["transect_id"]}|{request.form["date"][2:].replace("-", "")}'
+                new_path_id = f"{request.form['transect_id']}|{request.form['date'][2:].replace('-', '')}"
 
                 # check if path_id already exists
                 if new_path_id != path_id:
                     rows = (
-                        con.execute(text("SELECT path_id FROM paths WHERE path_id = :path_id"), {"path_id": new_path_id}).mappings().all()
+                        con.execute(
+                            text("SELECT path_id FROM paths WHERE path_id = :path_id"),
+                            {"path_id": new_path_id},
+                        )
+                        .mappings()
+                        .all()
                     )
 
                     if rows is not None and len(rows):
@@ -406,7 +454,9 @@ def edit_path(path_id):
                         "transect_id": request.form["transect_id"],
                         "date": request.form["date"],
                         "sampling_season": fn.sampling_season(request.form["date"]),
-                        "completeness": request.form["completeness"] if request.form["completeness"] else None,
+                        "completeness": request.form["completeness"]
+                        if request.form["completeness"]
+                        else None,
                         "observer": request.form["observer"],
                         "institution": request.form["institution"],
                         "category": request.form["category"],
@@ -445,7 +495,9 @@ def del_path(path_id):
     """
 
     with fn.conn_alchemy().connect() as con:
-        con.execute(text("DELETE FROM paths WHERE path_id = :path_id"), {"path_id": path_id})
+        con.execute(
+            text("DELETE FROM paths WHERE path_id = :path_id"), {"path_id": path_id}
+        )
     return redirect("/paths_list")
 
 
@@ -463,18 +515,29 @@ def load_paths_xlsx():
 
     """
     if request.method == "GET":
-        return render_template("load_paths_xlsx.html", header_title="Import paths from XLSX/ODS")
+        return render_template(
+            "load_paths_xlsx.html", header_title="Import paths from XLSX/ODS"
+        )
 
     if request.method == "POST":
         new_file = request.files["new_file"]
 
         # check file extension
-        if pl.Path(new_file.filename).suffix.upper() not in params["excel_allowed_extensions"]:
-            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"))
+        if (
+            pl.Path(new_file.filename).suffix.upper()
+            not in params["excel_allowed_extensions"]
+        ):
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
+                )
+            )
             return redirect("/load_paths_xlsx")
 
         try:
-            filename = str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix.upper())
+            filename = str(uuid.uuid4()) + str(
+                pl.Path(new_file.filename).suffix.upper()
+            )
             new_file.save(pl.Path(params["upload_folder"]) / pl.Path(filename))
         except Exception:
             flash(fn.alert_danger("Error with the uploaded file"))
@@ -482,14 +545,20 @@ def load_paths_xlsx():
 
         r, msg, paths_data = paths_import.extract_data_from_paths_xlsx(filename)
         if r:
-            flash(Markup(f"File name: <b>{new_file.filename}</b>") + Markup("<hr><br>") + msg)
+            flash(
+                Markup(f"File name: <b>{new_file.filename}</b>")
+                + Markup("<hr><br>")
+                + msg
+            )
             return redirect("/load_paths_xlsx")
 
         # check if path_id already in DB
         with fn.conn_alchemy().connect() as con:
             paths_list = "','".join([paths_data[idx]["path_id"] for idx in paths_data])
             sql = text(f"SELECT path_id FROM paths WHERE path_id IN ('{paths_list}')")
-            paths_to_update = [row["path_id"] for row in con.execute(sql).mappings().all()]
+            paths_to_update = [
+                row["path_id"] for row in con.execute(sql).mappings().all()
+            ]
 
             return render_template(
                 "confirm_load_paths_xlsx.html",
@@ -572,14 +641,19 @@ def confirm_load_paths_xlsx(filename, mode):
                         "transect_id": data["transect_id"],
                         "date": data["date"],
                         "sampling_season": fn.sampling_season(data["date"]),
-                        "completeness": data["completeness"] if data["completeness"] else None,
+                        "completeness": data["completeness"]
+                        if data["completeness"]
+                        else None,
                         "operator": data["operator"].strip(),
                         "institution": data["institution"].strip(),
                         "notes": data["notes"].strip(),
                     },
                 )
             except Exception:
-                return "An error occured during the import of paths. Contact the administrator.<br>" + error_info(sys.exc_info())
+                return (
+                    "An error occured during the import of paths. Contact the administrator.<br>"
+                    + error_info(sys.exc_info())
+                )
 
     msg = f"XLSX/ODS file successfully loaded. {count_added} paths added, {count_updated} paths updated."
     flash(fn.alert_success(msg))

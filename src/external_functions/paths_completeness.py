@@ -36,7 +36,9 @@ def create_shapefile(dir_path: str, log_file: str):
         ],
     }
 
-    pointShp = fiona.open(dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632")
+    pointShp = fiona.open(
+        dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632"
+    )
 
     for path in paths:
         print(file=log)
@@ -78,18 +80,28 @@ def create_shapefile(dir_path: str, log_file: str):
                         continue
                     d = (
                         (point[0] - transect_geojson["coordinates"][0][idx - 1][0]) ** 2
-                        + (point[1] - transect_geojson["coordinates"][0][idx - 1][1]) ** 2
+                        + (point[1] - transect_geojson["coordinates"][0][idx - 1][1])
+                        ** 2
                     ) ** 0.5
                     tot_dist += d
 
                     # print(point, d, tot_dist, transect["transect_length"], file=log)
 
                     new_list.append(point)
-                    if round((tot_dist / transect["transect_length"]) * 100) >= path["completeness"]:
+                    if (
+                        round((tot_dist / transect["transect_length"]) * 100)
+                        >= path["completeness"]
+                    ):
                         break
 
-                if round((tot_dist / transect["transect_length"]) * 100) >= path["completeness"]:
-                    print(f'{path["completeness"]} COMPLETE OK  {tot_dist / transect["transect_length"]}', file=log)
+                if (
+                    round((tot_dist / transect["transect_length"]) * 100)
+                    >= path["completeness"]
+                ):
+                    print(
+                        f"{path['completeness']} COMPLETE OK  {tot_dist / transect['transect_length']}",
+                        file=log,
+                    )
 
                     rowDict = {
                         "geometry": {"type": "LineString", "coordinates": new_list},
@@ -108,7 +120,10 @@ def create_shapefile(dir_path: str, log_file: str):
                     pointShp.write(rowDict)
 
                 else:
-                    print(f'{path["completeness"]} NOT COMPLETE {tot_dist / transect["transect_length"]}', file=log)
+                    print(
+                        f"{path['completeness']} NOT COMPLETE {tot_dist / transect['transect_length']}",
+                        file=log,
+                    )
 
     log.close()
 

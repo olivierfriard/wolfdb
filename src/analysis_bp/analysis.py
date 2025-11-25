@@ -24,7 +24,9 @@ import fiona
 
 # from . import cell_occupancy as cell_occupancy_module
 
-app = flask.Blueprint("analysis", __name__, template_folder="templates", static_url_path="/static")
+app = flask.Blueprint(
+    "analysis", __name__, template_folder="templates", static_url_path="/static"
+)
 
 params = config()
 app.debug = params["debug"]
@@ -68,7 +70,11 @@ def path_completeness():
     require paths_completeness module
     """
 
-    dir_prefix = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
+    dir_prefix = (
+        pl.Path(pl.Path(app.static_url_path).name)
+        / pl.Path("results")
+        / pl.Path(session["email"])
+    )
     # create dir if not exists
     dir_prefix.mkdir(exist_ok=True)
 
@@ -80,7 +86,7 @@ def path_completeness():
     dir_path = dir_prefix / pl.Path(
         (
             f"paths_completeness_"
-            f'from_{session["start_date"]}_to_{session["end_date"]}'
+            f"from_{session['start_date']}_to_{session['end_date']}"
             f"_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}"
         )
     )
@@ -112,7 +118,11 @@ def transects_samples(mode: str):
 
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
-        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
+        transects = (
+            con.execute(text("SELECT * FROM transects ORDER BY transect_id"))
+            .mappings()
+            .all()
+        )
 
         out: dict = {}
         template: dict = {}
@@ -146,7 +156,11 @@ def transects_samples(mode: str):
                     text(
                         "SELECT path_id FROM paths WHERE transect_id = :transect_id AND date BETWEEN :start_date AND :end_date ORDER BY date"
                     ),
-                    {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                    {
+                        "transect_id": transect["transect_id"],
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
                 )
                 .mappings()
                 .all()
@@ -155,7 +169,12 @@ def transects_samples(mode: str):
             idx = 0
             for path in paths:
                 scats = (
-                    con.execute(text("SELECT count(*) AS n_scats FROM scats WHERE path_id = :path_id"), {"path_id": path["path_id"]})
+                    con.execute(
+                        text(
+                            "SELECT count(*) AS n_scats FROM scats WHERE path_id = :path_id"
+                        ),
+                        {"path_id": path["path_id"]},
+                    )
                     .mappings()
                     .fetchone()
                 )
@@ -188,7 +207,9 @@ def transects_samples(mode: str):
             response.headers["Content-type"] = "text/csv"
             extension = "csv"
 
-        response.headers["Content-disposition"] = f"attachment; filename={file_name}.{extension}"
+        response.headers["Content-disposition"] = (
+            f"attachment; filename={file_name}.{extension}"
+        )
 
         return response
 
@@ -202,7 +223,11 @@ def transects_dates():
 
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
-        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
+        transects = (
+            con.execute(text("SELECT * FROM transects ORDER BY transect_id"))
+            .mappings()
+            .all()
+        )
 
         out: dict = {}
         template: dict = {}
@@ -242,7 +267,11 @@ def transects_dates():
                         "AND date BETWEEN :start_date AND :end_date "
                         "ORDER BY date"
                     ),
-                    {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                    {
+                        "transect_id": transect["transect_id"],
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
                 )
                 .mappings()
                 .all()
@@ -264,11 +293,15 @@ def transects_dates():
     response = make_response(out_str, 200)
     if sep == "\t":
         response.headers["Content-type"] = "text/tab-separated-values"
-        response.headers["Content-disposition"] = "attachment; filename=transects_dates.tsv"
+        response.headers["Content-disposition"] = (
+            "attachment; filename=transects_dates.tsv"
+        )
 
     if sep in (",", ";"):
         response.headers["Content-type"] = "text/csv"
-        response.headers["Content-disposition"] = "attachment; filename=transects_dates.csv"
+        response.headers["Content-disposition"] = (
+            "attachment; filename=transects_dates.csv"
+        )
 
     return response
 
@@ -281,7 +314,11 @@ def transects_completeness():
 
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
-        transects = con.execute(text("SELECT * FROM transects ORDER BY transect_id")).mappings().all()
+        transects = (
+            con.execute(text("SELECT * FROM transects ORDER BY transect_id"))
+            .mappings()
+            .all()
+        )
 
         out: dict = {}
         template: dict = {}
@@ -314,7 +351,11 @@ def transects_completeness():
                         "WHERE transect_id = :transect_id "
                         "AND date BETWEEN :start_date AND :end_date ORDER BY date"
                     ),
-                    {"transect_id": transect["transect_id"], "start_date": session["start_date"], "end_date": session["end_date"]},
+                    {
+                        "transect_id": transect["transect_id"],
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
                 )
                 .mappings()
                 .all()
@@ -341,7 +382,9 @@ def transects_completeness():
     if sep in (",", ";"):
         response.headers["Content-type"] = "text/csv"
         extension = "csv"
-    response.headers["Content-disposition"] = f"attachment; filename=transects_completeness.{extension}"
+    response.headers["Content-disposition"] = (
+        f"attachment; filename=transects_completeness.{extension}"
+    )
 
     return response
 
@@ -374,15 +417,24 @@ def cell_occupancy():
 
         # check file extension
         if pl.Path(new_file.filename).suffix.upper() not in [".ZIP"]:
-            flash(fn.alert_danger("The uploaded file does not have an allowed extension (must be <b>.zip</b>)"))
+            flash(
+                fn.alert_danger(
+                    "The uploaded file does not have an allowed extension (must be <b>.zip</b>)"
+                )
+            )
             return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # save uploaded file
         try:
-            filename = pl.Path(params["upload_folder"]) / pl.Path(str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix))
+            filename = pl.Path(params["upload_folder"]) / pl.Path(
+                str(uuid.uuid4()) + str(pl.Path(new_file.filename).suffix)
+            )
             new_file.save(filename)
         except Exception:
-            flash(fn.alert_danger("Error saving the uploaded file") + f"({error_info(sys.exc_info())})")
+            flash(
+                fn.alert_danger("Error saving the uploaded file")
+                + f"({error_info(sys.exc_info())})"
+            )
             return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # extract zip file
@@ -391,7 +443,10 @@ def cell_occupancy():
             with zipfile.ZipFile(filename, "r") as zip_ref:
                 zip_ref.extractall(extracted_dir)
         except Exception:
-            flash(fn.alert_danger("Error during zip extraction") + f"({error_info(sys.exc_info())})")
+            flash(
+                fn.alert_danger("Error during zip extraction")
+                + f"({error_info(sys.exc_info())})"
+            )
             return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # remove uploaded file
@@ -417,11 +472,19 @@ def cell_occupancy():
         # check geometry
         for shape in shapes:
             if shape["geometry"]["type"] not in ["Polygon", "MultiPolygon"]:
-                flash(fn.alert_danger("All elements must have a Polygon or MultiPolygon geometry"))
+                flash(
+                    fn.alert_danger(
+                        "All elements must have a Polygon or MultiPolygon geometry"
+                    )
+                )
                 return redirect(f"/cell_occupancy/{year_init}/{year_end}")
 
         # ouput_path
-        output_path_prefix = pl.Path(pl.Path(app.static_url_path).name) / pl.Path("results") / pl.Path(session["email"])
+        output_path_prefix = (
+            pl.Path(pl.Path(app.static_url_path).name)
+            / pl.Path("results")
+            / pl.Path(session["email"])
+        )
         # create dir if not exists
         output_path_prefix.mkdir(exist_ok=True)
 
@@ -431,7 +494,7 @@ def cell_occupancy():
                 os.remove(path)
 
         output_path = output_path_prefix / pl.Path(
-            f'cell_occupancy_from_{session["start_date"]}_to_{session["end_date"]}_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip'
+            f"cell_occupancy_from_{session['start_date']}_to_{session['end_date']}_requested_at_{dt.datetime.now():%Y-%m-%d_%H%M%S}.zip"
         )
 
         _ = subprocess.Popen(

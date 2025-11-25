@@ -43,16 +43,21 @@ for shape in shapes:
     coord_str = ", ".join([f"{round(x[0])} {round(x[1])}" for x in coord_list])
 
     with fn.conn_alchemy().connect() as con:
-        sql = text(f"SELECT transect_id FROM transects WHERE ST_INTERSECTS(ST_GeomFromText('POLYGON(({coord_str}))', 32632), multilines); ")
+        sql = text(
+            f"SELECT transect_id FROM transects WHERE ST_INTERSECTS(ST_GeomFromText('POLYGON(({coord_str}))', 32632), multilines); "
+        )
 
         rows2 = con.execute(sql).mappings().all()
 
         for row2 in rows2:
-            print(f'transect ID: {row2["transect_id"]}\t', file=sys.stderr)
+            print(f"transect ID: {row2['transect_id']}\t", file=sys.stderr)
 
             rows3 = (
                 con.execute(
-                    text("SELECT path_id, date::date FROM paths WHERE transect_id = :transect_id", {"transect_id": row2["transect_id"]})
+                    text(
+                        "SELECT path_id, date::date FROM paths WHERE transect_id = :transect_id",
+                        {"transect_id": row2["transect_id"]},
+                    )
                 )
                 .mappings()
                 .all()
@@ -74,7 +79,10 @@ for shape in shapes:
                     .one()
                 )
                 data[id][path_date] += row4["count"]
-                print(f"{row3['path_id']}\tnumber of scats: {row4['count']}", file=sys.stderr)
+                print(
+                    f"{row3['path_id']}\tnumber of scats: {row4['count']}",
+                    file=sys.stderr,
+                )
 
         print("=" * 50, file=sys.stderr)
 
@@ -84,9 +92,13 @@ sep = ";"
 for id in data:
     tot_scats_nb += sum([data[id][date] for date in data[id]])
     if mode == "number":
-        print(f"{id}{sep}{ f'{sep}'.join([str(data[id][date]) for date in sorted(data[id].keys())])}")
+        print(
+            f"{id}{sep}{f'{sep}'.join([str(data[id][date]) for date in sorted(data[id].keys())])}"
+        )
     if mode == "presence":
-        print(f"{id}{sep}{ f'{sep}'.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}")
+        print(
+            f"{id}{sep}{f'{sep}'.join([str(int(data[id][date] > 0)) for date in sorted(data[id].keys())])}"
+        )
 
 
 print(f"{tot_scats_nb=}", file=sys.stderr)

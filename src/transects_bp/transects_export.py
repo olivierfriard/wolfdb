@@ -14,7 +14,15 @@ def export_transects(paths: list):
     ws1 = wb.active
     ws1.title = "Transects"
 
-    header = ["Transect ID", "Sector", "Location", "Municipality", "Province", "Province code", "Region"]
+    header = [
+        "Transect ID",
+        "Sector",
+        "Location",
+        "Municipality",
+        "Province",
+        "Province code",
+        "Region",
+    ]
 
     ws1.append(header)
 

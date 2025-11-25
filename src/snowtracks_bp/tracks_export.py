@@ -80,14 +80,24 @@ def export_shapefile(dir_path: str, file_name: str, log_file: str) -> str:
     log = open(log_file, "w")
 
     with fn.conn_alchemy().connect() as con:
-        tracks = con.execute(text("SELECT snowtrack_id, ST_AsGeoJSON(multilines) AS track_geojson FROM snow_tracks")).mappings().all()
+        tracks = (
+            con.execute(
+                text(
+                    "SELECT snowtrack_id, ST_AsGeoJSON(multilines) AS track_geojson FROM snow_tracks"
+                )
+            )
+            .mappings()
+            .all()
+        )
 
     schema = {
         "geometry": "MultiLineString",
         "properties": [("track_id", "str")],
     }
 
-    with fiona.open(dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632") as layer:
+    with fiona.open(
+        dir_path, mode="w", driver="ESRI Shapefile", schema=schema, crs="EPSG:32632"
+    ) as layer:
         for track in tracks:
             print(file=log)
             print(track, file=log)
@@ -97,7 +107,10 @@ def export_shapefile(dir_path: str, file_name: str, log_file: str) -> str:
             transect_geojson = json.loads(track["track_geojson"])
 
             rowDict = {
-                "geometry": {"type": "MultiLineString", "coordinates": transect_geojson["coordinates"]},
+                "geometry": {
+                    "type": "MultiLineString",
+                    "coordinates": transect_geojson["coordinates"],
+                },
                 "properties": {"track_id": track["snowtrack_id"]},
             }
             layer.write(rowDict)

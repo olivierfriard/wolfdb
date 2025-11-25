@@ -60,7 +60,11 @@ def view_pack(pack_name):
                     "AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL) "
                     "ORDER BY date_first_capture ASC"
                 ),
-                {"pack_name": pack_name, "start_date": session["start_date"], "end_date": session["end_date"]},
+                {
+                    "pack_name": pack_name,
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
             )
             .mappings()
             .all()
@@ -94,7 +98,11 @@ def view_pack(pack_name):
                     "       AND wa_results.genotype_id in (SELECT genotype_id FROM genotypes_list_mat WHERE pack = :pack_name "
                     "                                                                              AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL))"
                 ),
-                {"pack_name": pack_name, "start_date": session["start_date"], "end_date": session["end_date"]},
+                {
+                    "pack_name": pack_name,
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
             )
             .mappings()
             .all()
@@ -115,18 +123,29 @@ def view_pack(pack_name):
         popup_content: list = []
         if row["sample_type"] == "scat":
             color = params["scat_color"]
-            popup_content.append(f"""Scat ID: <a href="/view_scat/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>""")
+            popup_content.append(
+                f"""Scat ID: <a href="/view_scat/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
+            )
         elif row["sample_type"] == "Dead wolf":
             color = params["dead_wolf_color"]
-            popup_content.append(f"""Tissue ID: <a href="/view_tissue/{row['sample_id']}" target="_blank">{row['sample_id']}</a><br>""")
+            popup_content.append(
+                f"""Tissue ID: <a href="/view_tissue/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
+            )
         else:
             color = "red"
 
-        popup_content.append(f"""WA code: <a href="/view_wa/{row['wa_code']}" target="_blank">{row['wa_code']}</a><br>""")
-        popup_content.append(f"""Genotype ID: <a href="/view_genotype/{row['genotype_id']}" target="_blank">{row['genotype_id']}</a>""")
+        popup_content.append(
+            f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+        )
+        popup_content.append(
+            f"""Genotype ID: <a href="/view_genotype/{row["genotype_id"]}" target="_blank">{row["genotype_id"]}</a>"""
+        )
 
         sample_feature = {
-            "geometry": {"type": "Point", "coordinates": [row["longitude"], row["latitude"]]},
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["longitude"], row["latitude"]],
+            },
             "type": "Feature",
             "properties": {
                 "style": {"color": color, "fillColor": color, "fillOpacity": 1},

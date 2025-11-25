@@ -35,7 +35,9 @@ main > .container {
 </head>
 """
 
-out += "<h1>Location on transects closer than 50 m for scats from systematic sample</h1>\n"
+out += (
+    "<h1>Location on transects closer than 50 m for scats from systematic sample</h1>\n"
+)
 
 out += f"Check done at {datetime.datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')}<br><br>\n"
 
@@ -67,7 +69,6 @@ cursor.execute(
 )
 scats = cursor.fetchall()
 for row in scats:
-
     sql2 = sql.replace("XXX", str(row["x"])).replace("YYY", str(row["y"]))
 
     cursor.execute(sql2)
@@ -94,7 +95,7 @@ for row in scats:
     td = ""
     for t, d in zip(transects_list, distances_list):
         td += f"{t} ({d} m); "
-    out += f'<td>{row["scat_id"]}</td><td>{row["sampling_type"]}</td><td>{path_id}</td><td>{td}</td><td>{match}</td></tr>\n'
+    out += f"<td>{row['scat_id']}</td><td>{row['sampling_type']}</td><td>{path_id}</td><td>{td}</td><td>{match}</td></tr>\n"
 
 
 out += "</table>\n"

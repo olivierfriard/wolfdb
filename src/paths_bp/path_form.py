@@ -3,7 +3,6 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-
 from markupsafe import Markup
 import datetime
 from wtforms import Form, StringField, TextAreaField, SelectField
@@ -38,7 +37,9 @@ class Path(Form):
             return
         except Exception:
             raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>')
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Not a valid integer value</div>'
+                )
             )
 
     transect_id = SelectField(

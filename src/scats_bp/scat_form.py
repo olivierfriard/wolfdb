@@ -19,7 +19,11 @@ class Scat(Form):
             int(field.data)
             return
         except Exception:
-            raise ValidationError(Markup('<div class="alert alert-danger" role="alert">Not a valid integer value</div>'))
+            raise ValidationError(
+                Markup(
+                    '<div class="alert alert-danger" role="alert">Not a valid integer value</div>'
+                )
+            )
 
     def iso_date_validator(form, field):
         """
@@ -30,7 +34,9 @@ class Scat(Form):
             return
         except ValueError:
             raise ValidationError(
-                Markup('<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYYY-MM-DD format</div>')
+                Markup(
+                    '<div class="alert alert-danger" role="alert">The date is not valid. Uset the YYYY-MM-DD format</div>'
+                )
             )
 
     def wa_validator(form, field):
@@ -98,19 +104,35 @@ class Scat(Form):
     municipality = StringField("Municipality", [])
     province = StringField("Province", [])
 
-    deposition = SelectField("Deposition", choices=[("", ""), ("Fresh", "Fresh"), ("Old", "Old")], default="")
-    matrix = SelectField("Matrix", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
-    collected_scat = SelectField("Collected scat", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
+    deposition = SelectField(
+        "Deposition", choices=[("", ""), ("Fresh", "Fresh"), ("Old", "Old")], default=""
+    )
+    matrix = SelectField(
+        "Matrix", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default=""
+    )
+    collected_scat = SelectField(
+        "Collected scat", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default=""
+    )
     scalp_category = SelectField(
         "SCALP category",
         choices=[("C1", "C1"), ("C2", "C2"), ("C3", "C3")],
         default="C2",
     )
-    genetic_sample = SelectField("Genetic sample", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default="")
-    coord_east = StringField("Easting (X)", validators=[DataRequired(), integer_validator])
-    coord_north = StringField("Northing (Y)", validators=[DataRequired(), integer_validator])
-    coord_zone = StringField("Zone number", validators=[DataRequired(), integer_validator])
-    hemisphere = SelectField("Hemisphere", choices=[("N", "N"), ("S", "S")], default="N")
+    genetic_sample = SelectField(
+        "Genetic sample", choices=[("", ""), ("Yes", "Yes"), ("No", "No")], default=""
+    )
+    coord_east = StringField(
+        "Easting (X)", validators=[DataRequired(), integer_validator]
+    )
+    coord_north = StringField(
+        "Northing (Y)", validators=[DataRequired(), integer_validator]
+    )
+    coord_zone = StringField(
+        "Zone number", validators=[DataRequired(), integer_validator]
+    )
+    hemisphere = SelectField(
+        "Hemisphere", choices=[("N", "N"), ("S", "S")], default="N"
+    )
 
     observer = StringField("Operator", [])
     institution = StringField("Institution", [])

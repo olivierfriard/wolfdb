@@ -34,7 +34,11 @@ with fn.conn_alchemy().connect() as con:
     for r in wa_codes:
         if (r["wa_code"], r["locus"], r["allele"]) not in data:
             data[(r["wa_code"], r["locus"], r["allele"])] = []
-        data[(r["wa_code"], r["locus"], r["allele"])] = (r["timestamp"].isoformat(), r["notes"], r["user_id"])
+        data[(r["wa_code"], r["locus"], r["allele"])] = (
+            r["timestamp"].isoformat(),
+            r["notes"],
+            r["user_id"],
+        )
 
 # print(data)
 
