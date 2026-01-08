@@ -1011,6 +1011,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                 ") "
             )
 
+        if app.debug:
+            print(sql_all if not search_term else sql_search)
+
         wa_scats = (
             con.execute(
                 text(sql_all if not search_term else sql_search),
@@ -1165,6 +1168,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         if "url_scats_list" in session:
             del session["url_scats_list"]
 
+        # timing
         duration = round(time.time() - t0, 3)
 
         return render_template(
