@@ -36,7 +36,6 @@ def update_redis_wa_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-
         sql = text("SELECT wa_code FROM wa_scat_dw_mat ")
 
         for row in con.execute(sql).mappings().all():

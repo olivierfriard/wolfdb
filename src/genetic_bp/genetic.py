@@ -909,7 +909,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     filter: all / with notes / red_flag / no_values
     """
 
-
     if filter not in ("all", "good_mtdna", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
 
@@ -947,9 +946,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             search_term: str = request.args.get("search").strip()
 
     if filter == "all":
-        sql_all = "SELECT * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+        sql_all = "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
     else:
-        sql_all = "SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+        sql_all = "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     with fn.conn_alchemy().connect() as con:
         if ":" in search_term:
@@ -1014,6 +1013,10 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         if app.debug:
             print(sql_all if not search_term else sql_search)
 
+        # insert limits
+        if limit != "ALL":
+            sql_all += f' ORDER BY wa_code LIMIT {limit} OFFSET {offset} '
+
         wa_scats = (
             con.execute(
                 text(sql_all if not search_term else sql_search),
@@ -1028,6 +1031,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             .mappings()
             .all()
         )
+        total_n_wa = wa_scats[0].total_count if wa_scats else 0
+
+    # timing
+    if app.debug:
+        print("wa list done", time.time() - t0)
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -1042,9 +1050,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             True if (row["notes"] is not None and row["notes"]) else False
         )
 
-        loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
-        # loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
-        loci_values[row["wa_code"]] = dict(loci_val)
+        #loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
+        #loci_values[row["wa_code"]] = dict(loci_val)
+        loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
 
         has_loci_notes = False
         has_orange_loci_notes = False
@@ -1072,7 +1080,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                 if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
                     has_loci_values = True
 
-                # check if wa loci corresponds to genotype loci (if not the background colo will be orange)
+                # check if wa loci corresponds to genotype loci (if not the background color will be orange)
                 if row["genotype_id"]:
                     genotype_loci_val = {}
                     if mem_genotype_loci.get(row["genotype_id"], False):
@@ -1104,6 +1112,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                     except Exception:
                         pass
 
+
         if filter == "no_values":
             out.append(dict(row))
 
@@ -1129,6 +1138,15 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             else:
                 locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
 
+
+    print(f"{len(loci_values)=}")
+    print(f"{list(loci_values.keys())[:10]=}")
+
+    # timing
+    if app.debug:
+        print("after check", time.time() - t0)
+
+
     if mode == "export":
         file_content = export.export_wa_genetic_samples(
             loci_list, out, loci_values, filter
@@ -1146,9 +1164,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
     else:
         # apply offset and limit
-        n_wa = len(out)
-        if limit != "ALL":
-            out = out[offset : offset + limit]
+        n_wa = total_n_wa
+        #if limit != "ALL":
+        #    out = out[offset : offset + limit]
 
         if n_wa:
             title = f"Genetic data of {n_wa} WA codes"
@@ -1185,7 +1203,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             filter=filter,
             search_term=search_term,
             view_wa_code=view_wa_code,
-            duration=duration
+            duration=duration,
         )
 
 

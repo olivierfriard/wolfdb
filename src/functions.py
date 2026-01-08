@@ -117,10 +117,8 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
     """
     r = rdis.get(wa_code)
     if r is not None:
-        print(wa_code, 'from redis')
         return json.loads(r)
     else:
-        print(wa_code, 'from db')
         return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 

@@ -40,6 +40,20 @@ LEFT JOIN genotypes g
   ON g.genotype_id = w.genotype_id
 ORDER BY w.wa_code;
 
+* added tables
+
+
+CREATE TABLE wa_loci_values (
+  wa_code varchar(100) PRIMARY KEY,
+  loci_values jsonb NOT NULL
+);
+
+
+CREATE TABLE genotype_loci_values (
+  genotype_id varchar(100) PRIMARY KEY,
+  loci_values jsonb NOT NULL
+);
+
 
 
 ## 2025-04
