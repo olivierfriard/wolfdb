@@ -1118,6 +1118,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
         # skip if no loci values and no notes
         if not has_loci_values and not has_loci_notes:
+            if app.debug:
+                print(row["wa_code"], 'has no loci value and no loci notes')
             continue
 
         if (filter == "red_flag") and (has_loci_notes):
@@ -1140,11 +1142,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
 
 
     print(f"{len(loci_values)=}")
-    print(f"{list(loci_values.keys())[:10]=}")
-
-    # timing
-    if app.debug:
-        print("after check", time.time() - t0)
 
 
     if mode == "export":
@@ -1165,6 +1162,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     else:
         # apply offset and limit
         n_wa = total_n_wa
+        if app.debug:
+            print(f"{len(out)=}")
         #if limit != "ALL":
         #    out = out[offset : offset + limit]
 
