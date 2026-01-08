@@ -20,6 +20,7 @@ def export_wa_genetic_samples(loci_list, wa_scats, loci_values, with_notes):
         "sample_id": "Sample ID",
         "date": "Date",
         "municipality": "Municipality",
+        "province": "Province",
         "coord_east": "Coordinate WGS84 UTM East",
         "coord_north": "Coordinate WGS84 UTM North",
         "coord_zone": "UTM Zone",

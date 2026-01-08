@@ -909,7 +909,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     filter: all / with notes / red_flag / no_values
     """
 
-    if filter not in ("all", "with_notes", "red_flag", "no_values"):
+    if filter not in ("all", "good_mtdna", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
 
     # test limit value: must be ALL or int
@@ -929,6 +929,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     else:
         view_wa_code = None
 
+    search_term: str = ""
     if request.method == "POST":
         offset = 0
         limit = "ALL"
@@ -940,10 +941,11 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     elif request.method == "GET":
         if request.args.get("search") is not None:
             search_term: str = request.args.get("search").strip()
-        else:
-            search_term: str = ""
 
-    sql_all = "SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+    if filter == "all":
+        sql_all = "SELECT * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+    else:
+        sql_all = "SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     with fn.conn_alchemy().connect() as con:
         if ":" in search_term:
@@ -1105,8 +1107,10 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         if (filter == "red_flag") and (has_loci_notes):
             out.append(dict(row))
 
-        if (filter == "all") or (
-            filter == "with_notes" and (has_genotype_notes or has_loci_notes)
+        if (
+            (filter == "all")
+            or (filter == "good_mtdna")
+            or (filter == "with_notes" and (has_genotype_notes or has_loci_notes))
         ):
             out.append(dict(row))
 

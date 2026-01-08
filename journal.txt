@@ -1,4 +1,47 @@
 
+## 2026-01-08
+
+- added province to downloaded wa codes
+
+- added view:
+
+create view wa_genetic_samples_all AS 
+SELECT
+  w.wa_code,
+  w.sample_id,
+  w.date,
+  w.municipality,
+  w.province,
+  w.coord_east,
+  w.coord_north,
+  w.coord_zone,
+  w.geometry_utm,
+  w.genotype_id,
+  w.tmp_id,
+  w.mtdna,
+  w.sex_id,
+  w.sample_type,
+  w.box_number,
+  g.working_notes AS notes,
+  g.status,
+  g.hybrid,
+  g.pack,
+  CASE
+    WHEN EXISTS (
+      SELECT 1
+      FROM dead_wolves dw
+      WHERE dw.tissue_id = w.sample_id
+    )
+    THEN 'Yes'
+    ELSE NULL
+  END AS dead_recovery
+FROM wa_scat_dw_mat w
+LEFT JOIN genotypes g
+  ON g.genotype_id = w.genotype_id
+ORDER BY w.wa_code;
+
+
+
 ## 2025-04
 
 - added ispra_id field to scats table
