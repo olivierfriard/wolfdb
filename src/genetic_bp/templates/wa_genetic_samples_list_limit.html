@@ -60,7 +60,7 @@ function scroll_to_wa() {
 
 <a style="width:10%" href="/wa_genetic_samples/0/ALL/{{ filter }}/export" class="btn btn-secondary btn-sm">Export all genetic samples</a>
 </span>
-
+{% if config.DEBUG %}Duration: {{ duration }} s{% endif %}
 
 {% include "freeze_1stcolumn_1strow.html" %}
 

@@ -909,6 +909,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     filter: all / with notes / red_flag / no_values
     """
 
+
     if filter not in ("all", "good_mtdna", "with_notes", "red_flag", "no_values"):
         return "An error has occured. Check the URL"
 
@@ -918,6 +919,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             limit = int(limit)
         except Exception:
             return "An error has occured. Check the URL"
+
+    # timing
+    t0 = time.time()
 
     if limit == "ALL":
         offset = 0
@@ -1161,6 +1165,8 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         if "url_scats_list" in session:
             del session["url_scats_list"]
 
+        duration = round(time.time() - t0, 3)
+
         return render_template(
             "wa_genetic_samples_list_limit.html",
             header_title="Genetic data of WA codes",
@@ -1175,6 +1181,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             filter=filter,
             search_term=search_term,
             view_wa_code=view_wa_code,
+            duration=duration
         )
 
 
