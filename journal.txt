@@ -55,6 +55,22 @@ CREATE TABLE genotype_loci_values (
 );
 
 
+query for retrieving WA codes with almost one locus value:
+
+SELECT w.wa_code
+FROM wa_loci_values w
+WHERE EXISTS (
+  SELECT 1
+  FROM jsonb_each(w.loci_values) AS l(locus, alleles)
+  WHERE
+    (NULLIF(alleles #>> '{a,value}', '') IS NOT NULL AND (alleles #>> '{a,value}') NOT IN ('-', '0'))
+    OR
+    (NULLIF(alleles #>> '{b,value}', '') IS NOT NULL AND (alleles #>> '{b,value}') NOT IN ('-', '0'))
+);
+
+
+
+
 
 ## 2025-04
 
