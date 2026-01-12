@@ -32,35 +32,40 @@ function scroll_to_wa() {
 
 <span style="display:solid">
 {% if limit != 'ALL' %}
-<a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/{{ limit }}/{{ filter }}">1st page</a>
+<a class="btn btn{% if offset %}-outline{% endif %}-secondary btn-sm" href="{{ url_for(request.endpoint, offset=0, limit=limit, filter=filter) }}">1st page</a>
 {% if offset - limit >= 0 %}
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset - limit }}/{{ limit }}/{{ filter }}">Previous page</a>
+<a class="btn btn-outline-secondary btn-sm" href="{{ url_for(request.endpoint, offset=offset - limit, limit=limit, filter=filter) }}">Previous page</a>
+
 {% endif %}
-<a class="btn btn-outline-secondary btn-sm" href="/wa_genetic_samples/{{ offset + limit }}/{{ limit }}/{{ filter }}">Next page</a>
+<a class="btn btn-outline-secondary btn-sm" href="{{ url_for(request.endpoint, offset=offset + limit, limit=limit, filter=filter) }}">Next page</a>
 {% endif %}
+
+
 
 <span style="display:inline-block; width: 8em;"></span>
 <small>WA codes / page</small>
-<a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/10/{{ filter }}">10</a>
-<a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/20/{{ filter }}">20</a>
-<a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/50/{{ filter }}">50</a>
-<a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/100/{{ filter }}">100</a>
-<a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/200/{{ filter }}">200</a>
-<a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/{{ offset }}/500/{{ filter }}">500</a>
-<a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary btn-sm" href="/wa_genetic_samples/0/ALL/{{ filter }}">All</a>
+
+{# selection of number of results by page #}
+{% for n_results in [10,20,50,100,200,500, 'ALL'] %}
+<a class="btn btn{% if limit != n_results %}-outline{% endif %}-secondary btn-sm" href="{{ url_for(request.endpoint, offset=offset, limit=n_results, filter=filter) }}">{{ n_results }}</a>
+{% endfor %}
 
 
 <span style="display:inline-block; width: 8em;"></span>
 
-<form style="display:inline" method="POST" action="/wa_genetic_samples/0/ALL/{{ filter }}">
+<form style="display:inline" method="POST" action="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter) }}">   
 <input  type="search" name="search" value="{{ search_term }}">
 <button type="submit" class="btn btn-secondary btn-sm" >search</button>
 </form>
 <span style="display:inline-block; width: 8em;"></span>
 
-<a style="width:10%" href="/wa_genetic_samples/0/ALL/{{ filter }}/export" class="btn btn-secondary btn-sm">Export all genetic samples</a>
+<a style="width:10%" href="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter, mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>   
 </span>
 {% if config.DEBUG %}Duration: {{ duration }} s{% endif %}
+
+<br>
+endpoint: {{ request.endpoint }}<br>
+path: {{ request.path }}<br>
 
 {% include "freeze_1stcolumn_1strow.html" %}
 

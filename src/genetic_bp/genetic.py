@@ -1086,8 +1086,6 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     no_notes = []
     no_no = []
 
-    print(f"{len(wa_scats)=}")
-
     for row in wa_scats:
         # genotype working notes
         has_genotype_notes = (
@@ -1187,8 +1185,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             else:
                 locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
 
+    print(f"{len(wa_scats)=}")
     print(f"{len(loci_values)=}")
-    print(f"{len(no_loci)=}")
+    print(f"{len(no_loci)=} {no_loci}")
     print(f"{len(no_notes)=}")
     print(f"{len(no_no)=}")
 
@@ -1253,6 +1252,470 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             view_wa_code=view_wa_code,
             duration=duration,
         )
+
+
+@app.route(
+    "/wa_genetic_samples2/<int:offset>/<limit>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@app.route(
+    "/wa_genetic_samples2/<int:offset>/<limit>/<filter>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@app.route("/wa_genetic_samples2/<int:offset>/<limit>/<filter>/<mode>")
+@fn.check_login
+def wa_genetic_samples2(offset: int, limit: int | str, filter="all", mode="web"):
+    """
+    display genetic data for WA code
+    filter: all / with notes / red_flag / no_values
+    """
+
+    if filter not in (
+        "all",
+        "good_mtdna",
+        "with_notes",
+        "red_flag",
+        "no_values",
+        "with_loci_values",
+    ):
+        return "An error has occured. Check the URL"
+
+    # test limit value: must be ALL or int
+    if limit != "ALL":
+        try:
+            limit = int(limit)
+        except Exception:
+            return "An error has occured. Check the URL"
+
+    # timing
+    t0 = time.time()
+
+    if limit == "ALL":
+        offset = 0
+
+    # check if wa code is specified to scroll the table
+    if "view_wa_code" in session:
+        view_wa_code = session["view_wa_code"]
+        del session["view_wa_code"]
+    else:
+        view_wa_code = None
+
+    search_term: str = ""
+    if request.method == "POST":
+        offset = 0
+        limit = "ALL"
+        if request.args.get("search") is not None:
+            search_term = request.args.get("search").strip()
+        else:
+            search_term = request.form["search"].strip()
+
+    elif request.method == "GET":
+        if request.args.get("search") is not None:
+            search_term: str = request.args.get("search").strip()
+
+    table = "wa_genetic_samples_all"
+
+    match filter:
+        case "all":
+            sql_all = f"SELECT COUNT(*) OVER () AS total_count, * FROM {table} WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+
+        case "with_loci_values":
+            sql_all = (
+                f"SELECT COUNT(*) OVER () AS total_count, * FROM {table} WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+                " AND wa_code IN "
+                "(SELECT w.wa_code "
+                "FROM wa_loci_values w "
+                "WHERE EXISTS ( "
+                "SELECT 1 "
+                "FROM jsonb_each(w.loci_values) AS l(locus, alleles) "
+                "WHERE "
+                "    (NULLIF(alleles #>> '{a,value}', '') IS NOT NULL AND (alleles #>> '{a,value}') NOT IN ('-', '0')) "
+                "    OR "
+                "    (NULLIF(alleles #>> '{b,value}', '') IS NOT NULL AND (alleles #>> '{b,value}') NOT IN ('-', '0')) "
+                ")) "
+            )
+
+        case "with_notes":  # genotype notes
+            sql_all = (
+                f"SELECT COUNT(*) OVER () AS total_count, * FROM {table} WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+                "AND notes != '' AND notes IS NOT NULL "
+            )
+
+        case "with_loci_notes":  # loci notes
+            sql_all = (
+                f"SELECT COUNT(*) OVER () AS total_count, * FROM {table} WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+                " AND wa_code IN "
+                "(SELECT w.wa_code "
+                "FROM wa_loci_values w "
+                "WHERE EXISTS ( "
+                "  SELECT 1 "
+                "  FROM jsonb_each(w.loci_values) AS l(locus, alleles) "
+                "  WHERE "
+                "    ( "
+                "      COALESCE((alleles #>> '{a,has_history}')::int, 0) = 1 "
+                "      AND COALESCE((alleles #>> '{a,definitive}')::boolean, false) = false "
+                "    ) "
+                "    OR "
+                "    ( "
+                "      COALESCE((alleles #>> '{b,has_history}')::int, 0) = 1 "
+                "      AND COALESCE((alleles #>> '{b,definitive}')::boolean, false) = false "
+                "    ) "
+                ")) "
+            )
+
+    with fn.conn_alchemy().connect() as con:
+        if ":" in search_term:
+            sql_search = sql_all
+            values: dict = {}
+            for idx, field_term in enumerate(search_term.split(";")):
+                field, value = [x.strip().lower() for x in field_term.split(":")]
+                research_fields = (
+                    "wa",
+                    "date",
+                    "sample id",
+                    "municipality",
+                    "province",
+                    "genotype id",
+                    "sex",
+                    "hybrid",
+                    "tmp id",
+                    "notes",
+                    "pack",
+                    "box",
+                )
+                if field not in research_fields:
+                    flash(
+                        fn.alert_danger(
+                            f"Search term not found. Must be {'","'.join(research_fields)}"
+                        )
+                    )
+                    return redirect(session["url_wa_list"])
+
+                field = field.replace(" ", "_")
+                if field == "wa":
+                    field = "wa_code"
+                if field == "sex":
+                    field = "sex_id"
+                    values[f"search{idx}"] = value
+                    sql_search += f" AND ({field} = :search{idx}) "
+                    # sql_search_count += f" AND ({field} = :search{idx}) "
+
+                elif field == "box":
+                    field = "box_number"
+                    values[f"search{idx}"] = value
+                    sql_search += f" AND ({field} = :search{idx}) "
+                    # sql_search_count += f" AND ({field} = :search{idx}) "
+                else:
+                    sql_search += f" AND ({field} ILIKE :search{idx}) "
+                    # sql_search_count += f" AND ({field} ILIKE :search{idx}) "
+                    values[f"search{idx}"] = f"%{value}%"
+
+        else:  # search in all fields
+            values = {"search": f"%{search_term}%"}
+            sql_search = sql_all + (
+                " AND ("
+                "wa_code ILIKE :search "
+                "OR sample_id ILIKE :search "
+                "OR date::text ILIKE :search "
+                "OR municipality ILIKE :search "
+                "OR genotype_id ILIKE :search "
+                "OR hybrid ILIKE :search "
+                "OR tmp_id ILIKE :search "
+                "OR notes ILIKE :search "
+                "OR pack ILIKE :search "
+                "OR box_number::text = :search "
+                ") "
+            )
+            # sql_search_count = sql_all_count + (
+            #    " AND ("
+            #    "wa_code ILIKE :search "
+            #    "OR sample_id ILIKE :search "
+            #    "OR date::text ILIKE :search "
+            #    "OR municipality ILIKE :search "
+            #    "OR genotype_id ILIKE :search "
+            #    "OR hybrid ILIKE :search "
+            #    "OR tmp_id ILIKE :search "
+            #    "OR notes ILIKE :search "
+            #    "OR pack ILIKE :search "
+            #    "OR box_number::text = :search "
+            #    ") "
+            # )
+
+        if app.debug:
+            print(sql_all if not search_term else sql_search)
+            # print(sql_all_count if not search_term else sql_search_count)
+
+        # insert limits
+        if limit != "ALL":
+            sql_all += f" ORDER BY wa_code LIMIT {limit} OFFSET {offset} "
+
+        wa_scats = (
+            con.execute(
+                text(sql_all if not search_term else sql_search),
+                dict(
+                    {
+                        "start_date": session["start_date"],
+                        "end_date": session["end_date"],
+                    },
+                    **values,
+                ),
+            )
+            .mappings()
+            .all()
+        )
+
+        # count distinct wa codes
+        # wa_scats_n = con.execute(
+        #    text(sql_all_count if not search_term else sql_search_count),
+        #    dict(
+        #        {
+        #            "start_date": session["start_date"],
+        #            "end_date": session["end_date"],
+        #        },
+        #        **values,
+        #    ),
+        # ).scalar_one()
+
+        total_n_wa = wa_scats[0].total_count if wa_scats else 0
+        # print(f"{total_n_wa=}")
+        # print(f"{wa_scats_n=}")
+
+    # timing
+    if app.debug:
+        print("wa list done", time.time() - t0)
+
+    # loci list
+    loci_list: dict = fn.get_loci_list()
+
+    out: list = []
+    loci_values: list = {}
+    locus_notes: dict = {}
+    mem_genotype_loci: dict = {}
+
+    no_loci = []
+    no_notes = []
+    no_no = []
+
+    for row in wa_scats:
+        # genotype working notes
+        has_genotype_notes = (
+            True if (row["notes"] is not None and row["notes"]) else False
+        )
+
+        loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
+
+        has_loci_notes = False
+        has_orange_loci_notes = False
+        has_loci_values = False
+
+        # check if loci have notes and values and corresponds to genotype loci
+        for x in loci_values[row["wa_code"]]:
+            for allele in ("a", "b"):
+                if allele not in loci_values[row["wa_code"]][x]:
+                    continue
+
+                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
+
+                if row["wa_code"] == "P2733":
+                    print(f"{loci_values[row["wa_code"]][x][allele]=}")
+
+                if loci_values[row["wa_code"]][x][allele]["has_history"]:
+                    if loci_values[row["wa_code"]][x][allele]["definitive"]:
+                        loci_values[row["wa_code"]][x][allele]["color"] = params[
+                            "green_note"
+                        ]
+                    else:
+                        loci_values[row["wa_code"]][x][allele]["color"] = params[
+                            "red_note"
+                        ]
+                        has_loci_notes = True
+
+                # if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                #    has_loci_values = True
+
+                # check if wa loci corresponds to genotype loci (if not the background color will be orange)
+                if row["genotype_id"]:
+                    genotype_loci_val = {}
+                    if mem_genotype_loci.get(row["genotype_id"], False):
+                        genotype_loci_val = mem_genotype_loci[row["genotype_id"]]
+                    else:
+                        genotype_loci_val = fn.get_genotype_loci_values_redis(
+                            row["genotype_id"]
+                        )
+                        if genotype_loci_val is not None:
+                            mem_genotype_loci[row["genotype_id"]] = genotype_loci_val
+                        else:
+                            print(
+                                f"Loci not found {row["genotype_id"]=}  {row["wa_code"]=}"
+                            )
+
+                    try:
+                        if (
+                            genotype_loci_val
+                            and genotype_loci_val[x][allele]["value"]
+                            != loci_val[x][allele]["value"]
+                            and loci_val[x][allele]["value"] not in (0, "-")
+                            and loci_val[x][allele]["value"] not in (0, "-")
+                        ):
+                            has_orange_loci_notes = True
+                            loci_values[row["wa_code"]][x][allele][
+                                "divergent_allele"
+                            ] = Markup('<span style="font-size:24px">&#128312;</span>')
+                            # check if allele has already a color
+                    except Exception:
+                        pass
+
+        if filter == "no_values":
+            out.append(dict(row))
+
+        # skip if no loci values and no notes
+        if not has_loci_values:
+            no_loci.append(row["wa_code"])
+        if not has_loci_notes:
+            no_notes.append(row["wa_code"])
+
+        if not has_loci_values and not has_loci_notes:
+            # if app.debug:
+            #    print(row["wa_code"], "has no loci value and no loci notes")
+            no_no.append(row["wa_code"])
+
+            # continue
+
+        # if (filter == "red_flag") and (has_loci_notes):
+        #    out.append(dict(row))
+        # if (
+        #    (filter == "all")
+        #    or (filter == "good_mtdna")
+        #    or (filter == "with_notes" and (has_genotype_notes or has_loci_notes))
+        # ):
+        #    out.append(dict(row))
+
+        out.append(dict(row))
+
+        if has_loci_notes:
+            locus_notes[row["wa_code"]] = Markup("&#128681;")  # red flag
+        if has_orange_loci_notes:
+            if row["wa_code"] in locus_notes:
+                locus_notes[row["wa_code"]] += Markup("&#128312;")  # orange
+            else:
+                locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
+
+    print(f"{len(wa_scats)=} ")
+    print(f"{len(loci_values)=}")
+    print(f"{len(no_loci)=}")
+    print(f"{len(no_notes)=}")
+    print(f"{len(no_no)=}")
+
+    if mode == "export":
+        file_content = export.export_wa_genetic_samples(
+            loci_list, out, loci_values, filter
+        )
+
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = (
+            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response.headers["Content-disposition"] = (
+            f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        )
+
+        return response
+
+    else:
+        # apply offset and limit
+        # n_wa = total_n_wa
+        n_wa = total_n_wa
+        if app.debug:
+            print(f"{len(out)=}")
+        # if limit != "ALL":
+        #    out = out[offset : offset + limit]
+
+        if n_wa:
+            title = f"Genetic data of {n_wa} WA codes"
+            match filter:
+                case "with_notes":
+                    title += " with notes"
+                case "red_flag":
+                    title += " with locus/allele notes"
+                case "no_values":
+                    title += " (including WA without loci values)"
+        else:
+            title = "No WA code found"
+
+        session["url_wa_list"] = (
+            f"/wa_genetic_samples/{offset}/{limit}/{filter}?search={search_term}"
+        )
+        if "url_scats_list" in session:
+            del session["url_scats_list"]
+
+        # timing
+        duration = round(time.time() - t0, 3)
+
+        return render_template(
+            "wa_genetic_samples_list_limit.html",
+            header_title="Genetic data of WA codes",
+            title=title,
+            n_wa=n_wa,
+            limit=limit,
+            offset=offset,
+            loci_list=loci_list,
+            wa_scats=out,
+            loci_values=loci_values,
+            locus_notes=locus_notes,
+            filter=filter,
+            search_term=search_term,
+            view_wa_code=view_wa_code,
+            duration=duration,
+        )
+
+
+@app.route(
+    "/wa_genetic_samples3",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def wa_genetic_samples3():
+    """
+    display genetic data for WA code
+    filter: all / with notes / red_flag / no_values
+    """
+
+    limit = request.args.get("limit", default="unknown")
+    offset = request.args.get("offset", default="unknown")
+    offset = request.args.get("offset", default="unknown")
+
+    return render_template(
+        "wa_genetic_samples_list_limit2.html",
+        limit=limit,
+        offset=offset, filter='with_notes'
+    )
+
+@app.get("/wa")
+def wa():
+
+    print('ok')
+
+    offset = int(request.args.get("offset", 0))
+    limit = int(request.args.get("limit", 20))
+    filter_ = request.args.get("filter", "")
+
+    only_active = "1" in request.args.getlist("only_active")
+    only_verified = "1" in request.args.getlist("only_verified")
+
+    print(only_active, only_verified)
+
+    items = f"only_active: {only_active} only_verified {only_verified}"
+    return render_template("_items.html", items=items)
+
 
 
 @app.route("/wa_analysis/<distance>/<int:cluster_id>")

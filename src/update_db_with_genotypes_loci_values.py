@@ -31,32 +31,33 @@ def update_db_genotypes_loci():
     print("Updating DB with genotypes loci")
     t0 = time.time()
 
-
     # loci list
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        
-        genotypes_list = [row["genotype_id"] for row in (
-            con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all()
-        )]
-        
+        genotypes_list = [
+            row["genotype_id"]
+            for row in (
+                con.execute(text("SELECT genotype_id FROM genotypes")).mappings().all()
+            )
+        ]
+
         for genotype_id in genotypes_list:
             # print(f'{row["genotype_id"]=}')
 
             _ = con.execute(
-                            text(
-                                "INSERT INTO genotype_loci_values (genotype_id, loci_values) "
-                                "VALUES (:genotype_id, :loci_values) "
-                                "ON CONFLICT (genotype_id) "
-                                "DO UPDATE "
-                                "SET loci_values = EXCLUDED.loci_values; "
-                            ).bindparams(bindparam("loci_values", type_=JSONB)),
-                            {
-                                "genotype_id": genotype_id,
-                                "loci_values": fn.get_genotype_loci_values(genotype_id, loci_list),
-                            },
-                        )
+                text(
+                    "INSERT INTO genotype_loci_values (genotype_id, loci_values) "
+                    "VALUES (:genotype_id, :loci_values) "
+                    "ON CONFLICT (genotype_id) "
+                    "DO UPDATE "
+                    "SET loci_values = EXCLUDED.loci_values; "
+                ).bindparams(bindparam("loci_values", type_=JSONB)),
+                {
+                    "genotype_id": genotype_id,
+                    "loci_values": fn.get_genotype_loci_values(genotype_id, loci_list),
+                },
+            )
 
     print(f"DB updated with genotypes loci in {round(time.time() - t0, 1)} seconds")
 

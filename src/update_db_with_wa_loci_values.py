@@ -10,7 +10,8 @@ from sqlalchemy import text
 from sqlalchemy import text, bindparam
 from sqlalchemy.dialects.postgresql import JSONB
 import functions as fn
-#import json
+
+# import json
 import time
 from datetime import datetime
 
@@ -62,7 +63,6 @@ def update_db_wa_loci():
             #    row["wa_code"],
             #    json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
             # )
-
 
     print(f"DB updated with WA codes loci in {round(time.time() - t0, 1)} seconds")
 
