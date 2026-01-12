@@ -1,0 +1,32 @@
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+<form id="wa-filters"
+      hx-get="{{ url_for('genetic.wa') }}"
+      hx-trigger="change"
+      hx-target="#wa"
+      hx-swap="innerHTML">
+
+  <!-- parametri fissi -->
+  <input type="hidden" name="offset" value="{{ offset }}">
+  <input type="hidden" name="limit" value="{{ limit }}">
+  <input type="hidden" name="filter" value="{{ filter }}">
+
+  <!-- hidden per garantire 0 quando unchecked -->
+  <input type="hidden" name="only_active" value="0">
+  <input type="hidden" name="only_verified" value="0">
+
+  <label>
+    <input type="checkbox" name="only_active" value="1">
+    Only active
+  </label>
+
+  <label style="margin-left: 1em;">
+    <input type="checkbox" name="only_verified" value="1">
+    Only verified
+  </label>
+</form>
+
+<div id="wa">
+  {% include "_items.html" %}
+</div>
