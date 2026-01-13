@@ -1,32 +1,38 @@
+{% extends "bootstrap_no-body.html" %}
 
+{% block content %}
+<body onload="scroll_to_wa()"> 
+  <script>
+  function scroll_to_wa() {
+      const element = document.getElementById("{{ view_wa_code }}");
+      if (element) {
+          element.scrollIntoView();
+          }
+      }
+  </script>
+  
 <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
-<form id="wa-filters"
-      hx-get="{{ url_for('genetic.wa') }}"
-      hx-trigger="change"
-      hx-target="#wa"
-      hx-swap="innerHTML">
+{% include "menu.html" %}
 
-  <!-- parametri fissi -->
-  <input type="hidden" name="offset" value="{{ offset }}">
-  <input type="hidden" name="limit" value="{{ limit }}">
-  <input type="hidden" name="filter" value="{{ filter }}">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
-  <!-- hidden per garantire 0 quando unchecked -->
-  <input type="hidden" name="only_active" value="0">
-  <input type="hidden" name="only_verified" value="0">
 
-  <label>
-    <input type="checkbox" name="only_active" value="1">
-    Only active
-  </label>
+<h3>{{ title }}</h3>
+{#
+{% if limit == 'ALL' %}
+    {% if wa_scats %}<h4>All WA codes</h4>{% endif %}
+{% else %}
+    <h4>WA codes from {{ offset + 1}} to {{ (offset + limit) if offset + limit <= total_n_wa else total_n_wa }}</h4>
+{% endif %}
+#}
 
-  <label style="margin-left: 1em;">
-    <input type="checkbox" name="only_verified" value="1">
-    Only verified
-  </label>
-</form>
+<div id="wa-panel">
 
-<div id="wa">
-  {% include "_items.html" %}
+  {% include "_wa_panel.html" %}
 </div>
+
+{% endblock %}
+
+</body>

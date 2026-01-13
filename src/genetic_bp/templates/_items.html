@@ -1,4 +1,104 @@
 
-table
+parameters: {{ parameters }}
 
-{{ items }}
+{{ total_n_wa }}
+<br>
+
+{% include "freeze_1stcolumn_1strow.html" %}
+
+<div class="frozen">
+<div class="condensed">
+    <table class="table table-striped" id="wa_table">
+    <thead>
+    <tr>
+    <th>WA code</th>
+    <th>Sample ID</th>
+    <th>Date</th>
+    <th>Box number</th>
+    <th>Municipality</th>
+    <th>Province</th>
+    <th>Coordinates WGS84 UTM</th>
+    <th>mtDNA result</th>
+    <th>Hybrid</th>
+    <th>Genotype ID</th>
+    <th>Temp ID</th>
+    <th>Sex</th>
+    <th>Status</th>
+    <th>Pack</th>
+    <th>Dead recovery</th>
+    {% for locus in loci_list %}
+    {% if loci_list[locus] == 2%}
+    <th style="border-left: 1px solid black;">{{ locus }} a</th>
+    <th>{{ locus }} b</th>
+    {% else %}
+    <th style="border-left: 1px solid black;">{{ locus }}</th>
+    <th></th>
+    {% endif %}
+    
+    {% endfor %}
+    </tr>
+    </thead>
+    
+    <tbody>
+    {% if wa_scats %}
+    
+    {% for result in wa_scats %}
+    <tr>
+    <td style="white-space: nowrap;">
+    <a id="{{ result.wa_code }}"><a href="/view_wa/{{ result.wa_code }}"><b>{{ result.wa_code }}</b></a></a>
+    <a href="/view_genetic_data/{{ result.wa_code }}" class="btn btn-sm btn-primary">Genetic data</a>
+    <a href="/set_wa_genotype/{{ result.wa_code }}" class="btn btn-sm btn-primary">Set genotype</a>
+    {% if locus_notes[result.wa_code] %}
+    <span style="font-size:24px">{{ locus_notes[result.wa_code] }}</span>
+    {% endif %}
+    </td>
+    
+    <td>{% if result.sample_id %}<a href="/view_sample/{{ result.sample_id }}">{{ result.sample_id }}</a>{% endif %}</td>
+    
+    <td>{% if result['date'] %}{{ result['date'] }}{% endif %}</td>
+    
+    <td>{% if result['box_number'] %}{{ result['box_number'] }}{% endif %}</td>
+    
+    <td>{% if result['municipality'] %}{{ result['municipality'] }}{% endif %}</td>
+    
+    <td>{{ result['province'] if result['province'] else '' }}</td>
+    
+    <td>{{ result['coord_east'] }}, {{ result['coord_north'] }}<br>{{ result['coord_zone'] }}</td>
+    
+    <td>{% if result['mtdna'] %}{{ result['mtdna'] }}{% endif %}</td>
+    
+    <td>{% if result.hybrid %}{{ result.hybrid }}{% endif %}</td>
+    
+    <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
+    {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
+    class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
+    </td>
+    
+    <td>{% if result['tmp_id'] %}{{ result['tmp_id'] }}{% endif %}</td>
+    
+    <td>{% if result['sex_id'] %}{{ result['sex_id'] }}{% endif %}</td>
+    
+    <td>{% if result['status'] %}{{ result['status'] }}{% endif %}</td>
+    
+    <td>{% if result['pack'] %}<a href="/view_pack/{{ result['pack'] }}">{{ result['pack'] }}</a>{% endif %}</td>
+    
+    <td>{% if result['dead_recovery'] %}{{ result['dead_recovery'] }}{% endif %}</td>
+    
+    {% for locus in loci_values[result['wa_code']] %}
+    {% for allele in ('a', 'b') if allele in loci_values[result['wa_code']][locus] %}
+    <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">
+    {{ loci_values[result['wa_code']][locus][allele]['value'] }}<br>
+    <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/{{ allele }}">note</a>
+    {{ loci_values[result['wa_code']][locus][allele]['divergent_allele'] }}
+    </td>
+    {% endfor %}
+    {% endfor %}
+    </tr>
+    {% endfor %}
+    {% endif %}
+    </tbody>
+    </table>
+    </div><!-- condensed -->
+    </div><!-- frozen -->
+    
+
