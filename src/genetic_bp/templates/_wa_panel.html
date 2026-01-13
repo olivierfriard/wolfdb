@@ -25,6 +25,7 @@
   <span style="display:solid">
 
   <button class="btn btn-secondary btn-sm"
+  {% if offset <= 0  %}disabled{% endif %}
   type="button"
           hx-get="{{ url_for('genetic.wa') }}"
           hx-target="#wa-panel"
@@ -34,7 +35,7 @@
     ◀ Prev
   </button>
 
-  <button class="btn btn-sm btn{% if offset + limit >= total_n_wa %}-outline{% endif %}-secondary"
+  <button class="btn btn-sm btn-secondary"
     {% if offset + limit >= total_n_wa %}disabled{% endif %}
           type="button"
           hx-get="{{ url_for('genetic.wa') }}"
