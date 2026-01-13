@@ -1,0 +1,108 @@
+
+<form id="wa-filters"
+      hx-get="{{ url_for('genetic.wa') }}"
+      hx-trigger="change"
+      hx-target="#wa-panel"
+      hx-swap="innerHTML">
+
+  <input type="hidden" name="offset" value="{{ offset|int }}">
+  <input type="hidden" name="with_genotype_notes" value="0">
+  <input type="hidden" name="with_loci_values" value="0">
+  <input type="hidden" name="with_loci_notes" value="0">
+
+
+  {% if limit == 'All' %}
+  <h4>WA codes from 1 to {{ total_n_wa }} from {{ total_n_wa }}</h4>
+  {% else %}
+  {% if offset + limit > total_n_wa %}
+  <h4>WA codes from {{ offset + 1}} to {{ total_n_wa }} from {{ total_n_wa }}</h4>
+  {% else %}
+  <h4>WA codes from {{ offset + 1}} to {{ offset + limit }} from {{ total_n_wa }}</h4>
+  {% endif %}
+  {% endif %}
+
+
+  <span style="display:solid">
+
+  <button class="btn btn-secondary btn-sm"
+  type="button"
+          hx-get="{{ url_for('genetic.wa') }}"
+          hx-target="#wa-panel"
+          hx-swap="innerHTML"
+          hx-include="#wa-filters"
+          hx-vals='{{ {"offset": [0, (offset|int) - (limit|int)] | max } | tojson }}'>
+    ◀ Prev
+  </button>
+
+  <button class="btn btn-sm btn{% if offset + limit >= total_n_wa %}-outline{% endif %}-secondary"
+    {% if offset + limit >= total_n_wa %}disabled{% endif %}
+          type="button"
+          hx-get="{{ url_for('genetic.wa') }}"
+          hx-target="#wa-panel"
+          hx-swap="innerHTML"
+          hx-include="#wa-filters"
+          hx-vals='{{ {"offset": (offset|int) + (limit|int)} | tojson }}'>
+    Next ▶
+  </button>
+    
+<span style="display:inline-block; width: 8em;"></span>
+<small>WA codes / page</small>
+
+  <label>
+    <select class="form-select" name="limit"
+    hx-get="{{ url_for('genetic.wa') }}"
+            hx-target="#wa-panel"
+            hx-swap="innerHTML"
+            hx-include="#wa-filters"
+            hx-vals='{{ {"offset": 0} | tojson }}'
+    >
+      {% for v in [10, 20, 50, 100, 200, 500, 'All'] %}
+        <option value="{{ v }}" {% if (limit|int) == v %}selected{% endif %}>{{ v }}</option>
+      {% endfor %}
+    </select>
+  </label>
+    
+    <span style="display:inline-block; width: 8em;"></span>
+  
+    <label>
+      <input  class="form-check-input" type="checkbox" name="with_genotype_notes" value="1"
+             {% if with_genotype_notes %}checked{% endif %}>
+             with genotype notes
+    </label>
+  
+    <label style="margin-left: 1em;">
+      <input  class="form-check-input" type="checkbox" name="with_loci_notes" value="1"
+             {% if with_loci_notes %}checked{% endif %}>
+      with loci notes
+    </label>
+  
+    <label style="margin-left: 1em;">
+      <input  class="form-check-input" type="checkbox" name="with_loci_values" value="1"
+             {% if with_loci_values %}checked{% endif %}>
+      exclude WA w/o loci values
+    </label>
+  
+
+
+{#    
+    <a style="width:10%" href="/wa_genetic_samples/0/ALL/all/export" class="btn btn-secondary btn-sm">Export all genetic samples</a>
+#}
+
+  </span>
+
+
+
+
+
+
+
+
+
+  
+</form>
+
+
+
+<div id="wa">
+  {% include "_items.html" %}
+</div>
