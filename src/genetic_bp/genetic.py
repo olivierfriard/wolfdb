@@ -1175,7 +1175,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         )
 
 
-
+'''
 @app.route(
     "/wa_genetic_samples2/<int:offset>/<limit>",
     methods=(
@@ -1582,7 +1582,7 @@ def wa_genetic_samples2(offset: int, limit: int | str, filter="all", mode="web")
             view_wa_code=view_wa_code,
             duration=duration,
         )
-
+'''
 
 @app.route(
     "/wa_genetic_samples3",
@@ -1599,40 +1599,38 @@ def wa_genetic_samples3():
 
     offset = 0
     limit = 10
+    with_genotype_notes = 0
+    with_loci_values = 0
+    with_loci_notes = 0
+
+    out, loci_values,locus_notes,total_n_wa = get_wa(offset, limit, with_genotype_notes,with_loci_values,with_loci_notes)
+
+    # loci list
+    loci_list: dict = fn.get_loci_list()
 
     return render_template(
         "wa_genetic_samples_list_limit2.html",
-        header_title="Genetic data of WA codes",
+        #header_title="Genetic data of WA codes",
+        #offset=offset,
+        #limit=limit,
+        #total_n_wa=0,
+        #title="Genetic data of WA codes",
+
+        #parameters=parameters,
         offset=offset,
         limit=limit,
-        total_n_wa=0,
-        title="Genetic data of WA codes",
+        with_genotype_notes=with_genotype_notes,
+        with_loci_values=with_loci_values,
+        with_loci_notes=with_loci_notes,
+        loci_list=loci_list,
+        wa_scats=out,
+        loci_values=loci_values,
+        locus_notes=locus_notes,
+        total_n_wa=total_n_wa,
+
     )
 
-
-@app.get("/wa")
-def wa():
-    offset = int(request.args.get("offset", -1))
-    raw_limit = request.args.get("limit", 10)
-
-    limit:str|int = 'All' if raw_limit == 'All' else int(raw_limit)
-
-    print("\n" * 5)
-    print("=" * 20)
-    print(f"{offset=}")
-    print(f"{limit=}")
-
-    with_genotype_notes = "1" in request.args.getlist("with_genotype_notes")
-    with_loci_values = "1" in request.args.getlist("with_loci_values")
-    with_loci_notes = "1" in request.args.getlist("with_loci_notes")
-
-    print(f"{with_genotype_notes=}")
-    print(f"{with_loci_values=}")
-    print(f"{with_loci_notes=}")
-
-    parameters = f"offset: {offset}  limit: {limit}   with_genotype_notes: {with_genotype_notes}   with_loci_notes  {with_loci_notes}  with_loci_values {with_loci_values}   "
-    # return render_template("_items.html", items=items)
-
+def get_wa(offset:int=0, limit:int|str=10, with_genotype_notes:int=0, with_loci_values:int=0,with_loci_notes:int=0):
     sql_base = "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     if with_genotype_notes:
@@ -1704,9 +1702,6 @@ def wa():
                 print("new offset", offset)
             else:
                 break
-
-    # loci list
-    loci_list: dict = fn.get_loci_list()
 
     out: list = []
     loci_values: list = {}
@@ -1781,6 +1776,36 @@ def wa():
                 locus_notes[row["wa_code"]] += Markup("&#128312;")  # orange
             else:
                 locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
+
+    return out, loci_values,locus_notes,total_n_wa
+
+@app.get("/wa")
+def wa():
+    offset = int(request.args.get("offset", -1))
+    raw_limit = request.args.get("limit", 10)
+
+    limit:str|int = 'All' if raw_limit == 'All' else int(raw_limit)
+
+    print("\n" * 5)
+    print("=" * 20)
+    print(f"{offset=}")
+    print(f"{limit=}")
+
+    with_genotype_notes = "1" in request.args.getlist("with_genotype_notes")
+    with_loci_values = "1" in request.args.getlist("with_loci_values")
+    with_loci_notes = "1" in request.args.getlist("with_loci_notes")
+
+    print(f"{with_genotype_notes=}")
+    print(f"{with_loci_values=}")
+    print(f"{with_loci_notes=}")
+
+    parameters = f"offset: {offset}  limit: {limit}   with_genotype_notes: {with_genotype_notes}   with_loci_notes  {with_loci_notes}  with_loci_values {with_loci_values}   "
+
+    out, loci_values,locus_notes,total_n_wa = get_wa(offset, limit, with_genotype_notes,with_loci_values,with_loci_notes)
+
+    # loci list
+    loci_list: dict = fn.get_loci_list()
+
 
     return render_template(
         "_wa_panel.html",
