@@ -1,6 +1,10 @@
 TO DO list
 ===================================
 
+* check if materialized views can be replaced by views
+
+* check if postgres can replace redis
+
 
 * fix:
 

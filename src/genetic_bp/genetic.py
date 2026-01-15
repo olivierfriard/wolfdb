@@ -1602,6 +1602,7 @@ def wa_genetic_samples3():
 
     return render_template(
         "wa_genetic_samples_list_limit2.html",
+        header_title="Genetic data of WA codes",
         offset=offset,
         limit=limit,
         total_n_wa=0,
@@ -1612,12 +1613,9 @@ def wa_genetic_samples3():
 @app.get("/wa")
 def wa():
     offset = int(request.args.get("offset", -1))
-    limit = request.args.get("limit", 10)
+    raw_limit = request.args.get("limit", 10)
 
-    try:
-        limit = int(limit)
-    except Exception:
-        pass
+    limit:str|int = 'All' if raw_limit == 'All' else int(raw_limit)
 
     print("\n" * 5)
     print("=" * 20)
@@ -2850,6 +2848,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
         data = {"wa_code": wa_code, "locus": locus, "allele": allele}
 
         if request.method == "GET":
+
             data["allele_modifier"] = fn.get_allele_modifier(session["email"])
 
             notes = (

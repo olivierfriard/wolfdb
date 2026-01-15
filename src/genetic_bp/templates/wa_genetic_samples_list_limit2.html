@@ -20,17 +20,9 @@
 
 
 <h3>{{ title }}</h3>
-{#
-{% if limit == 'ALL' %}
-    {% if wa_scats %}<h4>All WA codes</h4>{% endif %}
-{% else %}
-    <h4>WA codes from {{ offset + 1}} to {{ (offset + limit) if offset + limit <= total_n_wa else total_n_wa }}</h4>
-{% endif %}
-#}
 
 <div id="wa-panel">
-
-  {% include "_wa_panel.html" %}
+{% include "_wa_panel.html" %}
 </div>
 
 {% endblock %}

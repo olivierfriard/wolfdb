@@ -1,8 +1,11 @@
 
-parameters: {{ parameters }}
+{# parameters: {{ parameters }}
 
-{{ total_n_wa }}
-<br>
+ {{ total_n_wa }} 
+
+ <br>
+
+ #}
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
@@ -45,10 +48,12 @@ parameters: {{ parameters }}
     {% for result in wa_scats %}
     <tr>
     <td style="white-space: nowrap;">
-    <a id="{{ result.wa_code }}"><a href="/view_wa/{{ result.wa_code }}"><b>{{ result.wa_code }}</b></a></a>
-    <a href="/view_genetic_data/{{ result.wa_code }}" class="btn btn-sm btn-primary">Genetic data</a>
-    <a href="/set_wa_genotype/{{ result.wa_code }}" class="btn btn-sm btn-primary">Set genotype</a>
-    {% if locus_notes[result.wa_code] %}
+
+<a id="{{ result.wa_code }}"><a href="{{ url_for('genetic.view_wa', wa_code=result.wa_code) }}"><b>{{ result.wa_code }}</b></a></a>
+<a href="{{ url_for('genetic.view_genetic_data', wa_code=result.wa_code) }}" class="btn btn-sm btn-primary">Genetic data</a>
+<a href="{{ url_for('genetic.set_wa_genotype', wa_code=result.wa_code) }}" class="btn btn-sm btn-primary">Set genotype</a>
+
+{% if locus_notes[result.wa_code] %}
     <span style="font-size:24px">{{ locus_notes[result.wa_code] }}</span>
     {% endif %}
     </td>
@@ -69,8 +74,8 @@ parameters: {{ parameters }}
     
     <td>{% if result.hybrid %}{{ result.hybrid }}{% endif %}</td>
     
-    <td>{% if result['genotype_id'] %}<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>{% endif %}
-    {% if result['notes'] %}<br><a href="/genotype_note/{{ result['genotype_id'] }}"
+    <td>{% if result['genotype_id'] %}<a href="{{ url_for('genetic.view_genotype', genotype_id=result['genotype_id']) }}">{{ result['genotype_id'] }}</a>{% endif %}
+    {% if result['notes'] %}<br><a href="{{ url_for('genetic.genotype_note', genotype_id=result['genotype_id']) }}"
     class="btn btn-sm btn-outline-danger">{{ result['notes'] }}</button>{% endif %}
     </td>
     
@@ -89,6 +94,7 @@ parameters: {{ parameters }}
     <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">
     {{ loci_values[result['wa_code']][locus][allele]['value'] }}<br>
     <a href="/locus_note/{{ result['wa_code']}}/{{ locus }}/{{ allele }}">note</a>
+   {# <a href="{{{ url_for('wa_locus_note',wa_code=result['wa_code'], locus=locus, allele=allele) }}">note</a> #}
     {{ loci_values[result['wa_code']][locus][allele]['divergent_allele'] }}
     </td>
     {% endfor %}
