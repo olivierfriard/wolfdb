@@ -1597,10 +1597,8 @@ def wa_genetic_samples3():
     optimized display of genetic data for WA codes
     """
     offset = request.args.get("offset", default=0, type=int) 
-    limit = request.args.get("limit", default=0, type=int) 
+    limit = request.args.get("limit", default=10, type=int) 
 
-    #offset = 0
-    #limit = 10
     with_genotype_notes = 0
     with_loci_values = 0
     with_loci_notes = 0
