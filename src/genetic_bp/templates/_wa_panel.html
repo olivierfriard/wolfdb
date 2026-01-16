@@ -122,16 +122,13 @@
 </label>
 <span style="display:inline-block; width: 8em;"></span>
 
-<a style="width:10%" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='ALL',
+<a style="width:10%" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
                                  with_genotype_notes=1 if with_genotype_notes else 0,
                                  with_loci_values=1 if with_loci_values else 0,
                                  with_loci_notes=1 if with_loci_notes else 0,
                                 mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>   
 
 
-{#    
-    <a style="width:10%" href="/wa_genetic_samples/0/ALL/all/export" class="btn btn-secondary btn-sm">Export all genetic samples</a>
-#}
 
   </span>
 

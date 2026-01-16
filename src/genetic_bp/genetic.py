@@ -1597,22 +1597,43 @@ def wa_genetic_samples3():
     optimized display of genetic data for WA codes
     """
     offset = request.args.get("offset", default=0, type=int) 
-    limit = request.args.get("limit", default=10, type=int)
+    raw_limit = request.args.get("limit", default=10)
+    limit:str|int = 'All' if raw_limit == 'All' else int(raw_limit)
     mode = request.args.get("mode", default="web")
 
     with_genotype_notes =  request.args.get("with_genotype_notes", default=0, type=int)
     with_loci_values =  request.args.get("with_loci_values", default=0, type=int)
     with_loci_notes =  request.args.get("with_loci_notes", default=0, type=int)
 
+    print(f"{offset=}")
+    print(f"{limit=}")
+
     print(f"{with_genotype_notes=}")
     print(f"{with_loci_values=}")
     print(f"{with_loci_notes=}")
+    print(f"{mode=}")
 
 
     out, loci_values,locus_notes,total_n_wa = get_wa(offset, limit, with_genotype_notes,with_loci_values,with_loci_notes)
 
     # loci list
     loci_list: dict = fn.get_loci_list()
+
+    if mode == "export":
+        file_content = export.export_wa_genetic_samples(
+            loci_list, out, loci_values
+        )
+
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = (
+            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response.headers["Content-disposition"] = (
+            f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        )
+
+        return response
+
 
     return render_template(
         "wa_genetic_samples_list_limit2.html",
