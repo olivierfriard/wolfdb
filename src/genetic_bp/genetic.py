@@ -1637,6 +1637,7 @@ def wa_genetic_samples3():
 
     return render_template(
         "wa_genetic_samples_list_limit2.html",
+        header_title="Genetic data of WA codes",
         offset=offset,
         limit=limit,
         with_genotype_notes=with_genotype_notes,
