@@ -120,9 +120,13 @@
          hx-vals='{{ {"offset": 0} | tojson }}'>
   exclude WA w/o loci values
 </label>
+<span style="display:inline-block; width: 8em;"></span>
 
-
-
+<a style="width:10%" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='ALL',
+                                 with_genotype_notes=1 if with_genotype_notes else 0,
+                                 with_loci_values=1 if with_loci_values else 0,
+                                 with_loci_notes=1 if with_loci_notes else 0,
+                                mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>   
 
 
 {#    
