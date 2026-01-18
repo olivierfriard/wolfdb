@@ -1584,6 +1584,7 @@ def wa_genetic_samples2(offset: int, limit: int | str, filter="all", mode="web")
         )
 '''
 
+
 @app.route(
     "/wa_genetic_samples3",
     methods=(
@@ -1596,14 +1597,16 @@ def wa_genetic_samples3():
     """
     optimized display of genetic data for WA codes
     """
-    offset = request.args.get("offset", default=0, type=int) 
+    offset = request.args.get("offset", default=0, type=int)
     raw_limit = request.args.get("limit", default=10)
-    limit:str|int = 'All' if raw_limit == 'All' else int(raw_limit)
+    limit: str | int = "All" if raw_limit == "All" else int(raw_limit)
     mode = request.args.get("mode", default="web")
 
-    with_genotype_notes =  request.args.get("with_genotype_notes", default=0, type=int)
-    with_loci_values =  request.args.get("with_loci_values", default=0, type=int)
-    with_loci_notes =  request.args.get("with_loci_notes", default=0, type=int)
+    with_genotype_notes = request.args.get("with_genotype_notes", default=0, type=int)
+    with_loci_values = request.args.get("with_loci_values", default=0, type=int)
+    with_loci_notes = request.args.get("with_loci_notes", default=0, type=int)
+
+    view_wa_code = request.args.get("view_wa_code", default="")
 
     print(f"{offset=}")
     print(f"{limit=}")
@@ -1613,16 +1616,15 @@ def wa_genetic_samples3():
     print(f"{with_loci_notes=}")
     print(f"{mode=}")
 
-
-    out, loci_values,locus_notes,total_n_wa = get_wa(offset, limit, with_genotype_notes,with_loci_values,with_loci_notes)
+    out, loci_values, locus_notes, total_n_wa = get_wa(
+        offset, limit, with_genotype_notes, with_loci_values, with_loci_notes
+    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
 
     if mode == "export":
-        file_content = export.export_wa_genetic_samples(
-            loci_list, out, loci_values
-        )
+        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values)
 
         response = make_response(file_content, 200)
         response.headers["Content-type"] = (
@@ -1633,7 +1635,6 @@ def wa_genetic_samples3():
         )
 
         return response
-
 
     return render_template(
         "wa_genetic_samples_list_limit2.html",
@@ -1648,10 +1649,17 @@ def wa_genetic_samples3():
         loci_values=loci_values,
         locus_notes=locus_notes,
         total_n_wa=total_n_wa,
-
+        view_wa_code=view_wa_code,
     )
 
-def get_wa(offset:int=0, limit:int|str=10, with_genotype_notes:int=0, with_loci_values:int=0,with_loci_notes:int=0):
+
+def get_wa(
+    offset: int = 0,
+    limit: int | str = 10,
+    with_genotype_notes: int = 0,
+    with_loci_values: int = 0,
+    with_loci_notes: int = 0,
+):
     sql_base = "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     if with_genotype_notes:
@@ -1730,7 +1738,6 @@ def get_wa(offset:int=0, limit:int|str=10, with_genotype_notes:int=0, with_loci_
     mem_genotype_loci: dict = {}
 
     for row in wa_scats:
-
         loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
         loci_values[row["wa_code"]] = dict(loci_val)
 
@@ -1798,14 +1805,15 @@ def get_wa(offset:int=0, limit:int|str=10, with_genotype_notes:int=0, with_loci_
             else:
                 locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
 
-    return out, loci_values,locus_notes,total_n_wa
+    return out, loci_values, locus_notes, total_n_wa
+
 
 @app.get("/wa")
 def wa():
     offset = int(request.args.get("offset", -1))
     raw_limit = request.args.get("limit", 10)
 
-    limit:str|int = 'All' if raw_limit == 'All' else int(raw_limit)
+    limit: str | int = "All" if raw_limit == "All" else int(raw_limit)
 
     print("\n" * 5)
     print("=" * 20)
@@ -1822,11 +1830,12 @@ def wa():
 
     parameters = f"offset: {offset}  limit: {limit}   with_genotype_notes: {with_genotype_notes}   with_loci_notes  {with_loci_notes}  with_loci_values {with_loci_values}   "
 
-    out, loci_values,locus_notes,total_n_wa = get_wa(offset, limit, with_genotype_notes,with_loci_values,with_loci_notes)
+    out, loci_values, locus_notes, total_n_wa = get_wa(
+        offset, limit, with_genotype_notes, with_loci_values, with_loci_notes
+    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
-
 
     return render_template(
         "_wa_panel.html",
@@ -2890,11 +2899,12 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
     session["view_wa_code"] = wa_code
 
+    return_to = request.args.get("return_to", default="")
+
     with fn.conn_alchemy().connect() as con:
         data = {"wa_code": wa_code, "locus": locus, "allele": allele}
 
         if request.method == "GET":
-
             data["allele_modifier"] = fn.get_allele_modifier(session["email"])
 
             notes = (
@@ -2964,6 +2974,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 header_title="Allele's notes",
                 data=data,
                 notes=notes,
+                return_to=return_to,
             )
 
         if request.method == "POST":

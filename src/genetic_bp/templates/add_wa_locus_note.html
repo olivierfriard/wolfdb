@@ -1,9 +1,6 @@
 {% extends "bootstrap.html" %}
 
-
 {% block content %}
-
-<!--<h2>{{ header_title }}</h2>-->
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -12,8 +9,11 @@
 {% endwith %}
 
 
-<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
-
+{% if return_to %}
+<a href="{{ return_to }}&view_wa_code={{ data.wa_code }}" class="btn btn-primary">Go to genetic samples</a>
+{% else %}
+<button type="button" class="btn btn-primary" onclick="history.back()">Go to genetic samples</button>
+{% endif %}
 
 <br>
 <br>
