@@ -2185,6 +2185,7 @@ def view_wa_polygon(polygon: str, mode: str = "web"):
             loci_values=loci_values,
             polygon=polygon,
         )
+
     # XLSX format
     if mode == "export":
         file_content = export.export_wa(loci_list, wa_list, loci_values)
