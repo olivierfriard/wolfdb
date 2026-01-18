@@ -73,18 +73,12 @@ function scroll_to_wa() {
 
 <td>{% if wa.sample_id %}<a href="/view_sample/{{ wa.sample_id }}">{{ wa.sample_id }}</a>{% endif %}</td>
 
-<td>{% if wa['date'] %}{{ wa['date'] }}{% endif %}</td>
-
-<td>{% if wa['box_number'] %}{{ wa['box_number'] }}{% endif %}</td>
-
-<td>{% if wa['municipality'] %}{{ wa['municipality'] }}{% endif %}</td>
-
-<td>{{ wa['province'] if wa['province'] else '' }}</td>
-
+<td>{% if wa.date %}{{ wa.date }}{% endif %}</td>
+<td>{% if wa.box_number %}{{ wa.box_number }}{% endif %}</td>
+<td>{% if wa.municipality %}{{ wa.municipality }}{% endif %}</td>
+<td>{{ wa.province if wa.province else '' }}</td>
 <td>{{ wa['coord_east'] }}, {{ wa['coord_north'] }}<br>{{ wa['coord_zone'] }}</td>
-
 <td>{% if wa['mtdna'] %}{{ wa['mtdna'] }}{% endif %}</td>
-
 <td>{% if wa['genotype_id'] %}<a href="/view_genotype/{{ wa['genotype_id'] }}">{{ wa['genotype_id'] }}</a>{% endif %}
 {% if wa['notes'] %}<br><a href="/genotype_note/{{ wa['genotype_id'] }}"
 class="btn btn-sm btn-outline-danger">{{ wa['notes'] }}</button>{% endif %}
@@ -105,7 +99,13 @@ class="btn btn-sm btn-outline-danger">{{ wa['notes'] }}</button>{% endif %}
 {% for allele in ('a', 'b') if allele in loci_values[wa['wa_code']][locus] %}
 <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[wa['wa_code']][locus][allele]['color'] }}">
 {{ loci_values[wa['wa_code']][locus][allele]['value'] }}<br>
+
+<a href="/locus_note/{{ wa.wa_code}}/{{ locus }}/{{ allele }}?return_to={{ url_for('genetic.view_wa_polygon',
+    polygon=polygon
+    ) | urlencode }}">note</a>
+
 <a href="/locus_note/{{ wa['wa_code']}}/{{ locus }}/{{ allele }}">note</a>
+
 {{ loci_values[wa['wa_code']][locus][allele]['divergent_allele'] }}
 </td>
 {% endfor %}

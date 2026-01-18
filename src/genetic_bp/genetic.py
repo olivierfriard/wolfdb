@@ -1660,6 +1660,10 @@ def get_wa(
     with_loci_values: int = 0,
     with_loci_notes: int = 0,
 ):
+    """
+    get genetic data for wa_codes
+    """
+
     sql_base = "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     if with_genotype_notes:
@@ -2125,9 +2129,10 @@ def create_ml_relate_input(title: str, loci_values) -> str:
     return "\n".join(ml_relate)
 
 
+@app.route("/view_wa_polygon/<polygon>")
 @app.route("/view_wa_polygon/<polygon>/<mode>")
 @fn.check_login
-def view_wa_polygon(polygon: str, mode: str):
+def view_wa_polygon(polygon: str, mode: str = "web"):
     """
     Display the WA contained in polygon
     """
@@ -2989,7 +2994,15 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                                 f"The allele value <b>{request.form['new_value']}</b> is not allowed. Must be <b>numeric (positive)</b> or <b>empty</b>."
                             )
                         )
-                        return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+                        return redirect(
+                            url_for(
+                                "genetic.wa_locus_note",
+                                wa_code=wa_code,
+                                locus=locus,
+                                allele=allele,
+                                return_to=return_to,
+                            )
+                        )
 
                 except ValueError:
                     flash(
@@ -2997,7 +3010,15 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                             f"The allele value <b>{request.form['new_value']}</b> is not allowed. Must be <b>numeric</b> or <b>empty</b>."
                         )
                     )
-                    return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+                    return redirect(
+                        url_for(
+                            "genetic.wa_locus_note",
+                            wa_code=wa_code,
+                            locus=locus,
+                            allele=allele,
+                            return_to=return_to,
+                        )
+                    )
 
             else:
                 # get last value for locus / allele
@@ -3041,12 +3062,22 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
             con.execute(sql, data)
 
+            return_to = request.form.get("return_to", "")
+
             rdis.set(
                 wa_code,
                 json.dumps(fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]),
             )
 
-            return redirect(f"/locus_note/{wa_code}/{locus}/{allele}")
+            return redirect(
+                url_for(
+                    "genetic.wa_locus_note",
+                    wa_code=wa_code,
+                    locus=locus,
+                    allele=allele,
+                    return_to=return_to,
+                )
+            )
 
 
 @app.route(

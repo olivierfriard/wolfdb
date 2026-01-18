@@ -10,7 +10,11 @@
 
 
 {% if return_to %}
+{% if 'wa_genetic_sample' in return_to %}
 <a href="{{ return_to }}&view_wa_code={{ data.wa_code }}" class="btn btn-primary">Go to genetic samples</a>
+{% else %}
+<a href="{{ return_to }}" class="btn btn-primary">Return to WA codes</a>
+{% endif %}
 {% else %}
 <button type="button" class="btn btn-primary" onclick="history.back()">Go to genetic samples</button>
 {% endif %}
@@ -72,6 +76,7 @@ No notes were found
 
 <form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
 
+  <input type="hidden" name="return_to" value="{{ return_to }}">
 
   {% if not data['allele_modifier'] %}<fieldset disabled>{%endif%}
 
