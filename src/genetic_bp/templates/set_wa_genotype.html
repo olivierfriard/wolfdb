@@ -4,7 +4,13 @@
 {% block content %}
 
 
-<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
+{# <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a> #}
+
+{% if return_to %}
+<a href="{{ return_to }}" class="btn btn-primary">Return to genetic samples</a>
+{% else %}
+<button type="button" class="btn btn-primary" onclick="history.back()">Return to genetic samples</button>
+{% endif %}
 
 <br>
 <br>

@@ -42,8 +42,6 @@ def update_db_wa_loci():
         wa_list = [row["wa_code"] for row in con.execute(sql).mappings().all()]
 
         for wa_code in wa_list:
-            # wa_loci_values = json.dumps(fn.get_wa_loci_values(wa_code, loci_list)[0])
-
             _ = con.execute(
                 text(
                     "INSERT INTO wa_loci_values (wa_code, loci_values) "

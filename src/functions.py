@@ -122,7 +122,7 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
         return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 
-def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
+def get_wa_loci_values_old(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     """
     get WA code loci values from postgresql
     """
@@ -140,19 +140,27 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                     con.execute(
                         text(
                             (
-                                "SELECT val, notes, "
-                                "extract(epoch from timestamp)::integer AS epoch, "
-                                "user_id, "
-                                "definitive, "
-                                "to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp, "
-                                "(SELECT COUNT(*) FROM wa_locus "
-                                "WHERE wa_code=wl.wa_code "
-                                "      AND locus=wl.locus "
-                                "      AND allele=wl.allele "
-                                "      AND user_id IS NOT NULL) AS has_history  "
-                                "FROM wa_locus wl "
-                                "WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
-                                "ORDER BY timestamp DESC LIMIT 1"
+                                " SELECT  "
+                                "   wl.val,  "
+                                "   wl.notes,  "
+                                '   extract(epoch from wl."timestamp")::integer AS epoch,  '
+                                "   wl.user_id,  "
+                                "   wl.definitive,  "
+                                "   to_char(wl.\"timestamp\", 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp,  "
+                                "   EXISTS (  "
+                                "     SELECT 1  "
+                                "     FROM wa_locus h  "
+                                "     WHERE h.wa_code = wl.wa_code  "
+                                "       AND h.locus   = wl.locus  "
+                                "       AND h.allele  = wl.allele  "
+                                "       AND h.user_id IS NOT NULL  "
+                                "   ) AS has_history  "
+                                " FROM wa_locus wl  "
+                                " WHERE wl.wa_code = :wa_code  "
+                                "   AND wl.locus   = :locus  "
+                                "   AND wl.allele  = :allele  "
+                                ' ORDER BY wl."timestamp" DESC  '
+                                " LIMIT 1;  "
                             )
                         ),
                         {"wa_code": wa_code, "locus": locus, "allele": allele},
@@ -197,10 +205,122 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     return loci_values, has_loci_notes
 
 
-def get_genotype_loci_values_redis(genotype_id: str) -> dict | None:
+def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
+    """
+    Return:
+      loci_values[locus][allele] = {
+        value, notes, has_history, epoch, user_id, date, definitive
+      }
+    loci_list example: {"D3S1358": 2, "AMEL": 1, ...}
+    """
+    # prepara tutte le coppie (locus, allele) richieste
+    requested = []
+    for locus, n_alleles in loci_list.items():
+        for allele in ("a", "b")[:n_alleles]:
+            requested.append((locus, allele))
+
+    loci_values: dict = {locus: {} for locus in loci_list}
+    has_loci_notes = False
+
+    if not requested:
+        return loci_values, False
+
+    # Costruzione VALUES dinamica e bind sicuri
+    values_sql = ", ".join(f"(:locus{i}, :allele{i})" for i in range(len(requested)))
+    params = {"wa_code": wa_code}
+    for i, (locus, allele) in enumerate(requested):
+        params[f"locus{i}"] = locus
+        params[f"allele{i}"] = allele
+
+    sql = text(f"""
+        WITH req(locus, allele) AS (
+            VALUES {values_sql}
+        ),
+        latest AS (
+            SELECT DISTINCT ON (wl.locus, wl.allele)
+                wl.locus,
+                wl.allele,
+                wl.val,
+                wl.notes,
+                wl.user_id,
+                wl.definitive,
+                wl."timestamp"
+            FROM wa_locus wl
+            JOIN req r
+              ON r.locus = wl.locus AND r.allele = wl.allele
+            WHERE wl.wa_code = :wa_code
+            ORDER BY wl.locus, wl.allele, wl."timestamp" DESC
+        ),
+        hist AS (
+            SELECT h.locus, h.allele, TRUE AS has_history
+            FROM wa_locus h
+            JOIN req r
+              ON r.locus = h.locus AND r.allele = h.allele
+            WHERE h.wa_code = :wa_code
+              AND h.user_id IS NOT NULL
+            GROUP BY h.locus, h.allele
+        )
+        SELECT
+            r.locus,
+            r.allele,
+            l.val,
+            l.notes,
+            extract(epoch from l."timestamp")::integer AS epoch,
+            l.user_id,
+            l.definitive,
+            to_char(l."timestamp", 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp,
+            COALESCE(h.has_history, FALSE) AS has_history
+        FROM req r
+        LEFT JOIN latest l ON l.locus = r.locus AND l.allele = r.allele
+        LEFT JOIN hist   h ON h.locus = r.locus AND h.allele = r.allele
+    """)
+
+    with conn_alchemy().connect() as con:
+        rows = con.execute(sql, params).mappings().all()
+
+    # init default (anche per coppie senza righe nel DB)
+    for locus, n_alleles in loci_list.items():
+        for allele in ("a", "b")[:n_alleles]:
+            loci_values[locus][allele] = {
+                "value": "-",
+                "notes": "",
+                "has_history": False,
+                "epoch": "",
+                "user_id": "",
+                "date": "",
+                "definitive": False,
+            }
+
+    for row in rows:
+        locus = row["locus"]
+        allele = row["allele"]
+
+        has_history = bool(row["has_history"])
+        has_loci_notes = has_loci_notes or has_history
+
+        loci_values[locus][allele] = {
+            "value": row["val"] if row["val"] is not None else "-",
+            "notes": row["notes"] if row["notes"] is not None else "",
+            "has_history": has_history,
+            "epoch": row["epoch"] if row["epoch"] is not None else "",
+            "user_id": row["user_id"] if row["user_id"] is not None else "",
+            "date": row["formatted_timestamp"]
+            if row["formatted_timestamp"] is not None
+            else "",
+            "definitive": bool(row["definitive"])
+            if row["definitive"] is not None
+            else False,
+        }
+
+    return loci_values, has_loci_notes
+
+
+def get_genotype_loci_values_redis(genotype_id: str|None) -> dict | None:
     """
     get genotype loci values from redis
     """
+    if genotype_id is None:
+        return None
     try:
         r = rdis.get(genotype_id)
         if r is not None:

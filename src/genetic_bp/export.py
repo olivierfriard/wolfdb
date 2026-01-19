@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from tempfile import NamedTemporaryFile
 
 
-def export_wa_genetic_samples(loci_list:dict, wa_scats, loci_values):
+def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values):
     """
     export genetic data for wa codes
     """

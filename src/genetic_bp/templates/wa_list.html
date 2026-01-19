@@ -68,7 +68,9 @@ function scroll_to_wa() {
 <tr>
 <td style="white-space: nowrap;">
 <a id="{{ wa.wa_code }}"><a href="/view_wa/{{ wa.wa_code }}"><b>{{ wa.wa_code }}</b></a></a>
+{% if wa.genotype_id %}
 <a href="/view_genetic_data/{{ wa.wa_code }}" class="btn btn-sm btn-primary">Genetic data</a>
+{% endif %}
 </td>
 
 <td>{% if wa.sample_id %}<a href="/view_sample/{{ wa.sample_id }}">{{ wa.sample_id }}</a>{% endif %}</td>

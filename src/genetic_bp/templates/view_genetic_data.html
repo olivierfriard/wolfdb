@@ -5,13 +5,25 @@
 
 <h2>View genetic data for WA code <a href="/view_wa/{{ wa_code }}"><b>{{wa_code}}</b></a></h2><hr>
 
-<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
+
+{# <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Return to genetic samples</a> #}
+
+{% if return_to %}
+<a href="{{ return_to }}" class="btn btn-primary">Return to WA codes</a>
+{% else %}
+<button type="button" class="btn btn-primary" onclick="history.back()">Return to genetic samples</button>
+{% endif %}
+
 
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;
 <br>
 <br>
 
-<h3>Genotype id: <b><a href="/view_genotype/{{ genotype_id }}">{{ genotype_id }}</a></b> sex: <b>{{ sex }}</b></h3>
+{% if genotype_id %}
+    <h3>Genotype id: <b><a href="/view_genotype/{{ genotype_id }}">{{ genotype_id }}</a></b> sex: <b>{{ sex }}</b></h3>
+{% else %}
+<h3>Genotype id: <b>NA</b> sex: <b>NA</b></h3>
+{%endif%}
 
 <br>
 <span style="font-size:24px">&#128312;</span><small>The WA code locus is distinct from the genotype locus.</small>
@@ -42,9 +54,7 @@
 {% if genotype_id %}
 <td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
 <td style="border-right: 1px solid black;">
-{% if 'b' in genotype_loci[locus] %}    
-{{ genotype_loci[locus].b.value }}
-{% endif %}
+{% if 'b' in genotype_loci[locus] %}   {{ genotype_loci[locus].b.value }} {% endif %}
 </td>
 <td></td>
 {% endif %}
@@ -54,7 +64,7 @@
 <td {% if allele == 'b' %}style="border-left: 1px solid black;"{%endif%}
 style="background:{{ data[locus][allele]['bgcolor'] }}">
 {{ data[locus][allele]['value'] }}
-{% if data[locus][allele]['value'] != genotype_loci[locus][allele]['value'] and data[locus][allele]['value'] not in (0, '-')%}
+{% if genotype_loci and data[locus][allele]['value'] != genotype_loci[locus][allele]['value'] and data[locus][allele]['value'] not in (0, '-')%}
 <span>&#128312;</span>
 {% endif %}
 

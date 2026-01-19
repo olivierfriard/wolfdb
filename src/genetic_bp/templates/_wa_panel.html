@@ -50,7 +50,7 @@
   </button>
 
   <button class="btn btn-sm btn-secondary"
-    {% if offset + limit >= total_n_wa %}disabled{% endif %}
+    {% if limit != 'All' and (offset + limit >= total_n_wa) %}disabled{% endif %}
           type="button"
           hx-get="{{ url_for('genetic.wa') }}"
           hx-target="#wa-panel"

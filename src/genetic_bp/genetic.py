@@ -152,6 +152,8 @@ def view_genotype(genotype_id: str):
     visualize genotype's data
     """
 
+    return_to = request.args.get("return_to", default=request.referrer)
+
     with fn.conn_alchemy().connect() as con:
         genotype = (
             con.execute(
@@ -170,12 +172,13 @@ def view_genotype(genotype_id: str):
                     f"The genotype <b>{genotype_id}</b> was not found in Genotypes table"
                 )
             )
+            return redirect(return_to)
             # return to the last page
-            if "url_genotypes_list" in session:
-                return redirect(session["url_genotypes_list"])
-            if "url_wa_list" in session:
-                return redirect(session["url_wa_list"])
-            return "Error on genotype"
+            #if "url_genotypes_list" in session:
+            #    return redirect(session["url_genotypes_list"])
+            #if "url_wa_list" in session:
+            #    return redirect(session["url_wa_list"])
+            #return "Error on genotype"
 
         session["view_genotype_id"] = genotype_id
 
@@ -270,6 +273,7 @@ def view_genotype(genotype_id: str):
         dead_wolf_color=params["dead_wolf_color"],
         transect_color=params["transect_color"],
         track_color=params["track_color"],
+        return_to=return_to
     )
 
 
@@ -1664,7 +1668,18 @@ def get_wa(
     get genetic data for wa_codes
     """
 
-    sql_base = "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+    sql_base = (
+        "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all "
+        "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+        #"SELECT "
+        #"  COUNT(*) OVER () AS total_count, "
+        #"  g.*, "
+        #"  COALESCE(lv.loci_values, '{}'::jsonb) AS loci_values "
+        #"FROM wa_genetic_samples_all AS g "
+        #"LEFT JOIN wa_loci_values AS lv "
+        #"  ON lv.wa_code = g.wa_code "
+        #"WHERE (g.date BETWEEN :start_date AND :end_date OR g.date IS NULL) "
+    )
 
     if with_genotype_notes:
         sql_base = sql_base + "AND notes != '' AND notes IS NOT NULL "
@@ -1744,6 +1759,9 @@ def get_wa(
     for row in wa_scats:
         loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
         loci_values[row["wa_code"]] = dict(loci_val)
+
+        #loci_val = dict(row['loci_values'])
+        #loci_values[row["wa_code"]] = dict(loci_val)
 
         has_loci_notes = False
         has_orange_loci_notes = False
@@ -1832,11 +1850,13 @@ def wa():
     print(f"{with_loci_values=}")
     print(f"{with_loci_notes=}")
 
-    parameters = f"offset: {offset}  limit: {limit}   with_genotype_notes: {with_genotype_notes}   with_loci_notes  {with_loci_notes}  with_loci_values {with_loci_values}   "
-
+    time0 = time.time()
     out, loci_values, locus_notes, total_n_wa = get_wa(
         offset, limit, with_genotype_notes, with_loci_values, with_loci_notes
     )
+    time1 = time.time() - time0
+
+    parameters = f"time: {round(time1, 3)}   offset: {offset}  limit: {limit}   with_genotype_notes: {with_genotype_notes}   with_loci_notes  {with_loci_notes}  with_loci_values {with_loci_values}   "
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -2550,6 +2570,8 @@ def view_genetic_data(wa_code: str):
 
     session["view_wa_code"] = wa_code
 
+    return_to = request.args.get("return_to", default=request.referrer)
+
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
         row = (
@@ -2565,7 +2587,7 @@ def view_genetic_data(wa_code: str):
 
         if row is None:
             flash(fn.alert_danger(f"WA code {wa_code} not found"))
-            return redirect(request.referrer)
+            return redirect(return_to)
 
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
@@ -2608,6 +2630,7 @@ def view_genetic_data(wa_code: str):
             genotype_id=genotype_id,
             data=wa_loci,
             genotype_loci=genotype_loci,
+            return_to=return_to,
         )
 
 
@@ -2905,7 +2928,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
     session["view_wa_code"] = wa_code
 
-    return_to = request.args.get("return_to", default="")
+    return_to = request.args.get("return_to", default=request.referrer)
 
     with fn.conn_alchemy().connect() as con:
         data = {"wa_code": wa_code, "locus": locus, "allele": allele}
@@ -2928,8 +2951,8 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 .all()
             )
             if not notes:
-                flash(fn.alert_danger("Error with allele value"))
-                return redirect(session["url_wa_list"])
+                flash(fn.alert_danger(f"Error with allele value for {wa_code} locus: {locus} allele: {allele}"))
+                return redirect(return_to)
 
             data["value"] = notes[-1]["val"]
             data["definitive"] = notes[-1]["definitive"]
@@ -2972,8 +2995,11 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             )
 
             # genotype allele value
-            genotype_loci = fn.get_genotype_loci_values_redis(data["genotype_id"])
-            data["genotype_allele"] = genotype_loci[locus].get(allele, "")
+            if data["genotype_id"]:
+                genotype_loci = fn.get_genotype_loci_values_redis(data["genotype_id"])
+                data["genotype_allele"] = genotype_loci[locus].get(allele, "")
+            else:
+                data["genotype_allele"] = ""
 
             return render_template(
                 "add_wa_locus_note.html",
@@ -3037,7 +3063,8 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 )
                 if not last_note:
                     flash(fn.alert_danger("Error with allele value"))
-                    return redirect(session["url_wa_list"])
+                    flash(fn.alert_danger(f"Error with allele value for {wa_code} locus: {locus} allele: {allele}"))
+                    return redirect(return_to)
 
                 new_value = last_note["val"]
 
@@ -3357,6 +3384,8 @@ def set_wa_genotype(wa_code: str):
 
     session["view_wa_code"] = wa_code
 
+    return_to = request.args.get("return_to", default=request.referrer)
+
     with fn.conn_alchemy().connect() as con:
         if request.method == "GET":
             with fn.conn_alchemy().connect() as con:
@@ -3372,7 +3401,7 @@ def set_wa_genotype(wa_code: str):
                 )
             if result is None:
                 flash(fn.alert_danger(f"WA code not found: {wa_code}"))
-                return redirect(session["url_wa_list"])
+                return redirect(return_to)
 
             genotype_id = "" if result["genotype_id"] is None else result["genotype_id"]
 
@@ -3381,7 +3410,7 @@ def set_wa_genotype(wa_code: str):
                 header_title=f"Set genotype ID for WA code {wa_code}",
                 wa_code=wa_code,
                 current_genotype_id=genotype_id,
-                return_url=request.referrer,
+                return_to=return_to,
             )
 
         if request.method == "POST":

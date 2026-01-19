@@ -8,12 +8,21 @@
 {% endif %}
 {% endwith %}
 
+{#
 {% if 'url_wa_list' in session %}
-<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Go to genetic samples</a>
+<a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Return to genetic samples</a>
 {%endif%}
 {% if 'url_genotypes_list' in session %}
-<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Go to genotypes list</a>
+<a href="{{ session['url_genotypes_list'] }}" class="btn btn-primary">Return to genotypes list</a>
 {%endif%}
+#}
+
+
+{% if return_to %}
+<a href="{{ return_to }}" class="btn btn-primary">Return to genetic samples</a>
+{% else %}
+<button type="button" class="btn btn-primary" onclick="history.back()">Return to genetic samples</button>
+{% endif %}
 
 
 <h2 style="padding-top:1em;">Genotype ID: {{ result["genotype_id"] }}</h2>

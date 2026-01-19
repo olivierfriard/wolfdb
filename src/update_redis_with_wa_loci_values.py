@@ -39,6 +39,13 @@ def update_redis_wa_loci():
         sql = text("SELECT wa_code FROM wa_scat_dw_mat ")
 
         for row in con.execute(sql).mappings().all():
+            # old = fn.get_wa_loci_values_old(row["wa_code"], loci_list)
+            # new = fn.get_wa_loci_values(row["wa_code"], loci_list)
+            # if old != new:
+            #    print(old)
+            #    print(new)
+            #    sys.exit()
+
             rdis.set(
                 row["wa_code"],
                 json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
