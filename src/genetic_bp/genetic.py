@@ -2597,7 +2597,6 @@ def view_genetic_data(wa_code: str):
 
         wa_loci = fn.get_wa_loci_values_redis(wa_code)
 
-        # genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
         genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
         for locus in loci_list:
