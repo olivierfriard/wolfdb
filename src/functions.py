@@ -122,7 +122,7 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
         return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 
-def get_wa_loci_values_old(wa_code: str, loci_list: list) -> tuple[dict, bool]:
+def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     """
     get WA code loci values from postgresql
     """
@@ -205,7 +205,7 @@ def get_wa_loci_values_old(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     return loci_values, has_loci_notes
 
 
-def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
+def get_wa_loci_values_new(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
     """
     Return:
       loci_values[locus][allele] = {
@@ -315,7 +315,7 @@ def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
     return loci_values, has_loci_notes
 
 
-def get_genotype_loci_values_redis(genotype_id: str|None) -> dict | None:
+def get_genotype_loci_values_redis(genotype_id: str | None) -> dict | None:
     """
     get genotype loci values from redis
     """
