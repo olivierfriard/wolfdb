@@ -122,7 +122,7 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
         return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 
-def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
+def get_wa_loci_values_old(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     """
     get WA code loci values from postgresql
     """
@@ -171,7 +171,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
 
                 if row is not None:
                     val = row["val"] if row["val"] is not None else "-"
-                    notes = row["notes"] if not None else ""
+                    notes = row["notes"] if row["notes"] is not None else ""
                     has_history = row["has_history"]
                     has_loci_notes = has_history != 0
                     epoch = row["epoch"] if row["epoch"] is not None else ""
@@ -186,7 +186,7 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
                 else:
                     val = "-"
                     notes = ""
-                    has_history = 0
+                    has_history = False
                     epoch = ""
                     user_id = ""
                     date = ""
@@ -205,15 +205,16 @@ def get_wa_loci_values(wa_code: str, loci_list: list) -> tuple[dict, bool]:
     return loci_values, has_loci_notes
 
 
-def get_wa_loci_values_new(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
+def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
     """
+    TODO: to be tested
+
     Return:
       loci_values[locus][allele] = {
         value, notes, has_history, epoch, user_id, date, definitive
       }
-    loci_list example: {"D3S1358": 2, "AMEL": 1, ...}
     """
-    # prepara tutte le coppie (locus, allele) richieste
+    # prepare required tuple (locus, allele)
     requested = []
     for locus, n_alleles in loci_list.items():
         for allele in ("a", "b")[:n_alleles]:
@@ -225,7 +226,7 @@ def get_wa_loci_values_new(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
     if not requested:
         return loci_values, False
 
-    # Costruzione VALUES dinamica e bind sicuri
+    #
     values_sql = ", ".join(f"(:locus{i}, :allele{i})" for i in range(len(requested)))
     params = {"wa_code": wa_code}
     for i, (locus, allele) in enumerate(requested):

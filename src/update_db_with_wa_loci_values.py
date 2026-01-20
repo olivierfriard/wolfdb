@@ -25,8 +25,7 @@ if not params:
 
 def update_db_wa_loci():
     """
-    update Redis with loci values of WA codes
-    from PostgreSQL
+    update db with loci values of WA codes
     """
 
     print("Updating DB with WA codes loci")
@@ -55,12 +54,6 @@ def update_db_wa_loci():
                     "loci_values": fn.get_wa_loci_values(wa_code, loci_list)[0],
                 },
             )
-            # new_id = result.scalar_one()
-
-            # rdis.set(
-            #    row["wa_code"],
-            #    json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
-            # )
 
     print(f"DB updated with WA codes loci in {round(time.time() - t0, 1)} seconds")
 
