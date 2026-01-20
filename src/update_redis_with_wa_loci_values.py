@@ -46,7 +46,7 @@ def update_redis_wa_loci():
             #    print(new)
             #    sys.exit()
 
-            print(row["wa_code"])
+            # print(row["wa_code"])
 
             rdis.set(
                 row["wa_code"],
