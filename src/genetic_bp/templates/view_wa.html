@@ -2,7 +2,13 @@
 
 {% block content %}
 
-
+{% if return_to %}
+<a href="{{ return_to }}" class="btn btn-primary">Previous page</a>
+{% else %}
+<button type="button" class="btn btn-primary" onclick="history.back()">Previous page</button>
+{% endif %}
+<br>
+<br>
 
 <h2>WA code: <b>{{ wa_code }}</b></h2>
 

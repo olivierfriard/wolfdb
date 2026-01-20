@@ -174,11 +174,11 @@ def view_genotype(genotype_id: str):
             )
             return redirect(return_to)
             # return to the last page
-            #if "url_genotypes_list" in session:
+            # if "url_genotypes_list" in session:
             #    return redirect(session["url_genotypes_list"])
-            #if "url_wa_list" in session:
+            # if "url_wa_list" in session:
             #    return redirect(session["url_wa_list"])
-            #return "Error on genotype"
+            # return "Error on genotype"
 
         session["view_genotype_id"] = genotype_id
 
@@ -273,7 +273,7 @@ def view_genotype(genotype_id: str):
         dead_wolf_color=params["dead_wolf_color"],
         transect_color=params["transect_color"],
         track_color=params["track_color"],
-        return_to=return_to
+        return_to=return_to,
     )
 
 
@@ -512,6 +512,9 @@ def view_wa(wa_code: str):
     visualize WA code and correlated sample data
     link to view genetic data (if available)
     """
+
+    return_to = request.args.get("return_to", default=request.referrer)
+
     with fn.conn_alchemy().connect() as con:
         result = (
             con.execute(
@@ -527,14 +530,14 @@ def view_wa(wa_code: str):
         )
         if result is None:
             flash(fn.alert_danger(f"WA code not found: {wa_code}"))
-            return redirect(request.referrer)
+            return redirect(return_to)
         if len(result) > 1:
             flash(
                 fn.alert_danger(
                     f"WA code found in scats and dead wolves table. Check {wa_code}"
                 )
             )
-            return redirect(request.referrer)
+            return redirect(return_to)
 
         # check if genetic data available
         genetic_data = (
@@ -552,6 +555,7 @@ def view_wa(wa_code: str):
             wa_code=wa_code,
             result=result[0],
             genetic_data=genetic_data,
+            return_to=return_to,
         )
 
 
@@ -1671,14 +1675,14 @@ def get_wa(
     sql_base = (
         "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all "
         "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
-        #"SELECT "
-        #"  COUNT(*) OVER () AS total_count, "
-        #"  g.*, "
-        #"  COALESCE(lv.loci_values, '{}'::jsonb) AS loci_values "
-        #"FROM wa_genetic_samples_all AS g "
-        #"LEFT JOIN wa_loci_values AS lv "
-        #"  ON lv.wa_code = g.wa_code "
-        #"WHERE (g.date BETWEEN :start_date AND :end_date OR g.date IS NULL) "
+        # "SELECT "
+        # "  COUNT(*) OVER () AS total_count, "
+        # "  g.*, "
+        # "  COALESCE(lv.loci_values, '{}'::jsonb) AS loci_values "
+        # "FROM wa_genetic_samples_all AS g "
+        # "LEFT JOIN wa_loci_values AS lv "
+        # "  ON lv.wa_code = g.wa_code "
+        # "WHERE (g.date BETWEEN :start_date AND :end_date OR g.date IS NULL) "
     )
 
     if with_genotype_notes:
@@ -1760,8 +1764,8 @@ def get_wa(
         loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
         loci_values[row["wa_code"]] = dict(loci_val)
 
-        #loci_val = dict(row['loci_values'])
-        #loci_values[row["wa_code"]] = dict(loci_val)
+        # loci_val = dict(row['loci_values'])
+        # loci_values[row["wa_code"]] = dict(loci_val)
 
         has_loci_notes = False
         has_orange_loci_notes = False
@@ -2950,7 +2954,11 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 .all()
             )
             if not notes:
-                flash(fn.alert_danger(f"Error with allele value for {wa_code} locus: {locus} allele: {allele}"))
+                flash(
+                    fn.alert_danger(
+                        f"Error with allele value for {wa_code} locus: {locus} allele: {allele}"
+                    )
+                )
                 return redirect(return_to)
 
             data["value"] = notes[-1]["val"]
@@ -3062,7 +3070,11 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 )
                 if not last_note:
                     flash(fn.alert_danger("Error with allele value"))
-                    flash(fn.alert_danger(f"Error with allele value for {wa_code} locus: {locus} allele: {allele}"))
+                    flash(
+                        fn.alert_danger(
+                            f"Error with allele value for {wa_code} locus: {locus} allele: {allele}"
+                        )
+                    )
                     return redirect(return_to)
 
                 new_value = last_note["val"]

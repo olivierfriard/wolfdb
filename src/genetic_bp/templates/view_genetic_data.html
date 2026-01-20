@@ -2,17 +2,17 @@
 
 {% block content %}
 
+{% if return_to %}
+<a href="{{ return_to }}" class="btn btn-primary">Previous page</a>
+{% else %}
+<button type="button" class="btn btn-primary" onclick="history.back()">Previous page</button>
+{% endif %}
+<br>
+<br>
+
 
 <h2>View genetic data for WA code <a href="/view_wa/{{ wa_code }}"><b>{{wa_code}}</b></a></h2><hr>
 
-
-{# <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">Return to genetic samples</a> #}
-
-{% if return_to %}
-<a href="{{ return_to }}" class="btn btn-primary">Return to WA codes</a>
-{% else %}
-<button type="button" class="btn btn-primary" onclick="history.back()">Return to genetic samples</button>
-{% endif %}
 
 
 <a href="/add_genetic_data/{{wa_code}}" class="btn btn-danger">Add genetic data</a>&nbsp;

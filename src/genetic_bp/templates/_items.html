@@ -45,13 +45,14 @@ parameters: {{ parameters }}<br>
     <tbody>
     {% if wa_scats %}
     
-{% set return_url = url_for(
-    'genetic.wa_genetic_samples3',
-    offset=offset,
-    limit=limit,
-    with_genotype_notes=1 if with_genotype_notes else 0,
-    with_loci_values=1 if with_loci_values else 0,
-    with_loci_notes=1 if with_loci_notes else 0
+{%
+set return_url = url_for(
+'genetic.wa_genetic_samples3',
+offset=offset,
+limit=limit,
+with_genotype_notes=1 if with_genotype_notes else 0,
+with_loci_values=1 if with_loci_values else 0,
+with_loci_notes=1 if with_loci_notes else 0
 )
 %}
 
@@ -59,16 +60,11 @@ parameters: {{ parameters }}<br>
     <tr>
     <td style="white-space: nowrap;">
 
-<a id="{{ result.wa_code }}"><a href="{{ url_for('genetic.view_wa', wa_code=result.wa_code) }}"><b>{{ result.wa_code }}</b></a></a>
+    <a id="{{ result.wa_code }}"><a href="{{ url_for('genetic.view_wa', wa_code=result.wa_code, return_to=return_url+ '&view_wa_code='+result.wa_code) }}"><b>{{ result.wa_code }}</b></a></a>
 
-{# <a href="{{ url_for('genetic.view_genetic_data', wa_code=result.wa_code) }}" class="btn btn-sm btn-primary">Genetic data</a> #}
+    <a href="{{ url_for('genetic.view_genetic_data', wa_code=result.wa_code, return_to=return_url+ '&view_wa_code='+result.wa_code) }}" class="btn btn-sm btn-primary">Genetic data</a>
 
-
-
-
-<a href="{{ url_for('genetic.view_genetic_data', wa_code=result.wa_code, return_to=return_url+ '&view_wa_code='+result.wa_code) }}" class="btn btn-sm btn-primary">Genetic data</a>
-
-<a href="{{ url_for('genetic.set_wa_genotype', wa_code=result.wa_code, return_to=return_url+ '&view_wa_code='+result.wa_code) }}" class="btn btn-sm btn-primary">Set genotype</a>
+    <a href="{{ url_for('genetic.set_wa_genotype', wa_code=result.wa_code, return_to=return_url+ '&view_wa_code='+result.wa_code) }}" class="btn btn-sm btn-primary">Set genotype</a>
 
 
 
