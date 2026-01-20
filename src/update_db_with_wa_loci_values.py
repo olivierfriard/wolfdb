@@ -6,7 +6,6 @@ This script is required by wolfdb.py
 """
 
 import sys
-from sqlalchemy import text
 from sqlalchemy import text, bindparam
 from sqlalchemy.dialects.postgresql import JSONB
 import functions as fn
