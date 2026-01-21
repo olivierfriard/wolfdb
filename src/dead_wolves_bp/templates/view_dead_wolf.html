@@ -27,23 +27,23 @@ id <a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a><
 </td></tr>
 
 <tr><td>Genotype ID</td><td>
-{% if dead_wolf["genotype_id"] %}    
+{% if dead_wolf["genotype_id"] %}
 <a href="/view_genotype/{{ dead_wolf['genotype_id'] }}">{{ dead_wolf["genotype_id"] }}</a>
 {% endif %}
 </td></tr>
 
 <tr><td>WA code</td><td>
-{% if dead_wolf["wa_code"] %}    
+{% if dead_wolf["wa_code"] %}
 <a href="/view_wa/{{ dead_wolf['wa_code'] }}">{{ dead_wolf["wa_code"] }}</a>
 {% endif %}
 </td></tr>
 
 <tr><td>SCALP category</td><td>
-{% if dead_wolf["scalp_category"] %} 
+{% if dead_wolf["scalp_category"] %}
 {{ dead_wolf["scalp_category"] }}
 {% endif %}
 </td></tr>
-    
+
 <tr><td>Operator</td><td>
 {{ dead_wolf["scalp_category"] if dead_wolf["operator"] else ""}}
 </td></tr>
@@ -51,20 +51,21 @@ id <a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a><
 <tr><td>Institution</td><td>
 {{ dead_wolf["institution"] if dead_wolf["institution"] else ""}}
 </td></tr>
-    
-       
+
+
 
 
 <tr><td>Box number</td><td>
-{% if dead_wolf["box_number"] %}    
+{% if dead_wolf["box_number"] %}
 {{ dead_wolf["box_number"] }}
 {% endif %}
 </td></tr>
 
-    
+
 
 <tr><td>Location</td><td>{{ dead_wolf["location"] if dead_wolf["location"] else ""}}</td></tr>
 <tr><td>Municipality</td><td>{{ dead_wolf["municipality"] if dead_wolf["municipality"] else ""}}</td></tr>
+<tr><td>Municipality from coordinates</td><td>{{ dead_wolf["municipality_auto"] if dead_wolf["municipality_auto"] else ""}}</td></tr>
 <tr><td>Province</td><td>{{ dead_wolf["province"] if dead_wolf["province"] else ""}}</td></tr>
 <tr><td>Region</td><td>  {{ dead_wolf["region"] if dead_wolf["region"] else ""}}</td></tr>
 
@@ -102,9 +103,3 @@ East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}
 
 
 {% endblock %}
-
-
-
-
-
-

@@ -3,18 +3,20 @@ WolfDB web service
 (c) Olivier Friard
 """
 
-from markupsafe import Markup
 import datetime
 import re
 
-from wtforms import Form, StringField, SelectField
+from markupsafe import Markup
+from sqlalchemy import text
+from wtforms import Form, SelectField, StringField
 from wtforms.validators import ValidationError
+
+import functions as fn
 
 
 class Dead_wolf(Form):
     """
     form to insert or modifiy a dead wolf
-
     """
 
     def integer_validator(form, field):
@@ -98,120 +100,27 @@ class Dead_wolf(Form):
     location = StringField("Location", [], default="")
     municipality = StringField("Municipality", [], default="")
 
+    with fn.conn_alchemy().connect() as con:
+        provinces = (
+            con.execute(
+                text(
+                    "select province_code, province_name, country from geo_info order by province_name"
+                ),
+            )
+            .mappings()
+            .all()
+        )
+        province_choices = [("", "")] + [
+            (
+                row["province_code"],
+                f"{row['province_name']} ({row['province_code']}) - {row['country']}",
+            )
+            for row in provinces
+        ]
+
     province = SelectField(
         "Province",
-        choices=[
-            ("", ""),
-            ("AG", "Agrigento"),
-            ("AL", "Alessandria"),
-            ("06", "Alpi Marittime"),
-            ("AN", "Ancona"),
-            ("AO", "Aosta"),
-            ("AR", "Arezzo"),
-            ("AP", "Ascoli"),
-            ("AT", "Asti"),
-            ("AV", "Avellino"),
-            ("BA", "Bari"),
-            ("BT", "Barletta-Andria-Trani"),
-            ("BL", "Belluno"),
-            ("BN", "Benevento"),
-            ("BG", "Bergamo"),
-            ("BI", "Biella"),
-            ("BO", "Bologna"),
-            ("BZ", "Bolzano"),
-            ("BS", "Brescia"),
-            ("BR", "Brindisi"),
-            ("CA", "Cagliari"),
-            ("CL", "Caltanissetta"),
-            ("CB", "Campobasso"),
-            ("CI", "Carbonia Iglesias"),
-            ("CE", "Caserta"),
-            ("CT", "Catania"),
-            ("CZ", "Catanzaro"),
-            ("CH", "Chieti"),
-            ("CO", "Como"),
-            ("CS", "Cosenza"),
-            ("CR", "Cremona"),
-            ("KR", "Crotone"),
-            ("CN", "Cuneo"),
-            ("EN", "Enna"),
-            ("FM", "Fermo"),
-            ("FE", "Ferrara"),
-            ("FI", "Firenze"),
-            ("FG", "Foggia"),
-            ("FC", "Forli-Cesena"),
-            ("FR", "Frosinone"),
-            ("GE", "Genova"),
-            ("GO", "Gorizia"),
-            ("GR", "Grosseto"),
-            ("IM", "Imperia"),
-            ("IS", "Isernia"),
-            ("AQ", "L'Aquila"),
-            ("SP", "La Spezia"),
-            ("LT", "Latina"),
-            ("LE", "Lecce"),
-            ("LC", "Lecco"),
-            ("LI", "Livorno"),
-            ("TI", "Locarno"),
-            ("LO", "Lodi"),
-            ("LU", "Lucca"),
-            ("MC", "Macerata"),
-            ("MN", "Mantova"),
-            ("MS", "Massa-Carrara"),
-            ("MT", "Matera"),
-            ("VS", "Medio Campidano"),
-            ("ME", "Messina"),
-            ("MI", "Milano"),
-            ("MO", "Modena"),
-            ("MB", "Monza e Brianza"),
-            ("NA", "Napoli"),
-            ("NO", "Novara"),
-            ("NU", "Nuoro"),
-            ("OG", "Ogliastra"),
-            ("OT", "Olbia Tempio"),
-            ("OR", "Oristano"),
-            ("PD", "Padova"),
-            ("PA", "Palermo"),
-            ("PR", "Parma"),
-            ("PV", "Pavia"),
-            ("PG", "Perugia"),
-            ("PU", "Pesaro e Urbino"),
-            ("PE", "Pescara"),
-            ("PC", "Piacenza"),
-            ("PI", "Pisa"),
-            ("PT", "Pistoia"),
-            ("PN", "Pordenone"),
-            ("PZ", "Potenza"),
-            ("PO", "Prato"),
-            ("RG", "Ragusa"),
-            ("RA", "Ravenna"),
-            ("RC", "Reggio Calabria"),
-            ("RE", "Reggio Emilia"),
-            ("RI", "Rieti"),
-            ("RN", "Rimini"),
-            ("Roma", "Roma"),
-            ("RO", "Rovigo"),
-            ("SA", "Salerno"),
-            ("SV", "Savona"),
-            ("SO", "Sondrio"),
-            ("TA", "Taranto"),
-            ("TE", "Teramo"),
-            ("TR", "Terni"),
-            ("TO", "Torino"),
-            ("TP", "Trapani"),
-            ("TN", "Trento"),
-            ("TV", "Treviso"),
-            ("TS", "Trieste"),
-            ("UD", "Udine"),
-            ("VA", "Varese"),
-            ("VE", "Venezia"),
-            ("VB", "Verbano-Cusio-Ossola"),
-            ("VC", "Vercelli"),
-            ("VR", "Verona"),
-            ("VV", "Vibo Valentia"),
-            ("VI", "Vicenza"),
-            ("VT", "Viterbo"),
-        ],
+        choices=province_choices,
         default="",
     )
 

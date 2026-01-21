@@ -6,28 +6,30 @@ flask blueprint for dead wolves management
 """
 
 import sys
+import uuid
+from io import BytesIO
+from pathlib import Path
+
 import flask
+import pandas as pd
+import utm
 from flask import (
-    render_template,
-    redirect,
-    request,
     flash,
-    session,
     make_response,
+    redirect,
+    render_template,
+    request,
+    session,
     url_for,
 )
 from markupsafe import Markup
-from sqlalchemy import text, exc
-import utm
-import pandas as pd
-from io import BytesIO
-from pathlib import Path
-import uuid
+from sqlalchemy import exc, text
 
+import functions as fn
 from config import config
+
 from . import tissues_import
 from .dw_form import Dead_wolf
-import functions as fn
 
 app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
 
@@ -78,7 +80,7 @@ def view_dead_wolf_id(id: int):
 
         if dead_wolf is None:
             flash(fn.alert_danger(f"Dead wolf <b>#{id}</b> not found"))
-            return redirect("/dead_wolves_list")
+            return redirect(url_for("dead_wolves_list"))
 
         # fields list
         fields_list = (
