@@ -22,7 +22,6 @@ from markupsafe import Markup
 from sqlalchemy import create_engine, text
 
 from config import config
-from italian_regions import prov_name2prov_code, regions
 
 params = config()
 
@@ -525,7 +524,7 @@ def province_code_list() -> list:
         ]
 
 
-def check_province_code(province_code) -> Union[None, str]:
+def check_province_code(province_code) -> str | None:
     """
     check if province code exists.
     Returns province code or None if not found
@@ -545,7 +544,7 @@ def check_province_code(province_code) -> Union[None, str]:
     return result["province_code"] if result is not None else None
 
 
-def prov_code2prov_name(province_code: str) -> str:
+def prov_code2prov_name(province_code: str) -> str | None:
     """
     returns the province name for the province code provided (None if not found)
     """
@@ -561,7 +560,7 @@ def prov_code2prov_name(province_code: str) -> str:
             .fetchone()
         )
 
-    return result["province_name"] if result else None
+    return result["province_name"] if result is not None else None
 
 
 def province_code2region_dict() -> dict:
@@ -614,7 +613,7 @@ def province_name_list() -> list:
         ]
 
 
-def province_name2code(province_name: str) -> str:
+def province_name2code(province_name: str) -> str | None:
     """
     returns province code from province name
     using geo_info table
@@ -631,7 +630,7 @@ def province_name2code(province_name: str) -> str:
             .fetchone()
         )
 
-    return result["province_code"] if result else None
+    return result["province_code"] if result is not None else None
 
 
 def province_name2code_dict() -> dict:
@@ -658,29 +657,49 @@ def province_name2region(province_name) -> str:
     """
     get region by province name
     """
-    region_out: str = ""
-    if province_name:
-        for region in regions:
-            if province_name.upper() in [x.upper() for x in region["capoluoghi"]]:
-                region_out = region["nome"]
-                break
 
-    return region_out
+    with conn_alchemy().connect() as con:
+        result = (
+            con.execute(
+                text(
+                    "SELECT region FROM geo_info WHERE UPPER(province_name) = :province_name"
+                ),
+                {"province_name": province_name.upper().strip()},
+            )
+            .mappings()
+            .fetchone()
+        )
+
+    return result["region"] if result is not None else ""
+
+    # region_out: str = ""
+    # if province_name:
+    #    for region in regions:
+    #        if province_name.upper() in [x.upper() for x in region["capoluoghi"]]:
+    #            region_out = region["nome"]
+    #            break
+    #
+    #    return region_out
 
 
-def get_regions(provinces: list) -> str:
+def prov_name2prov_code(province_name) -> str:
     """
-    returns list of regions (as str) corresponding to the list of provinces
+    get province code (sigla)  by province name
     """
 
-    transect_region: list = []
-    if provinces:
-        for region in regions:
-            for x in provinces.split(" "):
-                if x.upper() in region["province"]:
-                    transect_region.append(region["nome"])
+    with conn_alchemy().connect() as con:
+        result = (
+            con.execute(
+                text(
+                    "SELECT province_code FROM geo_info WHERE UPPER(province_name) = :province_name"
+                ),
+                {"province_name": province_name.upper().strip()},
+            )
+            .mappings()
+            .fetchone()
+        )
 
-    return " ".join(list(set(transect_region)))
+    return result["province_code"] if result is not None else ""
 
 
 def reverse_geocoding(lon_lat: list) -> dict:
