@@ -354,7 +354,7 @@ def new_dead_wolf():
             # add region
             region: str = ""
             if province_code:
-                region = (
+                region_result = (
                     con.execute(
                         text(
                             "SELECT region FROM geo_info WHERE province_code = :province_code"
@@ -362,18 +362,76 @@ def new_dead_wolf():
                         {"province_code": province_code},
                     )
                     .mappings()
-                    .fetchone()["region"]
+                    .fetchone()
                 )
+                if region_result is not None:
+                    region = region_result["region"]
 
             try:
                 con.execute(
                     text(
                         (
-                            "INSERT INTO dead_wolves "
-                            "(genotype_id, tissue_id, discovery_date, location, municipality, province, region, wa_code, utm_east, utm_north, utm_zone, geometry_utm) "
-                            "VALUES "
-                            "(:genotype_id, :tissue_id, :discovery_date, :location, :municipality, :province, :region, :wa_code, "
-                            ":utm_east, :utm_north, :utm_zone, ST_GeomFromText(:wkt_point, :srid))"
+                            # "INSERT INTO dead_wolves "
+                            # "(genotype_id, tissue_id, discovery_date, location, municipality, province, region, wa_code, utm_east, utm_north, utm_zone, geometry_utm) "
+                            # "VALUES "
+                            # "(:genotype_id, :tissue_id, :discovery_date, :location, :municipality, :province, :region, :wa_code, "
+                            # ":utm_east, :utm_north, :utm_zone, ST_GeomFromText(:wkt_point, :srid))"
+                            """
+                            WITH p AS (
+                              SELECT ST_GeomFromText(:wkt_point, :srid) AS geom
+                            ),
+                            c AS (
+                              SELECT
+                                co.comune,
+                                co.cod_prov,
+                                co.cod_reg
+                              FROM comuni co, p
+                              WHERE ST_Within(p.geom, co.wkb_geometry)
+                              LIMIT 1
+                            ),
+                            g AS (
+                              SELECT
+                                gi.province_code,
+                                gi.region,
+                                gi.country
+                              FROM geo_info gi, c
+                              WHERE
+                                gi.province_code_num = c.cod_prov::int
+                                AND gi.region_code_num   = c.cod_reg::int
+                              LIMIT 1
+                            )
+                            INSERT INTO dead_wolves
+                            (
+                              genotype_id, tissue_id, discovery_date, location,
+                              municipality, province, region, wa_code,
+                              utm_east, utm_north, utm_zone,
+                              geometry_utm,
+                              municipality_auto
+                            )
+                            SELECT
+                              :genotype_id,
+                              :tissue_id,
+                              :discovery_date,
+                              :location,
+                              :municipality,
+                              :province,
+                              :region,
+                              :wa_code,
+                              :utm_east,
+                              :utm_north,
+                              :utm_zone,
+                              p.geom,
+                              CONCAT(
+                                c.comune,
+                                ' (', g.province_code, ') - ',
+                                g.region,
+                                ' - ',
+                                g.country
+                              )
+                            FROM p
+                            LEFT JOIN c ON TRUE
+                            LEFT JOIN g ON TRUE;
+                            """
                         )
                     ),
                     {
@@ -624,7 +682,7 @@ def edit_dead_wolf(id: int):
             # add region
             region: str = ""
             if request.form["province"]:
-                region = (
+                region_result = (
                     con.execute(
                         text(
                             "SELECT region FROM geo_info WHERE province_code = :province_code"
@@ -632,26 +690,70 @@ def edit_dead_wolf(id: int):
                         {"province_code": request.form["province"]},
                     )
                     .mappings()
-                    .fetchone()["region"]
+                    .fetchone()
                 )
+                if region_result is not None:
+                    region = region_result["region"]
 
             con.execute(
                 text(
                     (
-                        "UPDATE dead_wolves "
-                        "SET genotype_id = :genotype_id,"
-                        "tissue_id = :tissue_id,"
-                        "discovery_date = :discovery_date,"
-                        "location = :location,"
-                        "municipality = :municipality,"
-                        "province = :province,"
-                        "region = :region,"
-                        "wa_code = :wa_code,"
-                        "utm_east = :utm_east,"
-                        "utm_north = :utm_north,"
-                        "utm_zone = :utm_zone,"
-                        "geometry_utm = ST_GeomFromText(:wkt_point, :srid) "
-                        "WHERE id = :dead_wolf_id "
+                        # "UPDATE dead_wolves dw "
+                        # "SET "
+                        # "genotype_id = :genotype_id, "
+                        # "tissue_id = :tissue_id, "
+                        # "discovery_date = :discovery_date, "
+                        # "location = :location, "
+                        # "municipality = :municipality, "
+                        # "province = :province, "
+                        # "region = :region, "
+                        # "wa_code = :wa_code, "
+                        # "utm_east = :utm_east, "
+                        # "utm_north = :utm_north, "
+                        # "utm_zone = :utm_zone, "
+                        # "geometry_utm = ST_GeomFromText(:wkt_point, :srid), "
+                        # "municipality_auto = c.comune "
+                        # "FROM comuni c "
+                        # "WHERE "
+                        # "dw.id = :dead_wolf_id "
+                        # "AND ST_Within( "
+                        # "    ST_GeomFromText(:wkt_point, :srid), "
+                        # "    c.wkb_geometry "
+                        # ") "
+                        """
+                        WITH p AS (
+                          SELECT ST_GeomFromText(:wkt_point, :srid) AS geom
+                        ),
+                        c AS (
+                          SELECT co.comune, co.cod_prov, co.cod_reg
+                          FROM comuni co, p
+                          WHERE ST_Within(p.geom, co.wkb_geometry)
+                          LIMIT 1
+                        ),
+                        g AS (
+                          SELECT gi.province_code, gi.region, gi.country
+                          FROM geo_info gi, c
+                          WHERE
+                            gi.province_code_num = c.cod_prov::int
+                            AND gi.region_code_num = c.cod_reg::int
+                          LIMIT 1
+                        )
+                        UPDATE dead_wolves dw
+                        SET
+                          geometry_utm = p.geom,
+                          municipality_auto = CONCAT(
+                            c.comune,
+                            ' (', g.province_code, ') - ',
+                            g.region,
+                            ' - ',
+                            g.country
+                          )
+                        FROM p
+                        LEFT JOIN c ON TRUE
+                        LEFT JOIN g ON TRUE
+                        WHERE dw.id = :dead_wolf_id;
+
+"""
                     )
                 ),
                 {

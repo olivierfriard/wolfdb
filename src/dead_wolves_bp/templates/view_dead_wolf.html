@@ -65,7 +65,6 @@ id <a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a><
 
 <tr><td>Location</td><td>{{ dead_wolf["location"] if dead_wolf["location"] else ""}}</td></tr>
 <tr><td>Municipality</td><td>{{ dead_wolf["municipality"] if dead_wolf["municipality"] else ""}}</td></tr>
-<tr><td>Municipality from coordinates</td><td>{{ dead_wolf["municipality_auto"] if dead_wolf["municipality_auto"] else ""}}</td></tr>
 <tr><td>Province</td><td>{{ dead_wolf["province"] if dead_wolf["province"] else ""}}</td></tr>
 <tr><td>Region</td><td>  {{ dead_wolf["region"] if dead_wolf["region"] else ""}}</td></tr>
 
@@ -77,7 +76,7 @@ East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}
 {% endif %}
 </td>
 </tr>
-
+<tr><td>Administrative location from coordinates</td><td>{{ dead_wolf["municipality_auto"] if dead_wolf["municipality_auto"] else ""}}</td></tr>
 
 </table>
 
