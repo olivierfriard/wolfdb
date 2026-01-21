@@ -6,22 +6,23 @@ functions module
 
 """
 
+import json
+import os
+import urllib.request
 from functools import wraps
-from flask import redirect, session, url_for
-from markupsafe import Markup
-from sqlalchemy import text
+from typing import Union
+
+import matplotlib.pyplot as plt
 import psycopg2
 import psycopg2.extras
-from config import config
-import urllib.request
-import json
 import redis
-from typing import Union
-from sqlalchemy import create_engine
+from flask import redirect, session, url_for
 from jinja2 import Template
-import os
+from markupsafe import Markup
+from sqlalchemy import create_engine, text
 
-from italian_regions import regions, prov_name2prov_code
+from config import config
+from italian_regions import prov_name2prov_code, regions
 
 params = config()
 
@@ -53,6 +54,15 @@ def conn_alchemy():
         f"postgresql+psycopg://{params['user']}@{params['host']}:5432/{params['database']}",
         isolation_level="AUTOCOMMIT",
     )
+
+
+def get_cmap(n, name="viridis"):
+    """
+    Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
+    RGB color; the keyword argument name must be a standard mpl colormap name.
+    """
+
+    return plt.cm.get_cmap(name, n)
 
 
 def error_info(exc_info: tuple) -> str:
@@ -1047,7 +1057,7 @@ def leaflet_geojson(
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
- 
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -1183,12 +1193,12 @@ var drawControl = new L.Control.Draw({
         featureGroup: drawnItems
     },
     draw: {
-        polygon: true,  
-        polyline: false, 
-        rectangle: false, 
-        circle: false,    
-        marker: false,     
-        circlemarker: false, 
+        polygon: true,
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false,
         edit: false,
 
     }
@@ -1208,10 +1218,10 @@ map.on('draw:created', function (event) {
 
 {% if samples == 'genotypes' %}
     fetch('/select_on_map/genotypes',
-{% endif %}     
+{% endif %}
 {% if samples == 'wa' %}
     fetch('/select_on_map/wa',
-{% endif %}     
+{% endif %}
 
          {
         method: 'POST',
@@ -1238,7 +1248,7 @@ map.on('draw:created', function (event) {
 {% endif %}
 
             };
-        
+
 
     })
     .catch(error => {
@@ -1295,7 +1305,7 @@ def leaflet_geojson_label(
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
- 
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -1407,7 +1417,7 @@ scat_markers.forEach(function(data) {
         fillOpacity: 1,
         weight: 1,
         opacity: 1,
-        radius: 8 
+        radius: 8
     }).addTo(map);
 
     if (data.label) {
@@ -1465,12 +1475,12 @@ var drawControl = new L.Control.Draw({
         featureGroup: drawnItems
     },
     draw: {
-        polygon: true,  
-        polyline: false, 
-        rectangle: false, 
-        circle: false,    
-        marker: false,     
-        circlemarker: false, 
+        polygon: true,
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false,
         edit: false,
 
     }
@@ -1490,10 +1500,10 @@ map.on('draw:created', function (event) {
 
 {% if samples == 'genotypes' %}
     fetch('/select_on_map/genotypes',
-{% endif %}     
+{% endif %}
 {% if samples == 'wa' %}
     fetch('/select_on_map/wa',
-{% endif %}     
+{% endif %}
 
          {
         method: 'POST',
@@ -1520,7 +1530,7 @@ map.on('draw:created', function (event) {
 {% endif %}
 
             };
-        
+
 
     })
     .catch(error => {
@@ -1571,7 +1581,7 @@ def leaflet_markercluster_geojson(data: dict) -> str:
  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
- 
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>

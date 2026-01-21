@@ -5,39 +5,38 @@ WolfDB web service
 flask blueprint for genetic data management
 """
 
+import datetime as dt
+import json
+import subprocess
+import sys
+import time
+import uuid
+from pathlib import Path
+
+import jinja2
+import matplotlib
+import redis
 from flask import (
-    render_template,
-    redirect,
-    request,
-    flash,
-    session,
-    make_response,
     Blueprint,
     current_app,
+    flash,
     jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
     url_for,
 )
-from markupsafe import Markup
-from sqlalchemy import text, bindparam
-from sqlalchemy.dialects.postgresql import JSONB
-from config import config
-import json
-import matplotlib
-import matplotlib.pyplot as plt
-import subprocess
-import redis
-from pathlib import Path
-import sys
-import uuid
-import datetime as dt
-import time
-import jinja2
 from geojson import Polygon
+from markupsafe import Markup
+from sqlalchemy import bindparam, text
+from sqlalchemy.dialects.postgresql import JSONB
 
 import functions as fn
-from . import export
-from . import import_
-from . import wa_import
+from config import config
+
+from . import export, import_, wa_import
 
 app = Blueprint("genetic", __name__, template_folder="templates")
 
@@ -48,14 +47,28 @@ app.debug = params["debug"]
 rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
 
 
-def get_cmap(n, name="viridis"):
+def update_loci_values_cache(wa_code: str, loci_list: dict):
     """
-    Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
-    RGB color; the keyword argument name must be a standard mpl colormap name.
+    update redis and wa_loci_values table
     """
-
-    return plt.cm.get_cmap(name, n)
-    # return plt.colormaps.get_cmap(name, n)
+    loci_values = fn.get_wa_loci_values(wa_code, loci_list)[0]
+    # update redis
+    rdis.set(wa_code, json.dumps(loci_values))
+    # update DB
+    with fn.conn_alchemy().connect() as con:
+        _ = con.execute(
+            text(
+                "INSERT INTO wa_loci_values (wa_code, loci_values) "
+                "VALUES (:wa_code, :loci_values) "
+                "ON CONFLICT (wa_code) "
+                "DO UPDATE "
+                "SET loci_values = EXCLUDED.loci_values; "
+            ).bindparams(bindparam("loci_values", type_=JSONB)),
+            {
+                "wa_code": wa_code,
+                "loci_values": loci_values,
+            },
+        )
 
 
 @app.route("/del_genotype/<genotype_id>")
@@ -478,8 +491,8 @@ def genotype_without_wa_loci():
             n_recaptures,
             (SELECT STRING_AGG(CONCAT(wa_code, ' ',mtdna), ' | ') FROM wa_scat_dw_mat WHERE genotype_id = g.genotype_id ) AS "wa_code_mtDNA"
             FROM genotypes_list_mat g
-            WHERE 
-            n_recaptures != 0 
+            WHERE
+            n_recaptures != 0
             AND genotype_id NOT IN (SELECT genotype_id FROM genotype_locus)
             ORDER BY genotype_id;
           """)
@@ -792,7 +805,7 @@ def plot_wa_clusters(distance: int):
 
     """print(f"{max_cluster_id=}")"""
 
-    cmap = get_cmap(max_cluster_id)
+    cmap = fn.get_cmap(max_cluster_id)
 
     """print(f"{cmap=}")"""
 
@@ -2768,23 +2781,7 @@ def add_genetic_data(wa_code: str):
                             },
                         )
 
-            loci_values = fn.get_wa_loci_values(wa_code, loci_list)[0]
-            # update redis
-            rdis.set(wa_code, json.dumps(loci_values))
-            # update DB
-            _ = con.execute(
-                text(
-                    "INSERT INTO wa_loci_values (wa_code, loci_values) "
-                    "VALUES (:wa_code, :loci_values) "
-                    "ON CONFLICT (wa_code) "
-                    "DO UPDATE "
-                    "SET loci_values = EXCLUDED.loci_values; "
-                ).bindparams(bindparam("loci_values", type_=JSONB)),
-                {
-                    "wa_code": wa_code,
-                    "loci_values": loci_values,
-                },
-            )
+            update_loci_values_cache(wa_code, loci_list)
 
             # update genotype_locus
 
@@ -3119,26 +3116,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
             return_to = request.form.get("return_to", "")
 
-            loci_values = fn.get_wa_loci_values(wa_code, fn.get_loci_list())[0]
-            # update REDIS
-            rdis.set(
-                wa_code,
-                json.dumps(loci_values),
-            )
-            # update DB
-            _ = con.execute(
-                text(
-                    "INSERT INTO wa_loci_values (wa_code, loci_values) "
-                    "VALUES (:wa_code, :loci_values) "
-                    "ON CONFLICT (wa_code) "
-                    "DO UPDATE "
-                    "SET loci_values = EXCLUDED.loci_values; "
-                ).bindparams(bindparam("loci_values", type_=JSONB)),
-                {
-                    "wa_code": wa_code,
-                    "loci_values": loci_values,
-                },
-            )
+            update_loci_values_cache(wa_code, fn.get_loci_list())
 
             return redirect(
                 url_for(
@@ -3318,29 +3296,7 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
                     },
                 )
 
-                # update wa_loci
-                loci_values = fn.get_wa_loci_values(row["wa_code"], loci_list)[
-                    0
-                ]  # [0] for accessing values
-                # update REDIS
-                rdis.set(
-                    row["wa_code"],
-                    json.dumps(loci_values),
-                )
-                # update DB
-                _ = con.execute(
-                    text(
-                        "INSERT INTO wa_loci_values (wa_code, loci_values) "
-                        "VALUES (:wa_code, :loci_values) "
-                        "ON CONFLICT (wa_code) "
-                        "DO UPDATE "
-                        "SET loci_values = EXCLUDED.loci_values; "
-                    ).bindparams(bindparam("loci_values", type_=JSONB)),
-                    {
-                        "wa_code": row["wa_code"],
-                        "loci_values": loci_values,
-                    },
-                )
+                update_loci_values_cache(row["wa_code"], loci_list)
 
             return redirect(f"/genotype_locus_note/{genotype_id}/{locus}/{allele}")
 
@@ -4502,28 +4458,7 @@ def confirm_load_wa_spreadsheet(filename, mode):
                 con.execute(sql, params)
 
                 # update cache
-                loci_values = fn.get_wa_loci_values(
-                    data["wa_code"], fn.get_loci_list()
-                )[0]
-                # update REDIS
-                rdis.set(
-                    data["wa_code"],
-                    json.dumps(loci_values),
-                )
-                # update DB
-                _ = con.execute(
-                    text(
-                        "INSERT INTO wa_loci_values (wa_code, loci_values) "
-                        "VALUES (:wa_code, :loci_values) "
-                        "ON CONFLICT (wa_code) "
-                        "DO UPDATE "
-                        "SET loci_values = EXCLUDED.loci_values; "
-                    ).bindparams(bindparam("loci_values", type_=JSONB)),
-                    {
-                        "wa_code": data["wa_code"],
-                        "loci_values": loci_values,
-                    },
-                )
+                update_loci_values_cache(data["wa_code"], fn.get_loci_list())
 
         con.execute(text("ALTER TABLE wa_results ENABLE TRIGGER ALL"))
 
