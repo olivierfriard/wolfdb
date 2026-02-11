@@ -104,7 +104,7 @@ class Dead_wolf(Form):
         provinces = (
             con.execute(
                 text(
-                    "select province_code, province_name, country from geo_info order by province_name"
+                    "SELECT province_code, province_name, country FROM geo_info ORDER BY province_name"
                 ),
             )
             .mappings()

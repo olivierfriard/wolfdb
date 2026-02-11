@@ -2,7 +2,7 @@
 
 {% block content %}
 
-   
+
 
 
 <h3>{{ title }}</h3>
@@ -82,10 +82,17 @@
 {% for message in form.province.errors %}<div style="#770000">{{ message }}</div>{% endfor %}
 <span class="form-text"></span>
 </div></div></div>
+{# area #}
+<div class="mb-3"><div class="row g-3 align-items-top">
+<div class="col-2">{{ form.field21.label }}</div><div class="col-4">{{ form.field21(class="form-control", value=default_values["field21"]) }}{% for message in form.field21.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div>
+</div></div>
+{# country #}
+<div class="mb-3"><div class="row g-3 align-items-top">
+<div class="col-2">{{ form.field22.label }}</div><div class="col-4">{{ form.field22(class="form-control", value=default_values["field22"]) }}{% for message in form.field22.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div>
+</div></div>
 
-<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field21.label }}</div><div class="col-4">{{ form.field21(class="form-control", value=default_values["field21"]) }}{% for message in form.field21.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
-<div class="mb-3"><div class="row g-3 align-items-top"><div class="col-2">{{ form.field22.label }}</div><div class="col-4">{{ form.field22(class="form-control", value=default_values["field22"]) }}{% for message in form.field22.errors %}<div style="#770000;">{{ message }}</div>{% endfor %}<span class="form-text"></span></div></div></div>
 
+{% if municipality_auto %}Aministrative location from coordinates: <b>{{ municipality_auto }}</b><br><br>{%endif%}
 
 {# utm #}
 <div class="mb-3">

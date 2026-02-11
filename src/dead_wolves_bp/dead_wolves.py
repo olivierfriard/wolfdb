@@ -70,7 +70,10 @@ def view_dead_wolf_id(id: int):
         dead_wolf = (
             con.execute(
                 text(
-                    "SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"
+                    "SELECT *,"
+                    "(SELECT province_name FROM geo_info WHERE province_code = d.province) AS province_name, "
+                    "(SELECT country FROM geo_info WHERE region = d.region LIMIT 1) AS country "
+                    "FROM dead_wolves d WHERE deleted IS NULL AND id = :dead_wolf_id"
                 ),
                 {"dead_wolf_id": id},
             )
@@ -559,7 +562,11 @@ def edit_dead_wolf(id: int):
             dead_wolf = (
                 con.execute(
                     text(
-                        "SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"
+                        # "SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"
+                        "SELECT *,"
+                        "(SELECT province_name FROM geo_info WHERE province_code = d.province) AS province_name, "
+                        "(SELECT country FROM geo_info WHERE region = d.region LIMIT 1) AS country "
+                        "FROM dead_wolves d WHERE deleted IS NULL AND id = :dead_wolf_id"
                     ),
                     {"dead_wolf_id": id},
                 )
@@ -648,6 +655,7 @@ def edit_dead_wolf(id: int):
             action=f"/edit_dead_wolf/{id}",
             form=form,
             default_values=default_values,
+            municipality_auto=dead_wolf["municipality_auto"],
         )
 
     if request.method == "POST":

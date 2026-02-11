@@ -49,27 +49,26 @@ id <a href="/view_dead_wolf_id/{{ dead_wolf['id'] }}">{{ dead_wolf["id"] }}</a><
 </td></tr>
 
 <tr><td>Institution</td><td>
-{{ dead_wolf["institution"] if dead_wolf["institution"] else ""}}
+{{ dead_wolf.institution if dead_wolf.institution else ""}}
 </td></tr>
 
 
 
 
-<tr><td>Box number</td><td>
-{% if dead_wolf["box_number"] %}
-{{ dead_wolf["box_number"] }}
+<tr><td>Box number</td><td>{% if dead_wolf.box_number %}{{ dead_wolf.box_number }}{% endif %}</td></tr>
+
+
+<tr><td>Location</td><td>{{ dead_wolf.location if dead_wolf.location else ""}}</td></tr>
+<tr><td>Municipality</td><td>{{ dead_wolf.municipality if dead_wolf.municipality else ""}}</td></tr>
+<tr><td>Province</td><td>
+{% if dead_wolf.province %}
+{{ dead_wolf.province_name }} ({{ dead_wolf.province }})
 {% endif %}
 </td></tr>
+<tr><td>Region</td><td>  {{ dead_wolf.region if dead_wolf.region else ""}}</td></tr>
+<tr><td>Country</td><td>  {{ dead_wolf.country if dead_wolf.country else ""}}</td></tr>
 
-
-
-<tr><td>Location</td><td>{{ dead_wolf["location"] if dead_wolf["location"] else ""}}</td></tr>
-<tr><td>Municipality</td><td>{{ dead_wolf["municipality"] if dead_wolf["municipality"] else ""}}</td></tr>
-<tr><td>Province</td><td>{{ dead_wolf["province"] if dead_wolf["province"] else ""}}</td></tr>
-<tr><td>Region</td><td>  {{ dead_wolf["region"] if dead_wolf["region"] else ""}}</td></tr>
-
-
-<tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf["utm_zone"] }})</td>
+<tr><td>Coordinates (WGS 84 / UTM zone {{ dead_wolf.utm_zone }})</td>
 <td>
 {% if dead_wolf["utm_east"] and dead_wolf["utm_north"] %}
 East: {{ dead_wolf["utm_east"] }}, North: {{ dead_wolf["utm_north"] }}
