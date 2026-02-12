@@ -61,9 +61,8 @@ function scroll_to_wa() {
 
 <a style="width:10%" href="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter, mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>
 </span>
-{% if config.DEBUG %}
-Duration: {{ duration }} s
-<br>
+{% if config.DEBUG == 'True' %}
+Duration: {{ duration }} s<br>
 endpoint: {{ request.endpoint }}<br>
 path: {{ request.path }}<br>
 
