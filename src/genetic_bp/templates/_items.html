@@ -1,12 +1,6 @@
 {#  WA table content #}
 
 
-{% if config.DEBUG == "True" %}
-debug: {{ parameters }}<br>
-{% endif %}
-
-
-
 {% include "freeze_1stcolumn_1strow.html" %}
 
 <div class="frozen">
@@ -110,7 +104,7 @@ with_loci_notes=1 if with_loci_notes else 0
 
     <a href="{{ url_for('genetic.wa_locus_note', wa_code=result.wa_code, locus=locus, allele=allele, return_to=return_url + '&view_wa_code='+result.wa_code) }}">note</a>
 
-    {{ loci_values[result['wa_code']][locus][allele]['divergent_allele'] }}
+    {{ loci_values[result.wa_code][locus][allele]['divergent_allele'] }}
     </td>
     {% endfor %}
     {% endfor %}

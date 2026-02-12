@@ -148,19 +148,12 @@ not poor DNA
 
   </span>
 
-
-
-
-
-
-
-
-
-
 </form>
 
-
+{% if config.DEBUG == "True" %}
+debug: {{ parameters }}<br>
+{% endif %}
 
 <div id="wa">
-  {% include "_items.html" %}
+{% include "_items.html" %}
 </div>
