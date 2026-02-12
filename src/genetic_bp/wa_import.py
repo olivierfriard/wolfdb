@@ -1,10 +1,11 @@
 from pathlib import Path
+
 import pandas as pd
 from markupsafe import Markup
 from sqlalchemy import text
 
-from config import config
 import functions as fn
+from config import config
 
 DEBUG = False
 params = config()
@@ -114,7 +115,7 @@ def extract_wa_data_from_spreadsheet(filename: str):
         data["mtdna"] = row["mtdna"].strip() if not pd.isna(row["mtdna"]) else None
         data["sex_id"] = row["sex id"].strip() if not pd.isna(row["sex id"]) else None
         data["individual_id"] = (
-            row["other id"].strip() if not pd.isna(row["other id"]) else None
+            str(row["other id"]).strip() if not pd.isna(row["other id"]) else None
         )
 
         # constraint on quality_genotype

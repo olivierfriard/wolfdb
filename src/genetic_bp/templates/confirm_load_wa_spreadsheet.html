@@ -2,8 +2,6 @@
 
 {% block content %}
 
-<script src="https://unpkg.com/htmx.org@1.6.0"></script>
-
 <main class="flex-shrink-0">
 
 <div class="container">
@@ -26,9 +24,9 @@
 <b>{{ wa_to_update|count }}</b> are already present in the database (displayed with red background).<br>
 <br>
 
-<a href="/confirm_load_wa_spreadsheet/{{ filename }}/all"  class="btn btn-primary">Confirm insertion (WA already present will be updated)</a>
+<a href="{{ url_for("genetic.confirm_load_wa_spreadsheet", filename=filename, mode='all') }}"  class="btn btn-primary">Confirm insertion (WA already present will be updated)</a>
 
-<a href="/confirm_load_wa_spreadsheet/{{ filename }}/new"  class="btn btn-primary">Insert only new WA</a>
+<a href="{{ url_for("genetic.confirm_load_wa_spreadsheet", filename=filename, mode='new') }}"  class="btn btn-primary">Insert only new WA</a>
 
 <a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
 
