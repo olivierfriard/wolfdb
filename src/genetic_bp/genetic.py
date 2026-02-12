@@ -363,12 +363,12 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             else:
                 search_term: str = ""
 
+        sql_search: str = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} "
+
         if ":" in search_term:
             sql_search = sql_all
             values: dict = {}
-            sql_search: str = (
-                "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat "
-            )
+
             for idx, field_term in enumerate(search_term.split(";")):
                 field, value = [x.strip().lower() for x in field_term.split(":")]
                 if field not in (
@@ -390,17 +390,14 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
                 if field == "genotype":
                     field = "genotype id"
                 field = field.replace(" ", "_")
-                if idx == 0:
-                    sql_search += f" WHERE ({field} ILIKE :search{idx}) "
-                else:
-                    sql_search += f" AND ({field} ILIKE :search{idx}) "
+                sql_search += f" AND ({field} ILIKE :search{idx}) "
                 values[f"search{idx}"] = f"%{value}%"
 
         else:  # search in all fields
             values = {"search": f"%{search_term}%"}
 
-            sql_search = (
-                "SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat WHERE ("
+            sql_search += (
+                " AND ("
                 "genotype_id ILIKE :search "
                 "OR notes ILIKE :search "
                 "OR tmp_id ILIKE :search "
