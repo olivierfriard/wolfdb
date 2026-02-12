@@ -1,6 +1,5 @@
-{{ config.DEBUG }}
 
-{% if config.DEBUG %}
+{% if config.DEBUG == "True" %}
 debug: {{ parameters }}<br>
 {% endif %}
 
