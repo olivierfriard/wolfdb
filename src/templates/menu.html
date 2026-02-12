@@ -40,7 +40,7 @@ Transects
 <li><a class="dropdown-item" href="/export_transects">Export</a></li>
 </ul>
 </li>
-            
+
 
 
 
@@ -73,7 +73,7 @@ Tracks
 <li><a class="dropdown-item" href="/check_tracks_location">Check location</a></li>
 </ul>
 </li>
-    
+
 
 
 <li class="nav-item dropdown">
@@ -81,11 +81,11 @@ Tracks
 Genetic samples
 </a>
 <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/wa_genetic_samples3">WA samples (new)</a></li>    
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/all">WA samples</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/with_notes">WA samples with notes</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/red_flag">WA samples with locus/allele notes</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/no_values">All WA samples (include samples without loci values)</a></li>
+<li><a class="dropdown-item" href="/wa_genetic_samples3">WA samples</a></li>
+<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/all">OLD - WA samples</a></li>
+<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/with_notes">OLD - WA samples with notes</a></li>
+<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/red_flag">OLD - WA samples with locus/allele notes</a></li>
+<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/no_values">OLD - All WA samples (include samples without loci values)</a></li>
 
 <li><a class="dropdown-item" href="{{ url_for('genetic.check_genetic_profile') }}">Search genetic profile</a></li>
 
@@ -115,7 +115,7 @@ Genotypes
 <li><a class="dropdown-item" href="/genotypes_list/0/20/deleted">Deleted genotypes</a></li>
 </ul>
 </li>
-    
+
 
 
 <li class="nav-item dropdown">
@@ -130,7 +130,7 @@ Dead wolves
 <li><a class="dropdown-item" href="{{ url_for('dead_wolves.load_tissue_from_spreadsheet') }}">Import tissues from a spreadsheet file</a></li>
 </ul>
 </li>
-    
+
 
 
 <li class="nav-item dropdown">
@@ -172,7 +172,7 @@ Tools
 
 </ul>
 </li>
-    
+
 
 
 
@@ -183,7 +183,7 @@ Tools
     </a>
 
     <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-    
+
 {% if session.role == 'administrator' %}
    <li><a class="dropdown-item" href="/admin">Administration</a></li>
 {%endif%}

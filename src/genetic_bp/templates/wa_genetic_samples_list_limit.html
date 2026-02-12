@@ -1,7 +1,7 @@
 {% extends "bootstrap_no-body.html" %}
 
 {% block content %}
-<body onload="scroll_to_wa()"> 
+<body onload="scroll_to_wa()">
 <script>
 function scroll_to_wa() {
     const element = document.getElementById("{{ view_wa_code }}");
@@ -53,19 +53,22 @@ function scroll_to_wa() {
 
 <span style="display:inline-block; width: 8em;"></span>
 
-<form style="display:inline" method="POST" action="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter) }}">   
+<form style="display:inline" method="POST" action="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter) }}">
 <input  type="search" name="search" value="{{ search_term }}">
 <button type="submit" class="btn btn-secondary btn-sm" >search</button>
 </form>
 <span style="display:inline-block; width: 8em;"></span>
 
-<a style="width:10%" href="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter, mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>   
+<a style="width:10%" href="{{ url_for(request.endpoint, offset=0, limit='ALL', filter=filter, mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>
 </span>
-{% if config.DEBUG %}Duration: {{ duration }} s{% endif %}
-
+{% if config.DEBUG %}
+Duration: {{ duration }} s
 <br>
 endpoint: {{ request.endpoint }}<br>
 path: {{ request.path }}<br>
+
+{% endif %}
+
 
 {% include "freeze_1stcolumn_1strow.html" %}
 
