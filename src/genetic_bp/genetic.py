@@ -1270,6 +1270,7 @@ def get_wa(
     with_genotype_notes: int = 0,
     with_loci_values: int = 0,
     with_loci_notes: int = 0,
+    not_poor_dna: int = 0,
 ):
     """
     get genetic data for wa_codes
@@ -1287,9 +1288,11 @@ def get_wa(
         # "  ON lv.wa_code = g.wa_code "
         # "WHERE (g.date BETWEEN :start_date AND :end_date OR g.date IS NULL) "
     )
+    if not_poor_dna:
+        sql_base += "AND mtdna not ilike '%poor DNA%' "
 
     if with_genotype_notes:
-        sql_base = sql_base + "AND notes != '' AND notes IS NOT NULL "
+        sql_base += "AND notes != '' AND notes IS NOT NULL "
 
     if with_loci_values:
         sql_base = sql_base + (
@@ -1307,7 +1310,7 @@ def get_wa(
         )
 
     if with_loci_notes:
-        sql_base = sql_base + (
+        sql_base += (
             "AND wa_code IN "
             "(SELECT w.wa_code "
             "FROM wa_loci_values w "
@@ -1439,27 +1442,37 @@ def get_wa(
 
 @app.get("/wa")
 def wa():
+    """
+    serve wa codes for htmx requests (from _wa_panel.html)
+    """
     offset = int(request.args.get("offset", -1))
     raw_limit = request.args.get("limit", 10)
 
     limit: str | int = "All" if raw_limit == "All" else int(raw_limit)
 
-    print("\n" * 5)
-    print("=" * 20)
-    print(f"{offset=}")
-    print(f"{limit=}")
-
     with_genotype_notes = "1" in request.args.getlist("with_genotype_notes")
     with_loci_values = "1" in request.args.getlist("with_loci_values")
     with_loci_notes = "1" in request.args.getlist("with_loci_notes")
+    not_poor_dna = "1" in request.args.getlist("not_poor_dna")
 
-    print(f"{with_genotype_notes=}")
-    print(f"{with_loci_values=}")
-    print(f"{with_loci_notes=}")
+    if app.debug:
+        print("\n" * 5)
+        print("=" * 20)
+        print(f"{offset=}")
+        print(f"{limit=}")
+        print(f"{with_genotype_notes=}")
+        print(f"{with_loci_values=}")
+        print(f"{with_loci_notes=}")
+        print(f"{not_poor_dna=}")
 
     time0 = time.time()
     out, loci_values, locus_notes, total_n_wa = get_wa(
-        offset, limit, with_genotype_notes, with_loci_values, with_loci_notes
+        offset,
+        limit,
+        with_genotype_notes,
+        with_loci_values,
+        with_loci_notes,
+        not_poor_dna,
     )
     time1 = time.time() - time0
 
@@ -1470,6 +1483,7 @@ def wa():
         f"{with_genotype_notes=}<br>"
         f"{with_loci_notes=}<br>"
         f"{with_loci_values=}<br>"
+        f"{not_poor_dna=}<br>"
     )
 
     # loci list
@@ -1483,6 +1497,7 @@ def wa():
         with_genotype_notes=with_genotype_notes,
         with_loci_values=with_loci_values,
         with_loci_notes=with_loci_notes,
+        not_poor_dna=not_poor_dna,
         loci_list=loci_list,
         wa_scats=out,
         loci_values=loci_values,

@@ -9,6 +9,7 @@
   <input type="hidden" name="with_genotype_notes" value="0">
   <input type="hidden" name="with_loci_values" value="0">
   <input type="hidden" name="with_loci_notes" value="0">
+  <input type="hidden" name="not_poor_dna" value="0">
 
 
   {% if limit == 'All' %}
@@ -59,7 +60,7 @@
           hx-vals='{{ {"offset": (offset|int) + (limit|int)} | tojson }}'>
     Next ▶
   </button>
-    
+
 <span style="display:inline-block; width: 8em;"></span>
 <small>WA codes / page</small>
 
@@ -76,9 +77,9 @@
       {% endfor %}
     </select>
   </label>
-    
+
     <span style="display:inline-block; width: 8em;"></span>
-  
+
  <label>
   <input class="form-check-input"
          type="checkbox"
@@ -110,6 +111,20 @@
 <label style="margin-left: 1em;">
   <input class="form-check-input"
          type="checkbox"
+         name="not_poor_dna" value="1"
+         {% if not_poor_dna %}checked{% endif %}
+         hx-get="{{ url_for('genetic.wa') }}"
+         hx-trigger="change"
+         hx-target="#wa-panel"
+         hx-swap="innerHTML"
+         hx-include="#wa-filters"
+         hx-vals='{{ {"offset": 0} | tojson }}'>
+not poor DNA
+</label>
+
+<label style="margin-left: 1em;">
+  <input class="form-check-input"
+         type="checkbox"
          name="with_loci_values" value="1"
          {% if with_loci_values %}checked{% endif %}
          hx-get="{{ url_for('genetic.wa') }}"
@@ -120,13 +135,14 @@
          hx-vals='{{ {"offset": 0} | tojson }}'>
   exclude WA w/o loci values
 </label>
+
 <span style="display:inline-block; width: 8em;"></span>
 
 <a style="width:10%" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
                                  with_genotype_notes=1 if with_genotype_notes else 0,
                                  with_loci_values=1 if with_loci_values else 0,
                                  with_loci_notes=1 if with_loci_notes else 0,
-                                mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>   
+                                mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>
 
 
 
@@ -140,7 +156,7 @@
 
 
 
-  
+
 </form>
 
 
