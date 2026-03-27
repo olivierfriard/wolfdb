@@ -1,0 +1,65 @@
+{% extends "bootstrap_simple.html" %}
+
+{% block content %}
+
+{% if results %}
+<h3>{{ header_title }}</h3>
+
+<form method="POST" id="full_list_form" action="/dead_wolves_full_list" class="mb-3">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_xlsx')">Export XLSX</button>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_ods')">Export ODS</button>
+    <input type="hidden" name="action" id="action_field" value="search">
+</form>
+
+<script>
+    function submitForm(action) {
+        document.getElementById('action_field').value = action;
+        document.getElementById('full_list_form').submit();
+    }
+</script>
+
+{% include "freeze_1stcolumn_1strow.html" %}
+
+<div class="frozen">
+    <table class="table table-striped table-hover w-auto">
+        <thead>
+            <tr>
+                {% for column in all_columns %}
+                <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                {% for column in all_columns %}
+                <td>
+                    {% if column == "id" %}
+                    <a href="/view_dead_wolf_id/{{ result['id'] }}">{{ result['id'] }}</a>
+                    {% elif column == "tissue_id" and result['tissue_id'] %}
+                    <a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a>
+                    {% elif column == "genotype_id" and result['genotype_id'] %}
+                        {% if result['genotype_id_verif'] %}
+                        <a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>
+                        {% else %}
+                        {{ result['genotype_id'] }}
+                        {% endif %}
+                    {% elif column == "wa_code" and result['wa_code'] %}
+                    <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
+                    {% else %}
+                    {{ result[column] if result[column] is not none else "" }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+
+<h3>No dead wolf found</h3>
+
+{% endif %}
+
+{% endblock %}
