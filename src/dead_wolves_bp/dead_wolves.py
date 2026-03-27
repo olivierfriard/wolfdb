@@ -880,11 +880,11 @@ def dead_wolves_list():
        have a discovery date between start and end date
     """
 
-    action = "search"
+    action: str = "search"
 
     sql: str = (
-        "SELECT id, tissue_id, wa_code, genotype_id, discovery_date, location, municipality, province, region, utm_east, utm_north, utm_zone "
-        ",(SELECT genotype_id FROM genotypes WHERE genotype_id=dw.genotype_id) AS genotype_id_verif, "
+        "SELECT id, tissue_id, wa_code, genotype_id, discovery_date, location, municipality, province, region, utm_east, utm_north, utm_zone, "
+        "(SELECT genotype_id FROM genotypes WHERE genotype_id=dw.genotype_id) AS genotype_id_verif, "
         "(SELECT val FROM dead_wolves_values WHERE field_id = 12 AND id = dw.id) AS main_mortality, "
         "(SELECT val FROM dead_wolves_values WHERE field_id = 13 AND id = dw.id) AS specific_mortality "
         "FROM dead_wolves dw "
@@ -958,27 +958,192 @@ def dead_wolves_list():
             if "selected_field" in request.form
             else "all",
         )
-    elif action == "export":
+    elif action.startswith("export_"):
         if not results:
             return "No dead wolves found"
-        file_content = export_dead_wolves(results)
+        file_format = action.split("_")[1]
+        file_content = export_dead_wolves(results, file_format)
+        if file_content is None:
+            return "error"
         response = make_response(file_content, 200)
         response.headers["Content-type"] = (
             "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            if file_format == "xlsx"
+            else "application/vnd.oasis.opendocument.spreadsheet"
         )
         response.headers["Content-disposition"] = (
-            f"attachment; filename=dead_wolves_{request.form['selected_field'] if 'selected_field' in request.form else 'all'}_{search_term}.xlsx"
+            f"attachment; filename=dead_wolves_{request.form['selected_field'] if 'selected_field' in request.form else 'all'}_{search_term}.{file_format}"
         )
-
         return response
 
     else:
         return "error"
 
 
-def export_dead_wolves(results):
+@app.route(
+    "/dead_wolves_full_list",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def dead_wolves_full_list():
     """
-    export results in XLXS
+    Show a complete list of dead wolves with base and dynamic fields.
+    """
+    action: str = "search"
+    if request.method == "POST":
+        action = request.form.get("action", "search")
+
+    base_columns: list[str] = [
+        "id",
+        "tissue_id",
+        "genotype_id",
+        "wa_code",
+        "discovery_date",
+        "location",
+        "municipality",
+        "province",
+        "region",
+        "utm_east",
+        "utm_north",
+        "utm_zone",
+        "box_number",
+        "scalp_category",
+        "notes",
+        "sampling_season",
+        "operator",
+        "institution",
+    ]
+
+    with fn.conn_alchemy().connect() as con:
+        # Load all dynamic fields and keep their display order.
+        dynamic_fields = (
+            con.execute(
+                text(
+                    "SELECT field_id, name "
+                    "FROM dead_wolves_fields_definition "
+                    "ORDER BY position"
+                )
+            )
+            .mappings()
+            .all()
+        )
+
+        # Load base columns from dead_wolves for the active date range.
+        base_results = (
+            con.execute(
+                text(
+                    "SELECT "
+                    "dw.id, dw.tissue_id, dw.genotype_id, dw.wa_code, dw.discovery_date, "
+                    "dw.location, dw.municipality, dw.province, dw.region, "
+                    "dw.utm_east, dw.utm_north, dw.utm_zone, "
+                    "dw.box_number, dw.scalp_category, dw.notes, dw.sampling_season, "
+                    "dw.operator, dw.institution, "
+                    "(SELECT genotype_id FROM genotypes WHERE genotype_id = dw.genotype_id) AS genotype_id_verif "
+                    "FROM dead_wolves dw "
+                    "WHERE dw.deleted IS NULL "
+                    "AND (dw.discovery_date BETWEEN :start_date AND :end_date OR dw.discovery_date IS NULL) "
+                    "ORDER BY dw.id"
+                ),
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+
+        # Load all dynamic values tied to dead wolves in the same date range.
+        dynamic_values_rows = (
+            con.execute(
+                text(
+                    "SELECT dv.id, dv.field_id, dv.val "
+                    "FROM dead_wolves_values dv "
+                    "JOIN dead_wolves dw ON dw.id = dv.id "
+                    "WHERE dw.deleted IS NULL "
+                    "AND (dw.discovery_date BETWEEN :start_date AND :end_date OR dw.discovery_date IS NULL)"
+                ),
+                {
+                    "start_date": session["start_date"],
+                    "end_date": session["end_date"],
+                },
+            )
+            .mappings()
+            .all()
+        )
+
+    field_id_to_name: dict[int, str] = {
+        field["field_id"]: field["name"] for field in dynamic_fields
+    }
+
+    results_by_id: dict[int, dict] = {}
+    for row in base_results:
+        row_dict = dict(row)
+        # Pre-fill dynamic columns so each row has all headers.
+        for field in dynamic_fields:
+            row_dict[field["name"]] = None
+        results_by_id[row["id"]] = row_dict
+
+    for row in dynamic_values_rows:
+        # Ignore orphan values if no matching dead wolf is present.
+        if row["id"] not in results_by_id:
+            continue
+        field_name = field_id_to_name.get(row["field_id"])
+        if field_name is None:
+            continue
+        results_by_id[row["id"]][field_name] = row["val"]
+
+    # Clean legacy bad values produced by older import logic.
+    for row in results_by_id.values():
+        for field_name in ("operator", "institution"):
+            if row.get(field_name) == "Error None":
+                row[field_name] = None
+
+    all_columns: list[str] = base_columns + [field["name"] for field in dynamic_fields]
+
+    results = list(results_by_id.values())
+
+    if action == "search":
+        return render_template(
+            "dead_wolves_full_list.html",
+            header_title=f"Complete list of {len(base_results)} dead wol{'f' if len(base_results) == 1 else 'ves'}",
+            results=results,
+            all_columns=all_columns,
+        )
+
+    if action.startswith("export_"):
+        if not results:
+            return "No dead wolves found"
+
+        file_format = action.split("_")[1]
+        # Keep only table columns in the export file.
+        export_results = [
+            {column: row[column] for column in all_columns} for row in results
+        ]
+        file_content = export_dead_wolves(export_results, file_format)
+        if file_content is None:
+            return "error"
+
+        response = make_response(file_content, 200)
+        response.headers["Content-type"] = (
+            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            if file_format == "xlsx"
+            else "application/vnd.oasis.opendocument.spreadsheet"
+        )
+        response.headers["Content-disposition"] = (
+            f"attachment; filename=dead_wolves_full_list.{file_format}"
+        )
+        return response
+
+    return "error"
+
+
+def export_dead_wolves(results, file_format: str):
+    """
+    export results in spreadsheet
     """
 
     df = pd.DataFrame(results)
@@ -988,9 +1153,15 @@ def export_dead_wolves(results):
     # Create an in-memory stream
     output = BytesIO()
 
-    # Save to XLSX in the stream
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, sheet_name="Sheet1", index=False)
+    if file_format == "xlsx":
+        engine = "openpyxl"
+    elif file_format == "ods":
+        engine = "odf"
+    else:
+        return None
+    # Save dataframe as spreadsheet in the stream
+    with pd.ExcelWriter(output, engine=engine) as writer:
+        df.to_excel(writer, sheet_name="Dead wolves", index=False)
 
     # Get the stream content (bytes)
     return output.getvalue()
@@ -1079,12 +1250,12 @@ def confirm_load_tissue_spreadsheet(filename, mode):
     """
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect("/load_tissue_from_spreadsheet")
+        return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
 
     r, msg, all_data = tissues_import.extract_tissue_data_from_spreadsheet(filename)
     if r:
         flash(msg)
-        return redirect(url_for("/load_tissue_from_spreadsheet"))
+        return redirect(url_for("dead_wolves.load_tissue_from_spreadsheet"))
 
     with fn.conn_alchemy().connect() as con:
         # check if tissue already in DB
@@ -1159,8 +1330,9 @@ def confirm_load_tissue_spreadsheet(filename, mode):
                 "scalp_category": data["scalp_category"],
                 "notes": data["notes"],
                 "sampling_season": fn.sampling_season(data["date"]),
-                "operator": fn.sampling_season(data["operator"]),
-                "institution": fn.sampling_season(data["institution"]),
+                # Keep raw text values for operator/institution.
+                "operator": data["operator"],
+                "institution": data["institution"],
             }
 
             if data["tissue_id"] in tissues_to_update:

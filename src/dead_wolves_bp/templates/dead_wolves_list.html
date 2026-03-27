@@ -10,84 +10,92 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@400&display=swap" rel="stylesheet">
 <style>
-.condensed {
-    font-family: "Fira Sans Condensed";
-    font-size: 1.2em;
-}</style>
+    .condensed {
+        font-family: "Fira Sans Condensed";
+        font-size: 1.2em;
+    }
+</style>
 
 
 {# search form #}
 
-<span style="display:solid; padding-bottom: 2em;" >
+<span style="display:solid; padding-bottom: 2em;">
 
 
-  <div class="row">
-    <div class="col-md-6">
-      <div class="card mb-3">
-        <div class="card-header">
-          Search
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    Search
+                </div>
+                <div class="card-body">
+
+
+                    <form method="POST" id="search_form" action="/dead_wolves_list">
+                        <div class="row">
+                            <!-- search fields -->
+                            <div class="col-md-4">
+                                <label for="selectOption" class="form-label">Field</label>
+                                <select class="form-select" id="selected_field" name="selected_field">
+
+                                    {% for option in options %}
+                                    <option value="{{ option.value }}" {% if selected_value==option.value %}selected{%
+                                        endif %}>
+                                        {{ option.text }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- value -->
+                            <div class="col-md-4">
+                                <label for="search" class="form-label">Value</label>
+                                <input type="text" class="form-control" name="search" id="search"
+                                    placeholder="Enter value" value="{{ search_term }}">
+                            </div>
+
+                            <!-- search button -->
+                            <div class="col-md-2 d-flex align-items-end">
+                                <label for="btn" class="form-label"></label>
+                                <button type="button" id='btn' class="btn btn-secondary btn-sm"
+                                    onclick="submitForm('search')">Search</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="clearSearch()">Clear</button>
+                            </div>
+                            {% if results %}
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                    onclick="submitForm('export_xlsx')">Export XLSX</button>
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                    onclick="submitForm('export_ods')">Export ODS</button>
+
+                            </div>
+                            {%endif%}
+                            <input type="hidden" name="action" id="action_field" value="search">
+
+                            <script>
+                                function clearSearch() {
+                                    document.getElementById('search').value = '';
+                                    document.getElementById('selected_field').value = 'all';
+                                    document.getElementById('action_field').value = 'search';
+                                    document.getElementById('search_form').submit();
+                                }
+
+                                function submitForm(action) {
+                                    document.getElementById('action_field').value = action;
+                                    document.getElementById('search_form').submit();
+                                }
+
+                            </script>
+
+
+                        </div><!-- row -->
+                    </form>
+
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-
-
-<form method="POST"  id="search_form" action="/dead_wolves_list">
-<div class="row">
-<!-- search fields -->
-<div class="col-md-4">
-<label for="selectOption" class="form-label">Field</label>
-<select class="form-select" id="selected_field"  name="selected_field" >
-
-{% for option in options %}
-<option value="{{ option.value }}" 
-{% if selected_value == option.value %}selected{% endif %}>
-{{ option.text }}
-</option>
-{% endfor %}
-</select>
-</div>
-
-<!-- value -->
-<div class="col-md-4">
-<label for="search" class="form-label">Value</label>
-<input type="text" class="form-control" name="search"  id="search" placeholder="Enter value" value="{{ search_term }}">
-</div>
-
-<!-- search button -->
-<div class="col-md-2 d-flex align-items-end">
-<label for="btn" class="form-label"></label>
-<button type="button" id='btn' class="btn btn-secondary btn-sm" onclick="submitForm('search')">Search</button>
-<button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSearch()">Clear</button>
-</div>
-{% if results %}
-<div class="col-md-2 d-flex align-items-end">
-<button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export')">Export</button>
-</div>
-{%endif%}
-<input type="hidden" name="action" id="action_field" value="search">
-
-<script>
-  function clearSearch() {
-    document.getElementById('search').value = '';
-    document.getElementById('selected_field').value = 'all'; 
-    document.getElementById('action_field').value = 'search';
-    document.getElementById('search_form').submit();
-  }
-
-  function submitForm(action) {
-    document.getElementById('action_field').value = action;
-    document.getElementById('search_form').submit();
-}
-
-</script>
-
-
-</div><!-- row -->
-</form>
-
-</div>
-</div>
-</div>
-</div>
+    </div>
 
 </span>
 
@@ -97,66 +105,66 @@
 {% include "freeze_1stcolumn_1strow.html" %}
 
 <div class="frozen">
-<div class="condensed">
+    <div class="condensed">
 
-<table id="dead_wolves_list" class="table table-striped table-hover w-auto">
-<thead>
-<tr>
-<th>ID</th>
-<th>Tissue ID</th>
-<th>Genotype ID</th>
-<th>WA code</th>
-<th>Discovery date</th>
-<th>Main cause of mortality</th>
-<th>Specific cause of mortality</th>
-</tr>
-</thead>
-<tbody>
-{% for result in results %}
-<tr>
-<td><a href="/view_dead_wolf_id/{{ result['id'] }}">{{ result['id'] }}</a></td>
+        <table id="dead_wolves_list" class="table table-striped table-hover w-auto">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tissue ID</th>
+                    <th>Genotype ID</th>
+                    <th>WA code</th>
+                    <th>Discovery date</th>
+                    <th>Main cause of mortality</th>
+                    <th>Specific cause of mortality</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr>
+                    <td><a href="/view_dead_wolf_id/{{ result['id'] }}">{{ result['id'] }}</a></td>
 
-<td><a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
+                    <td><a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a></td>
 
-<td>
-{% if result['genotype_id_verif'] is not none %}
-<a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>
-{% else %}
-{{ result['genotype_id'] }}
-{% endif %}
-</td>
+                    <td>
+                        {% if result['genotype_id_verif'] is not none %}
+                        <a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>
+                        {% else %}
+                        {{ result['genotype_id'] }}
+                        {% endif %}
+                    </td>
 
-<td>
-{% if result['wa_code'] %}
-<a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
-{%  endif %}
-</td>
+                    <td>
+                        {% if result['wa_code'] %}
+                        <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
+                        {% endif %}
+                    </td>
 
 
-<td>
-{% if result['discovery_date'] %}
-{{ result['discovery_date'] }}
-{%  endif %}
-</td>
-    
-<td>
-{% if result['main_mortality'] %}
-{{ result['main_mortality'] }}
-{%  endif %}
-</td>
-    
-<td>
-    {% if result['specific_mortality'] %}
-    {{ result['specific_mortality'] }}
-    {%  endif %}
-    </td>
-    
+                    <td>
+                        {% if result['discovery_date'] %}
+                        {{ result['discovery_date'] }}
+                        {% endif %}
+                    </td>
 
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
+                    <td>
+                        {% if result['main_mortality'] %}
+                        {{ result['main_mortality'] }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if result['specific_mortality'] %}
+                        {{ result['specific_mortality'] }}
+                        {% endif %}
+                    </td>
+
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
 
@@ -165,7 +173,3 @@
 {% endif %}
 
 {% endblock %}
-
-
-
-
