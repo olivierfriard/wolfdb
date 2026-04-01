@@ -5,11 +5,14 @@ WolfDB web service
 export results in XLSX format
 """
 
-from openpyxl import Workbook
+from io import BytesIO
 from tempfile import NamedTemporaryFile
 
+import pandas as pd
+from openpyxl import Workbook
 
-def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values):
+
+def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values, file_format: str):
     """
     export genetic data for wa codes
     """
@@ -66,6 +69,91 @@ def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values):
         stream = tmp.read()
 
         return stream
+
+
+def export_wa_genetic_samples_pandas(
+    loci_list: dict,
+    wa_scats,
+    loci_values,
+    file_format: str,
+):
+    """
+    Export genetic data for WA codes.
+
+    Supported formats:
+    - xlsx
+    - ods
+    - tsv
+
+    Returns:
+        bytes: file content
+    """
+
+    fields = {
+        "wa_code": "WA code",
+        "sample_id": "Sample ID",
+        "date": "Date",
+        "municipality": "Municipality",
+        "province": "Province",
+        "coord_east": "Coordinate WGS84 UTM East",
+        "coord_north": "Coordinate WGS84 UTM North",
+        "coord_zone": "UTM Zone",
+        "mtdna": "mtDNA result",
+        "genotype_id": "Genotype ID",
+        "notes": "Notes on genotype",
+        "tmp_id": "Temp ID",
+        "sex_id": "Sex",
+        "status": "Status",
+        "pack": "Pack",
+        "dead_recovery": "Dead recovery",
+    }
+
+    rows = []
+
+    for row in wa_scats:
+        out = {}
+
+        for field_key, field_label in fields.items():
+            value = row[field_key]
+            out[field_label] = value if value is not None else ""
+
+        wa_code = row["wa_code"]
+
+        for locus in loci_list:
+            for allele in ("a", "b")[: loci_list[locus]]:
+                locus_data = loci_values.get(wa_code, {}).get(locus, {}).get(allele, {})
+
+                out[f"{locus} {allele}"] = locus_data.get("value", "")
+                out[f"Notes for {locus} {allele}"] = locus_data.get("notes", "")
+
+        rows.append(out)
+
+    df = pd.DataFrame(rows)
+
+    file_format = file_format.lower().strip()
+
+    if file_format == "xlsx":
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="WA genetic samples", index=False)
+        output.seek(0)
+        return output.getvalue()
+
+    elif file_format == "ods":
+        with NamedTemporaryFile(suffix=".ods") as tmp:
+            with pd.ExcelWriter(tmp.name, engine="odf") as writer:
+                df.to_excel(writer, sheet_name="WA genetic samples", index=False)
+            tmp.seek(0)
+            return tmp.read()
+
+    elif file_format == "tsv":
+        output = BytesIO()
+        df.to_csv(output, sep="\t", index=False, encoding="utf-8")
+        output.seek(0)
+        return output.getvalue()
+
+    else:
+        raise ValueError(f"Unsupported file format: {file_format}")
 
 
 def export_wa_analysis(

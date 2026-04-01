@@ -1231,15 +1231,17 @@ def wa_genetic_samples3():
     # loci list
     loci_list: dict = fn.get_loci_list()
 
-    if mode == "export":
-        file_content = export.export_wa_genetic_samples(loci_list, out, loci_values)
+    if mode.startswith("export_"):
+        file_format = mode.split("_")[1]
+        file_content = export.export_wa_genetic_samples_pandas(
+            loci_list, out, loci_values, file_format
+        )
 
         response = make_response(file_content, 200)
-        response.headers["Content-type"] = (
-            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+
+        response.headers["Content-type"] = fn.content_type(file_format)
         response.headers["Content-disposition"] = (
-            f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+            f"attachment; filename=wa_genetic_samples_{dt.datetime.now():%Y-%m-%d_%H%M%S}.{file_format}"
         )
 
         return response

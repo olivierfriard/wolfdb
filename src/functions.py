@@ -104,6 +104,19 @@ def get_loci_list() -> dict:
     return loci_list
 
 
+def content_type(file_format: str) -> str | None:
+    """
+    returns the content-type of specified file format
+    """
+    if file_format == "xlsx":
+        return "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    if file_format == "ods":
+        return "application/vnd.oasis.opendocument.spreadsheet"
+    if file_format == "tsv":
+        return "text/tab-separated-values; charset=utf-8"
+    return None
+
+
 def get_allele_modifier(email: str) -> bool:
     """
     check if current user can modify allele value (allele modifier)

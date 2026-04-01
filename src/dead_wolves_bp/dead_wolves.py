@@ -966,18 +966,8 @@ def dead_wolves_list():
         if file_content is None:
             return "error"
         response = make_response(file_content, 200)
-        if file_format == "xlsx":
-            response.headers["Content-type"] = (
-                "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        if file_format == "ods":
-            response.headers["Content-type"] = (
-                "application/vnd.oasis.opendocument.spreadsheet"
-            )
-        if file_format == "tsv":
-            response.headers["Content-type"] = (
-                "text/tab-separated-values; charset=utf-8"
-            )
+
+        response.headers["Content-type"] = fn.content_type(file_format)
 
         response.headers["Content-disposition"] = (
             f"attachment; filename=dead_wolves_{request.form['selected_field'] if 'selected_field' in request.form else 'all'}_{search_term}.{file_format}"
@@ -1137,18 +1127,7 @@ def dead_wolves_full_list():
 
         response = make_response(file_content, 200)
 
-        if file_format == "xlsx":
-            response.headers["Content-type"] = (
-                "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        if file_format == "ods":
-            response.headers["Content-type"] = (
-                "application/vnd.oasis.opendocument.spreadsheet"
-            )
-        if file_format == "tsv":
-            response.headers["Content-type"] = (
-                "text/tab-separated-values; charset=utf-8"
-            )
+        response.headers["Content-type"] = fn.content_type(file_format)
 
         response.headers["Content-disposition"] = (
             f"attachment; filename=dead_wolves_full_list.{file_format}"
