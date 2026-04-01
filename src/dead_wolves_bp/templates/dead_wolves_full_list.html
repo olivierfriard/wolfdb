@@ -6,8 +6,34 @@
 <h3>{{ header_title }}</h3>
 
 <form method="POST" id="full_list_form" action="/dead_wolves_full_list" class="mb-3">
-    <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_xlsx')">Export XLSX</button>
+    <!--    <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_xlsx')">Export XLSX</button>
     <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_ods')">Export ODS</button>
+-->
+    <div class="dropdown">
+        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            Export
+        </button>
+
+        <ul class="dropdown-menu">
+            <li>
+                <button class="dropdown-item" type="button" onclick="submitForm('export_tsv')">
+                    TSV
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" onclick="submitForm('export_ods')">
+                    ODS
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" onclick="submitForm('export_xlsx')">
+                    XLSX
+                </button>
+            </li>
+        </ul>
+    </div>
+
     <input type="hidden" name="action" id="action_field" value="search">
 </form>
 
@@ -39,11 +65,11 @@
                     {% elif column == "tissue_id" and result['tissue_id'] %}
                     <a href="/view_tissue/{{ result['tissue_id'] }}">{{ result['tissue_id'] }}</a>
                     {% elif column == "genotype_id" and result['genotype_id'] %}
-                        {% if result['genotype_id_verif'] %}
-                        <a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>
-                        {% else %}
-                        {{ result['genotype_id'] }}
-                        {% endif %}
+                    {% if result['genotype_id_verif'] %}
+                    <a href="/view_genotype/{{ result['genotype_id'] }}">{{ result['genotype_id'] }}</a>
+                    {% else %}
+                    {{ result['genotype_id'] }}
+                    {% endif %}
                     {% elif column == "wa_code" and result['wa_code'] %}
                     <a href="/view_wa/{{ result['wa_code'] }}">{{ result['wa_code'] }}</a>
                     {% else %}

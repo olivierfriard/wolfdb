@@ -63,13 +63,47 @@
                                     onclick="clearSearch()">Clear</button>
                             </div>
                             {% if results %}
+                            <!--
                             <div class="col-md-2 d-flex align-items-end">
                                 <button type="button" class="btn btn-secondary btn-sm"
                                     onclick="submitForm('export_xlsx')">Export XLSX</button>
                                 <button type="button" class="btn btn-secondary btn-sm"
                                     onclick="submitForm('export_ods')">Export ODS</button>
-
                             </div>
+                            -->
+
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        Export
+                                    </button>
+
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <button class="dropdown-item" type="button"
+                                                onclick="submitForm('export_tsv')">
+                                                TSV
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button"
+                                                onclick="submitForm('export_ods')">
+                                                ODS
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button"
+                                                onclick="submitForm('export_xlsx')">
+                                                XLSX
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+
+
                             {%endif%}
                             <input type="hidden" name="action" id="action_field" value="search">
 

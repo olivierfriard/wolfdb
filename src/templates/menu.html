@@ -1,210 +1,255 @@
 <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
-<div class="container-fluid">
-<a class="navbar-brand" href="/">WolfDB</a>
-<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-<span class="navbar-toggler-icon"></span>
-</button>
-<div class="collapse navbar-collapse" id="navbarCollapse">
-<ul class="navbar-nav me-auto mb-2 mb-md-0">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">WolfDB</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+            aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
 
 
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Scats
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/scats_list_limit/0/20">List</a></li>
-<li><a class="dropdown-item" href="/plot_all_scats">Locations</a></li>
-<li><a class="dropdown-item" href="/new_scat">Insert</a></li>
-<li><a class="dropdown-item" href="/load_scats_xlsx">Import from spreadsheet</a></li>
-<li><a class="dropdown-item" href="/export_scats">Export</a></li>
-<li><div class="dropdown-divider"></div></li>
-<li><a class="dropdown-item" href="/systematic_scats_transect_location">Check location on systematic transects</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Scats
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/scats_list_limit/0/20">List</a></li>
+                        <li><a class="dropdown-item" href="/plot_all_scats">Locations</a></li>
+                        <li><a class="dropdown-item" href="/new_scat">Insert</a></li>
+                        <li><a class="dropdown-item" href="/load_scats_xlsx">Import from spreadsheet</a></li>
+                        <li><a class="dropdown-item" href="/export_scats">Export</a></li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="/systematic_scats_transect_location">Check location on
+                                systematic transects</a></li>
 
-</ul>
-</li>
-
-
-
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Transects
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/transects_list">List</a></li>
-<li><a class="dropdown-item" href="/plot_transects">Locations</a></li>
-
-<li><a class="dropdown-item" href="/new_transect">Insert</a></li>
-
-<li><a class="dropdown-item" href="/export_transects">Export</a></li>
-</ul>
-</li>
+                    </ul>
+                </li>
 
 
 
 
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Paths
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/paths_list">List</a></li>
-<li><a class="dropdown-item" href="/new_path">Insert</a></li>
-<li><a class="dropdown-item" href="/load_paths_xlsx">Import from spreadsheet</a></li>
-<li><a class="dropdown-item" href="/export_paths">Export</a></li>
-</ul>
-</li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Transects
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/transects_list">List</a></li>
+                        <li><a class="dropdown-item" href="/plot_transects">Locations</a></li>
 
+                        <li><a class="dropdown-item" href="/new_transect">Insert</a></li>
 
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Tracks
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/tracks_list">List</a></li>
-<li><a class="dropdown-item" href="/plot_tracks">Locations</a></li>
-<li><a class="dropdown-item" href="/new_track">Insert</a></li>
-<li><a class="dropdown-item" href="/load_tracks_xlsx">Import</a></li>
-<li><a class="dropdown-item" href="/export_tracks">Export (XLSX format)</a></li>
-<li><a class="dropdown-item" href="/export_tracks_shapefile">Export shapefile</a></li>
-<li><div class="dropdown-divider"></div></li>
-<li><a class="dropdown-item" href="/check_tracks_location">Check location</a></li>
-</ul>
-</li>
-
-
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Genetic samples
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/wa_genetic_samples3">WA samples</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/all">OLD - WA samples</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/with_notes">OLD - WA samples with notes</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/red_flag">OLD - WA samples with locus/allele notes</a></li>
-<li><a class="dropdown-item" href="/wa_genetic_samples/0/20/no_values">OLD - All WA samples (include samples without loci values)</a></li>
-
-<li><a class="dropdown-item" href="{{ url_for('genetic.check_genetic_profile') }}">Search genetic profile</a></li>
-
-<li><a class="dropdown-item" href="/plot_all_wa">Location</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/2500">DBSCAN clusters</a></li>
-<li><a class="dropdown-item" href="/select_on_map/genotypes">Select on map -> Genotypes</a></li>
-<li><a class="dropdown-item" href="/select_on_map/wa">Select on map -> WA</a></li>
-<li><div class="dropdown-divider"></div></li>
-<li><a class="dropdown-item" href="{{ url_for('genetic.load_wa_from_spreadsheet')}}">Import WA from a spreadsheet file</a></li>
-</ul>
-</li>
-
-
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Genotypes
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/genotypes_list/0/20/all">List of all genotypes</a></li>
-<li><a class="dropdown-item" href="/genotypes_list/0/20/definitive">List of definitive genotypes</a></li>
-<li><a class="dropdown-item" href="/genotypes_list/0/20/temp">List of temporary genotypes</a></li>
-<li><div class="dropdown-divider"></div></li>
-<li><a class="dropdown-item" href="/genotype_without_wa_loci">List of genotypes without WA code loci values</a></li>
-<li><div class="dropdown-divider"></div></li>
-<li><a class="dropdown-item" href="/load_definitive_genotypes_xlsx">Import definitive genotypes</a></li>
-<li><a class="dropdown-item" href="/genotypes_list/0/20/deleted">Deleted genotypes</a></li>
-</ul>
-</li>
-
-
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Dead wolves
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/dead_wolves_list">List</a></li>
-<li><a class="dropdown-item" href="/dead_wolves_full_list">Complete list</a></li>
-<li><a class="dropdown-item" href="/plot_dead_wolves">Locations</a></li>
-<li><a class="dropdown-item" href="/new_dead_wolf">Insert</a></li>
-<li><div class="dropdown-divider"></div></li>
-<li><a class="dropdown-item" href="{{ url_for('dead_wolves.load_tissue_from_spreadsheet') }}">Import tissues from a spreadsheet file</a></li>
-</ul>
-</li>
-
-
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Packs
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-<li><a class="dropdown-item" href="/packs">List</a></li>
-</ul>
-</li>
-
-
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-Tools
-</a>
-<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-
-<li><a class="dropdown-item" href="/path_completeness">Shapefile with path completeness</a></li>
-
-<li><a class="dropdown-item" href="/cell_occupancy">Cell occupancy</a></li>
-
-<li><a class="dropdown-item" href="/transects_samples/number">Transects occupancy: samples number</a></li>
-
-<li><a class="dropdown-item" href="/transects_samples/presence">Transects occupancy: samples presence</a></li>
-
-<li><a class="dropdown-item" href="/transects_dates">Transects occupancy: paths dates</a></li>
-
-<li><a class="dropdown-item" href="/transects_completeness">Transects occupancy: paths completeness</a></li>
-
-<li><div class="dropdown-divider"></div></li>
-
-<li><a class="dropdown-item" href="https://dbdiagram.io/d/wolfAlps-67efafbc4f7afba1845a0abd">Database diagram</a></li>
-
-
-<li><a class="dropdown-item" href="/query">SQL query</a></li>
-
-
-</ul>
-</li>
+                        <li><a class="dropdown-item" href="/export_transects">Export</a></li>
+                    </ul>
+                </li>
 
 
 
 
-<li class="nav-item dropdown">
-    {% if session.user_name %}
-    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    My account ({{session.user_name}})
-    </a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Paths
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/paths_list">List</a></li>
+                        <li><a class="dropdown-item" href="/new_path">Insert</a></li>
+                        <li><a class="dropdown-item" href="/load_paths_xlsx">Import from spreadsheet</a></li>
+                        <li><a class="dropdown-item" href="/export_paths">Export</a></li>
+                    </ul>
+                </li>
 
-    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
 
-{% if session.role == 'administrator' %}
-   <li><a class="dropdown-item" href="/admin">Administration</a></li>
-{%endif%}
 
-        <li><a class="dropdown-item" href="/settings">Settings</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Tracks
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/tracks_list">List</a></li>
+                        <li><a class="dropdown-item" href="/plot_tracks">Locations</a></li>
+                        <li><a class="dropdown-item" href="/new_track">Insert</a></li>
+                        <li><a class="dropdown-item" href="/load_tracks_xlsx">Import</a></li>
+                        <li><a class="dropdown-item" href="/export_tracks">Export (XLSX format)</a></li>
+                        <li><a class="dropdown-item" href="/export_tracks_shapefile">Export shapefile</a></li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="/check_tracks_location">Check location</a></li>
+                    </ul>
+                </li>
 
-        <li><a class="dropdown-item" href="/my_results">Result files</a></li>
 
-    <li><a class="dropdown-item" href="/google/logout">Logout</a></li>
-</ul>
-{% endif %}
-</li>
 
-{% if session["start_date"] != session["default_start_date"] or session["end_date"] != session["default_end_date"] %}
-<li class="nav-item">
-<a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><small><span style="color:orange">{{ session["start_date"] }} - {{ session["end_date"] }}</span></small></a>
-</li>
-{% endif %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Genetic samples
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/wa_genetic_samples3">WA samples</a></li>
+                        <li><a class="dropdown-item" href="/wa_genetic_samples/0/20/all">OLD - WA samples</a></li>
+                        <li><a class="dropdown-item" href="/wa_genetic_samples/0/20/with_notes">OLD - WA samples with
+                                notes</a></li>
+                        <li><a class="dropdown-item" href="/wa_genetic_samples/0/20/red_flag">OLD - WA samples with
+                                locus/allele notes</a></li>
+                        <li><a class="dropdown-item" href="/wa_genetic_samples/0/20/no_values">OLD - All WA samples
+                                (include samples without loci values)</a></li>
 
-</ul>
-</div>
-</div>
+                        <li><a class="dropdown-item" href="{{ url_for('genetic.check_genetic_profile') }}">Search
+                                genetic profile</a></li>
+
+                        <li><a class="dropdown-item" href="/plot_all_wa">Location</a></li>
+                        <li><a class="dropdown-item" href="/plot_wa_clusters/2500">DBSCAN clusters</a></li>
+                        <li><a class="dropdown-item" href="/select_on_map/genotypes">Select on map -> Genotypes</a></li>
+                        <li><a class="dropdown-item" href="/select_on_map/wa">Select on map -> WA</a></li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('genetic.load_wa_from_spreadsheet')}}">Import WA
+                                from a spreadsheet file</a></li>
+                    </ul>
+                </li>
+
+
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Genotypes
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/genotypes_list/0/20/all">List of all genotypes</a></li>
+                        <li><a class="dropdown-item" href="/genotypes_list/0/20/definitive">List of definitive
+                                genotypes</a></li>
+                        <li><a class="dropdown-item" href="/genotypes_list/0/20/temp">List of temporary genotypes</a>
+                        </li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="/genotype_without_wa_loci">List of genotypes without WA code
+                                loci values</a></li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="/load_definitive_genotypes_xlsx">Import definitive
+                                genotypes</a></li>
+                        <li><a class="dropdown-item" href="/genotypes_list/0/20/deleted">Deleted genotypes</a></li>
+                    </ul>
+                </li>
+
+
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Dead wolves
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/dead_wolves_list">Simple list</a></li>
+                        <li><a class="dropdown-item" href="/dead_wolves_full_list">Detailed list</a></li>
+                        <li><a class="dropdown-item" href="/plot_dead_wolves">Locations</a></li>
+                        <li><a class="dropdown-item" href="/new_dead_wolf">Insert</a></li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('dead_wolves.load_tissue_from_spreadsheet') }}">Import tissues from a
+                                spreadsheet file</a></li>
+                    </ul>
+                </li>
+
+
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Packs
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+                        <li><a class="dropdown-item" href="/packs">List</a></li>
+                    </ul>
+                </li>
+
+
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Tools
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+
+                        <li><a class="dropdown-item" href="/path_completeness">Shapefile with path completeness</a></li>
+
+                        <li><a class="dropdown-item" href="/cell_occupancy">Cell occupancy</a></li>
+
+                        <li><a class="dropdown-item" href="/transects_samples/number">Transects occupancy: samples
+                                number</a></li>
+
+                        <li><a class="dropdown-item" href="/transects_samples/presence">Transects occupancy: samples
+                                presence</a></li>
+
+                        <li><a class="dropdown-item" href="/transects_dates">Transects occupancy: paths dates</a></li>
+
+                        <li><a class="dropdown-item" href="/transects_completeness">Transects occupancy: paths
+                                completeness</a></li>
+
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+
+                        <li><a class="dropdown-item"
+                                href="https://dbdiagram.io/d/wolfAlps-67efafbc4f7afba1845a0abd">Database diagram</a>
+                        </li>
+
+
+                        <li><a class="dropdown-item" href="/query">SQL query</a></li>
+
+
+                    </ul>
+                </li>
+
+
+
+
+                <li class="nav-item dropdown">
+                    {% if session.user_name %}
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink1" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        My account ({{session.user_name}})
+                    </a>
+
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+
+                        {% if session.role == 'administrator' %}
+                        <li><a class="dropdown-item" href="/admin">Administration</a></li>
+                        {%endif%}
+
+                        <li><a class="dropdown-item" href="/settings">Settings</a></li>
+
+                        <li><a class="dropdown-item" href="/my_results">Result files</a></li>
+
+                        <li><a class="dropdown-item" href="/google/logout">Logout</a></li>
+                    </ul>
+                    {% endif %}
+                </li>
+
+                {% if session["start_date"] != session["default_start_date"] or session["end_date"] !=
+                session["default_end_date"] %}
+                <li class="nav-item">
+                    <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><small><span
+                                style="color:orange">{{ session["start_date"] }} - {{ session["end_date"]
+                                }}</span></small></a>
+                </li>
+                {% endif %}
+
+            </ul>
+        </div>
+    </div>
 </nav>

@@ -900,7 +900,7 @@ def dead_wolves_list():
     search_term: str = ""
 
     if request.method == "POST":
-        action = request.form["action"]
+        action = request.form["action"]  # id action_field
 
         if request.args.get("search") is None:
             search_term = request.form["search"].strip()
@@ -966,11 +966,19 @@ def dead_wolves_list():
         if file_content is None:
             return "error"
         response = make_response(file_content, 200)
-        response.headers["Content-type"] = (
-            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            if file_format == "xlsx"
-            else "application/vnd.oasis.opendocument.spreadsheet"
-        )
+        if file_format == "xlsx":
+            response.headers["Content-type"] = (
+                "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        if file_format == "ods":
+            response.headers["Content-type"] = (
+                "application/vnd.oasis.opendocument.spreadsheet"
+            )
+        if file_format == "tsv":
+            response.headers["Content-type"] = (
+                "text/tab-separated-values; charset=utf-8"
+            )
+
         response.headers["Content-disposition"] = (
             f"attachment; filename=dead_wolves_{request.form['selected_field'] if 'selected_field' in request.form else 'all'}_{search_term}.{file_format}"
         )
@@ -990,7 +998,7 @@ def dead_wolves_list():
 @fn.check_login
 def dead_wolves_full_list():
     """
-    Show a complete list of dead wolves with base and dynamic fields.
+    Show a detailed list of dead wolves with base and dynamic fields.
     """
     action: str = "search"
     if request.method == "POST":
@@ -1109,7 +1117,7 @@ def dead_wolves_full_list():
     if action == "search":
         return render_template(
             "dead_wolves_full_list.html",
-            header_title=f"Complete list of {len(base_results)} dead wol{'f' if len(base_results) == 1 else 'ves'}",
+            header_title=f"Detailed list of {len(base_results)} dead wol{'f' if len(base_results) == 1 else 'ves'}",
             results=results,
             all_columns=all_columns,
         )
@@ -1128,11 +1136,20 @@ def dead_wolves_full_list():
             return "error"
 
         response = make_response(file_content, 200)
-        response.headers["Content-type"] = (
-            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            if file_format == "xlsx"
-            else "application/vnd.oasis.opendocument.spreadsheet"
-        )
+
+        if file_format == "xlsx":
+            response.headers["Content-type"] = (
+                "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        if file_format == "ods":
+            response.headers["Content-type"] = (
+                "application/vnd.oasis.opendocument.spreadsheet"
+            )
+        if file_format == "tsv":
+            response.headers["Content-type"] = (
+                "text/tab-separated-values; charset=utf-8"
+            )
+
         response.headers["Content-disposition"] = (
             f"attachment; filename=dead_wolves_full_list.{file_format}"
         )
@@ -1143,7 +1160,7 @@ def dead_wolves_full_list():
 
 def export_dead_wolves(results, file_format: str):
     """
-    export results in spreadsheet
+    export results in TSV, ODS or XLSX format
     """
 
     df = pd.DataFrame(results)
@@ -1153,18 +1170,24 @@ def export_dead_wolves(results, file_format: str):
     # Create an in-memory stream
     output = BytesIO()
 
-    if file_format == "xlsx":
-        engine = "openpyxl"
-    elif file_format == "ods":
-        engine = "odf"
+    if file_format == "tsv":
+        df.to_csv(output, sep="\t", index=False, encoding="utf-8")
+        output.seek(0)
+        return output.getvalue()
+
+    elif file_format in ("xlsx", "ods"):
+        if file_format == "xlsx":
+            engine = "openpyxl"
+        elif file_format == "ods":
+            engine = "odf"
+        # Save dataframe as spreadsheet in the stream
+        with pd.ExcelWriter(output, engine=engine) as writer:
+            df.to_excel(writer, sheet_name="Dead wolves", index=False)
+        # Get the stream content (bytes)
+        return output.getvalue()
+
     else:
         return None
-    # Save dataframe as spreadsheet in the stream
-    with pd.ExcelWriter(output, engine=engine) as writer:
-        df.to_excel(writer, sheet_name="Dead wolves", index=False)
-
-    # Get the stream content (bytes)
-    return output.getvalue()
 
 
 @app.route(
