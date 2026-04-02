@@ -433,15 +433,19 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             row["genotype_id"]
         )
 
-    if mode == "export":
-        file_content = export.export_genotypes_list(loci_list, results, loci_values)
+    if mode.startswith("export_"):
+        file_format = mode.split("_")[1]
+        file_content = export.export_genotypes_list(
+            loci_list, results, loci_values, file_format
+        )
+
+        # file_format = "xlsx"
+        # file_content = export.export_genotypes_list_OLD(loci_list, results, loci_values)
 
         response = make_response(file_content, 200)
-        response.headers["Content-type"] = (
-            "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        response.headers["Content-type"] = fn.content_type(file_format)
         response.headers["Content-disposition"] = (
-            f"attachment; filename=genotypes_list_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+            f"attachment; filename=genotypes_list_{dt.datetime.now():%Y-%m-%d_%H%M%S}.{file_format}"
         )
 
         return response

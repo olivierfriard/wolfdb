@@ -358,11 +358,64 @@ def export_wa(loci_list, wa_list, loci_values):
         return stream
 
 
-def export_genotypes_list(loci_list, results, loci_values):
+def export_genotypes_list_OLD(loci_list, results, loci_values):
     wb = Workbook()
-
     ws1 = wb.active
     ws1.title = "Genotype matches"
+    fields = {
+        "genotype_id": "Genotype ID",
+        "tmp_id": "Other ID",
+        "date": "Date",
+        "pack": "Pack",
+        "sex": "Sex",
+        "hybrid": "Hybrid",
+        "status": "Status",
+        "age_first_capture": "Age at first capture",
+        "status_first_capture": "status at first capture",
+        "dispersal": "Dispersal",
+        "n_recaptures": "Number of recaptures",
+        "dead_recovery": "Dead recovery",
+    }
+    header: list = list(fields.values())
+    for locus in loci_list:
+        for allele in ("a", "b")[: loci_list[locus]]:
+            header.extend([f"{locus} {allele}", f"Notes for {locus} {allele}"])
+    ws1.append(header)
+    for row in results:
+        out: list = [row[field] if row[field] is not None else "" for field in fields]
+        for locus in loci_list:
+            for allele in ("a", "b")[: loci_list[locus]]:
+                out.extend(
+                    [
+                        loci_values[row["genotype_id"]][locus][allele]["value"],
+                        loci_values[row["genotype_id"]][locus][allele]["notes"],
+                    ]
+                )
+        ws1.append(out)
+    with NamedTemporaryFile() as tmp:
+        wb.save(tmp.name)
+        tmp.seek(0)
+        stream = tmp.read()
+        return stream
+
+
+def export_genotypes_list(
+    loci_list: dict,
+    results,
+    loci_values,
+    file_format: str,
+):
+    """
+    Export genotype matches.
+
+    Supported formats:
+    - xlsx
+    - ods
+    - tsv
+
+    Returns:
+        bytes: file content
+    """
 
     fields = {
         "genotype_id": "Genotype ID",
@@ -379,29 +432,51 @@ def export_genotypes_list(loci_list, results, loci_values):
         "dead_recovery": "Dead recovery",
     }
 
-    header: list = list(fields.values())
-    for locus in loci_list:
-        for allele in ("a", "b")[: loci_list[locus]]:
-            header.extend([f"{locus} {allele}", f"Notes for {locus} {allele}"])
-
-    ws1.append(header)
+    rows = []
 
     for row in results:
-        out: list = [row[field] if row[field] is not None else "" for field in fields]
+        out = {}
+
+        for field_key, field_label in fields.items():
+            value = row[field_key]
+            out[field_label] = value if value is not None else ""
+
+        genotype_id = row["genotype_id"]
+
         for locus in loci_list:
             for allele in ("a", "b")[: loci_list[locus]]:
-                out.extend(
-                    [
-                        loci_values[row["genotype_id"]][locus][allele]["value"],
-                        loci_values[row["genotype_id"]][locus][allele]["notes"],
-                    ]
+                locus_data = (
+                    loci_values.get(genotype_id, {}).get(locus, {}).get(allele, {})
                 )
 
-        ws1.append(out)
+                out[f"{locus} {allele}"] = locus_data.get("value", "")
+                out[f"Notes for {locus} {allele}"] = locus_data.get("notes", "")
 
-    with NamedTemporaryFile() as tmp:
-        wb.save(tmp.name)
-        tmp.seek(0)
-        stream = tmp.read()
+        rows.append(out)
 
-        return stream
+    df = pd.DataFrame(rows)
+
+    file_format = file_format.lower().strip()
+
+    if file_format == "xlsx":
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="Genotype matches", index=False)
+        output.seek(0)
+        return output.getvalue()
+
+    elif file_format == "ods":
+        with NamedTemporaryFile(suffix=".ods") as tmp:
+            with pd.ExcelWriter(tmp.name, engine="odf") as writer:
+                df.to_excel(writer, sheet_name="Genotype matches", index=False)
+            tmp.seek(0)
+            return tmp.read()
+
+    elif file_format == "tsv":
+        output = BytesIO()
+        df.to_csv(output, sep="\t", index=False, encoding="utf-8")
+        output.seek(0)
+        return output.getvalue()
+
+    else:
+        raise ValueError(f"Unsupported file format: {file_format}")

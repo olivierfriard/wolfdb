@@ -92,21 +92,13 @@
 
         <span style="display:inline-block; width: 8em;"></span>
 
-        <!--  <a style="width:10%" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                 with_genotype_notes=1 if with_genotype_notes else 0,
-                                 with_loci_values=1 if with_loci_values else 0,
-                                 with_loci_notes=1 if with_loci_notes else 0,
-                                mode='export') }}" class="btn btn-secondary btn-sm">Export all genetic samples</a>
-
-                                -->
-
+        {# button with menu to export data #}
         <span class="col-md-2 d-flex align-items-end">
             <span class="dropdown">
                 <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
                     Export
                 </button>
-
                 <ul class="dropdown-menu">
                     <li>
                         <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
@@ -138,9 +130,7 @@
                 </ul>
             </span>
         </span>
-
-
-    </span>
+    </span> {# button export #}
 
 
 
