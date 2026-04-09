@@ -88,22 +88,44 @@
                 <ul class="dropdown-menu">
                     <li>
                         <a class="dropdown-item" type="button"
-                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_tsv') }}">
+                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_tsv_with-loci-notes') }}">
                             TSV
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" type="button"
-                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_ods') }}">
+                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_tsv_wo-loci-notes') }}">
+                            TSV w/o loci notes
+                        </a>
+                    </li>
+
+                    <li>
+                        <a class="dropdown-item" type="button"
+                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_ods_with-loci-notes') }}">
                             ODS
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" type="button"
-                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_xlsx') }}">
+                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_ods_wo-loci-notes') }}">
+                            ODS w/o loci notes
+                        </a>
+                    </li>
+
+                    <li>
+                        <a class="dropdown-item" type="button"
+                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_xlsx_with-loci-notes') }}">
                             XLSX
                         </a>
                     </li>
+                    <li>
+                        <a class="dropdown-item" type="button"
+                            href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type = type, mode ='export_xlsx_wo-loci-notes') }}">
+                            XLSX w/o loci notes
+                        </a>
+                    </li>
+
+
                 </ul>
             </span>
         </span>

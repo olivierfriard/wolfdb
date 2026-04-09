@@ -434,13 +434,14 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         )
 
     if mode.startswith("export_"):
-        file_format = mode.split("_")[1]
+        _, file_format, loci_notes = mode.split("_")
         file_content = export.export_genotypes_list(
-            loci_list, results, loci_values, file_format
+            loci_list,
+            results,
+            loci_values,
+            file_format,
+            with_loci_notes=(loci_notes == "with-loci-notes"),
         )
-
-        # file_format = "xlsx"
-        # file_content = export.export_genotypes_list_OLD(loci_list, results, loci_values)
 
         response = make_response(file_content, 200)
         response.headers["Content-type"] = fn.content_type(file_format)

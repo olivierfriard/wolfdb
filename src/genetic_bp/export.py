@@ -413,6 +413,7 @@ def export_genotypes_list(
     results,
     loci_values,
     file_format: str,
+    with_loci_notes: bool = True,
 ):
     """
     Export genotype matches.
@@ -459,7 +460,8 @@ def export_genotypes_list(
                 )
 
                 out[f"{locus} {allele}"] = locus_data.get("value", "")
-                out[f"Notes for {locus} {allele}"] = locus_data.get("notes", "")
+                if with_loci_notes:
+                    out[f"Notes for {locus} {allele}"] = locus_data.get("notes", "")
 
         rows.append(out)
 
