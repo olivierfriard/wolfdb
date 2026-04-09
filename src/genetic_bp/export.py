@@ -12,7 +12,7 @@ import pandas as pd
 from openpyxl import Workbook
 
 
-def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values, file_format: str):
+def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values, filter: str):
     """
     export genetic data for wa codes
     """
@@ -76,6 +76,7 @@ def export_wa_genetic_samples_pandas(
     wa_scats,
     loci_values,
     file_format: str,
+    with_loci_notes: bool = True,
 ):
     """
     Export genetic data for WA codes.
@@ -124,7 +125,8 @@ def export_wa_genetic_samples_pandas(
                 locus_data = loci_values.get(wa_code, {}).get(locus, {}).get(allele, {})
 
                 out[f"{locus} {allele}"] = locus_data.get("value", "")
-                out[f"Notes for {locus} {allele}"] = locus_data.get("notes", "")
+                if with_loci_notes:
+                    out[f"Notes for {locus} {allele}"] = locus_data.get("notes", "")
 
         rows.append(out)
 
@@ -139,12 +141,19 @@ def export_wa_genetic_samples_pandas(
         output.seek(0)
         return output.getvalue()
 
+    # elif file_format == "ods":
+    #    with NamedTemporaryFile(suffix=".ods") as tmp:
+    #        with pd.ExcelWriter(tmp.name, engine="odf") as writer:
+    #            df.to_excel(writer, sheet_name="WA genetic samples", index=False)
+    #        tmp.seek(0)
+    #        return tmp.read()
+
     elif file_format == "ods":
-        with NamedTemporaryFile(suffix=".ods") as tmp:
-            with pd.ExcelWriter(tmp.name, engine="odf") as writer:
-                df.to_excel(writer, sheet_name="WA genetic samples", index=False)
-            tmp.seek(0)
-            return tmp.read()
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="odf") as writer:
+            df.to_excel(writer, sheet_name="WA genetic samples", index=False)
+        output.seek(0)
+        return output.getvalue()
 
     elif file_format == "tsv":
         output = BytesIO()

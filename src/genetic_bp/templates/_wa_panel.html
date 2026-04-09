@@ -105,7 +105,7 @@
                                                                          with_genotype_notes=1 if with_genotype_notes else 0,
                                                                          with_loci_values=1 if with_loci_values else 0,
                                                                          with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_tsv') }}">
+                                                                        mode='export_tsv_with-loci-notes') }}">
                             TSV
                         </a>
                     </li>
@@ -114,19 +114,52 @@
                                                                          with_genotype_notes=1 if with_genotype_notes else 0,
                                                                          with_loci_values=1 if with_loci_values else 0,
                                                                          with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_ods') }}">
-                            ODS
+                                                                        mode='export_tsv_wo-loci-notes') }}">
+                            TSV w/o loci notes
                         </a>
                     </li>
+
                     <li>
                         <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
                                                                          with_genotype_notes=1 if with_genotype_notes else 0,
                                                                          with_loci_values=1 if with_loci_values else 0,
                                                                          with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_xlsx') }}">
+                                                                        mode='export_ods_with-loci-notes') }}">
+                            ODS
+                        </a>
+                    </li>
+
+                    <li>
+                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
+                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
+                                                                         with_loci_values=1 if with_loci_values else 0,
+                                                                         with_loci_notes=1 if with_loci_notes else 0,
+                                                                        mode='export_ods_wo-loci-notes') }}">
+                            ODS w/o loci notes
+                        </a>
+                    </li>
+
+
+                    <li>
+                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
+                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
+                                                                         with_loci_values=1 if with_loci_values else 0,
+                                                                         with_loci_notes=1 if with_loci_notes else 0,
+                                                                        mode='export_xlsx_with-loci-notes') }}">
                             XLSX
                         </a>
                     </li>
+
+                    <li>
+                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
+                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
+                                                                         with_loci_values=1 if with_loci_values else 0,
+                                                                         with_loci_notes=1 if with_loci_notes else 0,
+                                                                        mode='export_xlsx_wo-loci-notes') }}">
+                            XLSX w/o loci notes
+                        </a>
+                    </li>
+
                 </ul>
             </span>
         </span>

@@ -8,32 +8,34 @@ export WOLFDB_CONFIG_PATH=PATH_TO/config.ini; python wolfdb.py
 
 """
 
-from flask import Flask, render_template, redirect, request, flash, session
-from markupsafe import Markup
-from flask_session import Session
-from sqlalchemy import text
-from config import config
-import functions as fn
-import utm
-import logging
-import secrets
 import datetime
+import logging
 import pathlib as pl
+import secrets
 import urllib.request
+
+import utm
+from flask import Flask, flash, redirect, render_template, request, session
+from markupsafe import Markup
+from sqlalchemy import text
+
+import functions as fn
 
 # blueprints
 import google_auth
-from scats_bp import scats
-from paths_bp import paths
-from packs_bp import packs
-from transects_bp import transects
-from snowtracks_bp import tracks
-from genetic_bp import genetic
-from dead_wolves_bp import dead_wolves
 from admin_bp import admin
 from analysis_bp import analysis
+from config import config
+from dead_wolves_bp import dead_wolves
+from flask_session import Session
+from genetic_bp import genetic
+from packs_bp import packs
+from paths_bp import paths
+from scats_bp import scats
+from snowtracks_bp import tracks
+from transects_bp import transects
 
-__version__ = "2025-11-25"
+__version__ = "2026-04-09"
 
 DEFAULT_START_DATE = "1990-01-01"
 DEFAULT_END_DATE = "2030-12-31"

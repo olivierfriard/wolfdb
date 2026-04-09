@@ -1236,9 +1236,13 @@ def wa_genetic_samples3():
     loci_list: dict = fn.get_loci_list()
 
     if mode.startswith("export_"):
-        file_format = mode.split("_")[1]
+        _, file_format, loci_notes = mode.split("_")
         file_content = export.export_wa_genetic_samples_pandas(
-            loci_list, out, loci_values, file_format
+            loci_list,
+            out,
+            loci_values,
+            file_format,
+            with_loci_notes=(loci_notes == "with-loci-notes"),
         )
 
         response = make_response(file_content, 200)
