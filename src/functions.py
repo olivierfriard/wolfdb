@@ -136,100 +136,33 @@ def get_allele_modifier(email: str) -> bool:
 def get_wa_loci_values_redis(wa_code: str) -> dict | None:
     """
     get WA code loci values from redis
+    if not found in redis retrieve from loci_values table
+    if not found in loci_values table use get_wa_loci_values function
     """
+
     r = rdis.get(wa_code)
     if r is not None:
         return json.loads(r)
     else:
-        return get_wa_loci_values(wa_code, get_loci_list())[0]
-
-
-def get_wa_loci_values_old(wa_code: str, loci_list: list) -> tuple[dict, bool]:
-    """
-    get WA code loci values from postgresql
-    """
-    with conn_alchemy().connect() as con:
-        has_loci_notes = False
-
-        loci_values: dict = {}
-
-        for locus in loci_list:
-            loci_values[locus] = {}
-
-            for allele in ("a", "b")[: loci_list[locus]]:  # select number of alleles
-                # get last locus value and the last notes (if any)
-                row = (
-                    con.execute(
-                        text(
-                            (
-                                " SELECT  "
-                                "   wl.val,  "
-                                "   wl.notes,  "
-                                '   extract(epoch from wl."timestamp")::integer AS epoch,  '
-                                "   wl.user_id,  "
-                                "   wl.definitive,  "
-                                "   to_char(wl.\"timestamp\", 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp,  "
-                                "   EXISTS (  "
-                                "     SELECT 1  "
-                                "     FROM wa_locus h  "
-                                "     WHERE h.wa_code = wl.wa_code  "
-                                "       AND h.locus   = wl.locus  "
-                                "       AND h.allele  = wl.allele  "
-                                "       AND h.user_id IS NOT NULL  "
-                                "   ) AS has_history  "
-                                " FROM wa_locus wl  "
-                                " WHERE wl.wa_code = :wa_code  "
-                                "   AND wl.locus   = :locus  "
-                                "   AND wl.allele  = :allele  "
-                                ' ORDER BY wl."timestamp" DESC  '
-                                " LIMIT 1;  "
-                            )
-                        ),
-                        {"wa_code": wa_code, "locus": locus, "allele": allele},
-                    )
-                    .mappings()
-                    .fetchone()
+        with conn_alchemy().connect() as con:
+            wa_loci = (
+                con.execute(
+                    text(
+                        "SELECT loci_values FROM wa_loci_values WHERE wa_code = :wa_code"
+                    ),
+                    {"wa_code": wa_code},
                 )
-
-                if row is not None:
-                    val = row["val"] if row["val"] is not None else "-"
-                    notes = row["notes"] if row["notes"] is not None else ""
-                    has_history = row["has_history"]
-                    has_loci_notes = has_history != 0
-                    epoch = row["epoch"] if row["epoch"] is not None else ""
-                    date = (
-                        row["formatted_timestamp"]
-                        if row["formatted_timestamp"] is not None
-                        else ""
-                    )
-                    user_id = row["user_id"] if row["user_id"] is not None else ""
-                    definitive = row["definitive"]
-
-                else:
-                    val = "-"
-                    notes = ""
-                    has_history = False
-                    epoch = ""
-                    user_id = ""
-                    date = ""
-                    definitive = False
-
-                loci_values[locus][allele] = {
-                    "value": val,
-                    "notes": notes,
-                    "has_history": has_history,
-                    "epoch": epoch,
-                    "user_id": user_id,
-                    "date": date,
-                    "definitive": definitive,
-                }
-
-    return loci_values, has_loci_notes
+                .mappings()
+                .fetchone()
+            )
+        if wa_loci is not None:
+            return wa_loci
+        else:
+            return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 
 def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
     """
-    TODO: to be tested
 
     Return:
       loci_values[locus][allele] = {
@@ -237,7 +170,7 @@ def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
       }
     """
     # prepare required tuple (locus, allele)
-    requested = []
+    requested: list = []
     for locus, n_alleles in loci_list.items():
         for allele in ("a", "b")[:n_alleles]:
             requested.append((locus, allele))
