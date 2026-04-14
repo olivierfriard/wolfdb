@@ -967,7 +967,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
         else:
             search_term: str = ""
 
-    sql_all = "SELECT * FROM wa_genetic_samples_mat WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+    sql_all: str = "SELECT * FROM wa_genetic_samples_all WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
 
     with fn.conn_alchemy().connect() as con:
         if ":" in search_term:
@@ -1849,7 +1849,7 @@ def view_wa_polygon(polygon: str, mode: str = "web"):
 
         sql_all = text(
             "SELECT * "
-            "FROM wa_genetic_samples_mat "
+            "FROM wa_genetic_samples_all "
             "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
             "AND ST_Within(geometry_utm, st_transform(ST_GeomFromText(:wkt_polygon, 4326), ST_SRID(geometry_utm)))"
         )
@@ -3035,7 +3035,6 @@ def after_genotype_modif() -> None:
 
     with fn.conn_alchemy().connect() as con:
         con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
-        con.execute(text("REFRESH MATERIALIZED VIEW wa_genetic_samples_mat"))
 
 
 def after_wa_results_modif() -> None:

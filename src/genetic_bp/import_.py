@@ -2,13 +2,15 @@
 import genetic data
 """
 
-from sqlalchemy import text
+import json
 import pathlib as pl
+
 import pandas as pd
+import redis
+from sqlalchemy import text
+
 import functions as fn
 from config import config
-import json
-import redis
 
 params = config()
 # db wolf -> db 0
@@ -283,4 +285,3 @@ def import_definitive_genotypes(filename):
             )
 
         con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
-        con.execute(text("REFRESH MATERIALIZED VIEW wa_genetic_samples_mat"))
