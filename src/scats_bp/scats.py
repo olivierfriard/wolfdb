@@ -5,34 +5,34 @@ WolfDB web service
 flask blueprint for scats management
 """
 
+import datetime
+import datetime as dt
+import json
+import os
+import pathlib as pl
+import subprocess
+import sys
+import uuid
+
 import flask
+import utm
 from flask import (
-    render_template,
-    redirect,
-    request,
     flash,
     make_response,
+    redirect,
+    render_template,
+    request,
     session,
     url_for,
 )
 from markupsafe import Markup
 from sqlalchemy import text
-import utm
-import json
-import pathlib as pl
-import datetime as dt
-import uuid
-import os
-import sys
-import subprocess
-import datetime
 
-
-from .scat_form import Scat
 import functions as fn
-from . import scats_export, scats_import
 from config import config
 
+from . import scats_export, scats_import
+from .scat_form import Scat
 
 app = flask.Blueprint(
     "scats", __name__, template_folder="templates", static_url_path="/static"
@@ -376,7 +376,7 @@ def scats_list_limit(offset: int, limit: int | str):
     with fn.conn_alchemy().connect() as con:
         sql_search = text(
             (
-                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE ("
+                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE ("
                 "scat_id ILIKE :search "
                 "OR date::text ILIKE :search "
                 "OR sampling_type ILIKE :search "
@@ -397,7 +397,7 @@ def scats_list_limit(offset: int, limit: int | str):
 
         sql_all = text(
             (
-                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date "
+                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date "
                 f"LIMIT {limit} "
                 f"OFFSET {offset}"
             )
@@ -478,7 +478,7 @@ def export_scats():
         file_content = scats_export.export_scats(
             con.execute(
                 text(
-                    "SELECT * FROM scats_list_mat WHERE date BETWEEN :start_date AND :end_date"
+                    "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
                 ),
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )

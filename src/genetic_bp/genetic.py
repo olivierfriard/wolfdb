@@ -3046,7 +3046,7 @@ def after_wa_results_modif() -> None:
 
     with fn.conn_alchemy().connect() as con:
         con.execute(text("REFRESH MATERIALIZED VIEW wa_scat_dw_mat"))
-        con.execute(text("REFRESH MATERIALIZED VIEW scats_list_mat"))
+        # con.execute(text("REFRESH MATERIALIZED VIEW scats_list_mat"))
 
     after_genotype_modif()
 

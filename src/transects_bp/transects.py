@@ -5,18 +5,20 @@ WolfDB web service
 flask blueprint for transects management
 """
 
-import flask
-from flask import render_template, redirect, request, flash, make_response, session
-from markupsafe import Markup
-from sqlalchemy import text
-from config import config
-import json
 import calendar
 import datetime as dt
+import json
 
-from .transect_form import Transect
+import flask
+from flask import flash, make_response, redirect, render_template, request, session
+from markupsafe import Markup
+from sqlalchemy import text
+
 import functions as fn
+from config import config
+
 from . import transects_export
+from .transect_form import Transect
 
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 
@@ -107,7 +109,7 @@ def view_transect(transect_id):
             con.execute(
                 text(
                     (
-                        "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_mat "
+                        "SELECT *, ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat FROM scats_list_all "
                         "WHERE path_id LIKE :path_id "
                         " AND (date between :start_date AND :end_date OR date IS NULL) "
                     )
