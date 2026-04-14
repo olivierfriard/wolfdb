@@ -1222,12 +1222,14 @@ def wa_genetic_samples3():
 
     view_wa_code = request.args.get("view_wa_code", default="")
 
-    # print(f"{offset=}")
-    # print(f"{limit=}")
-    # print(f"{with_genotype_notes=}")
-    # print(f"{with_loci_values=}")
-    # print(f"{with_loci_notes=}")
-    # print(f"{mode=}")
+    print("-" * 20)
+    print(f"{offset=}")
+    print(f"{limit=}")
+    print(f"{with_genotype_notes=}")
+    print(f"{with_loci_values=}")
+    print(f"{with_loci_notes=}")
+    print(f"{mode=}")
+    print("-" * 20)
 
     out, loci_values, locus_notes, total_n_wa = get_wa(
         offset, limit, with_genotype_notes, with_loci_values, with_loci_notes
@@ -1279,23 +1281,66 @@ def get_wa(
     with_loci_values: int = 0,
     with_loci_notes: int = 0,
     not_poor_dna: int = 0,
+    search_str: str = "",
 ):
     """
     get genetic data for wa_codes
     """
 
-    sql_base = (
+    out: list = []
+    loci_values: dict = {}
+    locus_notes: dict = {}
+    values: dict = {}
+    mem_genotype_loci: dict = {}
+
+    sql_base: str = (
         "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all "
         "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
-        # "SELECT "
-        # "  COUNT(*) OVER () AS total_count, "
-        # "  g.*, "
-        # "  COALESCE(lv.loci_values, '{}'::jsonb) AS loci_values "
-        # "FROM wa_genetic_samples_all AS g "
-        # "LEFT JOIN wa_loci_values AS lv "
-        # "  ON lv.wa_code = g.wa_code "
-        # "WHERE (g.date BETWEEN :start_date AND :end_date OR g.date IS NULL) "
     )
+
+    # search term
+    if search_str:
+        if ":" in search_str:
+            research_fields = {
+                "wa": "wa_code",
+                "date": "date",
+                "sample id": "sample_id",
+                "municipality": "municipality",
+                "province": "province",
+                "genotype id": "genotype_id",
+                "sex": "sex_id",
+                "hybrid": "hybrid",
+                "tmp id": "tmp_id",
+                "pack": "pack",
+                "box": "box_number",
+            }
+            for idx, field_term in enumerate(search_str.split(";")):
+                field, value = [x.strip() for x in field_term.split(":")]
+                if field not in research_fields:
+                    return out, loci_values, locus_notes, 0
+
+                field = research_fields[field]
+
+                values[f"search{idx}"] = f"%{value}%"
+                sql_base += f" AND ({field} ILIKE :search{idx}) "
+
+        else:
+            sql_base += (
+                " AND ("
+                "wa_code ILIKE :search_term "
+                "OR sample_id ILIKE :search_term "
+                "OR date::text ILIKE :search_term "
+                "OR municipality ILIKE :search_term "
+                "OR genotype_id ILIKE :search_term "
+                "OR hybrid ILIKE :search_term "
+                "OR tmp_id ILIKE :search_term "
+                "OR notes ILIKE :search_term "
+                "OR pack ILIKE :search_term "
+                "OR box_number::text = :search_term "
+                ") "
+            )
+
+    # poor dna
     if not_poor_dna:
         sql_base += "AND mtdna not ilike '%poor DNA%' "
 
@@ -1303,7 +1348,7 @@ def get_wa(
         sql_base += "AND notes != '' AND notes IS NOT NULL "
 
     if with_loci_values:
-        sql_base = sql_base + (
+        sql_base += (
             " AND wa_code IN "
             "(SELECT w.wa_code "
             "FROM wa_loci_values w "
@@ -1350,29 +1395,25 @@ def get_wa(
             wa_scats = (
                 con.execute(
                     text(sql_base),
-                    {
-                        "start_date": session["start_date"],
-                        "end_date": session["end_date"],
-                        "offset": offset,
-                        "limit": limit,
-                    },
+                    dict(
+                        {
+                            "start_date": session["start_date"],
+                            "end_date": session["end_date"],
+                            "offset": offset,
+                            "limit": limit,
+                            "search_term": f"%{search_str}%",
+                        },
+                        **values,
+                    ),
                 )
                 .mappings()
                 .all()
             )
             total_n_wa = wa_scats[0].total_count if wa_scats else 0
-            print(f"{total_n_wa=}")
 
             if limit != "All" and offset >= total_n_wa:
                 offset = max(0, total_n_wa - limit)
-                print("new offset", offset)
-            else:
-                break
-
-    out: list = []
-    loci_values: list = {}
-    locus_notes: dict = {}
-    mem_genotype_loci: dict = {}
+            break
 
     for row in wa_scats:
         loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
@@ -1454,6 +1495,7 @@ def wa():
     serve wa codes for htmx requests (from _wa_panel.html)
     """
     offset = int(request.args.get("offset", -1))
+    search_str = request.args.get("search_str", "")
     raw_limit = request.args.get("limit", 10)
 
     limit: str | int = "All" if raw_limit == "All" else int(raw_limit)
@@ -1464,14 +1506,16 @@ def wa():
     not_poor_dna = "1" in request.args.getlist("not_poor_dna")
 
     if app.debug:
-        print("\n" * 5)
         print("=" * 20)
+        # print(f"{request.args.getlist("with_genotype_notes")=}")
+        print(f"{search_str=}")
         print(f"{offset=}")
         print(f"{limit=}")
         print(f"{with_genotype_notes=}")
         print(f"{with_loci_values=}")
         print(f"{with_loci_notes=}")
         print(f"{not_poor_dna=}")
+        print("=" * 20)
 
     time0 = time.time()
     out, loci_values, locus_notes, total_n_wa = get_wa(
@@ -1481,6 +1525,7 @@ def wa():
         with_loci_values,
         with_loci_notes,
         not_poor_dna,
+        search_str,
     )
     time1 = time.time() - time0
 
@@ -1500,6 +1545,7 @@ def wa():
     return render_template(
         "_wa_panel.html",
         parameters=parameters,
+        search_str=search_str,
         offset=offset,
         limit=limit,
         with_genotype_notes=with_genotype_notes,

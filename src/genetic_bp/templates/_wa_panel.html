@@ -19,155 +19,196 @@
     {% endif %}
 
 
-    <span style="display:solid">
+    <div class="card shadow-sm border-0">
+        <div class="card-body py-3">
+            {# begin filters #}
+            {% set wa_url = url_for('genetic.wa') %}
 
+            <div class="d-flex flex-wrap align-items-center gap-2">
 
-        {% if offset > 0 %}
-        <button class="btn btn-secondary btn-sm" type="button" hx-get="{{ url_for('genetic.wa') }}"
-            hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
-            ◀◀ 1st page
-        </button>
-        {% endif %}
-
-
-        <button class="btn btn-secondary btn-sm" {% if offset <=0 %}disabled{% endif %} type="button"
-            hx-get="{{ url_for('genetic.wa') }}" hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
-            hx-vals='{{ {"offset": [0, (offset|int) - (limit|int)] | max } | tojson }}'>
-            ◀ Prev
-        </button>
-
-        <button class="btn btn-sm btn-secondary" {% if limit !='All' and (offset + limit>= total_n_wa) %}disabled{%
-            endif %}
-            type="button"
-            hx-get="{{ url_for('genetic.wa') }}"
-            hx-target="#wa-panel"
-            hx-swap="innerHTML"
-            hx-include="#wa-filters"
-            hx-vals='{{ {"offset": (offset|int) + (limit|int)} | tojson }}'>
-            Next ▶
-        </button>
-
-        <span style="display:inline-block; width: 8em;"></span>
-        <small>WA codes / page</small>
-
-        <label>
-            <select class="form-select" name="limit" hx-get="{{ url_for('genetic.wa') }}" hx-target="#wa-panel"
-                hx-swap="innerHTML" hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
-                {% for v in [10, 20, 50, 100, 200, 500, 'All'] %}
-                <option value="{{ v }}" {% if (limit|int)==v %}selected{% endif %}>{{ v }}</option>
-                {% endfor %}
-            </select>
-        </label>
-
-        <span style="display:inline-block; width: 8em;"></span>
-
-        <label>
-            <input class="form-check-input" type="checkbox" name="with_genotype_notes" value="1" {% if
-                with_genotype_notes %}checked{% endif %} hx-get="{{ url_for('genetic.wa') }}" hx-trigger="change"
-                hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
-                hx-vals='{{ {"offset": 0} | tojson }}'>
-            with genotype notes
-        </label>
-
-        <label style="margin-left: 1em;">
-            <input class="form-check-input" type="checkbox" name="with_loci_notes" value="1" {% if with_loci_notes
-                %}checked{% endif %} hx-get="{{ url_for('genetic.wa') }}" hx-trigger="change" hx-target="#wa-panel"
-                hx-swap="innerHTML" hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
-            with loci notes
-        </label>
-
-        <label style="margin-left: 1em;">
-            <input class="form-check-input" type="checkbox" name="not_poor_dna" value="1" {% if not_poor_dna %}checked{%
-                endif %} hx-get="{{ url_for('genetic.wa') }}" hx-trigger="change" hx-target="#wa-panel"
-                hx-swap="innerHTML" hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
-            not poor DNA
-        </label>
-
-        <label style="margin-left: 1em;">
-            <input class="form-check-input" type="checkbox" name="with_loci_values" value="1" {% if with_loci_values
-                %}checked{% endif %} hx-get="{{ url_for('genetic.wa') }}" hx-trigger="change" hx-target="#wa-panel"
-                hx-swap="innerHTML" hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
-            exclude WA w/o loci values
-        </label>
-
-        <span style="display:inline-block; width: 4em;"></span>
-
-        {# button with menu to export data #}
-        {#<span class="col-md-2 d-flex align-items-end">#}
-            <span class="dropdown">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                    Export
+                {% if offset > 0 %}
+                <button class="btn btn-outline-secondary btn-sm" type="button" hx-get="{{ wa_url }}"
+                    hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                    hx-vals='{{ {"offset": 0} | tojson }}'>
+                    &laquo; First
                 </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
-                                                                         with_loci_values=1 if with_loci_values else 0,
-                                                                         with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_tsv_with-loci-notes') }}">
-                            TSV
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
-                                                                         with_loci_values=1 if with_loci_values else 0,
-                                                                         with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_tsv_wo-loci-notes') }}">
-                            TSV w/o loci notes
-                        </a>
-                    </li>
+                {% endif %}
 
-                    <li>
-                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
-                                                                         with_loci_values=1 if with_loci_values else 0,
-                                                                         with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_ods_with-loci-notes') }}">
-                            ODS
-                        </a>
-                    </li>
+                <button class="btn btn-outline-secondary btn-sm" {% if offset <=0 %}disabled{% endif %} type="button"
+                    hx-get="{{ wa_url }}" hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                    hx-vals='{{ {"offset": [0, (offset|int) - (limit|int)] | max } | tojson }}'>
+                    &lsaquo; Prev
+                </button>
 
-                    <li>
-                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
-                                                                         with_loci_values=1 if with_loci_values else 0,
-                                                                         with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_ods_wo-loci-notes') }}">
-                            ODS w/o loci notes
-                        </a>
-                    </li>
+                <button class="btn btn-outline-secondary btn-sm" {% if limit !='All' and (offset + limit>= total_n_wa)
+                    %}disabled{% endif %}
+                    type="button"
+                    hx-get="{{ wa_url }}"
+                    hx-target="#wa-panel"
+                    hx-swap="innerHTML"
+                    hx-include="#wa-filters"
+                    hx-vals='{{ {"offset": (offset|int) + (limit|int)} | tojson }}'>
+                    Next &rsaquo;
+                </button>
+
+                <div class="vr mx-1"></div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <label for="wa-limit" class="form-label mb-0 small text-muted">WA codes / page</label>
+                    <select id="wa-limit" class="form-select form-select-sm" name="limit" style="width: auto;"
+                        hx-get="{{ wa_url }}" hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                        hx-vals='{{ {"offset": 0} | tojson }}'>
+                        {% for v in [10, 20, 50, 100, 200, 500, 'All'] %}
+                        <option value="{{ v }}" {% if limit==v or (v !='All' and (limit|int)==v) %}selected{% endif %}>
+                            {{ v }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="vr mx-1"></div>
+
+                <div class="d-flex flex-wrap align-items-center gap-3">
+
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="with_genotype_notes"
+                            name="with_genotype_notes" value="1" {% if with_genotype_notes %}checked{% endif %}
+                            hx-get="{{ wa_url }}" hx-trigger="change" hx-target="#wa-panel" hx-swap="innerHTML"
+                            hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
+                        <label class="form-check-label small" for="with_genotype_notes">
+                            With genotype notes
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="with_loci_notes" name="with_loci_notes"
+                            value="1" {% if with_loci_notes %}checked{% endif %} hx-get="{{ wa_url }}"
+                            hx-trigger="change" hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                            hx-vals='{{ {"offset": 0} | tojson }}'>
+                        <label class="form-check-label small" for="with_loci_notes">
+                            With loci notes
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="not_poor_dna" name="not_poor_dna" value="1"
+                            {% if not_poor_dna %}checked{% endif %} hx-get="{{ wa_url }}" hx-trigger="change"
+                            hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                            hx-vals='{{ {"offset": 0} | tojson }}'>
+                        <label class="form-check-label small" for="not_poor_dna">
+                            Not poor DNA
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="with_loci_values" name="with_loci_values"
+                            value="1" {% if with_loci_values %}checked{% endif %} hx-get="{{ wa_url }}"
+                            hx-trigger="change" hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                            hx-vals='{{ {"offset": 0} | tojson }}'>
+                        <label class="form-check-label small" for="with_loci_values">
+                            Exclude WA w/o loci values
+                        </label>
+                    </div>
+
+                </div>
+
+                <div class="vr mx-1"></div>
+
+                <div class="input-group input-group-sm" style="width: 280px;">
+                    <input id="wa-search" class="form-control" type="text" name="search_str" value="{{ search_str }}"
+                        placeholder="Search..." aria-label="Search WA"
+                        hx-on:keydown="if (event.key === 'Enter') event.preventDefault()">
+
+                    <button class="btn btn-primary" type="button" hx-get="{{ url_for('genetic.wa') }}"
+                        hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                        hx-vals='{{ {"offset": 0} | tojson }}' hx-trigger="click, keyup[key=='Enter'] from:#wa-search">
+                        Search
+                    </button>
+                </div>
+
+                <div class="vr mx-1"></div>
+
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        Export
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('genetic.wa_genetic_samples3',
+                        offset=0, limit='All',
+                        with_genotype_notes=1 if with_genotype_notes else 0,
+                        with_loci_values=1 if with_loci_values else 0,
+                        with_loci_notes=1 if with_loci_notes else 0,
+                        mode='export_tsv_with-loci-notes') }}">
+                                TSV
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('genetic.wa_genetic_samples3',
+                        offset=0, limit='All',
+                        with_genotype_notes=1 if with_genotype_notes else 0,
+                        with_loci_values=1 if with_loci_values else 0,
+                        with_loci_notes=1 if with_loci_notes else 0,
+                        mode='export_tsv_wo-loci-notes') }}">
+                                TSV w/o loci notes
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('genetic.wa_genetic_samples3',
+                        offset=0, limit='All',
+                        with_genotype_notes=1 if with_genotype_notes else 0,
+                        with_loci_values=1 if with_loci_values else 0,
+                        with_loci_notes=1 if with_loci_notes else 0,
+                        mode='export_ods_with-loci-notes') }}">
+                                ODS
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('genetic.wa_genetic_samples3',
+                        offset=0, limit='All',
+                        with_genotype_notes=1 if with_genotype_notes else 0,
+                        with_loci_values=1 if with_loci_values else 0,
+                        with_loci_notes=1 if with_loci_notes else 0,
+                        mode='export_ods_wo-loci-notes') }}">
+                                ODS w/o loci notes
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('genetic.wa_genetic_samples3',
+                        offset=0, limit='All',
+                        with_genotype_notes=1 if with_genotype_notes else 0,
+                        with_loci_values=1 if with_loci_values else 0,
+                        with_loci_notes=1 if with_loci_notes else 0,
+                        mode='export_xlsx_with-loci-notes') }}">
+                                XLSX
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('genetic.wa_genetic_samples3',
+                        offset=0, limit='All',
+                        with_genotype_notes=1 if with_genotype_notes else 0,
+                        with_loci_values=1 if with_loci_values else 0,
+                        with_loci_notes=1 if with_loci_notes else 0,
+                        mode='export_xlsx_wo-loci-notes') }}">
+                                XLSX w/o loci notes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
 
 
-                    <li>
-                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
-                                                                         with_loci_values=1 if with_loci_values else 0,
-                                                                         with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_xlsx_with-loci-notes') }}">
-                            XLSX
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="dropdown-item" type="button" href="{{ url_for('genetic.wa_genetic_samples3', offset=0, limit='All',
-                                                                         with_genotype_notes=1 if with_genotype_notes else 0,
-                                                                         with_loci_values=1 if with_loci_values else 0,
-                                                                         with_loci_notes=1 if with_loci_notes else 0,
-                                                                        mode='export_xlsx_wo-loci-notes') }}">
-                            XLSX w/o loci notes
-                        </a>
-                    </li>
-
-                </ul>
-            </span>
-        </span>
-        {# </span>#} {# button export #}
-
-
-
-
+            {# end filters #}
+        </div>
+    </div>
 
 </form>
 
