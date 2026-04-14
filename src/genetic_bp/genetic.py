@@ -172,7 +172,7 @@ def view_genotype(genotype_id: str):
         genotype = (
             con.execute(
                 text(
-                    "SELECT * FROM genotypes_list_mat WHERE genotype_id = :genotype_id"
+                    "SELECT * FROM genotypes_list_all WHERE genotype_id = :genotype_id"
                 ),
                 {"genotype_id": genotype_id},
             )
@@ -346,7 +346,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
         view_genotype_id = None
 
     with fn.conn_alchemy().connect() as con:
-        sql_all = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} LIMIT {limit} OFFSET {offset}"
+        sql_all: str = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_all {filter} LIMIT {limit} OFFSET {offset}"
 
         if request.method == "POST":
             offset = 0
@@ -363,7 +363,7 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
             else:
                 search_term: str = ""
 
-        sql_search: str = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_mat {filter} "
+        sql_search: str = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_all {filter} "
 
         if ":" in search_term:
             sql_search = sql_all
@@ -492,7 +492,7 @@ def genotype_without_wa_loci():
     sql = text("""SELECT genotype_id,
             n_recaptures,
             (SELECT STRING_AGG(CONCAT(wa_code, ' ',mtdna), ' | ') FROM wa_scat_dw_mat WHERE genotype_id = g.genotype_id ) AS "wa_code_mtDNA"
-            FROM genotypes_list_mat g
+            FROM genotypes_list_all g
             WHERE
             n_recaptures != 0
             AND genotype_id NOT IN (SELECT genotype_id FROM genotype_locus)
@@ -3033,8 +3033,10 @@ def after_genotype_modif() -> None:
     refresh materialized views after modification of genotypes table
     """
 
-    with fn.conn_alchemy().connect() as con:
-        con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
+    pass
+
+    # with fn.conn_alchemy().connect() as con:
+    #    con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
 
 
 def after_wa_results_modif() -> None:

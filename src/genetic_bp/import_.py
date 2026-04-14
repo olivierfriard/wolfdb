@@ -284,4 +284,4 @@ def import_definitive_genotypes(filename):
                 ),
             )
 
-        con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))
+        # con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))

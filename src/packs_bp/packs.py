@@ -5,12 +5,12 @@ WolfDB web service
 flask blueprint for packs management
 """
 
-from flask import render_template, Blueprint, session  # , render_template_string
-from sqlalchemy import text
+from flask import Blueprint, render_template, session  # , render_template_string
 from markupsafe import Markup
+from sqlalchemy import text
 
-from config import config
 import functions as fn
+from config import config
 
 app = Blueprint("packs", __name__, template_folder="templates")
 
@@ -55,7 +55,7 @@ def view_pack(pack_name):
         results = (
             con.execute(
                 text(
-                    "SELECT * FROM genotypes_list_mat "
+                    "SELECT * FROM genotypes_list_all "
                     "WHERE pack = :pack_name "
                     "AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL) "
                     "ORDER BY date_first_capture ASC"
@@ -83,19 +83,19 @@ def view_pack(pack_name):
                     "wa_results.wa_code "
                     "FROM scats, wa_results "
                     "WHERE scats.wa_code = wa_results.wa_code "
-                    "      AND wa_results.genotype_id in (SELECT genotype_id FROM genotypes_list_mat WHERE pack = :pack_name "
+                    "      AND wa_results.genotype_id IN (SELECT genotype_id FROM genotypes_list_all WHERE pack = :pack_name "
                     "                                                                             AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL)) "
                     "UNION "
                     "SELECT "
-                    "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
-                    "ST_Y(st_transform(geometry_utm, 4326)) as latitude, "
+                    "ST_X(st_transform(geometry_utm, 4326)) AS longitude, "
+                    "ST_Y(st_transform(geometry_utm, 4326)) AS latitude, "
                     "wa_results.genotype_id AS genotype_id,"
                     "tissue_id AS sample_id,"
                     "'Dead wolf' AS sample_type,"
                     "wa_results.wa_code "
                     "FROM dead_wolves, wa_results "
                     "WHERE dead_wolves.wa_code = wa_results.wa_code "
-                    "       AND wa_results.genotype_id in (SELECT genotype_id FROM genotypes_list_mat WHERE pack = :pack_name "
+                    "       AND wa_results.genotype_id IN (SELECT genotype_id FROM genotypes_list_all WHERE pack = :pack_name "
                     "                                                                              AND (date_first_capture BETWEEN :start_date AND :end_date OR date_first_capture IS NULL))"
                 ),
                 {

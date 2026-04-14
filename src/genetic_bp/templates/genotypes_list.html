@@ -34,131 +34,135 @@
     {% endif %}
 
 
+    <div class="card shadow-sm border-0">
+        <div class="card-body py-3">
+            {# filters #}
+            <div class="d-flex flex-wrap align-items-center gap-2">
 
-    {# filters #}
-    <div class="d-flex flex-wrap align-items-center gap-2">
+                {% if limit != 'ALL' %}
+                <div class="btn-group btn-group-sm" role="group" aria-label="Pagination">
+                    <a class="btn btn{% if offset %}-outline{% endif %}-secondary"
+                        href="/genotypes_list/0/{{ limit }}/{{ type }}">
+                        &laquo; First
+                    </a>
 
-        {% if limit != 'ALL' %}
-        <div class="btn-group btn-group-sm" role="group" aria-label="Pagination">
-            <a class="btn btn{% if offset %}-outline{% endif %}-secondary"
-                href="/genotypes_list/0/{{ limit }}/{{ type }}">
-                &laquo; First
-            </a>
+                    {% if offset - limit >= 0 %}
+                    <a class="btn btn-outline-secondary"
+                        href="/genotypes_list/{{ offset - limit }}/{{ limit }}/{{ type }}">
+                        &lsaquo; Previous
+                    </a>
+                    {% endif %}
 
-            {% if offset - limit >= 0 %}
-            <a class="btn btn-outline-secondary" href="/genotypes_list/{{ offset - limit }}/{{ limit }}/{{ type }}">
-                &lsaquo; Previous
-            </a>
-            {% endif %}
+                    <a class="btn btn-outline-secondary"
+                        href="/genotypes_list/{{ offset + limit }}/{{ limit }}/{{ type }}">
+                        Next &rsaquo;
+                    </a>
+                </div>
+                {% endif %}
 
-            <a class="btn btn-outline-secondary" href="/genotypes_list/{{ offset + limit }}/{{ limit }}/{{ type }}">
-                Next &rsaquo;
-            </a>
-        </div>
-        {% endif %}
+                <div class="vr mx-1"></div>
 
-        <div class="vr mx-1"></div>
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="small text-muted">Genotypes / page</span>
 
-        <div class="d-flex align-items-center flex-wrap gap-2">
-            <span class="small text-muted">Genotypes / page</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Page size">
+                        <a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/{{ offset }}/10/{{ type }}">10</a>
 
-            <div class="btn-group btn-group-sm" role="group" aria-label="Page size">
-                <a class="btn btn{% if limit != 10 %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/{{ offset }}/10/{{ type }}">10</a>
+                        <a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/{{ offset }}/20/{{ type }}">20</a>
 
-                <a class="btn btn{% if limit != 20 %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/{{ offset }}/20/{{ type }}">20</a>
+                        <a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/{{ offset }}/50/{{ type }}">50</a>
 
-                <a class="btn btn{% if limit != 50 %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/{{ offset }}/50/{{ type }}">50</a>
+                        <a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/{{ offset }}/100/{{ type }}">100</a>
 
-                <a class="btn btn{% if limit != 100 %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/{{ offset }}/100/{{ type }}">100</a>
+                        <a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/{{ offset }}/200/{{ type }}">200</a>
 
-                <a class="btn btn{% if limit != 200 %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/{{ offset }}/200/{{ type }}">200</a>
+                        <a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/{{ offset }}/500/{{ type }}">500</a>
 
-                <a class="btn btn{% if limit != 500 %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/{{ offset }}/500/{{ type }}">500</a>
+                        <a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary"
+                            href="/genotypes_list/0/ALL/{{ type }}">All</a>
+                    </div>
+                </div>
 
-                <a class="btn btn{% if limit != 'ALL' %}-outline{% endif %}-secondary"
-                    href="/genotypes_list/0/ALL/{{ type }}">All</a>
+                <div class="vr mx-1"></div>
+
+                <form class="d-flex align-items-center" method="POST" action="/genotypes_list/0/ALL/{{ type }}">
+                    <div class="input-group input-group-sm" style="width: 280px;">
+                        <input type="search" name="search" class="form-control" value="{{ search_term }}"
+                            placeholder="Search genotypes..." aria-label="Search genotypes">
+                        <button type="submit" class="btn btn-primary">
+                            Search
+                        </button>
+                    </div>
+                </form>
+
+                <div class="vr mx-1"></div>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        Export
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_tsv_with-loci-notes') }}">
+                                TSV
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_tsv_wo-loci-notes') }}">
+                                TSV w/o loci notes
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_ods_with-loci-notes') }}">
+                                ODS
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_ods_wo-loci-notes') }}">
+                                ODS w/o loci notes
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_xlsx_with-loci-notes') }}">
+                                XLSX
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_xlsx_wo-loci-notes') }}">
+                                XLSX w/o loci notes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
+            {# end filters #}
         </div>
-
-        <div class="vr mx-1"></div>
-
-        <form class="d-flex align-items-center" method="POST" action="/genotypes_list/0/ALL/{{ type }}">
-            <div class="input-group input-group-sm" style="width: 280px;">
-                <input type="search" name="search" class="form-control" value="{{ search_term }}"
-                    placeholder="Search genotypes..." aria-label="Search genotypes">
-                <button type="submit" class="btn btn-primary">
-                    Search
-                </button>
-            </div>
-        </form>
-
-        <div class="vr mx-1"></div>
-
-        <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                aria-expanded="false">
-                Export
-            </button>
-
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                <li>
-                    <a class="dropdown-item"
-                        href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_tsv_with-loci-notes') }}">
-                        TSV
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item"
-                        href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_tsv_wo-loci-notes') }}">
-                        TSV w/o loci notes
-                    </a>
-                </li>
-
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-
-                <li>
-                    <a class="dropdown-item"
-                        href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_ods_with-loci-notes') }}">
-                        ODS
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item"
-                        href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_ods_wo-loci-notes') }}">
-                        ODS w/o loci notes
-                    </a>
-                </li>
-
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-
-                <li>
-                    <a class="dropdown-item"
-                        href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_xlsx_with-loci-notes') }}">
-                        XLSX
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item"
-                        href="{{ url_for('genetic.genotypes_list', offset=0, limit='ALL', type=type, mode='export_xlsx_wo-loci-notes') }}">
-                        XLSX w/o loci notes
-                    </a>
-                </li>
-            </ul>
-        </div>
-
     </div>
-    {# end filters #}
-
 
 
 

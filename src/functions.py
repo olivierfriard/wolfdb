@@ -143,7 +143,7 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
     r = rdis.get(wa_code)
     if r is not None:
         return json.loads(r)
-    else:
+    else:  # try from loci_values table
         with conn_alchemy().connect() as con:
             wa_loci = (
                 con.execute(
