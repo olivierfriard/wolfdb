@@ -90,7 +90,8 @@
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
 
-                    <a class="dropdown-item" href="{{ url_for('scats.export_scats', format='tsv') }}">
+                    <a class="dropdown-item"
+                        href="{{ url_for('scats.export_scats', search_term=search_term, format='tsv') }}">
                         TSV
                     </a>
                     {#

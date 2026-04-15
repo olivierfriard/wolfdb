@@ -574,7 +574,7 @@ def scats_list_limit(offset: int, limit: int | str, mode: str = ""):
     )
 
 
-@app.route("/export_scats/<format>")
+@app.route("/export_scats/<format>/")
 @app.route("/export_scats/<format>/<search_term>")
 @fn.check_login
 def export_scats(format: str = "tsv", search_term: str = ""):
@@ -584,19 +584,18 @@ def export_scats(format: str = "tsv", search_term: str = ""):
     if format not in ("xlsx", "ods", "tsv"):
         return "Format error"
 
-    with fn.conn_alchemy().connect() as con:
-        file_content = scats_export.export_scats_pandas(
-            get_scats(search_term),
-            # con.execute(
-            #    text(
-            #        "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
-            #    ),
-            #    {"start_date": session["start_date"], "end_date": session["end_date"]},
-            # )
-            # .mappings()
-            # .all(),
-            file_format=format,
-        )
+    file_content = scats_export.export_scats_pandas(
+        get_scats(search_term),
+        # con.execute(
+        #    text(
+        #        "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
+        #    ),
+        #    {"start_date": session["start_date"], "end_date": session["end_date"]},
+        # )
+        # .mappings()
+        # .all(),
+        file_format=format,
+    )
 
     response = make_response(file_content, 200)
 
