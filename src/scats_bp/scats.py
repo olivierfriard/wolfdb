@@ -497,15 +497,17 @@ def scats_list_limit(offset: int, limit: int | str):
     )
 
 
-@app.route("/export_scats")
+@app.route("/export_scats/<format>")
 @fn.check_login
-def export_scats():
+def export_scats(format: str = "tsv"):
     """
-    export all scats in XLSX
+    export all scats in tabular format
     """
+    if format not in ("xlsx", "ods", "tsv"):
+        return "Format error"
 
     with fn.conn_alchemy().connect() as con:
-        file_content = scats_export.export_scats(
+        file_content = scats_export.export_scats_pandas(
             con.execute(
                 text(
                     "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
@@ -513,15 +515,16 @@ def export_scats():
                 {"start_date": session["start_date"], "end_date": session["end_date"]},
             )
             .mappings()
-            .all()
+            .all(),
+            file_format=format,
         )
 
     response = make_response(file_content, 200)
-    response.headers["Content-type"] = (
-        "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+
+    response.headers["Content-type"] = fn.content_type(format)
+
     response.headers["Content-disposition"] = (
-        f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+        f"attachment; filename=scats_{datetime.datetime.now():%Y-%m-%d_%H%M%S}.{format}"
     )
 
     return response
@@ -991,16 +994,16 @@ def set_path_id(scat_id, path_id):
 
 
 @app.route(
-    "/load_scats_xlsx",
+    "/load_scats_table",
     methods=(
         "GET",
         "POST",
     ),
 )
 @fn.check_login
-def load_scats_xlsx():
+def load_scats_table():
     """
-    Select a file for uploading scats from XLSX
+    Select a file for uploading scats from spreadsheet (ODS or XLSX)
     """
 
     if request.method == "GET":
@@ -1021,7 +1024,7 @@ def load_scats_xlsx():
                     "The uploaded file does not have an allowed extension (must be <b>.xlsx</b> or <b>.ods</b>)"
                 )
             )
-            return redirect("/load_scats_xlsx")
+            return redirect(url_for("scats.load_scats_table"))
 
         try:
             filename = str(uuid.uuid4()) + str(
@@ -1033,7 +1036,7 @@ def load_scats_xlsx():
                 fn.alert_danger("Error with the uploaded file")
                 + f"({error_info(sys.exc_info())})"
             )
-            return redirect("/load_scats_xlsx")
+            return redirect(url_for("scats.load_scats_table"))
 
         r, msg, all_data, _, _ = scats_import.extract_data_from_spreadsheet(filename)
         if r:
@@ -1042,7 +1045,7 @@ def load_scats_xlsx():
                 + Markup("<hr><br>")
                 + msg
             )
-            return redirect("/load_scats_xlsx")
+            return redirect(url_for("scats.load_scats_table"))
 
         else:
             # check if scat_id already in DB
@@ -1073,7 +1076,7 @@ def confirm_load_xlsx(filename, mode):
 
     if mode not in ["new", "all"]:
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect("/load_scats_xlsx")
+        return redirect(url_for("scats.load_scats_table"))
 
     r, msg, all_data, all_paths, all_tracks = (
         scats_import.extract_data_from_spreadsheet(filename)
@@ -1081,7 +1084,7 @@ def confirm_load_xlsx(filename, mode):
 
     if r:
         flash(msg)
-        return redirect(url_for("load_scats_xlsx"))
+        return redirect(url_for("scats.load_scats_table"))
 
     with fn.conn_alchemy().connect() as con:
         # check if scat_id already in DB

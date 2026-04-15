@@ -1592,25 +1592,55 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             .all()
         ):
             wa_list.append(row["wa_code"])
-        wa_list_str = "','".join(wa_list)
+        # wa_list_str = "','".join(wa_list)
 
         wa_scats = (
             con.execute(
                 text(
-                    "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, coord_zone, "
-                    "mtdna, genotype_id, tmp_id, sex_id, "
-                    "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw_all.genotype_id) AS notes, "
-                    "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw_all.genotype_id) AS status, "
-                    "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw_all.genotype_id) AS pack, "
-                    "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
-                    "FROM wa_scat_dw_all "
-                    f"WHERE wa_code IN ('{wa_list_str}') "
-                    "AND date BETWEEN :start_date AND :end_date "
-                    "ORDER BY wa_code ASC"
+                    # "SELECT wa_code, sample_id, date, municipality, coord_east, coord_north, coord_zone, "
+                    # "mtdna, genotype_id, tmp_id, sex_id, "
+                    # "(SELECT working_notes FROM genotypes WHERE genotype_id=wa_scat_dw_all.genotype_id) AS notes, "
+                    # "(SELECT status FROM genotypes WHERE genotype_id=wa_scat_dw_all.genotype_id) AS status, "
+                    # "(SELECT pack FROM genotypes WHERE genotype_id=wa_scat_dw_all.genotype_id) AS pack, "
+                    # "(SELECT 'Yes' FROM dead_wolves WHERE tissue_id = sample_id LIMIT 1) as dead_recovery "
+                    # "FROM wa_scat_dw_all "
+                    # f"WHERE wa_code IN ('{wa_list_str}') "
+                    # "AND date BETWEEN :start_date AND :end_date "
+                    # "ORDER BY wa_code ASC"
+                    "SELECT "
+                    "    w.wa_code, "
+                    "    w.sample_id, "
+                    "    w.date, "
+                    "    w.municipality, "
+                    "    w.coord_east, "
+                    "    w.coord_north, "
+                    "    w.coord_zone, "
+                    "    w.mtdna, "
+                    "    w.genotype_id, "
+                    "    w.tmp_id, "
+                    "    w.sex_id, "
+                    "    g.working_notes AS notes, "
+                    "    g.status, "
+                    "    g.pack, "
+                    "    CASE "
+                    "        WHEN EXISTS ( "
+                    "            SELECT 1 "
+                    "            FROM dead_wolves d "
+                    "            WHERE d.tissue_id = w.sample_id "
+                    "        ) THEN 'Yes' "
+                    "        ELSE NULL "
+                    "    END AS dead_recovery "
+                    "FROM wa_scat_dw_all w "
+                    "LEFT JOIN genotypes g "
+                    "    ON g.genotype_id = w.genotype_id "
+                    "WHERE w.wa_code = ANY(:wa_code_list) "
+                    "    AND w.date BETWEEN :start_date AND :end_date "
+                    "ORDER BY w.wa_code ASC; "
                 ),
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
+                    "wa_code_list": wa_list,
                 },
             )
             .mappings()
@@ -1732,7 +1762,7 @@ def get_genotypes_from_wa(wa_list: list):
     TODO: check if same genotype has 2 different sex
     """
 
-    wa_list_str = "','".join(wa_list)
+    # wa_list_str = "','".join(wa_list)
     with fn.conn_alchemy().connect() as con:
         # fetch grouped genotypes
         genotype_id = (
@@ -1740,10 +1770,11 @@ def get_genotypes_from_wa(wa_list: list):
                 text(
                     "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
                     "FROM wa_scat_dw_all "
-                    f"WHERE wa_code in ('{wa_list_str}') "
+                    "WHERE wa_code = ANY(:wa_list) "
                     "GROUP BY genotype_id, sex_id "
                     "ORDER BY genotype_id ASC"
-                )
+                ),
+                {"wa_list": wa_list},
             )
             .mappings()
             .all()
@@ -2003,15 +2034,10 @@ def wa_analysis_group(tool: str, mode: str):
         with open("external_functions/loci_to_use_with_colony.txt", "r") as file_in:
             colony_loci = [x.strip().upper() for x in file_in.readlines()]
 
-        """print(f"{colony_loci=}")"""
-
         valid_locus: list = []
         for locus in loci_list:
             if locus.upper() not in colony_loci:
                 continue
-            """ print()
-            print(f"{locus=}")
-            """
             locus_has_values: bool = False
             for genotype in loci_values:
                 # print(f"{genotype=}")

@@ -2,17 +2,18 @@
 export scats in XLSX format
 """
 
-from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import PatternFill, Font
+from io import BytesIO
 from tempfile import NamedTemporaryFile
+
+import pandas as pd
+from openpyxl import Workbook
 
 
 def export_scats(scats):
     wb = Workbook()
 
     ws1 = wb.active
-    ws1.title = f"Scats"
+    ws1.title = "Scats"
 
     header: list = [
         "Scat ID",
@@ -84,3 +85,63 @@ def export_scats(scats):
         stream = tmp.read()
 
         return stream
+
+
+def export_scats_pandas(scats, file_format="xlsx"):
+    file_format = file_format.lower()
+
+    columns = [
+        ("scat_id", "Scat ID"),
+        ("date", "Date"),
+        ("sampling_season", "Sampling season"),
+        ("sampling_type", "Sampling type"),
+        ("path_id", "path ID"),
+        ("snowtrack_id", "Snowtrack ID"),
+        ("wa_code", "WA code"),
+        ("genotype_id2", "Genotype ID"),
+        ("location", "location"),
+        ("municipality", "municipality"),
+        ("province", "province"),
+        ("region", "region"),
+        ("deposition", "Deposition"),
+        ("matrix", "Matrix"),
+        ("collected_scat", "Collected scat"),
+        ("scalp_category", "Scalp category"),
+        ("genetic_sample", "Genetic sample"),
+        ("coord_east", "Coordinate east"),
+        ("coord_north", "Coordinate north"),
+        ("coord_zone", "Zone"),
+        ("observer", "Operator"),
+        ("institution", "Institution"),
+        ("notes", "Notes"),
+    ]
+
+    rows = []
+    for row in scats:
+        rows.append(
+            {
+                label: ("" if row.get(key) is None else row.get(key))
+                for key, label in columns
+            }
+        )
+
+    df = pd.DataFrame(rows, columns=[label for _, label in columns])
+
+    output = BytesIO()
+
+    if file_format == "xlsx":
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Scats")
+
+    elif file_format == "tsv":
+        df.to_csv(output, index=False, sep="\t", encoding="utf-8")
+
+    elif file_format == "ods":
+        with pd.ExcelWriter(output, engine="odf") as writer:
+            df.to_excel(writer, index=False, sheet_name="Scats")
+
+    else:
+        raise ValueError("Unsupported format. Use 'xlsx', 'tsv', or 'ods'.")
+
+    output.seek(0)
+    return output.read()
