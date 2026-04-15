@@ -72,16 +72,13 @@
             </div>
         </div>
 
-        <form class="ms-md-auto" method="POST" action="/scats_list_limit/0/ALL">
+        <form class="ms-md-auto" method="POST" action="{{ url_for('scats.scats_list_limit', offset=0, limit='ALL')}}">
             <div class="input-group input-group-sm">
                 <input type="search" name="search" class="form-control" placeholder="Search..."
                     value="{{ search_term }}">
                 <button type="submit" class="btn btn-secondary">Search</button>
             </div>
         </form>
-
-
-
 
 
         <div class="dropdown">
@@ -92,19 +89,28 @@
 
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
+
                     <a class="dropdown-item" href="{{ url_for('scats.export_scats', format='tsv') }}">
                         TSV
                     </a>
+                    {#
+                    <a class="dropdown-item"
+                        href="{{ url_for('scats.scats_list_limit',  offset=0, limit='ALL',mode='export_tsv') }}">
+                        TSV
+                    </a>
+                    #}
                 </li>
 
                 <li>
-                    <a class="dropdown-item" href="{{ url_for('scats.export_scats', format='ods') }}">
+                    <a class="dropdown-item"
+                        href="{{ url_for('scats.export_scats', search_term=search_term,format='ods') }}">
                         ODS
                     </a>
                 </li>
 
                 <li>
-                    <a class="dropdown-item" href="{{ url_for('scats.export_scats', format='xlsx') }}">
+                    <a class="dropdown-item"
+                        href="{{ url_for('scats.export_scats', search_term=search_term,format='xlsx') }}">
                         XLSX
                     </a>
                 </li>

@@ -373,37 +373,10 @@ def plot_all_scats_markerclusters():
         )
 
 
-@app.route(
-    "/scats_list_limit/<int:offset>/<limit>",
-    methods=(
-        "GET",
-        "POST",
-    ),
-)
-@fn.check_login
-def scats_list_limit(offset: int, limit: int | str):
-    """
-    Display list of scats
-    """
+def get_scats(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
+    """ """
 
-    # test limit value: must be ALL or int
-    if limit != "ALL":
-        try:
-            limit = int(limit)
-        except Exception:
-            return "An error has occured. Check the URL"
-
-    if limit == "ALL":
-        offset = 0
-
-    # check if wa code is specified to scroll the table
-    if "view_scat_id" in session:
-        view_scat_id = session["view_scat_id"]
-        del session["view_scat_id"]
-    else:
-        view_scat_id = None
-
-    with fn.conn_alchemy().connect() as con:
+    if search_term:
         sql_search = text(
             (
                 "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE ("
@@ -424,23 +397,7 @@ def scats_list_limit(offset: int, limit: int | str):
                 "AND (date BETWEEN :start_date AND :end_date) "
             )
         )
-
-        sql_all = text(
-            (
-                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date "
-                f"LIMIT {limit} "
-                f"OFFSET {offset}"
-            )
-        )
-
-        if request.method == "POST":
-            offset = 0
-            limit = "ALL"
-            if request.args.get("search") is None:
-                search_term = request.form["search"].strip()
-            else:
-                search_term = request.args.get("search")
-
+        with fn.conn_alchemy().connect() as con:
             results = (
                 con.execute(
                     sql_search,
@@ -453,18 +410,21 @@ def scats_list_limit(offset: int, limit: int | str):
                 .mappings()
                 .all()
             )
+        return results
 
-        elif request.method == "GET":
-            if request.args.get("search") is not None:
-                search_term: str = request.args.get("search").strip()
-            else:
-                search_term: str = ""
-
+    else:
+        sql_all = text(
+            (
+                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date "
+                f"LIMIT {limit} "
+                f"OFFSET {offset}"
+            )
+        )
+        with fn.conn_alchemy().connect() as con:
             results = (
                 con.execute(
-                    sql_all if not search_term else sql_search,
+                    sql_all,
                     {
-                        "search": f"%{search_term}%",
                         "start_date": session["start_date"],
                         "end_date": session["end_date"],
                     },
@@ -472,6 +432,123 @@ def scats_list_limit(offset: int, limit: int | str):
                 .mappings()
                 .all()
             )
+        return results
+
+
+@app.route(
+    "/scats_list_limit/<int:offset>/<limit>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@app.route(
+    "/scats_list_limit/<int:offset>/<limit>/<mode>",
+    methods=(
+        "GET",
+        "POST",
+    ),
+)
+@fn.check_login
+def scats_list_limit(offset: int, limit: int | str, mode: str = ""):
+    """
+    Display list of scats
+    """
+
+    # test limit value: must be ALL or int
+    if limit != "ALL":
+        try:
+            limit = int(limit)
+        except Exception:
+            return "An error has occured. Check the URL"
+
+    if limit == "ALL":
+        offset = 0
+
+    if mode.startswith("export_"):
+        _, file_format = mode.split("_")
+        return export_scats(format=file_format)
+
+    # check if wa code is specified to scroll the table
+    if "view_scat_id" in session:
+        view_scat_id = session["view_scat_id"]
+        del session["view_scat_id"]
+    else:
+        view_scat_id = None
+
+    with fn.conn_alchemy().connect() as con:
+        # sql_search = text(
+        #    (
+        #        "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE ("
+        #        "scat_id ILIKE :search "
+        #        "OR date::text ILIKE :search "
+        #        "OR sampling_type ILIKE :search "
+        #        "OR sample_type ILIKE :search "
+        #        "OR wa_code ILIKE :search "
+        #        "OR genotype_id2 ILIKE :search "
+        #        "OR location ILIKE :search "
+        #        "OR municipality ILIKE :search "
+        #        "OR province ILIKE :search "
+        #        "OR region ILIKE :search "
+        #        "OR observer ILIKE :search "
+        #        "OR institution ILIKE :search "
+        #        "OR notes ILIKE :search "
+        #        ") "
+        #        "AND (date BETWEEN :start_date AND :end_date) "
+        #    )
+        # )
+
+        if request.method == "POST":
+            offset = 0
+            limit = "ALL"
+            if request.args.get("search") is None:
+                search_term = request.form["search"].strip()
+            else:
+                search_term = request.args.get("search")
+
+            results = get_scats(search_term)
+
+            # results = (
+            #    con.execute(
+            #        sql_search,
+            #        {
+            #            "search": f"%{search_term}%",
+            #            "start_date": session["start_date"],
+            #            "end_date": session["end_date"],
+            #        },
+            #    )
+            #    .mappings()
+            #    .all()
+            # )
+
+        elif request.method == "GET":
+            if request.args.get("search") is not None:
+                search_term: str = request.args.get("search").strip()
+            else:
+                search_term: str = ""
+
+            results = get_scats(search_term, offset, limit)
+
+            # sql_all = text(
+            #    (
+            #        "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date "
+            #        f"LIMIT {limit} "
+            #        f"OFFSET {offset}"
+            #    )
+            # )
+            #
+            # results = (
+            #    con.execute(
+            #        sql_all if not search_term else sql_search,
+            #        {
+            #            "search": f"%{search_term}%",
+            #            "start_date": session["start_date"],
+            #            "end_date": session["end_date"],
+            #        },
+            #    )
+            #    .mappings()
+            #    .all()
+            # )
 
     session["url_scats_list"] = (
         f"/scats_list_limit/{offset}/{limit}?search={search_term}"
@@ -498,8 +575,9 @@ def scats_list_limit(offset: int, limit: int | str):
 
 
 @app.route("/export_scats/<format>")
+@app.route("/export_scats/<format>/<search_term>")
 @fn.check_login
-def export_scats(format: str = "tsv"):
+def export_scats(format: str = "tsv", search_term: str = ""):
     """
     export all scats in tabular format
     """
@@ -508,14 +586,15 @@ def export_scats(format: str = "tsv"):
 
     with fn.conn_alchemy().connect() as con:
         file_content = scats_export.export_scats_pandas(
-            con.execute(
-                text(
-                    "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
-                ),
-                {"start_date": session["start_date"], "end_date": session["end_date"]},
-            )
-            .mappings()
-            .all(),
+            get_scats(search_term),
+            # con.execute(
+            #    text(
+            #        "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
+            #    ),
+            #    {"start_date": session["start_date"], "end_date": session["end_date"]},
+            # )
+            # .mappings()
+            # .all(),
             file_format=format,
         )
 
