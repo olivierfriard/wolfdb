@@ -1008,7 +1008,7 @@ def load_scats_table():
 
     if request.method == "GET":
         return render_template(
-            "load_scats_xlsx.html", header_title="Load scats from XLSX/ODS file"
+            "load_scats_table.html", header_title="Load scats from XLSX/ODS file"
         )
 
     if request.method == "POST":
@@ -1059,7 +1059,7 @@ def load_scats_table():
                 ]
 
             return render_template(
-                "confirm_load_scats_xlsx.html",
+                "confirm_load_scats_table.html",
                 n_scats=len(all_data),
                 n_scats_to_update=scats_to_update,
                 all_data=all_data,
@@ -1067,9 +1067,9 @@ def load_scats_table():
             )
 
 
-@app.route("/confirm_load_xlsx/<filename>/<mode>")
+@app.route("/confirm_load_table/<filename>/<mode>")
 @fn.check_login
-def confirm_load_xlsx(filename, mode):
+def confirm_load_table(filename, mode):
     """
     Confirm upload of scats from spreadsheet file
     """
