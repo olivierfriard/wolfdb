@@ -5,23 +5,24 @@ WolfDB web service
 flask blueprint for tracks management
 """
 
-import flask
-from flask import render_template, redirect, request, flash, make_response, session
-from markupsafe import Markup
-from config import config
-import sys
-import os
-import json
 import datetime as dt
-from . import tracks_import
-from . import tracks_export
-from .track_form import Track
-import functions as fn
-import uuid
+import json
+import os
 import pathlib as pl
+import sys
 import time
+import uuid
+
+import flask
+from flask import flash, make_response, redirect, render_template, request, session
+from markupsafe import Markup
 from sqlalchemy import text
 
+import functions as fn
+from config import config
+
+from . import tracks_export, tracks_import
+from .track_form import Track
 
 app = flask.Blueprint(
     "tracks", __name__, template_folder="templates", static_url_path="/static"
@@ -75,7 +76,7 @@ def view_track(snowtrack_id):
                     text(
                         (
                             "SELECT *, "
-                            "CASE WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw_mat  "
+                            "CASE WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw_all  "
                             " WHERE "
                             "   lower(mtdna) LIKE '%%wolf%%' "
                             "   AND wa_code IN (SELECT wa_code FROM scats WHERE snowtrack_id = t.snowtrack_id)  "
@@ -217,7 +218,7 @@ def tracks_list():
                     (
                         "SELECT *, "
                         "CASE "
-                        "WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw_mat "
+                        "WHEN (SELECT LOWER(mtdna) FROM wa_scat_dw_all "
                         " WHERE "
                         "   LOWER(mtdna) LIKE '%%wolf%%' "
                         "   AND wa_code IN (SELECT wa_code FROM scats WHERE snowtrack_id = t.snowtrack_id)  "

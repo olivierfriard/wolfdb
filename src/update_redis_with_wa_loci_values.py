@@ -5,14 +5,15 @@ This script is required by wolfdb.py
 
 """
 
-import sys
-from sqlalchemy import text
-import functions as fn
 import json
-import redis
+import sys
 import time
 from datetime import datetime
 
+import redis
+from sqlalchemy import text
+
+import functions as fn
 from config import config
 
 params = config()
@@ -36,7 +37,7 @@ def update_redis_wa_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        sql = text("SELECT wa_code FROM wa_scat_dw_mat ORDER BY wa_code")
+        sql = text("SELECT wa_code FROM wa_scat_dw_all ORDER BY wa_code")
 
         for row in con.execute(sql).mappings().all():
             # old = fn.get_wa_loci_values_old(row["wa_code"], loci_list)

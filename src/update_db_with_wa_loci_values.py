@@ -6,14 +6,15 @@ This script is required by wolfdb.py
 """
 
 import sys
-from sqlalchemy import text, bindparam
-from sqlalchemy.dialects.postgresql import JSONB
-import functions as fn
 
 # import json
 import time
 from datetime import datetime
 
+from sqlalchemy import bindparam, text
+from sqlalchemy.dialects.postgresql import JSONB
+
+import functions as fn
 from config import config
 
 params = config()
@@ -35,7 +36,7 @@ def update_db_wa_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        sql = text("SELECT DISTINCT wa_code FROM wa_scat_dw_mat ")
+        sql = text("SELECT DISTINCT wa_code FROM wa_scat_dw_all ")
 
         wa_list = [row["wa_code"] for row in con.execute(sql).mappings().all()]
 

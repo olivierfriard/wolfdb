@@ -283,5 +283,3 @@ def import_definitive_genotypes(filename):
                     fn.get_genotype_loci_values(values["genotype_id"], loci_list)
                 ),
             )
-
-        # con.execute(text("REFRESH MATERIALIZED VIEW genotypes_list_mat"))

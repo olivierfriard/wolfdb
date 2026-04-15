@@ -108,19 +108,49 @@ def view_scat(scat_id):
         results = (
             con.execute(
                 text(
-                    "SELECT *, "
-                    "(SELECT genotype_id FROM wa_scat_dw_mat WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id, "
-                    "(SELECT path_id FROM paths WHERE path_id = scats.path_id) AS path_id_verif, "
-                    "(SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = scats.snowtrack_id) AS snowtrack_id_verif, "
-                    "CASE "
-                    "WHEN (SELECT lower(mtdna) FROM wa_scat_dw_mat WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
-                    "ELSE scats.scalp_category "
-                    "END, "
-                    "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
-                    "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
-                    "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    # "SELECT *, "
+                    # "(SELECT genotype_id FROM wa_scat_dw_all WHERE wa_code=scats.wa_code LIMIT 1) AS genotype_id, "
+                    # "(SELECT path_id FROM paths WHERE path_id = scats.path_id) AS path_id_verif, "
+                    # "(SELECT snowtrack_id FROM snow_tracks WHERE snowtrack_id = scats.snowtrack_id) AS snowtrack_id_verif, "
+                    # "CASE "
+                    # "WHEN (SELECT lower(mtdna) FROM wa_scat_dw_mat WHERE wa_code=scats.wa_code LIMIT 1) LIKE '%wolf%' THEN 'C1' "
+                    # "ELSE scats.scalp_category "
+                    # "END, "
+                    # "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat, "
+                    # "ROUND(st_x(st_transform(geometry_utm, 4326))::numeric, 6) as longitude, "
+                    # "ROUND(st_y(st_transform(geometry_utm, 4326))::numeric, 6) as latitude "
+                    # "FROM scats "
+                    # "WHERE scat_id = :scat_id"
+                    "SELECT "
+                    "   scats.*, "
+                    "   g.genotype_id, "
+                    "   p.path_id AS path_id_verif, "
+                    "   st.snowtrack_id AS snowtrack_id_verif, "
+                    "   CASE "
+                    "       WHEN lower(m.mtdna) LIKE '%wolf%' THEN 'C1' "
+                    "       ELSE scats.scalp_category "
+                    "   END AS scalp_category_final, "
+                    "   ST_AsGeoJSON(ST_Transform(scats.geometry_utm, 4326)) AS scat_lonlat, "
+                    "   ROUND(ST_X(ST_Transform(scats.geometry_utm, 4326))::numeric, 6) AS longitude, "
+                    "   ROUND(ST_Y(ST_Transform(scats.geometry_utm, 4326))::numeric, 6) AS latitude "
                     "FROM scats "
-                    "WHERE scat_id = :scat_id"
+                    "LEFT JOIN LATERAL ( "
+                    "    SELECT w.genotype_id "
+                    "    FROM wa_scat_dw_all w "
+                    "    WHERE w.wa_code = scats.wa_code "
+                    "    LIMIT 1 "
+                    ") g ON true "
+                    "LEFT JOIN paths p "
+                    "    ON p.path_id = scats.path_id "
+                    "LEFT JOIN snow_tracks st "
+                    "    ON st.snowtrack_id = scats.snowtrack_id "
+                    "LEFT JOIN LATERAL ( "
+                    "    SELECT wdm.mtdna "
+                    "    FROM wa_scat_dw_all wdm "
+                    "    WHERE wdm.wa_code = scats.wa_code "
+                    "    LIMIT 1 "
+                    ") m ON true "
+                    "WHERE scats.scat_id = :scat_id; "
                 ),
                 {"scat_id": scat_id},
             )
@@ -849,7 +879,7 @@ def edit_scat(scat_id):
                 if len(
                     con.execute(
                         text(
-                            "SELECT sample_id FROM wa_scat_dw_mat WHERE sample_id !=:scat_id AND wa_code = :wa_code"
+                            "SELECT sample_id FROM wa_scat_dw_all WHERE sample_id !=:scat_id AND wa_code = :wa_code"
                         ),
                         {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
                     )
