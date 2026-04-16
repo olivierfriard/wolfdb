@@ -339,73 +339,77 @@ def genotypes_list(offset: int, limit: int | str, type: str, mode="web"):
     else:
         view_genotype_id = None
 
-    with fn.conn_alchemy().connect() as con:
-        sql_all: str = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_all {filter} LIMIT {limit} OFFSET {offset}"
+    # access search term(s)
+    search_term: str = ""
+    if request.method == "POST":
+        offset = 0
+        limit = "ALL"
 
-        if request.method == "POST":
-            offset = 0
-            limit = "ALL"
+        if request.args.get("search") is None:
+            search_term = request.form["search"].strip()
+        else:
+            search_term = request.args.get("search").strip()
 
-            if request.args.get("search") is None:
-                search_term = request.form["search"].strip()
-            else:
-                search_term = request.args.get("search").strip()
+    if request.method == "GET":
+        if request.args.get("search") is not None:
+            search_term: str = request.args.get("search").strip()
+        else:
+            search_term: str = ""
 
-        if request.method == "GET":
-            if request.args.get("search") is not None:
-                search_term: str = request.args.get("search").strip()
-            else:
-                search_term: str = ""
+    sql: str = (
+        f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_all {filter} "
+    )
 
-        sql_search: str = f"SELECT *, count(*) OVER() AS n_genotypes FROM genotypes_list_all {filter} "
-
-        if ":" in search_term:
-            sql_search = sql_all
-            values: dict = {}
-
-            for idx, field_term in enumerate(search_term.split(";")):
-                field, value = [x.strip().lower() for x in field_term.split(":")]
-                if field not in (
-                    "genotype",
-                    "notes",
-                    "tmp id",
-                    "date",
-                    "pack",
-                    "sex",
-                    "status",
-                    "working notes",
-                ):
-                    flash(
-                        fn.alert_danger(
-                            "<b>Search term not found</b>. Must be 'genotype id', 'notes', 'tmp id', 'date', 'pack', 'sex', 'status' or 'working notes'"
-                        )
+    values: dict = {}
+    if ":" in search_term:
+        research_fields: dict = {
+            "genotype": "genotype_id",
+            "notes": "notes",
+            "tmp id": "tmp id",
+            "date": "date",
+            "pack": "pack",
+            "sex": "sex",
+            "status": "status",
+            "working notes": "working notes",
+        }
+        for idx, field_term in enumerate(search_term.split(";")):
+            field, value = [x.strip().lower() for x in field_term.split(":")]
+            if field not in research_fields:
+                flash(
+                    fn.alert_danger(
+                        f"<b>Search term not found</b>. Must be {', '.join(research_fields.keys())}"
                     )
-                    return redirect(session["url_wa_list"])
-                if field == "genotype":
-                    field = "genotype id"
-                field = field.replace(" ", "_")
-                sql_search += f" AND ({field} ILIKE :search{idx}) "
-                values[f"search{idx}"] = f"%{value}%"
+                )
+                return redirect(session["url_wa_list"])
+            # convert field
+            field = research_fields[field]
 
-        else:  # search in all fields
-            values = {"search": f"%{search_term}%"}
+            sql += f" AND ({field} ILIKE :search{idx}) "
+            values[f"search{idx}"] = f"%{value}%"
 
-            sql_search += (
-                " AND ("
-                "genotype_id ILIKE :search "
-                "OR notes ILIKE :search "
-                "OR tmp_id ILIKE :search "
-                "OR date::text ILIKE :search "
-                "OR pack ILIKE :search "
-                "OR sex ILIKE :search "
-                "OR status ILIKE :search "
-                "OR working_notes ILIKE :search "
-                ") "
-            )
+    elif search_term:  # search in all fields
+        values = {"search": f"%{search_term}%"}
 
+        sql += (
+            " AND ("
+            "genotype_id ILIKE :search "
+            "OR notes ILIKE :search "
+            "OR tmp_id ILIKE :search "
+            "OR date::text ILIKE :search "
+            "OR pack ILIKE :search "
+            "OR sex ILIKE :search "
+            "OR status ILIKE :search "
+            "OR working_notes ILIKE :search "
+            ") "
+        )
+
+    # add limits
+    sql += f" LIMIT {limit} OFFSET {offset} "
+
+    with fn.conn_alchemy().connect() as con:
         results = (
             con.execute(
-                text(sql_all if not search_term else sql_search),
+                text(sql),
                 dict(
                     {
                         "start_date": session["start_date"],
@@ -1313,10 +1317,11 @@ def get_wa(
                 if field not in research_fields:
                     return out, loci_values, locus_notes, 0
 
+                # convert field
                 field = research_fields[field]
 
-                values[f"search{idx}"] = f"%{value}%"
                 sql_base += f" AND ({field} ILIKE :search{idx}) "
+                values[f"search{idx}"] = f"%{value}%"
 
         else:
             sql_base += (

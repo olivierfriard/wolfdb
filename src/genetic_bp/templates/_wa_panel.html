@@ -126,6 +126,22 @@
                     </button>
                 </div>
 
+                <div>
+                    <button class="btn btn-link p-0 text-decoration-none" style="font-size: 0.75rem;" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#waSearchHelp" aria-expanded="false"
+                        aria-controls="waSearchHelp">
+                        Search guide
+                    </button>
+                    <div class="collapse mt-2" id="waSearchHelp">
+                        <div class="card card-body py-2 px-3 small">
+                            <div><strong>Free text:</strong> search across the main searchable fields. Example: <code>TN</code></div>
+                            <div><strong>Field search:</strong> use <code>field:value</code>. Example: <code>municipality:Trento</code></div>
+                            <div><strong>Multiple filters:</strong> separate filters with <code>;</code>. Example: <code>municipality:Trento; pack:Lessinia</code></div>
+                            <div><strong>Available fields:</strong> wa, date, sample id, municipality, province, genotype id, sex, hybrid, tmp id, pack, box</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="vr mx-1"></div>
 
                 <div class="dropdown">

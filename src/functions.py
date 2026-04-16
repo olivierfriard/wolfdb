@@ -8,9 +8,9 @@ functions module
 
 import json
 import os
+import urllib.error
 import urllib.request
 from functools import wraps
-from typing import Union
 
 import matplotlib.pyplot as plt
 import psycopg2
@@ -648,7 +648,7 @@ def prov_name2prov_code(province_name) -> str:
     return result["province_code"] if result is not None else ""
 
 
-def reverse_geocoding(lon_lat: list) -> dict:
+def reverse_geocoding(lon_lat: list) -> dict | None:
     """
     get place from GPS coordinates with nominatum (OSM)
     """
@@ -920,7 +920,20 @@ def reverse_geocoding(lon_lat: list) -> dict:
         ],
     }
 
-    response = urllib.request.urlopen(URL).read().strip().decode("utf-8")
+    request = urllib.request.Request(
+        URL,
+        headers={
+            "User-Agent": "WolfDB/1.0 (+https://wolfdb.local)",
+            "Accept": "application/json",
+        },
+    )
+
+    try:
+        response = urllib.request.urlopen(request, timeout=10).read().strip().decode(
+            "utf-8"
+        )
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+        return None
 
     d = json.loads(response)
 

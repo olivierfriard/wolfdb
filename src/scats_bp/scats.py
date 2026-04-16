@@ -45,6 +45,11 @@ app.debug = params["debug"]
 LOCK_FILE_NAME_PATH = "check_location.lock"
 
 
+@app.app_template_filter("blank_if_none")
+def blank_if_none(value):
+    return "" if value is None else value
+
+
 def error_info(exc_info: tuple) -> tuple:
     """
     return details about error
@@ -374,6 +379,123 @@ def plot_all_scats_markerclusters():
 
 
 def get_scats(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
+    """
+    Search scats.
+
+    Supported syntax:
+    - free text: "trento"
+    - field search: "scat id:S123"
+    - multiple field search: "municipality:trento; observer:mario"
+    """
+
+    sql = (
+        "SELECT *, count(*) OVER() AS n_scats "
+        "FROM scats_list_all "
+        "WHERE date BETWEEN :start_date AND :end_date "
+    )
+
+    values = {
+        "start_date": session["start_date"],
+        "end_date": session["end_date"],
+    }
+
+    if search_term:
+        if ":" in search_term:
+            research_fields = {
+                "scat id": "scat_id",
+                "date": "date::text",
+                "wa code": "wa_code",
+                "sampling season": "sampling_season",
+                "sampling type": "sampling_type",
+                "path id": "path_id",
+                "snowtrack id": "snowtrack_id",
+                "location": "location",
+                "municipality": "municipality",
+                "province": "province",
+                "region": "region",
+                "deposition": "deposition",
+                "matrix": "matrix",
+                "collected scat": "collected_scat",
+                "scalp category": "scalp_category",
+                "genetic sample": "genetic_sample",
+                "observer": "observer",
+                "institution": "institution",
+                "notes": "notes",
+                "region auto": "region_auto",
+                "province auto": "province_auto",
+                "municipality auto": "municipality_auto",
+                "location auto": "location_auto",
+                "sample type": "sample_type",
+                "box number": "box_number",
+                "ispra id": "ispra_id",
+                "genotype": "genotype_id2",
+            }
+
+            for idx, field_term in enumerate(
+                x.strip() for x in search_term.split(";") if x.strip()
+            ):
+                if ":" not in field_term:
+                    raise ValueError(
+                        "Invalid search syntax. Use 'field:value' or free text."
+                    )
+
+                field, value = [x.strip() for x in field_term.split(":", 1)]
+                field_key = field.lower()
+
+                if field_key not in research_fields:
+                    raise ValueError(
+                        "Search field not found. Must be one of: "
+                        + ", ".join(research_fields.keys())
+                    )
+
+                sql += f" AND ({research_fields[field_key]} ILIKE :search{idx}) "
+                values[f"search{idx}"] = f"%{value}%"
+
+        else:
+            sql += (
+                "AND ("
+                "scat_id ILIKE :search "
+                "OR date::text ILIKE :search "
+                "OR wa_code ILIKE :search "
+                "OR sampling_season ILIKE :search "
+                "OR sampling_type ILIKE :search "
+                "OR path_id ILIKE :search "
+                "OR snowtrack_id ILIKE :search "
+                "OR location ILIKE :search "
+                "OR municipality ILIKE :search "
+                "OR province ILIKE :search "
+                "OR region ILIKE :search "
+                "OR deposition ILIKE :search "
+                "OR matrix ILIKE :search "
+                "OR collected_scat ILIKE :search "
+                "OR scalp_category ILIKE :search "
+                "OR genetic_sample ILIKE :search "
+                "OR observer ILIKE :search "
+                "OR institution ILIKE :search "
+                "OR notes ILIKE :search "
+                "OR region_auto ILIKE :search "
+                "OR province_auto ILIKE :search "
+                "OR municipality_auto ILIKE :search "
+                "OR location_auto ILIKE :search "
+                "OR sample_type ILIKE :search "
+                "OR box_number ILIKE :search "
+                "OR ispra_id ILIKE :search "
+                "OR genotype_id2 ILIKE :search "
+                ") "
+            )
+            values["search"] = f"%{search_term}%"
+
+    if limit != "ALL":
+        sql += f" LIMIT {int(limit)} OFFSET {int(offset)}"
+
+    with fn.conn_alchemy().connect() as con:
+        results = con.execute(text(sql), values).mappings().all()
+
+    return results
+
+
+'''
+def get_scats_old(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
     """ """
 
     if search_term:
@@ -433,6 +555,7 @@ def get_scats(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
                 .all()
             )
         return results
+'''
 
 
 @app.route(
@@ -586,14 +709,6 @@ def export_scats(format: str = "tsv", search_term: str = ""):
 
     file_content = scats_export.export_scats_pandas(
         get_scats(search_term),
-        # con.execute(
-        #    text(
-        #        "SELECT * FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date"
-        #    ),
-        #    {"start_date": session["start_date"], "end_date": session["end_date"]},
-        # )
-        # .mappings()
-        # .all(),
         file_format=format,
     )
 

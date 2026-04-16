@@ -48,7 +48,7 @@
 <tr>
 <td>ISPRA ID</td>
 <td>
-{{ results["ispra_id"] if results["ispra_id"] is not none else '' }}
+{{ results["ispra_id"] | blank_if_none }}
 </td>
 </tr>
     
@@ -62,11 +62,11 @@
 </td>
 </tr>
 
-<tr><td>Date</td><td>{{ results["date"] }}</td></tr>
+<tr><td>Date</td><td>{{ results["date"] | blank_if_none }}</td></tr>
 
-<tr><td>Sampling season</td><td>{{ results["sampling_season"] }}</td></tr>
-<tr><td>Sampling type</td><td>{{ results["sampling_type"] if results["sampling_type"] is not none else ''}}</td></tr>
-<tr><td>Sample type</td><td>{{ results["sample_type"] if results["sample_type"] is not none else ''}}</td></tr>
+<tr><td>Sampling season</td><td>{{ results["sampling_season"] | blank_if_none }}</td></tr>
+<tr><td>Sampling type</td><td>{{ results["sampling_type"] | blank_if_none }}</td></tr>
+<tr><td>Sample type</td><td>{{ results["sample_type"] | blank_if_none }}</td></tr>
 
 <tr>
 <td>Transect ID</td>
@@ -81,7 +81,7 @@
 <td>{% if results['path_id'] and results['path_id_verif'] %}
 <a href="/view_path/{{ results['path_id'] }}">{{ results['path_id'] }}</a>
 {% else %}
-{{ results['path_id'] }} <span style="color:red">NOT FOUND</span>
+{{ results['path_id'] | blank_if_none }} <span style="color:red">NOT FOUND</span>
 {% endif %}
 
 </td>
@@ -95,20 +95,20 @@
 {% endif %}
 </td></tr>
 
-<tr><td>Location</td><td>{{ results["location"] if results["location"] is not none else ''}}</td></tr>
-<tr><td>Municipality</td><td>{{ results["municipality"] }}</td></tr>
-<tr><td>Province</td><td>{{ results["province"] }}</td></tr>
-<tr><td>Region</td><td>{{ results["region"] }}</td></tr>
-<tr><td>Deposition</td><td>{{ results["deposition"] }}</td></tr>
-<tr><td>Matrix</td><td>{{ results["matrix"] }}</td></tr>
-<tr><td>Collected scat</td><td>{{ results["collected_scat"] }}</td></tr>
-<tr><td>SCALP category</td><td>{{ results["scalp_category"] }}</td></tr>
+<tr><td>Location</td><td>{{ results["location"] | blank_if_none }}</td></tr>
+<tr><td>Municipality</td><td>{{ results["municipality"] | blank_if_none }}</td></tr>
+<tr><td>Province</td><td>{{ results["province"] | blank_if_none }}</td></tr>
+<tr><td>Region</td><td>{{ results["region"] | blank_if_none }}</td></tr>
+<tr><td>Deposition</td><td>{{ results["deposition"] | blank_if_none }}</td></tr>
+<tr><td>Matrix</td><td>{{ results["matrix"] | blank_if_none }}</td></tr>
+<tr><td>Collected scat</td><td>{{ results["collected_scat"] | blank_if_none }}</td></tr>
+<tr><td>SCALP category</td><td>{{ results["scalp_category"] | blank_if_none }}</td></tr>
 
-<tr><td>Coordinates (WGS 84 / UTM zone {{ results["coord_zone"] }})</td><td>Easting (X): {{ results["coord_east"] }}, Northing (Y): {{ results["coord_north"] }}</td></tr>
-<tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td><td>{{ results["longitude"] }}, {{ results["latitude"] }}</td></tr>
-<tr><td>Operator</td><td>{{ results["observer"] }}</td></tr>
-<tr><td>Institution</td><td>{{ results["institution"] if results["institution"] is not none else ''}}</td></tr>
-<tr><td>Notes</td><td>{{ results["notes"]  if results["notes"] is not none else ""}}</td></tr>
+<tr><td>Coordinates (WGS 84 / UTM zone {{ results["coord_zone"] | blank_if_none }})</td><td>Easting (X): {{ results["coord_east"] | blank_if_none }}, Northing (Y): {{ results["coord_north"] | blank_if_none }}</td></tr>
+<tr><td>Longitude, Latitude (WGS84 Decimal EPSG:4326)</td><td>{{ results["longitude"] | blank_if_none }}, {{ results["latitude"] | blank_if_none }}</td></tr>
+<tr><td>Operator</td><td>{{ results["observer"] | blank_if_none }}</td></tr>
+<tr><td>Institution</td><td>{{ results["institution"] | blank_if_none }}</td></tr>
+<tr><td>Notes</td><td>{{ results["notes"] | blank_if_none }}</td></tr>
 
 <tr><td>Genetic sample</td><td>{% if results["genetic_sample"] %}{{ results["genetic_sample"] }}{% endif %}</td></tr>
 
@@ -125,9 +125,6 @@
 {% include 'legend.html' %}
 
 {% endblock %}
-
-
-
 
 
 
