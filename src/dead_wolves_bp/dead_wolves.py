@@ -562,7 +562,6 @@ def edit_dead_wolf(id: int):
             dead_wolf = (
                 con.execute(
                     text(
-                        # "SELECT * FROM dead_wolves WHERE deleted IS NULL AND id = :dead_wolf_id"
                         "SELECT *,"
                         "(SELECT province_name FROM geo_info WHERE province_code = d.province) AS province_name, "
                         "(SELECT country FROM geo_info WHERE region = d.region LIMIT 1) AS country "
@@ -655,7 +654,7 @@ def edit_dead_wolf(id: int):
             action=f"/edit_dead_wolf/{id}",
             form=form,
             default_values=default_values,
-            municipality_auto=dead_wolf["municipality_auto"],
+            # municipality_auto=dead_wolf["municipality_auto"],
         )
 
     if request.method == "POST":
@@ -991,8 +990,12 @@ def dead_wolves_full_list():
     Show a detailed list of dead wolves with base and dynamic fields.
     """
     action: str = "search"
+    search_term: str = ""
+    selected_field: str = "all"
     if request.method == "POST":
         action = request.form.get("action", "search")
+        search_term = request.form.get("search", "").strip()
+        selected_field = request.form.get("selected_field", "all")
 
     base_columns: list[str] = [
         "id",
@@ -1101,15 +1104,49 @@ def dead_wolves_full_list():
                 row[field_name] = None
 
     all_columns: list[str] = base_columns + [field["name"] for field in dynamic_fields]
+    searchable_columns: list[str] = [
+        column
+        for column in all_columns
+        if column not in {"utm_east", "utm_north", "utm_zone"}
+    ]
 
     results = list(results_by_id.values())
+
+    if search_term:
+        search_lower = search_term.lower()
+
+        def matches(row: dict) -> bool:
+            if selected_field == "all":
+                fields_to_search = searchable_columns
+            else:
+                fields_to_search = (
+                    [selected_field] if selected_field in searchable_columns else []
+                )
+
+            for field in fields_to_search:
+                value = row.get(field)
+                if value is None:
+                    continue
+                if search_lower in str(value).lower():
+                    return True
+            return False
+
+        results = [row for row in results if matches(row)]
 
     if action == "search":
         return render_template(
             "dead_wolves_full_list.html",
-            header_title=f"Detailed list of {len(base_results)} dead wol{'f' if len(base_results) == 1 else 'ves'}",
+            header_title=f"Detailed list of {len(results)} dead wol{'f' if len(results) == 1 else 'ves'}",
             results=results,
             all_columns=all_columns,
+            options=[{"value": "all", "text": "All"}]
+            + [
+                {"value": column, "text": column.replace("_", " ")}
+                for column in searchable_columns
+                if column != "id"
+            ],
+            search_term=search_term,
+            selected_value=selected_field,
         )
 
     if action.startswith("export_"):

@@ -1,5 +1,18 @@
 {% extends "bootstrap_no-body.html" %}
 
+{% macro render_field(field, value="", help_text="", input_class="form-control form-control-sm") -%}
+<div class="mb-3">
+    <label class="form-label small fw-semibold">{{ field.label }}</label>
+    {{ field(class=input_class, value=value) }}
+    {% for message in field.errors %}
+    <div class="text-danger small">{{ message }}</div>
+    {% endfor %}
+    {% if help_text %}
+    <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+</div>
+{%- endmacro %}
+
 {% block content %}
 
 <script>
@@ -49,7 +62,6 @@ function check_geocoding() {
 <main class="flex-shrink-0">
 <div class="container">
 
-
 <h2>{{ title }}</h2>
 <hr>
 {% with messages = get_flashed_messages() %}
@@ -61,223 +73,181 @@ function check_geocoding() {
 {% endwith %}
 
 <form method="POST" action="{{ action }}">
-
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-<div class="col-2">{{ form.scat_id.label }}</div>
-<div class="col-3">
-{{ form.scat_id(size=30, class="form-control",  value=default_values["scat_id"]) }}
-{% for message in form.scat_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-<div class="col-1">{{ form.date.label }}</div>
-<div class="col-2">
-    {{ form.date(size=15, class="form-control",  value=default_values["date"]) }}
-    {% for message in form.date.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-</div></div>
-
-
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-        
-<div class="col-2">{{ form.wa_code.label }}</div>
-<div class="col-3">
-{{ form.wa_code(size=30, class="form-control",  value=default_values["wa_code"]) }}
-{% for message in form.wa_code.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-<div class="col-1">{{ form.ispra_id.label }}</div>
-<div class="col-3">
-    {{ form.ispra_id(size=30, class="form-control",  value=default_values["ispra_id"]) }}
-    {% for message in form.ispra_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-</div></div>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top">
-    <div class="col-2">{{ form.coord_east.label }}</div>
-    <div class="col-1">
-    {{ form.coord_east(class="form-control", value=default_values["coord_east"]) }}
-    {% for message in form.coord_east.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    <span class="form-text">in meters</span>
-</div>
-
-<div class="col-2">{{ form.coord_north.label }}</div>
-<div class="col-1">
-    {{ form.coord_north(class="form-control",  value=default_values["coord_north"]) }}
-    {% for message in form.coord_north.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    <span class="form-text">in meters</span>
-</div>
-
-<div class="col-1">{{ form.coord_zone.label }}</div>
-<div class="col-1">
-{{ form.coord_zone(class="form-control",  value=default_values["coord_zone"]) }}
-{% for message in form.coord_zone.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-<div class="col-1">{{ form.hemisphere.label }}</div>
-<div class="col-1">
-{{ form.hemisphere(class="form-control",  value=default_values["hemisphere"]) }}
-{% for message in form.hemisphere.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-
-</div>
-</div>
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top">
-        <div class="col-2"></div>
-<div class="col-10">
-<button type="button" class="btn btn-primary btn-sm" onclick="check_geocoding()">Add municipality and province from coordinates</button>
-</div>
-</div></div>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top">
-        <div class="col-2">{{ form.location.label }}</div>
-        <div class="col-3">
-        {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
-        {% for message in form.location.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-        </div>
-        <div class="col-1">{{ form.municipality.label }}</div>
-        <div class="col-2">
-            {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
-            {% for message in form.municipality.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-        </div>
-
-        <div class="col-1">{{ form.province.label }}</div>
-        <div class="col-1">
-            {{ form.province(size=16, class="form-control", value=default_values["province"]) }}
-            {% for message in form.province.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
+    <div class="card mb-3">
+        <div class="card-header">Identity</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.scat_id.label }}</label>
+                        {{ form.scat_id(size=30, class="form-control", value=default_values["scat_id"]) }}
+                        {% for message in form.scat_id.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.date.label }}</label>
+                        {{ form.date(size=15, class="form-control", value=default_values["date"]) }}
+                        {% for message in form.date.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.wa_code.label }}</label>
+                        {{ form.wa_code(size=30, class="form-control", value=default_values["wa_code"]) }}
+                        {% for message in form.wa_code.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.ispra_id.label }}</label>
+                        {{ form.ispra_id(size=30, class="form-control", value=default_values["ispra_id"]) }}
+                        {% for message in form.ispra_id.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Coordinates And Place</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    {{ render_field(form.coord_east, default_values["coord_east"], "In meters") }}
+                </div>
+                <div class="col-md-3">
+                    {{ render_field(form.coord_north, default_values["coord_north"], "In meters") }}
+                </div>
+                <div class="col-md-2">
+                    {{ render_field(form.coord_zone, default_values["coord_zone"]) }}
+                </div>
+                <div class="col-md-2">
+                    {{ render_field(form.hemisphere, default_values["hemisphere"]) }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary btn-sm w-100" onclick="check_geocoding()">Fill From Coordinates</button>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.location.label }}</label>
+                        {{ form.location(size=16, class="form-control", value=default_values["location"]) }}
+                        {% for message in form.location.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.municipality.label }}</label>
+                        {{ form.municipality(size=16, class="form-control", value=default_values["municipality"]) }}
+                        {% for message in form.municipality.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.province.label }}</label>
+                        {{ form.province(size=16, class="form-control", value=default_values["province"]) }}
+                        {% for message in form.province.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-header">Sample Details</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ render_field(form.sample_type, default_values["sample_type"]) }}
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.sampling_type.label }}</label>
+                        {{ form.sampling_type(onchange="sampling_type_changed(this)", class="form-control", value=default_values["sampling_type"]) }}
+                        {% for message in form.sampling_type.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
 
+            <div id="systematic" style="display: {% if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ render_field(form.path_id, default_values["path_id"]) }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ render_field(form.snowtrack_id, default_values["snowtrack_id"]) }}
+                    </div>
+                </div>
+            </div>
 
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-    
-<div class="col-2">{{ form.sample_type.label }}
-</div><div class="col-8">
-{{ form.sample_type(class="form-control",  value=default_values["sample_type"]) }}
-{% for message in form.sample_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ render_field(form.deposition, default_values["deposition"]) }}
+                </div>
+                <div class="col-md-6">
+                    {{ render_field(form.matrix, default_values["matrix"]) }}
+                </div>
+            </div>
 
-</div>
-</div>
-    
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ render_field(form.collected_scat, default_values["collected_scat"]) }}
+                </div>
+                <div class="col-md-4">
+                    {{ render_field(form.scalp_category, default_values["scalp_category"]) }}
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-    
-<div class="col-2">{{ form.sampling_type.label }}
-</div><div class="col-8">
-{{ form.sampling_type(onchange="sampling_type_changed(this)", class="form-control",  value=default_values["sampling_type"]) }}
-{% for message in form.sampling_type.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
+    <div class="card mb-3">
+        <div class="card-header">People And Notes</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ render_field(form.observer, default_values["observer"]) }}
+                </div>
+                <div class="col-md-8">
+                    {{ render_field(form.institution, default_values["institution"]) }}
+                </div>
+            </div>
 
-</div></div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ form.notes.label }}</label>
+                        {{ form.notes(size=20, class="form-control", value=default_values["notes"]) }}
+                        {% for message in form.notes.errors %}
+                        <div class="text-danger small">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-
-<span id="systematic" style="display: {% if default_values["sampling_type"] == "Systematic" %}display{% else %}none{% endif %};">
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.path_id.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.path_id(class="form-control", value=default_values["path_id"]) }}
-    {% for message in form.path_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.snowtrack_id.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.snowtrack_id(class="form-control", value=default_values["snowtrack_id"]) }}
-    {% for message in form.snowtrack_id.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-</span>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.deposition.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.deposition(class="form-control", value=default_values["deposition"]) }}
-    {% for message in form.deposition.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.matrix.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.matrix(class="form-control", value=default_values["matrix"]) }}
-    {% for message in form.matrix.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.collected_scat.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.collected_scat(class="form-control",  value=default_values["collected_scat"]) }}
-    {% for message in form.collected_scat.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-<div class="mb-3">
-    <div class="row g-3 align-items-top"><div class="col-2">{{ form.scalp_category.label }}
-    </div><!-- col --><div class="col-8">
-    {{ form.scalp_category(class="form-control",  value=default_values["scalp_category"]) }}
-    {% for message in form.scalp_category.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-    </div></div>
-</div>
-
-
-
-
-
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-        
-<div class="col-2">{{ form.observer.label }}</div>
-<div class="col-3">
-{{ form.observer(class="form-control",  value=default_values["observer"]) }}
-{% for message in form.observer.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-<div class="col-1">{{ form.institution.label }}</div>
-<div class="col-4">
-{{ form.institution(class="form-control",  value=default_values["institution"]) }}
-{% for message in form.institution.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div>
-
-</div></div>
-
-
-
-<div class="mb-3">
-<div class="row g-3 align-items-top">
-<div class="col-2">{{ form.notes.label }}</div>
-<div class="col-8">{{ form.notes(size=20, class="form-control",  value=default_values["notes"]) }}
-{% for message in form.notes.errors %}<div style="color:#ff0000;">{{ message }}</div>{% endfor %}
-</div></div></div>
-
-
-
-
-
-<center><button type="submit" class="btn btn-lg btn-danger" >Submit</button></center>
+    <div class="text-center pb-4">
+        <button type="submit" class="btn btn-danger btn-lg">Submit</button>
+    </div>
 </form>
 
 </div>
@@ -285,4 +255,3 @@ function check_geocoding() {
 </body>
 
 {% endblock %}
-

@@ -19,119 +19,86 @@
 
 {# search form #}
 
-<span style="display:solid; padding-bottom: 2em;">
+<form method="POST" id="search_form" action="/dead_wolves_list">
+    <div class="d-flex flex-wrap align-items-center gap-3 p-3 mb-3 bg-light border rounded">
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-muted mb-0">Field</small>
+            <select class="form-select form-select-sm" id="selected_field" name="selected_field" style="width: auto;">
+                {% for option in options %}
+                <option value="{{ option.value }}" {% if selected_value==option.value %}selected{% endif %}>
+                    {{ option.text }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
 
+        <div class="input-group input-group-sm" style="max-width: 360px;">
+            <input type="search" class="form-control" name="search" id="search" placeholder="Search..."
+                value="{{ search_term }}">
+            <button type="button" id="btn" class="btn btn-secondary" onclick="submitForm('search')">Search</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="clearSearch()">Clear</button>
+        </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">
-                    Search
-                </div>
-                <div class="card-body">
-
-
-                    <form method="POST" id="search_form" action="/dead_wolves_list">
-                        <div class="row">
-                            <!-- search fields -->
-                            <div class="col-md-4">
-                                <label for="selectOption" class="form-label">Field</label>
-                                <select class="form-select" id="selected_field" name="selected_field">
-
-                                    {% for option in options %}
-                                    <option value="{{ option.value }}" {% if selected_value==option.value %}selected{%
-                                        endif %}>
-                                        {{ option.text }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <!-- value -->
-                            <div class="col-md-4">
-                                <label for="search" class="form-label">Value</label>
-                                <input type="text" class="form-control" name="search" id="search"
-                                    placeholder="Enter value" value="{{ search_term }}">
-                            </div>
-
-                            <!-- search button -->
-                            <div class="col-md-2 d-flex align-items-end">
-                                <label for="btn" class="form-label"></label>
-                                <button type="button" id='btn' class="btn btn-secondary btn-sm"
-                                    onclick="submitForm('search')">Search</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm"
-                                    onclick="clearSearch()">Clear</button>
-                            </div>
-                            {% if results %}
-                            <!--
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="button" class="btn btn-secondary btn-sm"
-                                    onclick="submitForm('export_xlsx')">Export XLSX</button>
-                                <button type="button" class="btn btn-secondary btn-sm"
-                                    onclick="submitForm('export_ods')">Export ODS</button>
-                            </div>
-                            -->
-
-                            <div class="col-md-2 d-flex align-items-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                        Export
-                                    </button>
-
-                                    <ul class="dropdown-menu">
-                                        <li>
-                                            <button class="dropdown-item" type="button"
-                                                onclick="submitForm('export_tsv')">
-                                                TSV
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item" type="button"
-                                                onclick="submitForm('export_ods')">
-                                                ODS
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item" type="button"
-                                                onclick="submitForm('export_xlsx')">
-                                                XLSX
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-
-
-
-                            {%endif%}
-                            <input type="hidden" name="action" id="action_field" value="search">
-
-                            <script>
-                                function clearSearch() {
-                                    document.getElementById('search').value = '';
-                                    document.getElementById('selected_field').value = 'all';
-                                    document.getElementById('action_field').value = 'search';
-                                    document.getElementById('search_form').submit();
-                                }
-
-                                function submitForm(action) {
-                                    document.getElementById('action_field').value = action;
-                                    document.getElementById('search_form').submit();
-                                }
-
-                            </script>
-
-
-                        </div><!-- row -->
-                    </form>
-
+        <div>
+            <button class="btn btn-link p-0 text-decoration-none" style="font-size: 0.75rem;" type="button"
+                data-bs-toggle="collapse" data-bs-target="#searchHelp" aria-expanded="false"
+                aria-controls="searchHelp">
+                Search guide
+            </button>
+            <div class="collapse mt-2" id="searchHelp">
+                <div class="card card-body py-2 px-3 small">
+                    <div><strong>Search by field:</strong> choose a field and search a value. Example:
+                        <code>WA123</code></div>
+                    <div><strong>Available fields:</strong> all, tissue id, genotype id, wa code, discovery date,
+                        province, cause of mortality</div>
                 </div>
             </div>
         </div>
+
+        {% if results %}
+        <div class="dropdown ms-md-auto">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                Export
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <button class="dropdown-item" type="button" onclick="submitForm('export_tsv')">
+                        TSV
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" onclick="submitForm('export_ods')">
+                        ODS
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" onclick="submitForm('export_xlsx')">
+                        XLSX
+                    </button>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
     </div>
 
-</span>
+    <input type="hidden" name="action" id="action_field" value="search">
+</form>
+
+<script>
+    function clearSearch() {
+        document.getElementById('search').value = '';
+        document.getElementById('selected_field').value = 'all';
+        document.getElementById('action_field').value = 'search';
+        document.getElementById('search_form').submit();
+    }
+
+    function submitForm(action) {
+        document.getElementById('action_field').value = action;
+        document.getElementById('search_form').submit();
+    }
+</script>
 
 {% if results %}
 <h3>{{ header_title }}</h3>

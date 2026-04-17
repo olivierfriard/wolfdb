@@ -2,48 +2,86 @@
 
 {% block content %}
 
-{% if results %}
 <h3>{{ header_title }}</h3>
 
 <form method="POST" id="full_list_form" action="/dead_wolves_full_list" class="mb-3">
-    <!--    <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_xlsx')">Export XLSX</button>
-    <button type="button" class="btn btn-secondary btn-sm" onclick="submitForm('export_ods')">Export ODS</button>
--->
-    <div class="dropdown">
-        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            Export
-        </button>
+    <div class="d-flex flex-wrap align-items-center gap-3 p-3 mb-3 bg-light border rounded">
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-muted mb-0">Field</small>
+            <select class="form-select form-select-sm" id="selected_field" name="selected_field" style="width: auto;">
+                {% for option in options %}
+                <option value="{{ option.value }}" {% if selected_value==option.value %}selected{% endif %}>
+                    {{ option.text }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
 
-        <ul class="dropdown-menu">
-            <li>
-                <button class="dropdown-item" type="button" onclick="submitForm('export_tsv')">
-                    TSV
-                </button>
-            </li>
-            <li>
-                <button class="dropdown-item" type="button" onclick="submitForm('export_ods')">
-                    ODS
-                </button>
-            </li>
-            <li>
-                <button class="dropdown-item" type="button" onclick="submitForm('export_xlsx')">
-                    XLSX
-                </button>
-            </li>
-        </ul>
+        <div class="input-group input-group-sm" style="max-width: 360px;">
+            <input type="search" class="form-control" name="search" id="search" placeholder="Search..."
+                value="{{ search_term }}">
+            <button type="button" class="btn btn-secondary" onclick="submitForm('search')">Search</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="clearSearch()">Clear</button>
+        </div>
+
+        <div>
+            <button class="btn btn-link p-0 text-decoration-none" style="font-size: 0.75rem;" type="button"
+                data-bs-toggle="collapse" data-bs-target="#searchHelp" aria-expanded="false"
+                aria-controls="searchHelp">
+                Search guide
+            </button>
+            <div class="collapse mt-2" id="searchHelp">
+                <div class="card card-body py-2 px-3 small">
+                    <div><strong>Search by field:</strong> choose a field and search a value.</div>
+                    <div><strong>All:</strong> searches across all columns, including dynamic fields.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dropdown ms-md-auto">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                Export
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <button class="dropdown-item" type="button" onclick="submitForm('export_tsv')">
+                        TSV
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" onclick="submitForm('export_ods')">
+                        ODS
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" onclick="submitForm('export_xlsx')">
+                        XLSX
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <input type="hidden" name="action" id="action_field" value="search">
 </form>
 
 <script>
+    function clearSearch() {
+        document.getElementById('search').value = '';
+        document.getElementById('selected_field').value = 'all';
+        document.getElementById('action_field').value = 'search';
+        document.getElementById('full_list_form').submit();
+    }
+
     function submitForm(action) {
         document.getElementById('action_field').value = action;
         document.getElementById('full_list_form').submit();
     }
 </script>
 
+{% if results %}
 {% include "freeze_1stcolumn_1strow.html" %}
 
 <div class="frozen">

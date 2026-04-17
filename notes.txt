@@ -31,7 +31,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS scats_geometry_utm_gix
   ON public.dead_wolves (discovery_date)
   WHERE deleted IS NULL;
 
-  Priorità media:
+
 
   CREATE INDEX CONCURRENTLY IF NOT EXISTS scats_date_idx
   ON public.scats (date);
@@ -41,3 +41,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS scats_geometry_utm_gix
 
   CREATE INDEX CONCURRENTLY IF NOT EXISTS dead_wolves_genotype_id_idx
   ON public.dead_wolves (genotype_id);
+
+
+
+DROP INDEX CONCURRENTLY IF EXISTS public.scats_wa_code_idx1;
