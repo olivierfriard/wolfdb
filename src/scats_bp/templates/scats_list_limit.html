@@ -196,8 +196,12 @@
                             {% endif %}
                             {% endif %}
                         </td>
-                        <td>{% if result['snowtrack_id'] %}<a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{
-                                result['snowtrack_id'] | blank_if_none }}</a>{% endif %}
+                        <td>
+                            {% if result['snowtrack_id'] %}
+                            <a href="/view_snowtrack/{{ result['snowtrack_id'] }}">{{ result['snowtrack_id'] | blank_if_none }}</a>
+                            {% else %}
+                            {{ result['snowtrack_id'] | blank_if_none }}
+                            {% endif %}
                         </td>
                         <td>{% if result['wa_code'] %}<a href="/view_wa/{{result['wa_code'] }}">{{ result['wa_code']
                                 }}</a>{% endif %}</td>
