@@ -3,6 +3,6 @@ flask_session
 .vscode
 .venv
 src/static/results/
-notes.txt
 src/start.bash
 src/static/colony_output/
+.codex
