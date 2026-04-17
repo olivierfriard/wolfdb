@@ -1,0 +1,43 @@
+
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS scats_geometry_utm_gix
+  ON public.scats USING gist (geometry_utm);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS transects_multilines_gix
+  ON public.transects USING gist (multilines);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS snow_tracks_multilines_gix
+  ON public.snow_tracks USING gist (multilines);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS wa_locus_lookup_idx
+  ON public.wa_locus (wa_code, locus, allele, "timestamp" DESC);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS genotype_locus_lookup_idx
+  ON public.genotype_locus (genotype_id, locus, allele, "timestamp" DESC);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS paths_transect_date_idx
+  ON public.paths (transect_id, date);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS snow_tracks_transect_date_idx
+  ON public.snow_tracks (transect_id, date);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS scats_snowtrack_id_idx
+  ON public.scats (snowtrack_id);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS dead_wolves_wa_code_idx
+  ON public.dead_wolves (wa_code);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS dead_wolves_active_discovery_date_idx
+  ON public.dead_wolves (discovery_date)
+  WHERE deleted IS NULL;
+
+  Priorità media:
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS scats_date_idx
+  ON public.scats (date);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS genotypes_pack_idx
+  ON public.genotypes (pack);
+
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS dead_wolves_genotype_id_idx
+  ON public.dead_wolves (genotype_id);
