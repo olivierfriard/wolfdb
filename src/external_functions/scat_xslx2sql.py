@@ -2,15 +2,16 @@
 import wa code from a spreadsheet file (XLSX/ODS) in the wolfDB
 """
 
-import sys
 import datetime as dt
+import sys
 from pathlib import Path
+
 import pandas as pd
-import utm
-from sqlalchemy import create_engine
-from sqlalchemy import text
-from psycopg import sql
 import tabulate
+import utm
+from psycopg import sql
+from sqlalchemy import create_engine, text
+
 import italian_regions
 
 
@@ -434,7 +435,5 @@ for _, row in scats_df.iterrows():
 
         print(query.as_string(), file=f_out)
 
-print("SET session_replication_role = DEFAULT;", file=f_out)
-print("CALL refresh_materialized_views();", file=f_out)
 
 f_out.close()

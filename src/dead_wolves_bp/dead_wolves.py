@@ -1272,8 +1272,6 @@ def confirm_load_tissue_spreadsheet(filename, mode):
 
         count_added: int = 0
         count_updated: int = 0
-        # pause trigger
-        con.execute(text("ALTER TABLE dead_wolves DISABLE TRIGGER ALL"))
 
         for idx in all_data:
             data = dict(all_data[idx])
@@ -1348,10 +1346,6 @@ def confirm_load_tissue_spreadsheet(filename, mode):
                     "An error occured during the loading of tissues. Contact the administrator.<br>"
                     + fn.error_info(sys.exc_info())
                 )
-
-        con.execute(text("ALTER TABLE dead_wolves ENABLE TRIGGER ALL"))
-
-        con.execute(text("CALL refresh_materialized_views()"))
 
     msg = f"Tissues successfully loaded from spreadsheet file. {count_added} tissue(s) added, {count_updated} tissue(s) updated."
     flash(fn.alert_success(msg))

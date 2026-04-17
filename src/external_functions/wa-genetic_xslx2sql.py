@@ -4,9 +4,9 @@ import wa genetic data from XLSX file
 
 import sys
 from pathlib import Path
+
 import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 
 def conn_alchemy():
@@ -346,8 +346,4 @@ for idx, row in genetic_df.iterrows():
     # print(file=sys.stderr)
 
 for handle in (f_genotype, f_genotype_loci, f_wa_results, f_wa_loci):
-    print(
-        "SET session_replication_role = DEFAULT;CALL refresh_materialized_views();",
-        file=handle,
-    )
     handle.close()

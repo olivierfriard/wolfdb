@@ -1,9 +1,13 @@
+## 2026-04
+
+* added export w/o loci value in wa and genotypes
+
+* added export button on scats list page
+
+
 ## 2026-01-15
 
 * Improved wa list display
-
-
-
 
 
 ## 2026-01-08
@@ -12,7 +16,7 @@
 
 - added view:
 
-create view wa_genetic_samples_all AS 
+create view wa_genetic_samples_all AS
 SELECT
   w.wa_code,
   w.sample_id,
@@ -87,7 +91,7 @@ WHERE EXISTS (
 
 ## 2024-12-13
 
-- add 'allele modifier' role to frolle 
+- add 'allele modifier' role to frolle
 
 
 ## 2024-11-22
@@ -483,4 +487,3 @@ alter table wa_locus add column definitive boolean;
 update wa_locus set definitive = TRUE where user_id ILIKE 'OK|%';
 update wa_locus set definitive = TRUE where user_id IS NULL;
 update wa_locus set definitive = FALSE where definitive IS NULL;
-

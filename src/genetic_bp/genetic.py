@@ -4040,8 +4040,6 @@ def confirm_load_wa_spreadsheet(filename, mode):
 
         count_added: int = 0
         count_updated: int = 0
-        # pause trigger
-        con.execute(text("ALTER TABLE wa_results DISABLE TRIGGER ALL"))
 
         for idx in wa_results:
             data = dict(wa_results[idx])
@@ -4114,10 +4112,6 @@ def confirm_load_wa_spreadsheet(filename, mode):
 
                 # update cache
                 update_loci_values_cache(data["wa_code"], fn.get_loci_list())
-
-        con.execute(text("ALTER TABLE wa_results ENABLE TRIGGER ALL"))
-
-        con.execute(text("CALL refresh_materialized_views()"))
 
     msg = f"WA code successfully loaded from spreadsheet file. {count_added} wa code(s) added, {count_updated} wa code(s) updated."
     flash(fn.alert_success(msg))
