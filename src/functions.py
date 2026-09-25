@@ -25,7 +25,9 @@ from config import config
 
 params = config()
 
-rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
+rdis = redis.Redis(
+    host=params["redis_host"], port=params["redis_port"], db=int(params["redis_db"])
+)
 
 
 def check_login(f):
@@ -40,17 +42,16 @@ def check_login(f):
 
 def get_connection():
     return psycopg2.connect(
-        user=params["user"],
-        password=params["password"],
-        host=params["host"],
-        # port="5432",
-        database=params["database"],
+        user=params["db_user"],
+        host=params["db_host"],
+        port=params["db_port"],
+        database=params["db_name"],
     )
 
 
 def conn_alchemy():
     return create_engine(
-        f"postgresql+psycopg://{params['user']}@{params['host']}:5432/{params['database']}",
+        f"postgresql+psycopg2://{params['db_user']}@{params['db_host']}:{params['db_port']}/{params['db_name']}",
         isolation_level="AUTOCOMMIT",
     )
 
@@ -929,8 +930,8 @@ def reverse_geocoding(lon_lat: list) -> dict | None:
     )
 
     try:
-        response = urllib.request.urlopen(request, timeout=10).read().strip().decode(
-            "utf-8"
+        response = (
+            urllib.request.urlopen(request, timeout=10).read().strip().decode("utf-8")
         )
     except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
         return None

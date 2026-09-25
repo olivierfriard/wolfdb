@@ -31,7 +31,9 @@ def update_redis_wa_loci():
     print("Updating REDIS with WA codes loci")
     t0 = time.time()
     # dev version use db #1
-    rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
+    rdis = redis.Redis(
+        host=params["redis_host"], port=params["redis_port"], db=int(params["redis_db"])
+    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()

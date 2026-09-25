@@ -44,7 +44,9 @@ params = config()
 app.debug = params["debug"]
 
 # db wolf -> db 0
-rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
+rdis = redis.Redis(
+    host=params["redis_host"], port=params["redis_port"], db=int(params["redis_db"])
+)
 
 
 def update_loci_values_cache(wa_code: str, loci_list: dict):

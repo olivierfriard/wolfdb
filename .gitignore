@@ -4,5 +4,6 @@ flask_session
 .venv
 src/static/results/
 src/start.bash
+src/.env
 src/static/colony_output/
 .codex

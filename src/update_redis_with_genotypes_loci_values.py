@@ -5,14 +5,15 @@ This script is required by wolfdb.py
 
 """
 
-import sys
-from sqlalchemy import text
-import functions as fn
 import json
-import redis
+import sys
 import time
 from datetime import datetime
 
+import redis
+from sqlalchemy import text
+
+import functions as fn
 from config import config
 
 params = config()
@@ -31,7 +32,9 @@ def update_redis_genotypes_loci():
     t0 = time.time()
 
     # dev version use db #1
-    rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
+    rdis = redis.Redis(
+        host=params["redis_host"], port=params["redis_port"], db=int(params["redis_db"])
+    )
 
     # loci list
     loci_list: dict = fn.get_loci_list()

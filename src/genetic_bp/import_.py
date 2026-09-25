@@ -14,7 +14,9 @@ from config import config
 
 params = config()
 # db wolf -> db 0
-rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
+rdis = redis.Redis(
+    host=params["redis_host"], port=params["redis_port"], db=int(params["redis_db"])
+)
 
 
 def extract_genotypes_data_from_xlsx(filename, loci_list):

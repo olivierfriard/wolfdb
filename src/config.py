@@ -1,32 +1,22 @@
 """
 WolfDB
-Read configuration file (config.ini)
+Read configuration from .env
 """
 
-import os
 import json
 from pathlib import Path
-from configparser import ConfigParser
+
+from dotenv import dotenv_values
 
 
 def config() -> dict:
-    config_filename = os.environ.get("WOLFDB_CONFIG_PATH")
+    config_filename = Path(__file__).with_name(".env")
 
-    if config_filename is None:
-        print("environment variable WOLFDB_CONFIG_PATH not set")
+    if not config_filename.is_file():
+        print(".env not found")
         return {}
 
-    if not Path(config_filename).is_file():
-        print("config.ini not found")
-        return {}
-
-    parser = ConfigParser()
-    parser.read(config_filename)
-    db: str = {}
-    for section in parser.sections():
-        params = parser.items(section)
-        for param in params:
-            db[param[0]] = param[1]
+    db = dotenv_values(config_filename)
 
     # convert from str to list
     db["excel_allowed_extensions"] = json.loads(db["excel_allowed_extensions"])

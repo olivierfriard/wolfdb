@@ -1,19 +1,19 @@
 """
-update redis with genotypes loci values
+update Postgres DB with genotypes loci values
 
 This script is required by wolfdb.py
 
 """
 
-import sys
-from sqlalchemy import text
-from sqlalchemy import text, bindparam
-from sqlalchemy.dialects.postgresql import JSONB
-import functions as fn
 import json
+import sys
 import time
 from datetime import datetime
 
+from sqlalchemy import bindparam, text
+from sqlalchemy.dialects.postgresql import JSONB
+
+import functions as fn
 from config import config
 
 params = config()
@@ -24,7 +24,7 @@ if not params:
 
 def update_db_genotypes_loci():
     """
-    update Redis with loci values of WA codes
+    update DB with loci values of WA codes
     from PostgreSQL
     """
 

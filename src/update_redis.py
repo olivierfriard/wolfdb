@@ -6,12 +6,12 @@ This script is required by wolfdb.py
 """
 
 import sys
+
 import redis
 
 from config import config
-
-from update_redis_with_wa_loci_values import update_redis_wa_loci
 from update_redis_with_genotypes_loci_values import update_redis_genotypes_loci
+from update_redis_with_wa_loci_values import update_redis_wa_loci
 
 params = config()
 if not params:
@@ -19,7 +19,9 @@ if not params:
     sys.exit(1)
 
 # dev version use db #1
-rdis = redis.Redis(db=(0 if params["database"] == "wolf" else 1))
+rdis = redis.Redis(
+    host=params["redis_host"], port=params["redis_port"], db=int(params["redis_db"])
+)
 
 # empty db
 rdis.flushdb()

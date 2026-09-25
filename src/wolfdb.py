@@ -4,7 +4,7 @@ WolfDB web service
 
 
 launch with:
-export WOLFDB_CONFIG_PATH=PATH_TO/config.ini; python wolfdb.py
+python wolfdb.py
 
 """
 
@@ -16,6 +16,7 @@ import urllib.request
 
 import utm
 from flask import Flask, flash, redirect, render_template, request, session
+from flask_session import Session
 from markupsafe import Markup
 from sqlalchemy import text
 
@@ -27,7 +28,6 @@ from admin_bp import admin
 from analysis_bp import analysis
 from config import config
 from dead_wolves_bp import dead_wolves
-from flask_session import Session
 from genetic_bp import genetic
 from packs_bp import packs
 from paths_bp import paths
@@ -84,7 +84,6 @@ app.db_log.setLevel(logging.INFO)
 
 
 @app.route("/")
-# @fn.check_login
 def home():
     """
     home page
