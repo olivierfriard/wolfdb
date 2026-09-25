@@ -62,7 +62,7 @@ def get_cmap(n, name="viridis"):
     RGB color; the keyword argument name must be a standard mpl colormap name.
     """
 
-    return plt.cm.get_cmap(name, n)
+    return plt.get_cmap(name, n)
 
 
 def error_info(exc_info: tuple) -> str:
