@@ -1,46 +1,71 @@
-{% extends "bootstrap.html" %}
-
-{% block content %}
-
-
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<ul class=flashes>
-{% for message in messages %}
-<strong>{{ message }}</strong><br>
-{% endfor %}
+{% extends "bootstrap.html" %} {% block content %} {% with messages =
+get_flashed_messages() %} {% if messages %}
+<ul class="flashes">
+    {% for message in messages %}
+    <strong>{{ message }}</strong
+    ><br />
+    {% endfor %}
 </ul>
-{% endif %}
-{% endwith %}
-{% block body %}{% endblock %}
+{% endif %} {% endwith %} {% block body %}{% endblock %}
 
+<h2>Import WA data from a spreadsheet file</h2>
+<br />
+<form
+    id="upload_file"
+    action="{{ url_for('genetic.load_wa_from_spreadsheet') }}"
+    method="POST"
+    enctype="multipart/form-data"
+>
+    <div class="mb-3">
+        <label for="laboratory" class="form-label">Laboratory</label>
 
-<h2>Upload WA from a spreadsheet file</h2>
+        <select class="form-select" id="laboratory" name="laboratory" required>
+            <option value="" selected disabled>Select a laboratory</option>
 
-<form id="upload_file" action="{{ url_for('genetic.load_wa_from_spreadsheet') }}"  method="POST" enctype="multipart/form-data">
-<br>
+            {% for lab in laboratories %}
+            <option value="{{ lab.acronym }}">
+                {{ lab.name }} - {{ lab.acronym }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
 
-<div class="form-group">
-<label for="new_file">Select the spreadsheet file (XLSX  or ODS)</label><br>
-<br>
-<input type="file" id="new_file" placeholder="" name="new_file" >
-</div>
-<br>
-<button type="submit" class="btn btn-danger" id="upload-file-btn" type="button">Upload file</button>
+    <div class="mb-3">
+        <label for="new_file" class="form-label">
+            Select a spreadsheet file (XLSX or ODS)
+        </label>
 
+        <input
+            type="file"
+            class="form-control"
+            id="new_file"
+            name="new_file"
+            accept=".xlsx,.ods"
+        />
+    </div>
+
+    <button
+        type="submit"
+        class="btn btn-danger"
+        id="upload-file-btn"
+        type="button"
+    >
+        Upload file
+    </button>
 </form>
 
-<hr>
+<hr />
 
-<h3>Template and example</h3>
+<h4>Template</h4>
 
-<br>
-<a href="{{ url_for('static', filename='wa_template.xltx') }}">Download Excel 2007-365 Spreadsheet template (XLTX)</a><br>
+<br />
+<a href="{{ url_for('static', filename='wa_template.xltx') }}"
+    >Download Excel 2007-365 Spreadsheet template (XLTX)</a
+><br />
 
 {#
-<br>
-<a href="{{ url_for('static', filename='scats_upload_example.xlsx') }}">XLSX example for uploading scats</a><br>
-#}
-
-{% endblock %}
-
+<br />
+<a href="{{ url_for('static', filename='scats_upload_example.xlsx') }}"
+    >XLSX example for uploading scats</a
+><br />
+#} {% endblock %}

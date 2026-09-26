@@ -103,7 +103,7 @@ def extract_wa_data_from_spreadsheet(filename: str):
     index = 0
     wa_results = {}
     wa_loci = {}
-    for idx, row in genetic_df.iterrows():
+    for _, row in genetic_df.iterrows():
         data: dict = {}
 
         data["wa_code"] = row["wa code"].strip()
@@ -122,9 +122,9 @@ def extract_wa_data_from_spreadsheet(filename: str):
         if pd.isna(row["quality_genotype"]):
             quality_genotype = "Yes"
         else:
-            if row["quality_genotype"].upper() == "POOR DNA":
-                quality_genotype = "Poor DNA"
-            elif not pd.isna(row["mtdna"]) and row["mtdna"].upper() == "POOR DNA":
+            if row["quality_genotype"].upper() == "POOR DNA" or (
+                not pd.isna(row["mtdna"]) and row["mtdna"].upper() == "POOR DNA"
+            ):
                 quality_genotype = "Poor DNA"
             else:
                 quality_genotype = row["quality_genotype"].capitalize()

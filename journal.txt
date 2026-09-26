@@ -1,3 +1,43 @@
+## 2026-09-26
+
+Modification to DB tables to add the laboratory name
+
+CREATE TABLE laboratories (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    acronym TEXT NOT NULL UNIQUE
+);
+
+INSERT INTO laboratories (name, acronym) VALUES
+    ('National Genomics Center', 'NGC'),
+    ('University of Ljubljana', 'UL'),
+    ('Senckenberg Nature Research', 'SGN'),
+    ('Charles University Faculty of Science', 'FoS'),
+    ('Fondazione Edmund Mach', 'FEM');
+
+
+
+alter table wa_results add column laboratory_acronym text ;
+
+update wa_results set laboratory_acronym = 'NGC';
+
+
+ALTER TABLE wa_results
+    DROP CONSTRAINT wa_results_pkey;
+
+ALTER TABLE wa_results
+    ALTER COLUMN laboratory_acronym SET NOT NULL;
+
+ALTER TABLE wa_results
+    ADD CONSTRAINT wa_results_pkey
+    PRIMARY KEY (wa_code, laboratory_acronym);
+
+
+
+alter table wa_locus add column laboratory_acronym text;
+update wa_locus set laboratory_acronym = 'NGC';
+
+
 ## 2026-04
 
 * added export w/o loci value in wa and genotypes

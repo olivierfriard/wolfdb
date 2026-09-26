@@ -1,61 +1,71 @@
-{% extends "bootstrap.html" %}
-
-{% block content %}
+{% extends "bootstrap.html" %} {% block content %}
 
 <main class="flex-shrink-0">
+    <div class="container">
+        {% with messages = get_flashed_messages() %} {% if messages %}
+        <ul class="flashes">
+            {% for message in messages %}
+            <strong>{{ message }}</strong
+            ><br />
+            {% endfor %}
+        </ul>
+        {% endif %} {% endwith %} {% block body %}{% endblock %}
 
-<div class="container">
+        <h2>Import WA data from a spreadsheet file</h2>
+        <br />
+        <div class="mb-3">
+            Laboratory name: <strong>{{ laboratory_name }}</strong>
+        </div>
 
+        <b>{{ n_wa }}</b> WA found in spreadsheet file.<br />
+        <b>{{ wa_to_update|count }}</b> are already present in the database
+        (displayed with red background).<br />
+        <br />
 
+        <a
+            href="{{ url_for('genetic.confirm_load_wa_spreadsheet', filename=filename, mode='all', lab_name=laboratory_name) }}"
+            class="btn btn-primary"
+            >Confirm insertion (WA already present will be updated)</a
+        >
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-  <ul class=flashes>
-  {% for message in messages %}
-    <strong>{{ message }}</strong><br>
-  {% endfor %}
-  </ul>
-{% endif %}
-{% endwith %}
-{% block body %}{% endblock %}
+        <a
+            href="{{ url_for('genetic.confirm_load_wa_spreadsheet', filename=filename, mode='new', lab_name=laboratory_name) }}"
+            class="btn btn-primary"
+            >Insert only new WA</a
+        >
 
+        <a href="{{ url_for('home') }}" class="btn btn-primary"
+            >Cancel insertion</a
+        >
 
-<b>{{ n_wa }}</b> WA found in spreadsheet file.<br>
-<b>{{ wa_to_update|count }}</b> are already present in the database (displayed with red background).<br>
-<br>
+        <br />
+        <br />
+        {% if wa_to_update|count %}
+        <div class="alert alert-danger" role="alert">
+            <b>The WA with red background already exists in the database.</b>
+        </div>
+        <br /><br />
+        {% endif %}
 
-<a href="{{ url_for("genetic.confirm_load_wa_spreadsheet", filename=filename, mode='all') }}"  class="btn btn-primary">Confirm insertion (WA already present will be updated)</a>
+        <table class="table table-striped">
+            <tr>
+                <th>WA code</th>
+            </tr>
 
-<a href="{{ url_for("genetic.confirm_load_wa_spreadsheet", filename=filename, mode='new') }}"  class="btn btn-primary">Insert only new WA</a>
+            {% for idx in wa_results %} {% if wa_results[idx]['wa_code'] in
+            wa_to_update %}
+            <tr class="table-danger">
+                {% else %}
+            </tr>
 
-<a href="{{ url_for('home') }}"  class="btn btn-primary">Cancel insertion</a>
+            <tr>
+                {% endif %}
+                <td>{{ wa_results[idx]['wa_code'] }}</td>
+            </tr>
 
-<br>
-<br>
-{% if wa_to_update|count %}
-<div class="alert alert-danger" role="alert"><b>The WA with red background already exists in the database.</b></div><br><br>
-{% endif %}
+            {% endfor %}
+        </table>
 
-
-<table class="table table-striped">
-
-<tr>
-<th>WA code</th>
-</tr>
-
-{% for idx in wa_results %}
-
-{% if wa_results[idx]['wa_code'] in wa_to_update %}
-<tr class="table-danger">
-{% else %}
-<tr>
-{% endif %}
-<td>{{ wa_results[idx]['wa_code'] }}</td>
-
-</tr>
-
-{% endfor %}
-
-</table>
-
-{% endblock %}
+        {% endblock %}
+    </div>
+</main>

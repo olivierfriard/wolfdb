@@ -12,6 +12,7 @@ import sys
 import time
 import uuid
 from pathlib import Path
+from pprint import pformat
 
 import jinja2
 import matplotlib
@@ -3956,13 +3957,25 @@ def load_wa_from_spreadsheet():
     """
 
     if request.method == "GET":
+        with fn.conn_alchemy().connect() as con:
+            laboratories = (
+                con.execute(
+                    text("SELECT name, acronym FROM laboratories ORDER BY name")
+                )
+                .mappings()
+                .fetchall()
+            )
+            print(laboratories)
+
         return render_template(
             "load_wa_spreadsheet.html",
             header_title="Load WA code from spreadsheet file",
+            laboratories=laboratories,
         )
 
     if request.method == "POST":
         new_file = request.files["new_file"]
+        laboratory_name = request.form["laboratory"]
 
         # check file extension
         if (
@@ -4014,17 +4027,19 @@ def load_wa_from_spreadsheet():
                 wa_to_update=wa_to_update,
                 wa_results=wa_results,
                 filename=filename,
+                laboratory_name=laboratory_name,
             )
 
 
 @app.route("/confirm_load_wa_spreadsheet/<filename>/<mode>")
+@app.route("/confirm_load_wa_spreadsheet/<filename>/<mode>/<lab_name>")
 @fn.check_login
-def confirm_load_wa_spreadsheet(filename, mode):
+def confirm_load_wa_spreadsheet(filename, mode, laboratory_name: str = ""):
     """
-    Confirm upload of wa from spreadsheet file
+    Confirm insert of wa from spreadsheet file
     """
 
-    if mode not in ["new", "all"]:
+    if mode not in ("new", "all"):
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect("/load_tissue_from_spreadsheet")
 
@@ -4050,10 +4065,9 @@ def confirm_load_wa_spreadsheet(filename, mode):
                 continue
 
             sql = text(
-                "INSERT INTO wa_results (wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype "
-                ")"
+                "INSERT INTO wa_results (wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym) "
                 "VALUES("
-                ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype "
+                ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym "
                 ") "
                 "ON CONFLICT (wa_code) "
                 "DO UPDATE SET "
@@ -4075,6 +4089,7 @@ def confirm_load_wa_spreadsheet(filename, mode):
                 "sex_id": data["sex_id"],
                 "individual_id": data["individual_id"],
                 "quality_genotype": data["quality_genotype"],
+                "laboratory_acronym": laboratory_name,
             }
 
             if data["wa_code"] in wa_to_update:
@@ -4084,17 +4099,14 @@ def confirm_load_wa_spreadsheet(filename, mode):
             try:
                 con.execute(sql, params)
             except Exception:
-                return (
-                    "An error occured during the loading of tissues. Contact the administrator.<br>"
-                    + fn.error_info(sys.exc_info())
-                )
+                return f"An error occured during the loading of data. Contact the administrator.<br> {fn.error_info(sys.exc_info())}"
 
         for idx in wa_loci:
             data = dict(wa_loci[idx])
             sql = text(
-                "INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp, user_id, definitive) "
+                "INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp, user_id, definitive, laboratory_acronym) "
                 "VALUES ("
-                ":wa_code, :locus, :allele, :val, NOW(), :user_id, TRUE"
+                ":wa_code, :locus, :allele, :val, NOW(), :user_id, TRUE, :laboratory_acronym"
                 ")"
             )
 
@@ -4109,6 +4121,7 @@ def confirm_load_wa_spreadsheet(filename, mode):
                     "allele": allele,
                     "val": val,
                     "user_id": session.get("user_name", session["email"]),
+                    "laboratory_acronym": laboratory_name,
                 }
                 con.execute(sql, params)
 
