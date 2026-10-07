@@ -1,7 +1,7 @@
 [project]
 name = "wolfdb"
 version = "0.1.0"
-requires-python = ">=3.13"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "authlib>=1.8.0",
     "python-dotenv>=1.2.2",
@@ -11,7 +11,7 @@ dependencies = [
     "geojson>=3.3.0",
     "google-api-python-client>=2.200.0",
     "google-auth>=2.58.1",
-    "matplotlib==3.11.2",
+    "matplotlib==3.7.3",
     "odfpy>=1.4.1",
     "pandas>=2.3.3",
     "psycopg2>=2.9.13",
@@ -24,4 +24,5 @@ dependencies = [
     "xlsxwriter>=3.2.9",
     "flask-session>=0.8.0",
     "openpyxl>=3.1.5",
+    "gunicorn>=26.2.0",
 ]
