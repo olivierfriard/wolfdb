@@ -50,28 +50,30 @@ rdis = redis.Redis(
 )
 
 
-def update_loci_values_cache(wa_code: str, loci_list: dict):
+def update_loci_values_cache(wa_code: str, loci_list: dict, con=None):
     """
     update redis and wa_loci_values table
     """
-    loci_values = fn.get_wa_loci_values(wa_code, loci_list)[0]
+    loci_values = fn.get_wa_loci_values(wa_code, loci_list, con=con)[0]
     # update redis
     rdis.set(wa_code, json.dumps(loci_values))
     # update DB
-    with fn.conn_alchemy().connect() as con:
-        _ = con.execute(
-            text(
-                "INSERT INTO wa_loci_values (wa_code, loci_values) "
-                "VALUES (:wa_code, :loci_values) "
-                "ON CONFLICT (wa_code) "
-                "DO UPDATE "
-                "SET loci_values = EXCLUDED.loci_values; "
-            ).bindparams(bindparam("loci_values", type_=JSONB)),
-            {
-                "wa_code": wa_code,
-                "loci_values": loci_values,
-            },
-        )
+    sql = text(
+        "INSERT INTO wa_loci_values (wa_code, loci_values) "
+        "VALUES (:wa_code, :loci_values) "
+        "ON CONFLICT (wa_code) "
+        "DO UPDATE "
+        "SET loci_values = EXCLUDED.loci_values; "
+    ).bindparams(bindparam("loci_values", type_=JSONB))
+    params = {
+        "wa_code": wa_code,
+        "loci_values": loci_values,
+    }
+    if con is None:
+        with fn.conn_alchemy().connect() as db_con:
+            _ = db_con.execute(sql, params)
+    else:
+        _ = con.execute(sql, params)
 
 
 @app.route("/del_genotype/<genotype_id>")
@@ -1498,6 +1500,7 @@ def wa():
     """
     offset = int(request.args.get("offset", -1))
     search_str = request.args.get("search_str", "")
+    print(f"{search_str=}")  # remove before release
     raw_limit = request.args.get("limit", 10)
 
     limit: str | int = "All" if raw_limit == "All" else int(raw_limit)
@@ -4034,26 +4037,47 @@ def load_wa_from_spreadsheet():
 @app.route("/confirm_load_wa_spreadsheet/<filename>/<mode>")
 @app.route("/confirm_load_wa_spreadsheet/<filename>/<mode>/<lab_name>")
 @fn.check_login
-def confirm_load_wa_spreadsheet(filename, mode, laboratory_name: str = ""):
+def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
     """
     Confirm insert of wa from spreadsheet file
     """
 
     if mode not in ("new", "all"):
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect("/load_tissue_from_spreadsheet")
+        return redirect(url_for("load_wa_from_spreadsheet"))
 
     r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(filename)
     if r:
         flash(msg)
-        return redirect(url_for("/load_wa_from_spreadsheet"))
+        return redirect(url_for("load_wa_from_spreadsheet"))
+
+    loci_list = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
         # check if wa already in DB
-        wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
-        sql = text(f"SELECT wa_code FROM wa_results WHERE wa_code in ('{wa_list}')")
+        # wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
+        # sql = text(f"SELECT wa_code FROM wa_results WHERE wa_code in ('{wa_list}')")
+        # wa_to_update = [row["wa_code"] for row in con.execute(sql).mappings().all()]
 
-        wa_to_update = [row["wa_code"] for row in con.execute(sql).mappings().all()]
+        wa_codes = [wa_results[idx]["wa_code"] for idx in wa_results]
+
+        sql = text(
+            "SELECT wa_code "
+            "FROM wa_results "
+            "WHERE wa_code IN :wa_codes "
+            "AND laboratory_acronym = :laboratory_acronym"
+        ).bindparams(bindparam("wa_codes", expanding=True))
+
+        wa_to_update = [
+            row["wa_code"]
+            for row in con.execute(
+                sql,
+                {
+                    "wa_codes": wa_codes,
+                    "laboratory_acronym": lab_name,
+                },
+            ).mappings()
+        ]
 
         count_added: int = 0
         count_updated: int = 0
@@ -4065,19 +4089,34 @@ def confirm_load_wa_spreadsheet(filename, mode, laboratory_name: str = ""):
                 continue
 
             sql = text(
-                "INSERT INTO wa_results (wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym) "
-                "VALUES("
-                ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym "
+                "INSERT INTO wa_results ("
+                "wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym"
                 ") "
-                "ON CONFLICT (wa_code) "
+                "VALUES ("
+                ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym"
+                ") "
+                "ON CONFLICT (wa_code, laboratory_acronym) "
                 "DO UPDATE SET "
-                "pack = CASE WHEN EXCLUDED.pack <> '' THEN EXCLUDED.pack ELSE wa_results.pack END,"
-                "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE wa_results.notes END,"
-                "genotype_id = CASE WHEN EXCLUDED.genotype_id <> '' THEN EXCLUDED.genotype_id ELSE wa_results.genotype_id END,"
-                "mtdna = CASE WHEN EXCLUDED.mtdna <> '' THEN EXCLUDED.mtdna ELSE wa_results.mtdna END,"
-                "sex_id = CASE WHEN EXCLUDED.sex_id <> '' THEN EXCLUDED.sex_id ELSE wa_results.sex_id END,"
-                "individual_id = CASE WHEN EXCLUDED.individual_id <> '' THEN EXCLUDED.individual_id ELSE wa_results.individual_id END,"
-                "quality_genotype = CASE WHEN EXCLUDED.quality_genotype <> '' THEN EXCLUDED.quality_genotype ELSE wa_results.quality_genotype END"
+                "pack = COALESCE(NULLIF(EXCLUDED.pack, ''), wa_results.pack), "
+                "notes = COALESCE(NULLIF(EXCLUDED.notes, ''), wa_results.notes), "
+                "genotype_id = COALESCE(NULLIF(EXCLUDED.genotype_id, ''), wa_results.genotype_id), "
+                "mtdna = COALESCE(NULLIF(EXCLUDED.mtdna, ''), wa_results.mtdna), "
+                "sex_id = COALESCE(NULLIF(EXCLUDED.sex_id, ''), wa_results.sex_id), "
+                "individual_id = COALESCE(NULLIF(EXCLUDED.individual_id, ''), wa_results.individual_id), "
+                "quality_genotype = COALESCE(NULLIF(EXCLUDED.quality_genotype, ''), wa_results.quality_genotype)"
+                # "INSERT INTO wa_results (wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym) "
+                # "VALUES("
+                # ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym "
+                # ") "
+                # "ON CONFLICT (wa_code) "
+                # "DO UPDATE SET "
+                # "pack = CASE WHEN EXCLUDED.pack <> '' THEN EXCLUDED.pack ELSE wa_results.pack END,"
+                # "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE wa_results.notes END,"
+                # "genotype_id = CASE WHEN EXCLUDED.genotype_id <> '' THEN EXCLUDED.genotype_id ELSE wa_results.genotype_id END,"
+                # "mtdna = CASE WHEN EXCLUDED.mtdna <> '' THEN EXCLUDED.mtdna ELSE wa_results.mtdna END,"
+                # "sex_id = CASE WHEN EXCLUDED.sex_id <> '' THEN EXCLUDED.sex_id ELSE wa_results.sex_id END,"
+                # "individual_id = CASE WHEN EXCLUDED.individual_id <> '' THEN EXCLUDED.individual_id ELSE wa_results.individual_id END,"
+                # "quality_genotype = CASE WHEN EXCLUDED.quality_genotype <> '' THEN EXCLUDED.quality_genotype ELSE wa_results.quality_genotype END"
             )
 
             params = {
@@ -4089,7 +4128,7 @@ def confirm_load_wa_spreadsheet(filename, mode, laboratory_name: str = ""):
                 "sex_id": data["sex_id"],
                 "individual_id": data["individual_id"],
                 "quality_genotype": data["quality_genotype"],
-                "laboratory_acronym": laboratory_name,
+                "laboratory_acronym": lab_name,
             }
 
             if data["wa_code"] in wa_to_update:
@@ -4121,12 +4160,12 @@ def confirm_load_wa_spreadsheet(filename, mode, laboratory_name: str = ""):
                     "allele": allele,
                     "val": val,
                     "user_id": session.get("user_name", session["email"]),
-                    "laboratory_acronym": laboratory_name,
+                    "laboratory_acronym": lab_name,
                 }
                 con.execute(sql, params)
 
-                # update cache
-                update_loci_values_cache(data["wa_code"], fn.get_loci_list())
+            # update cache
+            update_loci_values_cache(data["wa_code"], loci_list, con=con)
 
     msg = f"WA code successfully loaded from spreadsheet file. {count_added} wa code(s) added, {count_updated} wa code(s) updated."
     flash(fn.alert_success(msg))

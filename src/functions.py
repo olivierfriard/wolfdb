@@ -162,7 +162,9 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
             return get_wa_loci_values(wa_code, get_loci_list())[0]
 
 
-def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
+def get_wa_loci_values(
+    wa_code: str, loci_list: dict, con=None
+) -> tuple[dict, bool]:
     """
 
     Return:
@@ -232,7 +234,10 @@ def get_wa_loci_values(wa_code: str, loci_list: dict) -> tuple[dict, bool]:
         LEFT JOIN hist   h ON h.locus = r.locus AND h.allele = r.allele
     """)
 
-    with conn_alchemy().connect() as con:
+    if con is None:
+        with conn_alchemy().connect() as db_con:
+            rows = db_con.execute(sql, params).mappings().all()
+    else:
         rows = con.execute(sql, params).mappings().all()
 
     # init default (anche per coppie senza righe nel DB)
