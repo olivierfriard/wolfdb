@@ -5,34 +5,34 @@ WolfDB web service
 flask blueprint for scats management
 """
 
+import datetime
+import datetime as dt
+import json
+import os
+import pathlib as pl
+import subprocess
+import sys
+import uuid
+
 import flask
+import utm
 from flask import (
-    render_template,
-    redirect,
-    request,
     flash,
     make_response,
+    redirect,
+    render_template,
+    request,
     session,
     url_for,
 )
 from markupsafe import Markup
 from sqlalchemy import text
-import utm
-import json
-import pathlib as pl
-import datetime as dt
-import uuid
-import os
-import sys
-import subprocess
-import datetime
 
-
-from .scat_form import Scat
 import functions as fn
-from . import scats_export, scats_import
 from config import config
 
+from . import scats_export, scats_import
+from .scat_form import Scat
 
 app = flask.Blueprint(
     "scats", __name__, template_folder="templates", static_url_path="/static"
@@ -1070,6 +1070,19 @@ def confirm_load_xlsx(filename, mode):
             if mode == "new" and (data["scat_id"] in scats_to_update):
                 continue
 
+            # coord_zone vaut par exemple '32N' ou '33N'
+            zone = data["coord_zone"].strip().upper()
+            if zone.endswith("N"):
+                epsg = 32600 + int(zone[:-1])
+            elif zone.endswith("S"):
+                epsg = 32700 + int(zone[:-1])
+            else:
+                # zone numérique seule (ex: '32') → on suppose Nord par défaut
+                epsg = 32600 + int(zone)
+
+            # Ajoute la clé au dictionnaire de paramètres
+            data["coord_zone_epsg"] = epsg
+
             sql = text(
                 "INSERT INTO scats (scat_id, date, wa_code, sampling_season, sampling_type, path_id, snowtrack_id, "
                 "location, municipality, province, region, "
@@ -1081,7 +1094,8 @@ def confirm_load_xlsx(filename, mode):
                 ":location, :municipality, :province, :region, "
                 ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
                 ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
-                f"{data['geometry_utm']}, :notes, :sample_type, :box_number "
+                # f"{data['geometry_utm']}, :notes, :sample_type, :box_number "
+                "ST_SetSRID(ST_MakePoint(:coord_east, :coord_north), :coord_zone_epsg), :notes, :sample_type, :box_number "
                 ") "
                 "ON CONFLICT (scat_id) "
                 "DO UPDATE SET "
@@ -1105,7 +1119,8 @@ def confirm_load_xlsx(filename, mode):
                 "coord_zone = CASE WHEN EXCLUDED.coord_zone <> '' THEN EXCLUDED.coord_zone ELSE scats.coord_zone END,"
                 "observer = CASE WHEN EXCLUDED.observer <> '' THEN EXCLUDED.observer ELSE scats.observer END,"
                 "institution = CASE WHEN EXCLUDED.institution <> '' THEN EXCLUDED.institution ELSE scats.institution END,"
-                "geometry_utm = CASE WHEN EXCLUDED.geometry_utm <> '' THEN EXCLUDED.geometry_utm ELSE scats.geometry_utm END,"
+                # "geometry_utm = CASE WHEN EXCLUDED.geometry_utm <> '' THEN EXCLUDED.geometry_utm ELSE scats.geometry_utm END,"
+                "geometry_utm = CASE WHEN EXCLUDED.geometry_utm IS NOT NULL THEN EXCLUDED.geometry_utm ELSE scats.geometry_utm END,"
                 "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE scats.notes END,"
                 "sample_type = CASE WHEN EXCLUDED.sample_type <> '' THEN EXCLUDED.sample_type ELSE scats.sample_type END,"
                 "box_number = CASE WHEN EXCLUDED.box_number <> '' THEN EXCLUDED.box_number ELSE scats.box_number END"
@@ -1131,6 +1146,7 @@ def confirm_load_xlsx(filename, mode):
                 "coord_east": data["coord_east"],
                 "coord_north": data["coord_north"],
                 "coord_zone": data["coord_zone"].strip(),
+                "coord_zone_epsg": data["coord_zone_epsg"],
                 "operator": data["operator"],
                 "institution": data["institution"],
                 "notes": data["notes"],
