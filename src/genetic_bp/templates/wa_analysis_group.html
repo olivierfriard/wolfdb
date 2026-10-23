@@ -6,7 +6,7 @@
 <link href="{{ url_for('static', filename='css/condensed.css') }}" rel="stylesheet">
 
 {% if 'DBSCAN' in tool %}
-<a style="width:10%" href="/plot_wa_clusters/{{ distance }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
+<a style="width:10%" href="{{ url_for('genetic.plot_wa_clusters', distance=distance, laboratory=laboratory) }}" class="btn btn-primary">Plot WA clusters ({{ distance }} m)</a>&nbsp;
 {% endif %}
 
 <br>
@@ -24,10 +24,10 @@
 
 <br>
 
-<a href="/wa_analysis_group/{{ tool }}/export" class="btn btn-info btn-sm">Export XLSX</a>
-<a href="/wa_analysis_group/{{ tool }}/ml-relate" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a>
-<a href="/wa_analysis_group/{{ tool }}/colony" class="btn btn-info btn-sm">Export for Colony</a>
-<a href="/wa_analysis_group/{{ tool }}/run_colony" class="btn btn-info btn-sm">Run Colony</a>
+<a href="{{ url_for('genetic.wa_analysis_group', tool=tool, mode='export', laboratory=laboratory) }}" class="btn btn-info btn-sm">Export XLSX</a>
+<a href="{{ url_for('genetic.wa_analysis_group', tool=tool, mode='ml-relate', laboratory=laboratory) }}" class="btn btn-info btn-sm">Export Genepop (ML_Relate)</a>
+<a href="{{ url_for('genetic.wa_analysis_group', tool=tool, mode='colony', laboratory=laboratory) }}" class="btn btn-info btn-sm">Export for Colony</a>
+<a href="{{ url_for('genetic.wa_analysis_group', tool=tool, mode='run_colony', laboratory=laboratory) }}" class="btn btn-info btn-sm">Run Colony</a>
 
 {% if colony_error_message %}
 <div class="alert alert-danger" role="alert">

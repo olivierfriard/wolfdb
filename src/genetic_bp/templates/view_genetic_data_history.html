@@ -3,7 +3,7 @@
 {% block content %}
 
 
-<h2>View genetic data history for WA code <a href="/view_genetic_data/{{ wa_code }}" >{{ wa_code }}</a></h2><hr>
+<h2>View genetic data history for WA code <a href="{{ url_for('genetic.view_genetic_data', wa_code=wa_code, laboratory=laboratory) }}">{{ wa_code }}</a> — laboratory {{ laboratory }}</h2><hr>
 
 
 

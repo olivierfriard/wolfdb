@@ -4,17 +4,19 @@
 {% block content %}
 
 
-<a href="/view_genetic_data/{{ wa_code }}" class="btn btn-primary">Return to {{ wa_code }} genetic data</a>&nbsp;
+<a href="{{ url_for('genetic.view_genetic_data', wa_code=wa_code, laboratory=laboratory) }}" class="btn btn-primary">Return to {{ wa_code }} genetic data</a>&nbsp;
 
 <a href="{{ session['url_wa_list'] }}" class="btn btn-primary">WA samples list</a>
 
 <br>
 <br>
 
-<h2>WA code: <b>{{wa_code}}</b></h2>
+<h2>WA code: <b>{{wa_code}}</b> — laboratory {{ laboratory }}</h2>
 <h3>Genotype id: <b>{{ genotype_id }}</b> current sex: <b>{{ sex }}</b></h3>
 <br>
-<form method="POST" action="/add_genetic_data/{{ wa_code }}">
+<form method="POST" action="{{ url_for('genetic.add_genetic_data', wa_code=wa_code, laboratory=laboratory) }}">
+
+    <input type="hidden" name="laboratory" value="{{ laboratory }}">
 
     <span style="font-size: larger;">
         <b>Set new sex:</b>

@@ -113,9 +113,9 @@ Deleted
 {% for wa_code in wa_codes %}
 {% for allele in ('a', 'b')  %}
 {% if allele in genotype_loci[locus] %}
-<td style="background:{% if loci_values[wa_code['wa_code']][locus][allele]['value'] not in (0,'-') 
-and loci_values[wa_code['wa_code']][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">
-{{ loci_values[wa_code["wa_code"]][locus][allele]['value'] }}</td>
+<td style="background:{% if loci_values[wa_code['loci_key']][locus][allele]['value'] not in (0,'-')
+and loci_values[wa_code['loci_key']][locus][allele]['value'] != genotype_loci[locus][allele]['value'] %}orange{% endif %}">
+{{ loci_values[wa_code["loci_key"]][locus][allele]['value'] }}</td>
 {% else %}
 <td></td>
 {% endif %}

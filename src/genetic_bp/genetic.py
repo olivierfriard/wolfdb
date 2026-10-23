@@ -49,25 +49,48 @@ rdis = redis.Redis(
 )
 
 
-def update_loci_values_cache(wa_code: str, loci_list: dict, con=None):
+def update_loci_values_cache(
+    wa_code: str, loci_list: dict, con=None, laboratory: str | None = None
+):
     """
     update redis and wa_loci_values table
     """
-    loci_values = fn.get_wa_loci_values(wa_code, loci_list, con=con)[0]
+    if laboratory:
+        loci_values = fn.get_wa_loci_values_by_lab(
+            laboratory, wa_code, loci_list, con=con
+        )[0]
+        redis_key = f"lab:{laboratory}:wa:{wa_code}"
+    else:
+        loci_values = fn.get_wa_loci_values(wa_code, loci_list, con=con)[0]
+        redis_key = wa_code
+
     # update redis
-    rdis.set(wa_code, json.dumps(loci_values))
+    rdis.set(redis_key, json.dumps(loci_values))
     # update DB
-    sql = text(
-        "INSERT INTO wa_loci_values (wa_code, loci_values) "
-        "VALUES (:wa_code, :loci_values) "
-        "ON CONFLICT (wa_code) "
-        "DO UPDATE "
-        "SET loci_values = EXCLUDED.loci_values; "
-    ).bindparams(bindparam("loci_values", type_=JSONB))
+    if laboratory:
+        sql = text(
+            "INSERT INTO wa_loci_values "
+            "(wa_code, laboratory_acronym, loci_values) "
+            "VALUES (:wa_code, :laboratory, :loci_values) "
+            "ON CONFLICT (wa_code) "
+            "DO UPDATE SET "
+            "laboratory_acronym = EXCLUDED.laboratory_acronym, "
+            "loci_values = EXCLUDED.loci_values; "
+        ).bindparams(bindparam("loci_values", type_=JSONB))
+    else:
+        sql = text(
+            "INSERT INTO wa_loci_values (wa_code, loci_values) "
+            "VALUES (:wa_code, :loci_values) "
+            "ON CONFLICT (wa_code) "
+            "DO UPDATE "
+            "SET loci_values = EXCLUDED.loci_values; "
+        ).bindparams(bindparam("loci_values", type_=JSONB))
     params = {
         "wa_code": wa_code,
         "loci_values": loci_values,
     }
+    if laboratory:
+        params["laboratory"] = laboratory
     if con is None:
         with fn.conn_alchemy().connect() as db_con:
             _ = db_con.execute(sql, params)
@@ -185,12 +208,6 @@ def view_genotype(genotype_id: str):
                 )
             )
             return redirect(return_to)
-            # return to the last page
-            # if "url_genotypes_list" in session:
-            #    return redirect(session["url_genotypes_list"])
-            # if "url_wa_list" in session:
-            #    return redirect(session["url_wa_list"])
-            # return "Error on genotype"
 
         session["view_genotype_id"] = genotype_id
 
@@ -200,7 +217,7 @@ def view_genotype(genotype_id: str):
         wa_codes = (
             con.execute(
                 text(
-                    "SELECT wa_code, sample_id, sample_type, "
+                    "SELECT wa_code, sample_id, sample_type, laboratory_acronym as lab,"
                     "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
                     "ST_Y(st_transform(geometry_utm, 4326)) as latitude "
                     "FROM wa_scat_dw_all "
@@ -212,6 +229,8 @@ def view_genotype(genotype_id: str):
             .mappings()
             .all()
         )
+
+        wa_codes = [dict(row) for row in wa_codes]
 
     # loci list
     loci_list: dict = fn.get_loci_list()
@@ -226,10 +245,6 @@ def view_genotype(genotype_id: str):
         sum_lon += row["longitude"]
         sum_lat += row["latitude"]
 
-        """
-        if row["sample_type"] == "scat":
-            color = params["scat_color"]
-        """
         if row["sample_type"] == "Dead wolf":
             color = params["dead_wolf_color"]
         else:
@@ -255,7 +270,9 @@ def view_genotype(genotype_id: str):
         }
         samples_features.append(sample_feature)
 
-        loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(row["wa_code"])
+        loci_key = (row["lab"], row["wa_code"])
+        row["loci_key"] = loci_key
+        loci_values[loci_key] = fn.get_wa_loci_values_redis(row["lab"], row["wa_code"])
 
     if count_wa_code:
         map = Markup(
@@ -773,45 +790,51 @@ def plot_wa_clusters(distance: int):
     """
 
     MINPOINT = 1
-
-    print(f"{session["start_date"]=}")
-    print(f"{session["end_date"]=}")
-    print(f"{distance=}")
+    laboratories, laboratory = get_laboratory_selection()
 
     with fn.conn_alchemy().connect() as con:
         results = (
             con.execute(
                 text(
-                    "SELECT wa_code, sample_id, genotype_id, "
+                    "SELECT wa_code, sample_id, genotype_id, laboratory_acronym, "
                     "coord_east, coord_north, "
                     "ST_X(st_transform(geometry_utm, 4326)) as longitude, "
                     "ST_Y(st_transform(geometry_utm, 4326)) as latitude, "
                     "ST_ClusterDBSCAN(geometry_utm, eps:=:distance, minpoints:=:minpoint) OVER(ORDER BY wa_code) AS cid "
                     "FROM wa_scat_dw_all "
                     "WHERE mtdna != 'Poor DNA' "
-                    "AND date BETWEEN :start_date AND :end_date"
+                    "AND date BETWEEN :start_date AND :end_date "
+                    "AND geometry_utm IS NOT NULL "
+                    "AND laboratory_acronym = :laboratory_acronym"
                 ),
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                     "distance": distance,
                     "minpoint": MINPOINT,
+                    "laboratory_acronym": laboratory,
                 },
             )
             .mappings()
             .all()
         )
 
-    print(f"{len(results)=}")
+    if not results:
+        return render_template(
+            "plot_clusters.html",
+            header_title=f"WA codes clusters ({distance} m)",
+            title=Markup("No WA code found for the selected laboratory"),
+            map="",
+            distance=distance,
+            minpoint=MINPOINT,
+            clusters_number=0,
+            laboratories=laboratories,
+            selected_laboratory=laboratory,
+        )
 
     # max cluster id
-    max_cluster_id = max([row["cid"] for row in results if row["cid"] is not None])
-
-    """print(f"{max_cluster_id=}")"""
-
-    cmap = fn.get_cmap(max_cluster_id)
-
-    """print(f"{cmap=}")"""
+    max_cluster_id = max(row["cid"] for row in results if row["cid"] is not None)
+    cmap = fn.get_cmap(max_cluster_id + 1)
 
     # size of each cluster
     cluster_id_count = {}
@@ -821,38 +844,16 @@ def plot_wa_clusters(distance: int):
         cluster_id_count[row["cid"]] += 1
     print(f"{cluster_id_count=}")
 
-    """
-    for row in results:
-        if row["cid"] == 0:
-            print(row["coord_east"], row["coord_north"], row["longitude"], row["latitude"])
-            print("-" * 50)
-
-            max_dist = 0
-            min_dist = 1000000
-            for row2 in results:
-                if row2["cid"] == 0:
-                    d = ((row["coord_east"] - row2["coord_east"]) ** 2 + (row["coord_north"] - row2["coord_north"]) ** 2) ** 0.5
-                    max_dist = max(d, max_dist)
-                    min_dist = min(min_dist, d)
-            print(f"{min_dist=}")
-            print(f"{max_dist=}")
-            print()
-    """
-
     scat_features: list = []
     min_lon, min_lat, max_lon, max_lat = 90, 90, -90, -90
     for row in results:
         # skip loci with value 0 or -
 
-        """loci_val = rdis.get(row["wa_code"])
-        if loci_val is None:
-            continue
-        d = json.loads(loci_val)
-        """
-
         flag_ok = False
 
-        d = fn.get_wa_loci_values_redis(row["wa_code"])
+        d = fn.get_wa_loci_values_redis(
+            row["laboratory_acronym"], row["wa_code"]
+        )
 
         for locus in d:
             for allele in d[locus]:
@@ -873,6 +874,18 @@ def plot_wa_clusters(distance: int):
             color = matplotlib.colors.to_hex(cmap(row["cid"]), keep_alpha=False)
         else:
             color = "#000000"
+        wa_analysis_url = url_for(
+            "genetic.wa_analysis",
+            distance=distance,
+            cluster_id=row["cid"],
+            laboratory=laboratory,
+        )
+        genotype_analysis_url = url_for(
+            "genetic.wa_analysis_group",
+            tool=f"DBSCAN-{distance}-{row['cid']}",
+            mode="web",
+            laboratory=laboratory,
+        )
         scat_feature = {
             "geometry": {
                 "type": "Point",
@@ -884,9 +897,10 @@ def plot_wa_clusters(distance: int):
                 "popupContent": (
                     f"""Sample ID: <a href="/view_scat/{row["sample_id"]}" target="_blank">{row["sample_id"]}</a><br>"""
                     f"""WA code: <a href="/view_wa/{row["wa_code"]}" target="_blank">{row["wa_code"]}</a><br>"""
+                    f"""Laboratory: <b>{row["laboratory_acronym"]}</b><br>"""
                     f"""Genotype ID: <b>{row["genotype_id"]}</b><br>"""
-                    f"""Cluster ID {row["cid"]}:<br><a href="/wa_analysis/{distance}/{row["cid"]}">{cluster_id_count[row["cid"]]} samples</a> """
-                    f"""<a href="/wa_analysis_group/DBSCAN-{distance}-{row["cid"]}/web">Genotypes</a>"""
+                    f"""Cluster ID {row["cid"]}:<br><a href="{wa_analysis_url}">{cluster_id_count[row["cid"]]} samples</a> """
+                    f"""<a href="{genotype_analysis_url}">Genotypes</a>"""
                 ),
             },
             "id": row["sample_id"],
@@ -894,11 +908,9 @@ def plot_wa_clusters(distance: int):
 
         scat_features.append(scat_feature)
 
-    return render_template(
-        "plot_clusters.html",
-        header_title=f"WA codes clusters ({distance} m)",
-        title=Markup(f"Plot of {len(scat_features)} WA codes clusters"),
-        map=Markup(
+    map_html = ""
+    if scat_features:
+        map_html = Markup(
             fn.leaflet_geojson(
                 {
                     "scats": scat_features,
@@ -906,10 +918,18 @@ def plot_wa_clusters(distance: int):
                     "fit": [[min_lat, min_lon], [max_lat, max_lon]],
                 }
             )
-        ),
+        )
+
+    return render_template(
+        "plot_clusters.html",
+        header_title=f"WA codes clusters ({distance} m)",
+        title=Markup(f"Plot of {len(scat_features)} WA codes clusters"),
+        map=map_html,
         distance=int(distance),
         minpoint=MINPOINT,
         clusters_number=len(cluster_id_count),
+        laboratories=laboratories,
+        selected_laboratory=laboratory,
     )
 
 
@@ -1295,6 +1315,20 @@ def get_laboratories():
         )
 
 
+def get_laboratory_selection():
+    laboratories = get_laboratories()
+    acronyms = {laboratory["acronym"] for laboratory in laboratories}
+    default_laboratory = (
+        "NGC"
+        if "NGC" in acronyms
+        else (laboratories[0]["acronym"] if laboratories else "")
+    )
+    laboratory = request.args.get("laboratory", default=default_laboratory)
+    if laboratory not in acronyms:
+        laboratory = default_laboratory
+    return laboratories, laboratory
+
+
 def get_wa(
     offset: int = 0,
     limit: int | str = 10,
@@ -1607,6 +1641,8 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
     if mode not in ("web", "export", "ml-relate", "colony"):
         return "error: mode must be web, export or ml-relate"
 
+    _, laboratory = get_laboratory_selection()
+
     with fn.conn_alchemy().connect() as con:
         # loci list
         loci_list: list = fn.get_loci_list()
@@ -1621,13 +1657,16 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                     "ST_ClusterDBSCAN(geometry_utm, eps:= :distance, minpoints:=1) OVER(ORDER BY wa_code) AS cluster_id "
                     "FROM wa_scat_dw_all "
                     "WHERE mtdna != 'Poor DNA' "
-                    "AND date BETWEEN :start_date AND :end_date) q WHERE cluster_id = :cluster_id "
+                    "AND date BETWEEN :start_date AND :end_date "
+                    "AND geometry_utm IS NOT NULL "
+                    "AND laboratory_acronym = :laboratory_acronym) q WHERE cluster_id = :cluster_id "
                 ),
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                     "distance": distance,
                     "cluster_id": cluster_id,
+                    "laboratory_acronym": laboratory,
                 },
             )
             .mappings()
@@ -1661,6 +1700,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                     "    w.genotype_id, "
                     "    w.tmp_id, "
                     "    w.sex_id, "
+                    "    w.laboratory_acronym, "
                     "    g.working_notes AS notes, "
                     "    g.status, "
                     "    g.pack, "
@@ -1677,12 +1717,14 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                     "    ON g.genotype_id = w.genotype_id "
                     "WHERE w.wa_code = ANY(:wa_code_list) "
                     "    AND w.date BETWEEN :start_date AND :end_date "
+                    "    AND w.laboratory_acronym = :laboratory_acronym "
                     "ORDER BY w.wa_code ASC; "
                 ),
                 {
                     "start_date": session["start_date"],
                     "end_date": session["end_date"],
                     "wa_code_list": wa_list,
+                    "laboratory_acronym": laboratory,
                 },
             )
             .mappings()
@@ -1699,7 +1741,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             has_loci_values: bool = False
             for row in wa_scats:
                 loci_values[row["wa_code"]] = fn.get_wa_loci_values_redis(
-                    row["wa_code"]
+                    laboratory, row["wa_code"]
                 )
 
                 for allele in ("a", "b"):
@@ -1765,7 +1807,7 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             response.headers["Content-disposition"] = (
-                f"attachment; filename=cluster_id{cluster_id}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+                f"attachment; filename={laboratory}_cluster_id{cluster_id}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
             )
             return response
 
@@ -1773,19 +1815,24 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
             response = make_response("\n".join(ml_relate), 200)
             response.headers["Content-type"] = "text/plain"
             response.headers["Content-disposition"] = (
-                f"attachment; filename=cluster_id{cluster_id}_distance{distance}.txt"
+                f"attachment; filename={laboratory}_cluster_id{cluster_id}_distance{distance}.txt"
             )
             return response
 
         else:
-            session["go_back_url"] = f"/wa_analysis/{distance}/{cluster_id}"
+            session["go_back_url"] = url_for(
+                "genetic.wa_analysis",
+                distance=distance,
+                cluster_id=cluster_id,
+                laboratory=laboratory,
+            )
 
             return render_template(
                 "wa_analysis.html",
                 header_title=f"cluster ID: {cluster_id} distance: {distance} m) - WA matches",
                 title=Markup(
                     (
-                        f"Matches (cluster id: {cluster_id} distance: {distance} m) "
+                        f"Matches (cluster id: {cluster_id} distance: {distance} m, laboratory: {laboratory}) "
                         f"{count_samples_with_data} WA code{'s' if count_samples_with_data > 1 else ''} with data ({len(wa_scats)} total)"
                     )
                 ),
@@ -1794,11 +1841,12 @@ def wa_analysis(distance: int, cluster_id: int, mode: str = "web"):
                 loci_values=loci_values,
                 distance=distance,
                 cluster_id=cluster_id,
+                laboratory=laboratory,
                 ml_relate="\n".join(ml_relate),
             )
 
 
-def get_genotypes_from_wa(wa_list: list):
+def get_genotypes_from_wa(wa_list: list, laboratory: str | None = None):
     """
     get genotype info from list of WA codes
     TODO: check if same genotype has 2 different sex
@@ -1807,16 +1855,23 @@ def get_genotypes_from_wa(wa_list: list):
     # wa_list_str = "','".join(wa_list)
     with fn.conn_alchemy().connect() as con:
         # fetch grouped genotypes
+        sql = (
+            "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
+            "FROM wa_scat_dw_all "
+            "WHERE wa_code = ANY(:wa_list) "
+        )
+        values = {"wa_list": wa_list}
+        if laboratory is not None:
+            sql += "AND laboratory_acronym = :laboratory_acronym "
+            values["laboratory_acronym"] = laboratory
+        sql += (
+            "GROUP BY genotype_id, sex_id "
+            "ORDER BY genotype_id ASC"
+        )
         genotype_id = (
             con.execute(
-                text(
-                    "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
-                    "FROM wa_scat_dw_all "
-                    "WHERE wa_code = ANY(:wa_list) "
-                    "GROUP BY genotype_id, sex_id "
-                    "ORDER BY genotype_id ASC"
-                ),
-                {"wa_list": wa_list},
+                text(sql),
+                values,
             )
             .mappings()
             .all()
@@ -1985,22 +2040,27 @@ def wa_analysis_group(tool: str, mode: str):
 
         distance = None
         cluster_id = None
+        laboratory = None
         # DBScan
         if tool.startswith("DBSCAN"):
+            _, laboratory = get_laboratory_selection()
             distance, cluster_id = [int(x) for x in tool.split("-")[1:]]
             wa_list: list = []
             for row in (
                 con.execute(
                     text(
                         "SELECT wa_code, "
-                        f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) over() AS cluster_id "
+                        f"ST_ClusterDBSCAN(geometry_utm, eps:={distance}, minpoints:=1) OVER(ORDER BY wa_code) AS cluster_id "
                         "FROM wa_scat_dw_all "
                         "WHERE mtdna != 'Poor DNA' "
                         "AND date BETWEEN :start_date AND :end_date "
+                        "AND geometry_utm IS NOT NULL "
+                        "AND laboratory_acronym = :laboratory_acronym "
                     ),
                     {
                         "start_date": session["start_date"],
                         "end_date": session["end_date"],
+                        "laboratory_acronym": laboratory,
                     },
                 )
                 .mappings()
@@ -2048,7 +2108,7 @@ def wa_analysis_group(tool: str, mode: str):
             wa_list = [x["wa_code"] for x in wa_codes]
 
     # fetch grouped genotypes
-    genotypes_info = get_genotypes_from_wa(wa_list)
+    genotypes_info = get_genotypes_from_wa(wa_list, laboratory)
 
     data, loci_values, count_sex = get_genotypes_data(genotypes_info)
 
@@ -2156,7 +2216,7 @@ def wa_analysis_group(tool: str, mode: str):
             "application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         response.headers["Content-disposition"] = (
-            f"attachment; filename=genotypes_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
+            f"attachment; filename=genotypes_{laboratory or 'selection'}_{dt.datetime.now():%Y-%m-%d_%H%M%S}.xlsx"
         )
         return response
 
@@ -2181,7 +2241,9 @@ def wa_analysis_group(tool: str, mode: str):
 
     elif mode == "run_colony":
         if tool.startswith("DBSCAN"):
-            input_file_name = colony_output_path / Path(f"{distance}_{cluster_id}")
+            input_file_name = colony_output_path / Path(
+                f"{laboratory}_{distance}_{cluster_id}"
+            )
             with open(f"{input_file_name}.dat", "w") as file_out:
                 file_out.write("\n".join(colony_out))
 
@@ -2196,7 +2258,14 @@ def wa_analysis_group(tool: str, mode: str):
                     "The Colony program was not found. Please contact the administrator."
                 )
             )
-            return redirect(f"/wa_analysis_group/{tool}/web")
+            return redirect(
+                url_for(
+                    "genetic.wa_analysis_group",
+                    tool=tool,
+                    mode="web",
+                    laboratory=laboratory,
+                )
+            )
 
         with open(f"{input_file_name}.stdout", "w") as colony_stdout:
             _ = subprocess.Popen(
@@ -2227,7 +2296,14 @@ def wa_analysis_group(tool: str, mode: str):
                     )
                 )
             )
-            return redirect(f"/wa_analysis_group/{tool}/web")
+            return redirect(
+                url_for(
+                    "genetic.wa_analysis_group",
+                    tool=tool,
+                    mode="web",
+                    laboratory=laboratory,
+                )
+            )
 
         flash(
             fn.alert_success(
@@ -2235,7 +2311,14 @@ def wa_analysis_group(tool: str, mode: str):
             )
         )
 
-        return redirect(f"/wa_analysis_group/{tool}/web")
+        return redirect(
+            url_for(
+                "genetic.wa_analysis_group",
+                tool=tool,
+                mode="web",
+                laboratory=laboratory,
+            )
+        )
 
     # Genepop format (for ML-Relate)
     elif mode == "ml-relate":
@@ -2266,10 +2349,12 @@ def wa_analysis_group(tool: str, mode: str):
         if tool.startswith("DBSCAN"):
             header_title = f"Genotype{'s' if len(loci_values) > 1 else ''} for cluster ID: {cluster_id} distance: {distance} m))"
             page_title = Markup(
-                f"DBSCAN cluster id: {cluster_id} distance: {distance} m - <b>{len(loci_values)}</b> genotype{'s' if len(loci_values) > 1 else ''}"
+                f"DBSCAN cluster id: {cluster_id} distance: {distance} m, laboratory: {laboratory} - <b>{len(loci_values)}</b> genotype{'s' if len(loci_values) > 1 else ''}"
             )
 
-            colony_output_file = Path(f"{distance}_{cluster_id}.BestConfig_Ordered")
+            colony_output_file = Path(
+                f"{laboratory}_{distance}_{cluster_id}.BestConfig_Ordered"
+            )
             colony_output_file_path = colony_output_path / colony_output_file
 
         if tool.startswith("POLYGON"):
@@ -2301,6 +2386,7 @@ def wa_analysis_group(tool: str, mode: str):
             loci_values=loci_values,
             distance=distance,
             cluster_id=cluster_id,
+            laboratory=laboratory,
             colony_result=colony_result,
             colony_results_content=colony_results_content,
         )
@@ -2316,31 +2402,54 @@ def view_genetic_data(wa_code: str):
     session["view_wa_code"] = wa_code
 
     return_to = request.args.get("return_to", default=request.referrer)
+    laboratory = request.args.get("laboratory")
 
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
-        row = (
-            con.execute(
-                text(
-                    "SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"
-                ),
-                {"wa_code": wa_code},
+        if laboratory:
+            sql = text(
+                "SELECT sex_id, genotype_id, laboratory_acronym "
+                "FROM wa_results "
+                "WHERE wa_code = :wa_code "
+                "AND laboratory_acronym = :laboratory_acronym"
             )
+            query_params = {
+                "wa_code": wa_code,
+                "laboratory_acronym": laboratory,
+            }
+        else:
+            sql = text(
+                "SELECT sex_id, genotype_id, laboratory_acronym "
+                "FROM wa_results "
+                "WHERE wa_code = :wa_code "
+                "ORDER BY (laboratory_acronym = 'NGC') DESC, laboratory_acronym "
+                "LIMIT 1"
+            )
+            query_params = {"wa_code": wa_code}
+
+        row = (
+            con.execute(sql, query_params)
             .mappings()
             .fetchone()
         )
 
         if row is None:
-            flash(fn.alert_danger(f"WA code {wa_code} not found"))
+            laboratory_message = f" for laboratory {laboratory}" if laboratory else ""
+            flash(
+                fn.alert_danger(
+                    f"WA code {wa_code} not found{laboratory_message}"
+                )
+            )
             return redirect(return_to)
 
+        laboratory = row["laboratory_acronym"]
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
 
         # loci list
         loci_list = fn.get_loci_list()
 
-        wa_loci = fn.get_wa_loci_values_redis(wa_code)
+        wa_loci = fn.get_wa_loci_values_redis(laboratory, wa_code)
 
         genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
@@ -2367,8 +2476,9 @@ def view_genetic_data(wa_code: str):
 
         return render_template(
             "view_genetic_data.html",
-            header_title=f"{wa_code} genetic data",
+            header_title=f"{wa_code} genetic data ({laboratory})",
             wa_code=wa_code,
+            laboratory=laboratory,
             loci_list=loci_list,
             sex=sex,
             genotype_id=genotype_id,
@@ -2390,18 +2500,40 @@ def add_genetic_data(wa_code: str):
     """
     Let user add loci values for WA code
     """
+    laboratory = request.values.get("laboratory")
+
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
-        row = (
-            con.execute(
-                text(
-                    "SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"
-                ),
-                {"wa_code": wa_code},
+        if laboratory:
+            sql = text(
+                "SELECT sex_id, genotype_id, laboratory_acronym "
+                "FROM wa_results "
+                "WHERE wa_code = :wa_code "
+                "AND laboratory_acronym = :laboratory"
             )
-            .mappings()
-            .fetchone()
-        )
+            query_params = {"wa_code": wa_code, "laboratory": laboratory}
+        else:
+            sql = text(
+                "SELECT sex_id, genotype_id, laboratory_acronym "
+                "FROM wa_results "
+                "WHERE wa_code = :wa_code "
+                "ORDER BY (laboratory_acronym = 'NGC') DESC, "
+                "laboratory_acronym "
+                "LIMIT 1"
+            )
+            query_params = {"wa_code": wa_code}
+
+        row = con.execute(sql, query_params).mappings().fetchone()
+        if row is None:
+            laboratory_message = f" for laboratory {laboratory}" if laboratory else ""
+            flash(
+                fn.alert_danger(
+                    f"WA code {wa_code} not found{laboratory_message}"
+                )
+            )
+            return redirect(request.referrer or url_for("genetic.wa_genetic_samples3"))
+
+        laboratory = row["laboratory_acronym"]
 
         loci = (
             con.execute(text("SELECT * FROM loci ORDER BY position ASC"))
@@ -2412,7 +2544,7 @@ def add_genetic_data(wa_code: str):
         # loci list
         loci_list = fn.get_loci_list()
 
-        wa_loci = fn.get_wa_loci_values_redis(wa_code)
+        wa_loci = fn.get_wa_loci_values_redis(laboratory, wa_code)
 
         # genotype_loci = fn.get_genotype_loci_values(row["genotype_id"], loci_list)
         genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
@@ -2444,6 +2576,7 @@ def add_genetic_data(wa_code: str):
                 header_title=f"Add genetic data for {wa_code}",
                 go_back_url=request.referrer,
                 wa_code=wa_code,
+                laboratory=laboratory,
                 loci=loci,
                 loci_values=wa_loci,
                 sex=row["sex_id"],
@@ -2453,17 +2586,26 @@ def add_genetic_data(wa_code: str):
         if request.method == "POST":
             # set sex
             con.execute(
-                text("UPDATE wa_results SET sex_id = :sex_id WHERE wa_code = :wa_code"),
-                {"sex_id": request.form["sex"], "wa_code": wa_code},
+                text(
+                    "UPDATE wa_results SET sex_id = :sex_id "
+                    "WHERE wa_code = :wa_code "
+                    "AND laboratory_acronym = :laboratory"
+                ),
+                {
+                    "sex_id": request.form["sex"],
+                    "wa_code": wa_code,
+                    "laboratory": laboratory,
+                },
             )
 
             # test sex for all WA codes
             rows = (
                 con.execute(
                     text(
-                        "SELECT DISTINCT sex_id FROM wa_results WHERE genotype_id in (SELECT genotype_id FROM wa_results where wa_code = :wa_code)"
+                        "SELECT DISTINCT sex_id FROM wa_results "
+                        "WHERE genotype_id = :genotype_id"
                     ),
-                    {"wa_code": wa_code},
+                    {"genotype_id": row["genotype_id"]},
                 )
                 .mappings()
                 .fetchall()
@@ -2471,9 +2613,13 @@ def add_genetic_data(wa_code: str):
             if len(rows) == 1:  # same sex value for all WA codes -> Set genotype
                 con.execute(
                     text(
-                        "UPDATE genotypes SET sex = :sex WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code)"
+                        "UPDATE genotypes SET sex = :sex "
+                        "WHERE genotype_id = :genotype_id"
                     ),
-                    {"sex": rows[0]["sex_id"], "wa_code": wa_code},
+                    {
+                        "sex": rows[0]["sex_id"],
+                        "genotype_id": row["genotype_id"],
+                    },
                 )
 
             current_epoch = int(time.time())
@@ -2486,8 +2632,8 @@ def add_genetic_data(wa_code: str):
                         con.execute(
                             text(
                                 "INSERT INTO wa_locus "
-                                "(wa_code, locus, allele, val, timestamp, notes, user_id, definitive) "
-                                "VALUES (:wa_code, :locus, :allele, :val, to_timestamp(:current_epoch), :notes, :user_id, :definitive)"
+                                "(wa_code, locus, allele, val, timestamp, notes, user_id, definitive, laboratory_acronym) "
+                                "VALUES (:wa_code, :locus, :allele, :val, to_timestamp(:current_epoch), :notes, :user_id, :definitive, :laboratory)"
                             ),
                             {
                                 "wa_code": wa_code,
@@ -2504,10 +2650,13 @@ def add_genetic_data(wa_code: str):
                                 else None,
                                 "user_id": session.get("user_name", session["email"]),
                                 "definitive": True,
+                                "laboratory": laboratory,
                             },
                         )
 
-            update_loci_values_cache(wa_code, loci_list)
+            update_loci_values_cache(
+                wa_code, loci_list, con=con, laboratory=laboratory
+            )
 
             # update genotype_locus
 
@@ -2518,9 +2667,14 @@ def add_genetic_data(wa_code: str):
                         and request.form[locus["name"] + f"_{allele}"]
                     ):
                         sql = text(
-                            "SELECT DISTINCT (SELECT val FROM wa_locus WHERE locus = :locus AND allele = :allele AND wa_code = wa_scat_dw_all.wa_code ORDER BY timestamp DESC LIMIT 1) AS val "
-                            "FROM wa_scat_dw_all "
-                            "WHERE genotype_id = (SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code)"
+                            "SELECT DISTINCT ("
+                            "SELECT val FROM wa_locus "
+                            "WHERE locus = :locus AND allele = :allele "
+                            "AND wa_code = wa_scat_dw_all.wa_code "
+                            "AND laboratory_acronym = wa_scat_dw_all.laboratory_acronym "
+                            "ORDER BY timestamp DESC LIMIT 1"
+                            ") AS val FROM wa_scat_dw_all "
+                            "WHERE genotype_id = :genotype_id"
                         )
                         rows = (
                             con.execute(
@@ -2528,7 +2682,7 @@ def add_genetic_data(wa_code: str):
                                 {
                                     "locus": locus["name"],
                                     "allele": allele,
-                                    "wa_code": wa_code,
+                                    "genotype_id": row["genotype_id"],
                                 },
                             )
                             .mappings()
@@ -2539,7 +2693,7 @@ def add_genetic_data(wa_code: str):
                             sql = text(
                                 "SELECT distinct (SELECT id FROM genotype_locus where locus = :locus AND allele = :allele AND genotype_id = wa_scat_dw_all.genotype_id ORDER BY timestamp DESC LIMIT 1) AS id "
                                 "FROM wa_scat_dw_all "
-                                "WHERE genotype_id = (SELECT genotype_id FROM wa_results where wa_code = :wa_code)"
+                                "WHERE genotype_id = :genotype_id"
                             )
 
                             rows2 = (
@@ -2548,7 +2702,7 @@ def add_genetic_data(wa_code: str):
                                     {
                                         "locus": locus["name"],
                                         "allele": allele,
-                                        "wa_code": wa_code,
+                                        "genotype_id": row["genotype_id"],
                                     },
                                 )
                                 .mappings()
@@ -2606,24 +2760,44 @@ def add_genetic_data(wa_code: str):
                                     ),
                                 )
 
-            return redirect(f"/view_genetic_data/{wa_code}")
+            return redirect(
+                url_for(
+                    "genetic.view_genetic_data",
+                    wa_code=wa_code,
+                    laboratory=laboratory,
+                )
+            )
 
 
 @app.route("/view_genetic_data_history/<wa_code>/<locus>")
 @fn.check_login
 def view_genetic_data_history(wa_code: str, locus: str):
+    laboratory = request.args.get("laboratory")
+
     with fn.conn_alchemy().connect() as con:
         # get info about WA code
-        row = (
-            con.execute(
-                text(
-                    "SELECT sex_id, genotype_id FROM wa_results WHERE wa_code = :wa_code"
-                ),
-                {"wa_code": wa_code},
+        if laboratory:
+            sql = text(
+                "SELECT sex_id, genotype_id, laboratory_acronym "
+                "FROM wa_results WHERE wa_code = :wa_code "
+                "AND laboratory_acronym = :laboratory"
             )
-            .mappings()
-            .fetchone()
-        )
+            query_params = {"wa_code": wa_code, "laboratory": laboratory}
+        else:
+            sql = text(
+                "SELECT sex_id, genotype_id, laboratory_acronym "
+                "FROM wa_results WHERE wa_code = :wa_code "
+                "ORDER BY (laboratory_acronym = 'NGC') DESC, "
+                "laboratory_acronym LIMIT 1"
+            )
+            query_params = {"wa_code": wa_code}
+
+        row = con.execute(sql, query_params).mappings().fetchone()
+        if row is None:
+            flash(fn.alert_danger(f"WA code {wa_code} not found"))
+            return redirect(request.referrer or url_for("genetic.wa_genetic_samples3"))
+
+        laboratory = row["laboratory_acronym"]
         sex = row["sex_id"]
         genotype_id = row["genotype_id"]
 
@@ -2634,10 +2808,16 @@ def view_genetic_data_history(wa_code: str, locus: str):
                     (
                         "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp, notes, user_id, "
                         "CASE WHEN definitive IS NULL THEN ''::text ELSE definitive::text END "
-                        "FROM wa_locus WHERE wa_code = :wa_code and locus = :locus ORDER BY allele, timestamp ASC"
+                        "FROM wa_locus WHERE wa_code = :wa_code "
+                        "AND laboratory_acronym = :laboratory "
+                        "AND locus = :locus ORDER BY allele, timestamp ASC"
                     )
                 ),
-                {"wa_code": wa_code, "locus": locus},
+                {
+                    "wa_code": wa_code,
+                    "laboratory": laboratory,
+                    "locus": locus,
+                },
             )
             .mappings()
             .all()
@@ -2647,6 +2827,7 @@ def view_genetic_data_history(wa_code: str, locus: str):
             "view_genetic_data_history.html",
             header_title=f"{wa_code} genetic data",
             wa_code=wa_code,
+            laboratory=laboratory,
             locus=locus,
             locus_values=locus_values,
             sex=sex,

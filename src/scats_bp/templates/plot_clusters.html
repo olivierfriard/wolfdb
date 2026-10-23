@@ -4,18 +4,27 @@
 
 <h4>{{ title }}
 
+<form class="d-inline-flex align-items-center gap-2 ms-2" method="GET"
+      action="{{ url_for('genetic.plot_wa_clusters', distance=distance) }}">
+<label class="form-label mb-0 small" for="laboratory">Laboratory</label>
+<select class="form-select form-select-sm" id="laboratory" name="laboratory"
+        onchange="this.form.submit()">
+{% for laboratory in laboratories %}
+<option value="{{ laboratory.acronym }}" {% if laboratory.acronym == selected_laboratory %}selected{% endif %}>
+{{ laboratory.name }} — {{ laboratory.acronym }}
+</option>
+{% endfor %}
+</select>
+</form>
+
 <div class="btn-group dropend">
 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 Distance: {{ distance }} m
 </button>
 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-<li><a class="dropdown-item" href="/plot_wa_clusters/100">100 m</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/250">250 m</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/500">500 m</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/750">750 m</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/1000">1000 m</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/2000">2000 m</a></li>
-<li><a class="dropdown-item" href="/plot_wa_clusters/2500">2500 m</a></li>
+{% for value in [100, 250, 500, 750, 1000, 2000, 2500] %}
+<li><a class="dropdown-item" href="{{ url_for('genetic.plot_wa_clusters', distance=value, laboratory=selected_laboratory) }}">{{ value }} m</a></li>
+{% endfor %}
 </ul>
 </div>
 
