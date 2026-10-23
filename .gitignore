@@ -6,3 +6,4 @@ src/static/results/
 src/start.bash
 src/static/colony_output/
 .codex
+.env
