@@ -15,7 +15,6 @@ from config import config
 app = Blueprint("packs", __name__, template_folder="templates")
 
 params = config()
-app.debug = params["debug"]
 
 
 @app.route("/packs")

@@ -134,14 +134,14 @@ def get_allele_modifier(email: str) -> bool:
         )
 
 
-def get_wa_loci_values_redis(wa_code: str) -> dict | None:
+def get_wa_loci_values_redis(lab: str, wa_code: str) -> dict | None:
     """
-    get WA code loci values from redis
+    get WA code loci values for a lab from redis
     if not found in redis retrieve from loci_values table
     if not found in loci_values table use get_wa_loci_values function
     """
 
-    r = rdis.get(wa_code)
+    r = rdis.get(f"lab:{lab}:wa:{wa_code}")
     if r is not None:
         return json.loads(r)
     else:  # try from loci_values table
@@ -149,22 +149,20 @@ def get_wa_loci_values_redis(wa_code: str) -> dict | None:
             wa_loci = (
                 con.execute(
                     text(
-                        "SELECT loci_values FROM wa_loci_values WHERE wa_code = :wa_code"
+                        "SELECT loci_values FROM wa_loci_values WHERE wa_code = :wa_code AND laboratory_acronym = :lab "
                     ),
-                    {"wa_code": wa_code},
+                    {"wa_code": wa_code, "lab": lab},
                 )
                 .mappings()
                 .fetchone()
             )
         if wa_loci is not None:
-            return wa_loci
+            return wa_loci["loci_values"]
         else:
-            return get_wa_loci_values(wa_code, get_loci_list())[0]
+            return get_wa_loci_values_by_lab(lab, wa_code, get_loci_list())[0]
 
 
-def get_wa_loci_values(
-    wa_code: str, loci_list: dict, con=None
-) -> tuple[dict, bool]:
+def get_wa_loci_values(wa_code: str, loci_list: dict, con=None) -> tuple[dict, bool]:
     """
 
     Return:
@@ -184,7 +182,6 @@ def get_wa_loci_values(
     if not requested:
         return loci_values, False
 
-    #
     values_sql = ", ".join(f"(:locus{i}, :allele{i})" for i in range(len(requested)))
     params = {"wa_code": wa_code}
     for i, (locus, allele) in enumerate(requested):
@@ -237,7 +234,121 @@ def get_wa_loci_values(
     if con is None:
         with conn_alchemy().connect() as db_con:
             rows = db_con.execute(sql, params).mappings().all()
-    else:
+    else:  # use open received connection
+        rows = con.execute(sql, params).mappings().all()
+
+    # init default (anche per coppie senza righe nel DB)
+    for locus, n_alleles in loci_list.items():
+        for allele in ("a", "b")[:n_alleles]:
+            loci_values[locus][allele] = {
+                "value": "-",
+                "notes": "",
+                "has_history": False,
+                "epoch": "",
+                "user_id": "",
+                "date": "",
+                "definitive": False,
+            }
+
+    for row in rows:
+        locus = row["locus"]
+        allele = row["allele"]
+
+        has_history = bool(row["has_history"])
+        has_loci_notes = has_loci_notes or has_history
+
+        loci_values[locus][allele] = {
+            "value": row["val"] if row["val"] is not None else "-",
+            "notes": row["notes"] if row["notes"] is not None else "",
+            "has_history": has_history,
+            "epoch": row["epoch"] if row["epoch"] is not None else "",
+            "user_id": row["user_id"] if row["user_id"] is not None else "",
+            "date": row["formatted_timestamp"]
+            if row["formatted_timestamp"] is not None
+            else "",
+            "definitive": bool(row["definitive"])
+            if row["definitive"] is not None
+            else False,
+        }
+
+    return loci_values, has_loci_notes
+
+
+def get_wa_loci_values_by_lab(
+    lab: str, wa_code: str, loci_list: dict, con=None
+) -> tuple[dict, bool]:
+    """
+
+    Return:
+      loci_values[locus][allele] = {
+        value, notes, has_history, epoch, user_id, date, definitive
+      }
+    """
+    # prepare required tuple (locus, allele)
+    requested: list = []
+    for locus, n_alleles in loci_list.items():
+        for allele in ("a", "b")[:n_alleles]:
+            requested.append((locus, allele))
+
+    loci_values: dict = {locus: {} for locus in loci_list}
+    has_loci_notes = False
+
+    if not requested:
+        return loci_values, False
+
+    values_sql = ", ".join(f"(:locus{i}, :allele{i})" for i in range(len(requested)))
+    params = {"wa_code": wa_code, "lab": lab}
+    for i, (locus, allele) in enumerate(requested):
+        params[f"locus{i}"] = locus
+        params[f"allele{i}"] = allele
+
+    sql = text(f"""
+        WITH req(locus, allele) AS (
+            VALUES {values_sql}
+        ),
+        latest AS (
+            SELECT DISTINCT ON (wl.locus, wl.allele)
+                wl.locus,
+                wl.allele,
+                wl.val,
+                wl.notes,
+                wl.user_id,
+                wl.definitive,
+                wl."timestamp"
+            FROM wa_locus wl
+            JOIN req r
+              ON r.locus = wl.locus AND r.allele = wl.allele
+            WHERE wl.wa_code = :wa_code and wl.laboratory_acronym = :lab
+            ORDER BY wl.locus, wl.allele, wl."timestamp" DESC
+        ),
+        hist AS (
+            SELECT h.locus, h.allele, TRUE AS has_history
+            FROM wa_locus h
+            JOIN req r
+              ON r.locus = h.locus AND r.allele = h.allele
+            WHERE h.wa_code = :wa_code AND h.laboratory_acronym = :lab
+              AND h.user_id IS NOT NULL
+            GROUP BY h.locus, h.allele
+        )
+        SELECT
+            r.locus,
+            r.allele,
+            l.val,
+            l.notes,
+            extract(epoch from l."timestamp")::integer AS epoch,
+            l.user_id,
+            l.definitive,
+            to_char(l."timestamp", 'YYYY-MM-DD HH24:MI:SS') AS formatted_timestamp,
+            COALESCE(h.has_history, FALSE) AS has_history
+        FROM req r
+        LEFT JOIN latest l ON l.locus = r.locus AND l.allele = r.allele
+        LEFT JOIN hist   h ON h.locus = r.locus AND h.allele = r.allele
+    """)
+
+    if con is None:
+        with conn_alchemy().connect() as db_con:
+            rows = db_con.execute(sql, params).mappings().all()
+    else:  # use open received connection
         rows = con.execute(sql, params).mappings().all()
 
     # init default (anche per coppie senza righe nel DB)

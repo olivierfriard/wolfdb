@@ -92,6 +92,7 @@ def export_wa_genetic_samples_pandas(
 
     fields = {
         "wa_code": "WA code",
+        "laboratory_acronym": "Laboratory",
         "sample_id": "Sample ID",
         "date": "Date",
         "municipality": "Municipality",
@@ -118,11 +119,11 @@ def export_wa_genetic_samples_pandas(
             value = row[field_key]
             out[field_label] = value if value is not None else ""
 
-        wa_code = row["wa_code"]
+        loci_key = row["loci_key"]
 
         for locus in loci_list:
             for allele in ("a", "b")[: loci_list[locus]]:
-                locus_data = loci_values.get(wa_code, {}).get(locus, {}).get(allele, {})
+                locus_data = loci_values.get(loci_key, {}).get(locus, {}).get(allele, {})
 
                 out[f"{locus} {allele}"] = locus_data.get("value", "")
                 if with_loci_notes:

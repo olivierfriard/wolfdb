@@ -23,7 +23,6 @@ from .transect_form import Transect
 app = flask.Blueprint("transects", __name__, template_folder="templates")
 
 params = config()
-app.debug = params["debug"]
 
 
 @app.route("/view_transect/<transect_id>")

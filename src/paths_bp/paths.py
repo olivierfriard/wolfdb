@@ -5,28 +5,28 @@ WolfDB web service
 flask blueprint for paths management
 """
 
-import flask
-from flask import render_template, redirect, request, flash, session, make_response
-from markupsafe import Markup
-from sqlalchemy import text
-from config import config
-import json
-import pathlib as pl
-import os
-import sys
-import uuid
-from . import paths_import
-from .path_form import Path
-import functions as fn
-from . import paths_export
-
 # import paths_completeness
 import datetime as dt
+import json
+import os
+import pathlib as pl
+import sys
+import uuid
+
+import flask
+from flask import flash, make_response, redirect, render_template, request, session
+from markupsafe import Markup
+from sqlalchemy import text
+
+import functions as fn
+from config import config
+
+from . import paths_export, paths_import
+from .path_form import Path
 
 app = flask.Blueprint("paths", __name__, template_folder="templates")
 
 params = config()
-app.debug = params["debug"]
 
 
 def error_info(exc_info: tuple) -> tuple:

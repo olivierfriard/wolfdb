@@ -5,22 +5,24 @@ WolfDB web service
 flask blueprint for data analysis
 """
 
-import flask
-from flask import render_template, redirect, request, flash, make_response, session
-from sqlalchemy import text
-from config import config
-import pathlib as pl
+import copy
+import datetime as dt
 import os
+import pathlib as pl
+import subprocess
+import sys
+import time
+import uuid
+import zipfile
+
+import fiona
+import flask
+from flask import flash, make_response, redirect, render_template, request, session
+from sqlalchemy import text
+
 import functions as fn
 import paths_completeness
-import datetime as dt
-import copy
-import uuid
-import sys
-import subprocess
-import time
-import zipfile
-import fiona
+from config import config
 
 # from . import cell_occupancy as cell_occupancy_module
 
@@ -29,7 +31,6 @@ app = flask.Blueprint(
 )
 
 params = config()
-app.debug = params["debug"]
 
 
 def error_info(exc_info: tuple) -> tuple:

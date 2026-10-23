@@ -39,21 +39,19 @@ def update_redis_wa_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        sql = text("SELECT wa_code FROM wa_scat_dw_all ORDER BY wa_code")
+        sql = text(
+            "SELECT wa_code, laboratory_acronym FROM wa_scat_dw_all ORDER BY wa_code"
+        )
 
         for row in con.execute(sql).mappings().all():
-            # old = fn.get_wa_loci_values_old(row["wa_code"], loci_list)
-            # new = fn.get_wa_loci_values(row["wa_code"], loci_list)
-            # if old != new:
-            #    print(old)
-            #    print(new)
-            #    sys.exit()
-
-            # print(row["wa_code"])
-
             rdis.set(
-                row["wa_code"],
-                json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
+                f"lab:{row['laboratory_acronym']}:wa:{row['wa_code']}",
+                # json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
+                json.dumps(
+                    fn.get_wa_loci_values_by_lab(
+                        row["laboratory_acronym"], row["wa_code"], loci_list
+                    )[0]
+                ),
             )
 
     rdis.set("UPDATE WA LOCI", datetime.now().isoformat())

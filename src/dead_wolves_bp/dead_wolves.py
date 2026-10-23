@@ -35,8 +35,6 @@ app = flask.Blueprint("dead_wolves", __name__, template_folder="templates")
 
 params = config()
 
-app.debug = params["debug"]
-
 
 @app.route("/view_tissue/<path:tissue_id>")
 def view_tissue(tissue_id: str):

@@ -29,7 +29,6 @@ app = flask.Blueprint(
 )
 
 params = config()
-app.debug = params["debug"]
 
 
 def error_info(exc_info: tuple) -> tuple:

@@ -5,19 +5,18 @@ WolfDB web service
 flask blueprint for service administration
 """
 
-import sys
-from flask import render_template, session, current_app, flash, redirect, Blueprint
 import subprocess
+import sys
+
+from flask import Blueprint, current_app, flash, redirect, render_template, session
 from sqlalchemy import text
 
-from config import config
 import functions as fn
+from config import config
 
 app = Blueprint("admin", __name__, template_folder="templates")
 
 params = config()
-
-app.debug = params["debug"]
 
 
 @app.route("/admin")

@@ -9,6 +9,7 @@
     <thead>
     <tr>
     <th>WA code</th>
+    <th>Laboratory</th>
     <th>Sample ID</th>
     <th>Date</th>
     <th>Box number</th>
@@ -46,7 +47,10 @@ offset=offset,
 limit=limit,
 with_genotype_notes=1 if with_genotype_notes else 0,
 with_loci_values=1 if with_loci_values else 0,
-with_loci_notes=1 if with_loci_notes else 0
+with_loci_notes=1 if with_loci_notes else 0,
+not_poor_dna=1 if not_poor_dna else 0,
+search_str=search_str,
+laboratories=selected_laboratories
 )
 %}
 
@@ -63,11 +67,13 @@ with_loci_notes=1 if with_loci_notes else 0
 
 
 
-{% if locus_notes[result.wa_code] %}
-<span style="font-size:24px">{{ locus_notes[result.wa_code] }}</span>
+{% if locus_notes[result.loci_key] %}
+<span style="font-size:24px">{{ locus_notes[result.loci_key] }}</span>
 {% endif %}
 
 </td>
+
+    <td>{{ result.laboratory_acronym }}</td>
 
     <td>{% if result.sample_id %}<a href="/view_sample/{{ result.sample_id }}">{{ result.sample_id }}</a>{% endif %}</td>
 
@@ -97,14 +103,14 @@ with_loci_notes=1 if with_loci_notes else 0
 
     <td>{% if result.dead_recovery %}{{ result.dead_recovery }}{% endif %}</td>
 
-    {% for locus in loci_values[result.wa_code] %}
-    {% for allele in ('a', 'b') if allele in loci_values[result.wa_code][locus] %}
-    <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result['wa_code']][locus][allele]['color'] }}">
-    {{ loci_values[result.wa_code][locus][allele]['value'] }}<br>
+    {% for locus in loci_values[result.loci_key] %}
+    {% for allele in ('a', 'b') if allele in loci_values[result.loci_key][locus] %}
+    <td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[result.loci_key][locus][allele]['color'] }}">
+    {{ loci_values[result.loci_key][locus][allele]['value'] }}<br>
 
     <a href="{{ url_for('genetic.wa_locus_note', wa_code=result.wa_code, locus=locus, allele=allele, return_to=return_url + '&view_wa_code='+result.wa_code) }}">note</a>
 
-    {{ loci_values[result.wa_code][locus][allele]['divergent_allele'] }}
+    {{ loci_values[result.loci_key][locus][allele]['divergent_allele'] }}
     </td>
     {% endfor %}
     {% endfor %}

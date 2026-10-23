@@ -12,7 +12,6 @@ import sys
 import time
 import uuid
 from pathlib import Path
-from pprint import pformat
 
 import jinja2
 import matplotlib
@@ -42,7 +41,7 @@ from . import export, import_, wa_import
 app = Blueprint("genetic", __name__, template_folder="templates")
 
 params = config()
-app.debug = params["debug"]
+# app.debug = params["debug"]
 
 # db wolf -> db 0
 rdis = redis.Redis(
@@ -1222,24 +1221,32 @@ def wa_genetic_samples3():
     with_genotype_notes = request.args.get("with_genotype_notes", default=0, type=int)
     with_loci_values = request.args.get("with_loci_values", default=0, type=int)
     with_loci_notes = request.args.get("with_loci_notes", default=0, type=int)
+    selected_laboratories = request.args.getlist("laboratories") or ["NGC"]
 
     view_wa_code = request.args.get("view_wa_code", default="")
 
-    print("-" * 20)
-    print(f"{offset=}")
-    print(f"{limit=}")
-    print(f"{with_genotype_notes=}")
-    print(f"{with_loci_values=}")
-    print(f"{with_loci_notes=}")
-    print(f"{mode=}")
-    print("-" * 20)
+    if current_app.debug:
+        print("-" * 20)
+        print(f"{offset=}")
+        print(f"{limit=}")
+        print(f"{with_genotype_notes=}")
+        print(f"{with_loci_values=}")
+        print(f"{with_loci_notes=}")
+        print(f"{mode=}")
+        print("-" * 20)
 
     out, loci_values, locus_notes, total_n_wa = get_wa(
-        offset, limit, with_genotype_notes, with_loci_values, with_loci_notes
+        offset,
+        limit,
+        with_genotype_notes,
+        with_loci_values,
+        with_loci_notes,
+        laboratory_acronyms=selected_laboratories,
     )
 
     # loci list
     loci_list: dict = fn.get_loci_list()
+    laboratories = get_laboratories()
 
     if mode.startswith("export_"):
         _, file_format, loci_notes = mode.split("_")
@@ -1268,6 +1275,8 @@ def wa_genetic_samples3():
         with_genotype_notes=with_genotype_notes,
         with_loci_values=with_loci_values,
         with_loci_notes=with_loci_notes,
+        laboratories=laboratories,
+        selected_laboratories=selected_laboratories,
         loci_list=loci_list,
         wa_scats=out,
         loci_values=loci_values,
@@ -1275,6 +1284,15 @@ def wa_genetic_samples3():
         total_n_wa=total_n_wa,
         view_wa_code=view_wa_code,
     )
+
+
+def get_laboratories():
+    with fn.conn_alchemy().connect() as con:
+        return (
+            con.execute(text("SELECT name, acronym FROM laboratories ORDER BY name"))
+            .mappings()
+            .all()
+        )
 
 
 def get_wa(
@@ -1285,6 +1303,7 @@ def get_wa(
     with_loci_notes: int = 0,
     not_poor_dna: int = 0,
     search_str: str = "",
+    laboratory_acronyms: list[str] | None = None,
 ):
     """
     get genetic data for wa_codes
@@ -1295,10 +1314,12 @@ def get_wa(
     locus_notes: dict = {}
     values: dict = {}
     mem_genotype_loci: dict = {}
+    laboratory_acronyms = laboratory_acronyms or ["NGC"]
 
     sql_base: str = (
-        "SELECT COUNT(*) OVER () AS total_count, * FROM wa_genetic_samples_all "
-        "WHERE (date BETWEEN :start_date AND :end_date OR date IS NULL) "
+        "SELECT COUNT(*) OVER () AS total_count, wgs.* FROM wa_genetic_samples_all AS wgs "
+        "WHERE (wgs.date BETWEEN :start_date AND :end_date OR wgs.date IS NULL) "
+        "AND wgs.laboratory_acronym = ANY(:laboratory_acronyms) "
     )
 
     # search term
@@ -1325,40 +1346,40 @@ def get_wa(
                 # convert field
                 field = research_fields[field]
 
-                sql_base += f" AND ({field} ILIKE :search{idx}) "
+                sql_base += f" AND (wgs.{field} ILIKE :search{idx}) "
                 values[f"search{idx}"] = f"%{value}%"
 
         else:
             sql_base += (
                 " AND ("
-                "wa_code ILIKE :search_term "
-                "OR sample_id ILIKE :search_term "
-                "OR date::text ILIKE :search_term "
-                "OR municipality ILIKE :search_term "
-                "OR genotype_id ILIKE :search_term "
-                "OR hybrid ILIKE :search_term "
-                "OR tmp_id ILIKE :search_term "
-                "OR notes ILIKE :search_term "
-                "OR pack ILIKE :search_term "
-                "OR box_number::text = :search_term "
+                "wgs.wa_code ILIKE :search_term "
+                "OR wgs.sample_id ILIKE :search_term "
+                "OR wgs.date::text ILIKE :search_term "
+                "OR wgs.municipality ILIKE :search_term "
+                "OR wgs.genotype_id ILIKE :search_term "
+                "OR wgs.hybrid ILIKE :search_term "
+                "OR wgs.tmp_id ILIKE :search_term "
+                "OR wgs.notes ILIKE :search_term "
+                "OR wgs.pack ILIKE :search_term "
+                "OR wgs.box_number::text = :search_term "
                 ") "
             )
 
     # poor dna
     if not_poor_dna:
-        sql_base += "AND mtdna not ilike '%poor DNA%' "
+        sql_base += "AND wgs.mtdna NOT ILIKE '%poor DNA%' "
 
     if with_genotype_notes:
-        sql_base += "AND notes != '' AND notes IS NOT NULL "
+        sql_base += "AND wgs.notes != '' AND wgs.notes IS NOT NULL "
 
     if with_loci_values:
         sql_base += (
-            " AND wa_code IN "
-            "(SELECT w.wa_code "
-            "FROM wa_loci_values w "
-            "WHERE EXISTS ( "
-            "SELECT 1 "
-            "FROM jsonb_each(w.loci_values) AS l(locus, alleles) "
+            " AND EXISTS ("
+            "SELECT 1 FROM wa_loci_values w "
+            "WHERE w.wa_code = wgs.wa_code "
+            "AND w.laboratory_acronym = wgs.laboratory_acronym "
+            "AND EXISTS ("
+            "SELECT 1 FROM jsonb_each(w.loci_values) AS l(locus, alleles) "
             "WHERE "
             "(NULLIF(alleles #>> '{a,value}', '') IS NOT NULL AND (alleles #>> '{a,value}') NOT IN ('-', '0')) "
             "OR "
@@ -1368,12 +1389,12 @@ def get_wa(
 
     if with_loci_notes:
         sql_base += (
-            "AND wa_code IN "
-            "(SELECT w.wa_code "
-            "FROM wa_loci_values w "
-            "WHERE EXISTS ( "
-            "SELECT 1 "
-            "FROM jsonb_each(w.loci_values) AS l(locus, alleles) "
+            "AND EXISTS ("
+            "SELECT 1 FROM wa_loci_values w "
+            "WHERE w.wa_code = wgs.wa_code "
+            "AND w.laboratory_acronym = wgs.laboratory_acronym "
+            "AND EXISTS ("
+            "SELECT 1 FROM jsonb_each(w.loci_values) AS l(locus, alleles) "
             "WHERE "
             "( "
             " COALESCE((alleles #>> '{a,has_history}')::boolean, false) = true "
@@ -1394,6 +1415,9 @@ def get_wa(
     else:
         sql_base += "LIMIT :limit "
 
+    if current_app.debug:
+        print(f"{sql_base=}")  # remove before release
+
     with fn.conn_alchemy().connect() as con:
         while True:
             wa_scats = (
@@ -1406,6 +1430,7 @@ def get_wa(
                             "offset": offset,
                             "limit": limit,
                             "search_term": f"%{search_str}%",
+                            "laboratory_acronyms": laboratory_acronyms,
                         },
                         **values,
                     ),
@@ -1420,32 +1445,31 @@ def get_wa(
             break
 
     for row in wa_scats:
-        loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
-        loci_values[row["wa_code"]] = dict(loci_val)
+        loci_key = (row["laboratory_acronym"], row["wa_code"])
+        loci_val = fn.get_wa_loci_values_redis(
+            row["laboratory_acronym"], row["wa_code"]
+        )
+        loci_values[loci_key] = dict(loci_val)
 
         # loci_val = dict(row['loci_values'])
-        # loci_values[row["wa_code"]] = dict(loci_val)
+        # loci_values[loci_key] = dict(loci_val)
 
         has_loci_notes = False
         has_orange_loci_notes = False
 
         # check if loci have notes and values and corresponds to genotype loci
-        for x in loci_values[row["wa_code"]]:
+        for x in loci_values[loci_key]:
             for allele in ("a", "b"):
-                if allele not in loci_values[row["wa_code"]][x]:
+                if allele not in loci_values[loci_key][x]:
                     continue
 
-                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
+                loci_values[loci_key][x][allele]["divergent_allele"] = ""
 
-                if loci_values[row["wa_code"]][x][allele]["has_history"]:
-                    if loci_values[row["wa_code"]][x][allele]["definitive"]:
-                        loci_values[row["wa_code"]][x][allele]["color"] = params[
-                            "green_note"
-                        ]
+                if loci_values[loci_key][x][allele]["has_history"]:
+                    if loci_values[loci_key][x][allele]["definitive"]:
+                        loci_values[loci_key][x][allele]["color"] = params["green_note"]
                     else:
-                        loci_values[row["wa_code"]][x][allele]["color"] = params[
-                            "red_note"
-                        ]
+                        loci_values[loci_key][x][allele]["color"] = params["red_note"]
                         has_loci_notes = True
 
                 # check if wa loci corresponds to genotype loci (if not the background color will be orange)
@@ -1473,22 +1497,24 @@ def get_wa(
                             and loci_val[x][allele]["value"] not in (0, "-")
                         ):
                             has_orange_loci_notes = True
-                            loci_values[row["wa_code"]][x][allele][
-                                "divergent_allele"
-                            ] = Markup('<span style="font-size:24px">&#128312;</span>')
+                            loci_values[loci_key][x][allele]["divergent_allele"] = (
+                                Markup('<span style="font-size:24px">&#128312;</span>')
+                            )
                             # check if allele has already a color
                     except Exception:
                         pass
 
-        out.append(dict(row))
+        row_data = dict(row)
+        row_data["loci_key"] = loci_key
+        out.append(row_data)
 
         if has_loci_notes:
-            locus_notes[row["wa_code"]] = Markup("&#128681;")  # red flag
+            locus_notes[loci_key] = Markup("&#128681;")  # red flag
         if has_orange_loci_notes:
-            if row["wa_code"] in locus_notes:
-                locus_notes[row["wa_code"]] += Markup("&#128312;")  # orange
+            if loci_key in locus_notes:
+                locus_notes[loci_key] += Markup("&#128312;")  # orange
             else:
-                locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
+                locus_notes[loci_key] = Markup("&#128312;")  # orange
 
     return out, loci_values, locus_notes, total_n_wa
 
@@ -1509,8 +1535,9 @@ def wa():
     with_loci_values = "1" in request.args.getlist("with_loci_values")
     with_loci_notes = "1" in request.args.getlist("with_loci_notes")
     not_poor_dna = "1" in request.args.getlist("not_poor_dna")
+    selected_laboratories = request.args.getlist("laboratories") or ["NGC"]
 
-    if app.debug:
+    if current_app.debug:
         print("=" * 20)
         # print(f"{request.args.getlist("with_genotype_notes")=}")
         print(f"{search_str=}")
@@ -1531,6 +1558,7 @@ def wa():
         with_loci_notes,
         not_poor_dna,
         search_str,
+        selected_laboratories,
     )
     time1 = time.time() - time0
 
@@ -1546,6 +1574,7 @@ def wa():
 
     # loci list
     loci_list: dict = fn.get_loci_list()
+    laboratories = get_laboratories()
 
     return render_template(
         "_wa_panel.html",
@@ -1557,6 +1586,8 @@ def wa():
         with_loci_values=with_loci_values,
         with_loci_notes=with_loci_notes,
         not_poor_dna=not_poor_dna,
+        laboratories=laboratories,
+        selected_laboratories=selected_laboratories,
         loci_list=loci_list,
         wa_scats=out,
         loci_values=loci_values,

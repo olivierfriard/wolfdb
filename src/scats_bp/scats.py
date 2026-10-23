@@ -40,7 +40,6 @@ app = flask.Blueprint(
 
 params = config()
 
-app.debug = params["debug"]
 
 LOCK_FILE_NAME_PATH = "check_location.lock"
 

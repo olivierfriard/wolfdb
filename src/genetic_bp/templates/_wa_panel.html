@@ -110,6 +110,20 @@
                         </label>
                     </div>
 
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 small" for="laboratories">Laboratories</label>
+                        <select id="laboratories" class="form-select form-select-sm" name="laboratories" multiple
+                            size="3" style="min-width: 190px;" hx-get="{{ wa_url }}" hx-trigger="change"
+                            hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
+                            hx-vals='{{ {"offset": 0} | tojson }}'>
+                            {% for laboratory in laboratories %}
+                            <option value="{{ laboratory.acronym }}" {% if laboratory.acronym in selected_laboratories %}selected{% endif %}>
+                                {{ laboratory.name }} — {{ laboratory.acronym }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                 </div>
 
                 <div class="vr mx-1"></div>
@@ -157,6 +171,9 @@
                         with_genotype_notes=1 if with_genotype_notes else 0,
                         with_loci_values=1 if with_loci_values else 0,
                         with_loci_notes=1 if with_loci_notes else 0,
+                        not_poor_dna=1 if not_poor_dna else 0,
+                        search_str=search_str,
+                        laboratories=selected_laboratories,
                         mode='export_tsv_with-loci-notes') }}">
                                 TSV
                             </a>
@@ -167,6 +184,9 @@
                         with_genotype_notes=1 if with_genotype_notes else 0,
                         with_loci_values=1 if with_loci_values else 0,
                         with_loci_notes=1 if with_loci_notes else 0,
+                        not_poor_dna=1 if not_poor_dna else 0,
+                        search_str=search_str,
+                        laboratories=selected_laboratories,
                         mode='export_tsv_wo-loci-notes') }}">
                                 TSV w/o loci notes
                             </a>
@@ -180,6 +200,9 @@
                         with_genotype_notes=1 if with_genotype_notes else 0,
                         with_loci_values=1 if with_loci_values else 0,
                         with_loci_notes=1 if with_loci_notes else 0,
+                        not_poor_dna=1 if not_poor_dna else 0,
+                        search_str=search_str,
+                        laboratories=selected_laboratories,
                         mode='export_ods_with-loci-notes') }}">
                                 ODS
                             </a>
@@ -190,6 +213,9 @@
                         with_genotype_notes=1 if with_genotype_notes else 0,
                         with_loci_values=1 if with_loci_values else 0,
                         with_loci_notes=1 if with_loci_notes else 0,
+                        not_poor_dna=1 if not_poor_dna else 0,
+                        search_str=search_str,
+                        laboratories=selected_laboratories,
                         mode='export_ods_wo-loci-notes') }}">
                                 ODS w/o loci notes
                             </a>
@@ -203,6 +229,9 @@
                         with_genotype_notes=1 if with_genotype_notes else 0,
                         with_loci_values=1 if with_loci_values else 0,
                         with_loci_notes=1 if with_loci_notes else 0,
+                        not_poor_dna=1 if not_poor_dna else 0,
+                        search_str=search_str,
+                        laboratories=selected_laboratories,
                         mode='export_xlsx_with-loci-notes') }}">
                                 XLSX
                             </a>
@@ -213,6 +242,9 @@
                         with_genotype_notes=1 if with_genotype_notes else 0,
                         with_loci_values=1 if with_loci_values else 0,
                         with_loci_notes=1 if with_loci_notes else 0,
+                        not_poor_dna=1 if not_poor_dna else 0,
+                        search_str=search_str,
+                        laboratories=selected_laboratories,
                         mode='export_xlsx_wo-loci-notes') }}">
                                 XLSX w/o loci notes
                             </a>
