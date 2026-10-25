@@ -79,13 +79,15 @@ Deleted
 <th colspan="2">{{ result["genotype_id"] }}</th><th></th>
 
 {% for wa_code in wa_codes %}
-<th colspan="2"><a href="/view_wa/{{ wa_code["wa_code"] }}">{{ wa_code["wa_code"] }}</a>
+<th colspan="2"><a href="{{ url_for('genetic.view_wa', wa_code=wa_code.wa_code, laboratory=wa_code.lab) }}">{{ wa_code["wa_code"] }}</a>
     
 {% if wa_code["sample_type"] == 'Dead wolf' %}
 (<a href="/view_tissue/{{ wa_code['sample_id'] }}">{{ wa_code["sample_id"] }}</a>)
 {% else %}
 (<a href="/view_scat/{{ wa_code['sample_id'] }}">{{ wa_code["sample_id"] }}</a>)
 {% endif %}
+
+<br><small class="text-muted">Laboratory: {{ wa_code.lab }}</small>
 
 </th><th></th>
 {%  endfor %}

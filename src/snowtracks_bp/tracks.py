@@ -138,7 +138,9 @@ def view_track(snowtrack_id):
                 text(
                     (
                         "SELECT *,"
-                        "(SELECT genotype_id FROM wa_results WHERE wa_code = scats.wa_code) AS genotype_id, "
+                        "(SELECT genotype_id FROM wa_results WHERE wa_code = scats.wa_code "
+                        "ORDER BY (laboratory_acronym = 'NGC') DESC, laboratory_acronym "
+                        "LIMIT 1) AS genotype_id, "
                         "ST_AsGeoJSON(st_transform(geometry_utm, 4326)) AS scat_lonlat "
                         "FROM scats WHERE snowtrack_id LIKE :snowtrack_id"
                     )

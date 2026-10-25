@@ -20,6 +20,7 @@
 
 <h3>
 WA code: <b>{{ data.wa_code }}</b><br>
+Laboratory: <b>{{ data.laboratory }}</b><br>
 Locus: <b>{{ data.locus }}</b><br>
 Allele: <b>{{ data.allele }}</b><br>
 Current value: <b>{{ data.value }}</b> Other allele value: {{ data.other_allele_value }}<br>
@@ -70,7 +71,7 @@ No notes were found
 
 <h4>Insert a new value and/or a note</h4>
 
-<form method="POST" action="/locus_note/{{ data['wa_code'] }}/{{ data['locus'] }}/{{ data['allele'] }}">
+<form method="POST" action="{{ url_for('genetic.wa_locus_note', wa_code=data.wa_code, locus=data.locus, allele=data.allele, laboratory=data.laboratory, return_to=return_to) }}">
 
   <input type="hidden" name="return_to" value="{{ return_to }}">
 

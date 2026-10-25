@@ -21,10 +21,10 @@
 {% endwith %}
 
 
-<h3>WA code: <b>{{ wa_code }}</b></h3>
+<h3>WA code: <b>{{ wa_code }}</b> — laboratory {{ laboratory }}</h3>
 
 
-<form method="POST" action="/set_wa_genotype/{{ wa_code }}">
+<form method="POST" action="{{ url_for('genetic.set_wa_genotype', wa_code=wa_code, laboratory=laboratory, return_to=return_to) }}">
 
 Current genotype ID: <b>{{ current_genotype_id }}</b><br>
 <br>

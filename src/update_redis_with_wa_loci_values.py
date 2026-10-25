@@ -40,16 +40,15 @@ def update_redis_wa_loci():
 
     with fn.conn_alchemy().connect() as con:
         sql = text(
-            "SELECT wa_code, laboratory_acronym FROM wa_scat_dw_all ORDER BY wa_code"
+            "SELECT wa_code, laboratory_acronym FROM wa_results ORDER BY wa_code, laboratory_acronym"
         )
 
         for row in con.execute(sql).mappings().all():
             rdis.set(
                 f"lab:{row['laboratory_acronym']}:wa:{row['wa_code']}",
-                # json.dumps(fn.get_wa_loci_values(row["wa_code"], loci_list)[0]),
                 json.dumps(
                     fn.get_wa_loci_values_by_lab(
-                        row["laboratory_acronym"], row["wa_code"], loci_list
+                        row["laboratory_acronym"], row["wa_code"], loci_list, con=con
                     )[0]
                 ),
             )

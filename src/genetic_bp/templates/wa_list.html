@@ -67,9 +67,9 @@ function scroll_to_wa() {
 {% for wa in wa_list %}
 <tr>
 <td style="white-space: nowrap;">
-<a id="{{ wa.wa_code }}"><a href="/view_wa/{{ wa.wa_code }}"><b>{{ wa.wa_code }}</b></a></a>
+<a id="{{ wa.wa_code }}"><a href="{{ url_for('genetic.view_wa', wa_code=wa.wa_code, laboratory=wa.laboratory_acronym) }}"><b>{{ wa.wa_code }}</b> ({{ wa.laboratory_acronym }})</a></a>
 {% if wa.genotype_id %}
-<a href="/view_genetic_data/{{ wa.wa_code }}" class="btn btn-sm btn-primary">Genetic data</a>
+<a href="{{ url_for('genetic.view_genetic_data', wa_code=wa.wa_code, laboratory=wa.laboratory_acronym) }}" class="btn btn-sm btn-primary">Genetic data</a>
 {% endif %}
 </td>
 
@@ -96,19 +96,17 @@ class="btn btn-sm btn-outline-danger">{{ wa['notes'] }}</button>{% endif %}
 
 <td>{% if wa['dead_recovery'] %}{{ wa['dead_recovery'] }}{% endif %}</td>
 
-{% if  wa.wa_code in loci_values %}
-{% for locus in loci_values[wa['wa_code']] %}
-{% for allele in ('a', 'b') if allele in loci_values[wa['wa_code']][locus] %}
-<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[wa['wa_code']][locus][allele]['color'] }}">
-{{ loci_values[wa['wa_code']][locus][allele]['value'] }}<br>
+{% if  wa.loci_key in loci_values %}
+{% for locus in loci_values[wa.loci_key] %}
+{% for allele in ('a', 'b') if allele in loci_values[wa.loci_key][locus] %}
+<td style="{% if allele == 'a' %}border-left: 1px solid black;{% endif %}background:{{ loci_values[wa.loci_key][locus][allele]['color'] }}">
+{{ loci_values[wa.loci_key][locus][allele]['value'] }}<br>
 
-<a href="/locus_note/{{ wa.wa_code}}/{{ locus }}/{{ allele }}?return_to={{ url_for('genetic.view_wa_polygon',
-    polygon=polygon
-    ) | urlencode }}">note</a>
+<a href="{{ url_for('genetic.wa_locus_note', wa_code=wa.wa_code, locus=locus, allele=allele, laboratory=wa.laboratory_acronym, return_to=url_for('genetic.view_wa_polygon', polygon=polygon)) }}">note</a>
 
-<a href="/locus_note/{{ wa['wa_code']}}/{{ locus }}/{{ allele }}">note</a>
+<a href="{{ url_for('genetic.wa_locus_note', wa_code=wa.wa_code, locus=locus, allele=allele, laboratory=wa.laboratory_acronym) }}">note</a>
 
-{{ loci_values[wa['wa_code']][locus][allele]['divergent_allele'] }}
+{{ loci_values[wa.loci_key][locus][allele]['divergent_allele'] }}
 </td>
 {% endfor %}
 {% endfor %}

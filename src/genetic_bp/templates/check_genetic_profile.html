@@ -41,8 +41,8 @@ Genetic profile:<br>
 
 <h3>WA codes</h3>
 
-{% for wa_code in out %}
-<a href="/view_genetic_data/{{ wa_code }}">{{ wa_code }}</a><br>
+{% for result in out %}
+<a href="{{ url_for('genetic.view_genetic_data', wa_code=result.wa_code, laboratory=result.laboratory) }}">{{ result.wa_code }} — {{ result.laboratory }}</a><br>
 {%endfor%}
 
 {%endif %}

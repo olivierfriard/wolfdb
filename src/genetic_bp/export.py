@@ -24,6 +24,7 @@ def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values, filter: st
 
     fields = {
         "wa_code": "WA code",
+        "laboratory_acronym": "Laboratory",
         "sample_id": "Sample ID",
         "date": "Date",
         "municipality": "Municipality",
@@ -56,8 +57,8 @@ def export_wa_genetic_samples(loci_list: dict, wa_scats, loci_values, filter: st
             for allele in ("a", "b")[: loci_list[locus]]:
                 out.extend(
                     [
-                        loci_values[row["wa_code"]][locus][allele]["value"],
-                        loci_values[row["wa_code"]][locus][allele]["notes"],
+                        loci_values[row["loci_key"]][locus][allele]["value"],
+                        loci_values[row["loci_key"]][locus][allele]["notes"],
                     ]
                 )
 
@@ -312,6 +313,7 @@ def export_wa(loci_list, wa_list, loci_values):
 
     fields = {
         "wa_code": "WA code",
+        "laboratory_acronym": "Laboratory",
         "sample_id": "Sample ID",
         "genotype_id": "Genotype ID",
         "date": "Date",
@@ -342,16 +344,16 @@ def export_wa(loci_list, wa_list, loci_values):
         out: list = [wa[field] if wa[field] is not None else "" for field in fields]
 
         for locus in loci_list:
-            if wa["wa_code"] in loci_values:
+            if wa["loci_key"] in loci_values:
                 out.extend(
                     [
-                        loci_values[wa["wa_code"]][locus]["a"]["value"],
-                        loci_values[wa["wa_code"]][locus]["a"]["notes"],
-                        loci_values[wa["wa_code"]][locus]["b"]["value"]
-                        if "b" in loci_values[wa["wa_code"]][locus]
+                        loci_values[wa["loci_key"]][locus]["a"]["value"],
+                        loci_values[wa["loci_key"]][locus]["a"]["notes"],
+                        loci_values[wa["loci_key"]][locus]["b"]["value"]
+                        if "b" in loci_values[wa["loci_key"]][locus]
                         else "",
-                        loci_values[wa["wa_code"]][locus]["b"]["notes"]
-                        if "b" in loci_values[wa["wa_code"]][locus]
+                        loci_values[wa["loci_key"]][locus]["b"]["notes"]
+                        if "b" in loci_values[wa["loci_key"]][locus]
                         else "",
                     ]
                 )

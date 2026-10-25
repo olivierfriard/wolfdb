@@ -36,22 +36,25 @@ def update_db_wa_loci():
     loci_list: dict = fn.get_loci_list()
 
     with fn.conn_alchemy().connect() as con:
-        sql = text("SELECT DISTINCT wa_code FROM wa_scat_dw_all ")
+        sql = text("SELECT wa_code, laboratory_acronym FROM wa_results")
 
-        wa_list = [row["wa_code"] for row in con.execute(sql).mappings().all()]
+        wa_list = con.execute(sql).mappings().all()
 
-        for wa_code in wa_list:
+        for row in wa_list:
             _ = con.execute(
                 text(
-                    "INSERT INTO wa_loci_values (wa_code, loci_values) "
-                    "VALUES (:wa_code, :loci_values) "
-                    "ON CONFLICT (wa_code) "
+                    "INSERT INTO wa_loci_values (wa_code, laboratory_acronym, loci_values) "
+                    "VALUES (:wa_code, :laboratory, :loci_values) "
+                    "ON CONFLICT (wa_code, laboratory_acronym) "
                     "DO UPDATE "
                     "SET loci_values = EXCLUDED.loci_values; "
                 ).bindparams(bindparam("loci_values", type_=JSONB)),
                 {
-                    "wa_code": wa_code,
-                    "loci_values": fn.get_wa_loci_values(wa_code, loci_list)[0],
+                    "wa_code": row["wa_code"],
+                    "laboratory": row["laboratory_acronym"],
+                    "loci_values": fn.get_wa_loci_values_by_lab(
+                        row["laboratory_acronym"], row["wa_code"], loci_list, con=con
+                    )[0],
                 },
             )
 

@@ -17,6 +17,7 @@ import jinja2
 import matplotlib
 import redis
 from flask import (
+    abort,
     Blueprint,
     current_app,
     flash,
@@ -49,53 +50,48 @@ rdis = redis.Redis(
 )
 
 
+def resolve_wa_laboratory(con, wa_code: str, laboratory: str | None = None):
+    """Resolve old links deterministically and validate explicit laboratories."""
+    sql = "SELECT laboratory_acronym FROM wa_results WHERE wa_code = :wa_code "
+    values = {"wa_code": wa_code}
+    if laboratory:
+        sql += "AND laboratory_acronym = :laboratory "
+        values["laboratory"] = laboratory
+    sql += "ORDER BY (laboratory_acronym = 'NGC') DESC, laboratory_acronym LIMIT 1"
+    row = con.execute(text(sql), values).mappings().fetchone()
+    if row is None:
+        abort(404, description="WA code not found for the requested laboratory")
+    return row["laboratory_acronym"]
+
+
 def update_loci_values_cache(
     wa_code: str, loci_list: dict, con=None, laboratory: str | None = None
 ):
     """
     update redis and wa_loci_values table
     """
-    if laboratory:
-        loci_values = fn.get_wa_loci_values_by_lab(
-            laboratory, wa_code, loci_list, con=con
-        )[0]
-        redis_key = f"lab:{laboratory}:wa:{wa_code}"
-    else:
-        loci_values = fn.get_wa_loci_values(wa_code, loci_list, con=con)[0]
-        redis_key = wa_code
-
-    # update redis
-    rdis.set(redis_key, json.dumps(loci_values))
-    # update DB
-    if laboratory:
-        sql = text(
-            "INSERT INTO wa_loci_values "
-            "(wa_code, laboratory_acronym, loci_values) "
-            "VALUES (:wa_code, :laboratory, :loci_values) "
-            "ON CONFLICT (wa_code) "
-            "DO UPDATE SET "
-            "laboratory_acronym = EXCLUDED.laboratory_acronym, "
-            "loci_values = EXCLUDED.loci_values; "
-        ).bindparams(bindparam("loci_values", type_=JSONB))
-    else:
-        sql = text(
-            "INSERT INTO wa_loci_values (wa_code, loci_values) "
-            "VALUES (:wa_code, :loci_values) "
-            "ON CONFLICT (wa_code) "
-            "DO UPDATE "
-            "SET loci_values = EXCLUDED.loci_values; "
-        ).bindparams(bindparam("loci_values", type_=JSONB))
+    if con is None:
+        with fn.conn_alchemy().connect() as db_con:
+            return update_loci_values_cache(
+                wa_code, loci_list, con=db_con, laboratory=laboratory
+            )
+    laboratory = resolve_wa_laboratory(con, wa_code, laboratory)
+    loci_values = fn.get_wa_loci_values_by_lab(
+        laboratory, wa_code, loci_list, con=con
+    )[0]
+    sql = text(
+        "INSERT INTO wa_loci_values (wa_code, laboratory_acronym, loci_values) "
+        "VALUES (:wa_code, :laboratory, :loci_values) "
+        "ON CONFLICT (wa_code, laboratory_acronym) "
+        "DO UPDATE SET loci_values = EXCLUDED.loci_values"
+    ).bindparams(bindparam("loci_values", type_=JSONB))
     params = {
         "wa_code": wa_code,
         "loci_values": loci_values,
     }
-    if laboratory:
-        params["laboratory"] = laboratory
-    if con is None:
-        with fn.conn_alchemy().connect() as db_con:
-            _ = db_con.execute(sql, params)
-    else:
-        _ = con.execute(sql, params)
+    params["laboratory"] = laboratory
+    con.execute(sql, params)
+    rdis.set(f"lab:{laboratory}:wa:{wa_code}", json.dumps(loci_values))
 
 
 @app.route("/del_genotype/<genotype_id>")
@@ -577,7 +573,10 @@ def view_wa(wa_code: str):
         # check if genetic data available
         genetic_data = (
             con.execute(
-                text("SELECT wa_code FROM wa_results WHERE wa_code = :wa_code"),
+                text(
+                    "SELECT wa_code, laboratory_acronym FROM wa_results "
+                    "WHERE wa_code = :wa_code ORDER BY laboratory_acronym"
+                ),
                 {"wa_code": wa_code},
             )
             .mappings()
@@ -590,6 +589,7 @@ def view_wa(wa_code: str):
             wa_code=wa_code,
             result=result[0],
             genetic_data=genetic_data,
+            laboratory=request.args.get("laboratory"),
             return_to=return_to,
         )
 
@@ -1074,38 +1074,40 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
     locus_notes: dict = {}
     mem_genotype_loci: dict = {}
     for row in wa_scats:
+        row = dict(row)
+        row["loci_key"] = (row["laboratory_acronym"], row["wa_code"])
         # genotype working notes
         has_genotype_notes = (
             True if (row["notes"] is not None and row["notes"]) else False
         )
 
-        loci_val = fn.get_wa_loci_values_redis(row["wa_code"])
-        loci_values[row["wa_code"]] = dict(loci_val)
+        loci_val = fn.get_wa_loci_values_redis(row["laboratory_acronym"], row["wa_code"])
+        loci_values[row["loci_key"]] = dict(loci_val)
 
         has_loci_notes = False
         has_orange_loci_notes = False
         has_loci_values = False
 
         # check if loci have notes and values and corresponds to genotype loci
-        for x in loci_values[row["wa_code"]]:
+        for x in loci_values[row["loci_key"]]:
             for allele in ("a", "b"):
-                if allele not in loci_values[row["wa_code"]][x]:
+                if allele not in loci_values[row["loci_key"]][x]:
                     continue
 
-                loci_values[row["wa_code"]][x][allele]["divergent_allele"] = ""
+                loci_values[row["loci_key"]][x][allele]["divergent_allele"] = ""
 
-                if loci_values[row["wa_code"]][x][allele]["has_history"]:
-                    if loci_values[row["wa_code"]][x][allele]["definitive"]:
-                        loci_values[row["wa_code"]][x][allele]["color"] = params[
+                if loci_values[row["loci_key"]][x][allele]["has_history"]:
+                    if loci_values[row["loci_key"]][x][allele]["definitive"]:
+                        loci_values[row["loci_key"]][x][allele]["color"] = params[
                             "green_note"
                         ]
                     else:
-                        loci_values[row["wa_code"]][x][allele]["color"] = params[
+                        loci_values[row["loci_key"]][x][allele]["color"] = params[
                             "red_note"
                         ]
                         has_loci_notes = True
 
-                if loci_values[row["wa_code"]][x][allele]["value"] not in (0, "-"):
+                if loci_values[row["loci_key"]][x][allele]["value"] not in (0, "-"):
                     has_loci_values = True
 
                 # check if wa loci corresponds to genotype loci (if not the background colo will be orange)
@@ -1133,7 +1135,7 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
                             and loci_val[x][allele]["value"] not in (0, "-")
                         ):
                             has_orange_loci_notes = True
-                            loci_values[row["wa_code"]][x][allele][
+                            loci_values[row["loci_key"]][x][allele][
                                 "divergent_allele"
                             ] = Markup('<span style="font-size:24px">&#128312;</span>')
                             # check if allele has already a color
@@ -1156,12 +1158,12 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             out.append(dict(row))
 
         if has_loci_notes:
-            locus_notes[row["wa_code"]] = Markup("&#128681;")  # red flag
+            locus_notes[row["loci_key"]] = Markup("&#128681;")  # red flag
         if has_orange_loci_notes:
-            if row["wa_code"] in locus_notes:
-                locus_notes[row["wa_code"]] += Markup("&#128312;")  # orange
+            if row["loci_key"] in locus_notes:
+                locus_notes[row["loci_key"]] += Markup("&#128312;")  # orange
             else:
-                locus_notes[row["wa_code"]] = Markup("&#128312;")  # orange
+                locus_notes[row["loci_key"]] = Markup("&#128312;")  # orange
 
     if mode == "export":
         file_content = export.export_wa_genetic_samples(
@@ -1241,6 +1243,8 @@ def wa_genetic_samples3():
     with_genotype_notes = request.args.get("with_genotype_notes", default=0, type=int)
     with_loci_values = request.args.get("with_loci_values", default=0, type=int)
     with_loci_notes = request.args.get("with_loci_notes", default=0, type=int)
+    not_poor_dna = request.args.get("not_poor_dna", default=0, type=int)
+    search_str = request.args.get("search_str", default="")
     selected_laboratories = request.args.getlist("laboratories") or ["NGC"]
 
     view_wa_code = request.args.get("view_wa_code", default="")
@@ -1261,6 +1265,8 @@ def wa_genetic_samples3():
         with_genotype_notes,
         with_loci_values,
         with_loci_notes,
+        not_poor_dna=not_poor_dna,
+        search_str=search_str,
         laboratory_acronyms=selected_laboratories,
     )
 
@@ -1295,6 +1301,8 @@ def wa_genetic_samples3():
         with_genotype_notes=with_genotype_notes,
         with_loci_values=with_loci_values,
         with_loci_notes=with_loci_notes,
+        not_poor_dna=not_poor_dna,
+        search_str=search_str,
         laboratories=laboratories,
         selected_laboratories=selected_laboratories,
         loci_list=loci_list,
@@ -1443,7 +1451,10 @@ def get_wa(
         )
 
     # offset and limit
-    sql_base += " ORDER BY wa_code OFFSET :offset "
+    sql_base += (
+        " ORDER BY wgs.wa_code, wgs.laboratory_acronym, wgs.sample_id "
+        "OFFSET :offset "
+    )
     if limit == "All":
         sql_base += "LIMIT ALL "
     else:
@@ -1856,7 +1867,8 @@ def get_genotypes_from_wa(wa_list: list, laboratory: str | None = None):
     with fn.conn_alchemy().connect() as con:
         # fetch grouped genotypes
         sql = (
-            "SELECT genotype_id, count(wa_code) AS n_recap, sex_id "
+            "SELECT genotype_id, count(DISTINCT (sample_type, sample_id)) AS n_recap, "
+            "MIN(sex_id) AS sex_id "
             "FROM wa_scat_dw_all "
             "WHERE wa_code = ANY(:wa_list) "
         )
@@ -1865,7 +1877,7 @@ def get_genotypes_from_wa(wa_list: list, laboratory: str | None = None):
             sql += "AND laboratory_acronym = :laboratory_acronym "
             values["laboratory_acronym"] = laboratory
         sql += (
-            "GROUP BY genotype_id, sex_id "
+            "GROUP BY genotype_id "
             "ORDER BY genotype_id ASC"
         )
         genotype_id = (
@@ -1993,9 +2005,11 @@ def view_wa_polygon(polygon: str, mode: str = "web"):
         return "No WA codes in polygon"
 
     loci_values: dict = {}
+    wa_list = [dict(wa) for wa in wa_list]
     for wa in wa_list:
+        wa["loci_key"] = (wa["laboratory_acronym"], wa["wa_code"])
         if wa["genotype_id"]:
-            loci_values[wa["wa_code"]] = fn.get_genotype_loci_values_redis(
+            loci_values[wa["loci_key"]] = fn.get_genotype_loci_values_redis(
                 wa["genotype_id"]
             )
 
@@ -2854,7 +2868,13 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
     return_to = request.args.get("return_to", default=request.referrer)
 
     with fn.conn_alchemy().connect() as con:
-        data = {"wa_code": wa_code, "locus": locus, "allele": allele}
+        laboratory = resolve_wa_laboratory(
+            con, wa_code, request.values.get("laboratory")
+        )
+        data = {
+            "wa_code": wa_code, "locus": locus, "allele": allele,
+            "laboratory": laboratory,
+        }
 
         if request.method == "GET":
             data["allele_modifier"] = fn.get_allele_modifier(session["email"])
@@ -2866,6 +2886,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                         "val, definitive, "
                         "date_trunc('second', timestamp) AS timestamp "
                         "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                        "AND laboratory_acronym = :laboratory "
                         "ORDER BY timestamp ASC"
                     ),
                     data,
@@ -2891,6 +2912,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                     text(
                         "SELECT val, definitive "
                         "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele != :allele "
+                        "AND laboratory_acronym = :laboratory "
                         "ORDER BY timestamp DESC "
                         "LIMIT 1"
                     ),
@@ -2908,6 +2930,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 con.execute(
                     text(
                         "SELECT genotype_id, sex_id FROM wa_results WHERE wa_code = :wa_code "
+                        "AND laboratory_acronym = :laboratory "
                     ),
                     data,
                 )
@@ -2954,6 +2977,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                                 wa_code=wa_code,
                                 locus=locus,
                                 allele=allele,
+                                laboratory=laboratory,
                                 return_to=return_to,
                             )
                         )
@@ -2970,6 +2994,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                             wa_code=wa_code,
                             locus=locus,
                             allele=allele,
+                            laboratory=laboratory,
                             return_to=return_to,
                         )
                     )
@@ -2981,6 +3006,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                         text(
                             "SELECT val "
                             "FROM wa_locus WHERE wa_code = :wa_code AND locus = :locus AND allele = :allele "
+                            "AND laboratory_acronym = :laboratory "
                             "ORDER BY timestamp DESC"
                         ),
                         data,
@@ -3001,7 +3027,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
             sql = text(
                 "INSERT INTO wa_locus "
-                "(wa_code, locus, allele, val, timestamp, notes, user_id, definitive) "
+                "(wa_code, locus, allele, val, timestamp, notes, user_id, definitive, laboratory_acronym) "
                 "VALUES ("
                 ":wa_code,"
                 ":locus,"
@@ -3010,7 +3036,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                 "NOW(),"
                 ":new_note,"
                 ":user_id,"
-                ":definitive"
+                ":definitive, :laboratory"
                 ")",
             )
 
@@ -3023,7 +3049,9 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
 
             return_to = request.form.get("return_to", "")
 
-            update_loci_values_cache(wa_code, fn.get_loci_list())
+            update_loci_values_cache(
+                wa_code, fn.get_loci_list(), con=con, laboratory=laboratory
+            )
 
             return redirect(
                 url_for(
@@ -3031,6 +3059,7 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
                     wa_code=wa_code,
                     locus=locus,
                     allele=allele,
+                    laboratory=laboratory,
                     return_to=return_to,
                 )
             )
@@ -3172,8 +3201,10 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
 
             # update wa_code with genotype note
             sql = text(
-                "SELECT id, wa_locus.wa_code AS wa_code FROM wa_locus, wa_results "
+                "SELECT id, wa_locus.wa_code AS wa_code, wa_locus.laboratory_acronym "
+                "FROM wa_locus, wa_results "
                 "WHERE wa_locus.wa_code = wa_results.wa_code "
+                "AND wa_locus.laboratory_acronym = wa_results.laboratory_acronym "
                 "AND wa_results.genotype_id = :genotype_id "
                 "AND wa_locus.locus = :locus "
                 "AND allele = :allele "
@@ -3203,7 +3234,10 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
                     },
                 )
 
-                update_loci_values_cache(row["wa_code"], loci_list)
+                update_loci_values_cache(
+                    row["wa_code"], loci_list, con=con,
+                    laboratory=row["laboratory_acronym"],
+                )
 
             return redirect(f"/genotype_locus_note/{genotype_id}/{locus}/{allele}")
 
@@ -3286,14 +3320,18 @@ def set_wa_genotype(wa_code: str):
     return_to = request.args.get("return_to", default=request.referrer)
 
     with fn.conn_alchemy().connect() as con:
+        laboratory = resolve_wa_laboratory(
+            con, wa_code, request.values.get("laboratory")
+        )
         if request.method == "GET":
             with fn.conn_alchemy().connect() as con:
                 result = (
                     con.execute(
                         text(
                             "SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code "
+                            "AND laboratory_acronym = :laboratory"
                         ),
-                        {"wa_code": wa_code},
+                        {"wa_code": wa_code, "laboratory": laboratory},
                     )
                     .mappings()
                     .fetchone()
@@ -3308,6 +3346,7 @@ def set_wa_genotype(wa_code: str):
                 "set_wa_genotype.html",
                 header_title=f"Set genotype ID for WA code {wa_code}",
                 wa_code=wa_code,
+                laboratory=laboratory,
                 current_genotype_id=genotype_id,
                 return_to=return_to,
             )
@@ -3332,21 +3371,26 @@ def set_wa_genotype(wa_code: str):
                             f"<strong>Attention!</strong><br>The genotype <strong>{request.form['genotype_id']}</strong> does not exits."
                         )
                     )
-                    return redirect(url_for("genetic.set_wa_genotype", wa_code=wa_code))
+                    return redirect(url_for(
+                        "genetic.set_wa_genotype", wa_code=wa_code,
+                        laboratory=laboratory, return_to=return_to,
+                    ))
 
             with fn.conn_alchemy().connect() as con:
                 sql = text(
-                    "UPDATE wa_results SET genotype_id = :genotype_id WHERE wa_code = :wa_code"
+                    "UPDATE wa_results SET genotype_id = :genotype_id "
+                    "WHERE wa_code = :wa_code AND laboratory_acronym = :laboratory"
                 )
                 con.execute(
                     sql,
                     {
                         "genotype_id": request.form["genotype_id"].strip(),
                         "wa_code": wa_code,
+                        "laboratory": laboratory,
                     },
                 )
 
-            return redirect(session["url_wa_list"])
+            return redirect(return_to or session.get("url_wa_list") or url_for("genetic.wa_genetic_samples3"))
 
 
 @app.route(
@@ -4101,23 +4145,24 @@ def check_genetic_profile():
                     text(
                         (
                             "SELECT "
-                            "  wl.wa_code, "
+                            "  wl.wa_code, wl.laboratory_acronym, "
                             "  STRING_AGG(wl.val_text::text, ';' ORDER BY ld.position, wl.allele) AS loci_values "
                             "FROM ( "
-                            "  SELECT DISTINCT ON (wa_code, locus, allele) "
-                            "    wa_code, "
+                            "  SELECT DISTINCT ON (wa_code, laboratory_acronym, locus, allele) "
+                            "    wa_code, laboratory_acronym, "
                             "    locus, "
                             "    allele, "
                             "COALESCE(val::text, '') AS val_text, "
                             "    timestamp "
                             "  FROM "
                             "    wa_locus "
+                            "  WHERE locus <> 'SRY' "
                             "  ORDER BY "
-                            "    wa_code, locus, allele, timestamp DESC "
+                            "    wa_code, laboratory_acronym, locus, allele, timestamp DESC "
                             ") wl "
                             "JOIN "
                             "  loci ld ON wl.locus = ld.name "
-                            "GROUP BY wl.wa_code; "
+                            "GROUP BY wl.wa_code, wl.laboratory_acronym; "
                             #                            "SELECT "
                             #                            "  wl.wa_code, "
                             #                            "  STRING_AGG(wl.val::text, ';' ORDER BY ld.position, wl.allele) AS loci_values "
@@ -4148,7 +4193,7 @@ def check_genetic_profile():
                     and row["loci_values"].split(";") == genetic_profile
                 ):
                     print(row["wa_code"])
-                    out.append(row["wa_code"])
+                    out.append({"wa_code": row["wa_code"], "laboratory": row["laboratory_acronym"]})
 
         return render_template(
             "check_genetic_profile.html",
@@ -4230,10 +4275,11 @@ def load_wa_from_spreadsheet():
             with fn.conn_alchemy().connect() as con:
                 wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
                 sql = text(
-                    f"SELECT wa_code FROM wa_results WHERE wa_code IN ('{wa_list}')"
+                    f"SELECT wa_code FROM wa_results WHERE wa_code IN ('{wa_list}') "
+                    "AND laboratory_acronym = :laboratory"
                 )
                 wa_to_update = [
-                    row["wa_code"] for row in con.execute(sql).mappings().all()
+                    row["wa_code"] for row in con.execute(sql, {"laboratory": laboratory_name}).mappings().all()
                 ]
 
             return render_template(
@@ -4257,6 +4303,9 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
     if mode not in ("new", "all"):
         flash(fn.alert_danger("Error: mode not allowed"))
         return redirect(url_for("load_wa_from_spreadsheet"))
+
+    if lab_name not in {lab["acronym"] for lab in get_laboratories()}:
+        abort(400, description="A valid laboratory is required for the import")
 
     r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(filename)
     if r:
@@ -4354,6 +4403,8 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
 
         for idx in wa_loci:
             data = dict(wa_loci[idx])
+            if mode == "new" and data["wa_code"] in wa_to_update:
+                continue
             sql = text(
                 "INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp, user_id, definitive, laboratory_acronym) "
                 "VALUES ("
@@ -4377,7 +4428,9 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
                 con.execute(sql, params)
 
             # update cache
-            update_loci_values_cache(data["wa_code"], loci_list, con=con)
+            update_loci_values_cache(
+                data["wa_code"], loci_list, con=con, laboratory=lab_name
+            )
 
     msg = f"WA code successfully loaded from spreadsheet file. {count_added} wa code(s) added, {count_updated} wa code(s) updated."
     flash(fn.alert_success(msg))

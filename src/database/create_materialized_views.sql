@@ -158,7 +158,7 @@ FROM public.genotypes AS g
 LEFT JOIN (
     SELECT
         wa_scat_dw_all.genotype_id,
-        count(*) AS n_recaptures,
+        count(DISTINCT (sample_type, sample_id)) AS n_recaptures,
         bool_or(
             wa_scat_dw_all.sample_id::text ~~ 'T%'::text
             OR wa_scat_dw_all.sample_id::text ~~ 'M%'::text
@@ -210,7 +210,8 @@ LEFT JOIN LATERAL (
     SELECT wsdm.genotype_id, wsdm.mtdna
     FROM public.wa_scat_dw_all AS wsdm
     WHERE wsdm.wa_code::text = s.wa_code::text
-    ORDER BY wsdm.date DESC NULLS LAST
+    ORDER BY (wsdm.laboratory_acronym = 'NGC') DESC,
+             wsdm.laboratory_acronym, wsdm.date DESC NULLS LAST
     LIMIT 1
 ) AS w ON true
 ORDER BY s.scat_id;

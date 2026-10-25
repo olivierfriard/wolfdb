@@ -11,7 +11,7 @@
 <br>
 
 
-<h2>View genetic data for WA code <a href="/view_wa/{{ wa_code }}"><b>{{wa_code}}</b></a> — laboratory {{ laboratory }}</h2><hr>
+<h2>View genetic data for WA code <a href="{{ url_for('genetic.view_wa', wa_code=wa_code, laboratory=laboratory) }}"><b>{{wa_code}}</b></a> — laboratory {{ laboratory }}</h2><hr>
 
 
 

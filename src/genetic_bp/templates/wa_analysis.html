@@ -63,8 +63,8 @@
 <tr>
 <td style="white-space: nowrap;">
 <a id="{{ result['wa_code'] }}">
-<a href="/view_wa/{{ result['wa_code'] }}"><b>{{ result['wa_code'] }}</b></a></a>
-<a href="/view_genetic_data/{{ result['wa_code'] }}" class="btn btn-sm btn-primary">Genetic data</a>
+<a href="{{ url_for('genetic.view_wa', wa_code=result.wa_code, laboratory=laboratory) }}"><b>{{ result['wa_code'] }}</b></a></a>
+<a href="{{ url_for('genetic.view_genetic_data', wa_code=result.wa_code, laboratory=laboratory) }}" class="btn btn-sm btn-primary">Genetic data</a>
 </td>
 
 <td>{% if result['sample_id'] %}<a href="/view_sample/{{ result['sample_id'] }}">{{ result['sample_id'] }}</a>{% endif %}</td>
@@ -114,7 +114,7 @@
 {{ loci_values[result['wa_code']][locus]['a']['value'] }}
 <br>
 <small>
-<a href="/locus_note/{{ result.wa_code}}/{{ locus }}/{{ allele }}">note</a>
+<a href="{{ url_for('genetic.wa_locus_note', wa_code=result.wa_code, locus=locus, allele=allele, laboratory=laboratory) }}">note</a>
 </small>
 </td>
 
