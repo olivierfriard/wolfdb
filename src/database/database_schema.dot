@@ -1,0 +1,377 @@
+digraph wolfdb_schema {
+    graph [
+        label="WolfDB — application database schema",
+        labelloc="t",
+        fontsize=22,
+        fontname="Helvetica",
+        rankdir=LR,
+        nodesep=0.45,
+        ranksep=1.4,
+        splines=spline,
+        bgcolor="white",
+        pad=0.3
+    ];
+
+    node [shape=plain, fontname="Helvetica", fontsize=9];
+    edge [fontname="Helvetica", fontsize=8, color="#78909c", arrowsize=0.7];
+
+    // PostgreSQL currently declares no FOREIGN KEY constraints. Dashed edges
+    // below document the logical relationships used by the application.
+
+    subgraph cluster_sampling {
+        label="Sampling and field data";
+        color="#90caf9";
+        style="rounded,dashed";
+
+        scats [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#1976d2"><FONT COLOR="white"><B>scats</B></FONT></TD></TR>
+            <TR><TD PORT="scat_id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>scat_id</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="scat_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">date</TD><TD ALIGN="LEFT">date</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="wa_code_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">wa_code</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="wa_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sampling_season</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sampling_type</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="path_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">path_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="path_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="snowtrack_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">snowtrack_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="snowtrack_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">location</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">municipality</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">deposition</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">matrix</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">collected_scat</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">scalp_category</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">genetic_sample</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">coord_east</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">coord_north</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">coord_zone</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">observer</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">institution</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">geometry_utm</TD><TD ALIGN="LEFT">geometry</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region_auto</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province_auto</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">municipality_auto</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">location_auto</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sample_type</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">box_number</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">ispra_id</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        dead_wolves [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#1976d2"><FONT COLOR="white"><B>dead_wolves</B></FONT></TD></TR>
+            <TR><TD PORT="id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>UQ</B></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT">integer</TD><TD PORT="id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="genotype_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">genotype_id</TD><TD ALIGN="LEFT">text</TD><TD PORT="genotype_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD><B>UQ</B></TD><TD ALIGN="LEFT">tissue_id</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">discovery_date</TD><TD ALIGN="LEFT">date</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">location</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">municipality</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="wa_code_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">wa_code</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="wa_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">deleted</TD><TD ALIGN="LEFT">timestamp</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">utm_east</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">utm_north</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">geometry_utm</TD><TD ALIGN="LEFT">geometry</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">utm_zone</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">box_number</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">scalp_category</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sampling_season</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">operator</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">institution</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        paths [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#1976d2"><FONT COLOR="white"><B>paths</B></FONT></TD></TR>
+            <TR><TD PORT="path_id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>path_id</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="path_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="transect_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">transect_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="transect_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">date</TD><TD ALIGN="LEFT">date</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sampling_season</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">completeness</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">observer</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">institution</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">created</TD><TD ALIGN="LEFT">timestamp</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">category</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">experience_index</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        snow_tracks [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#1976d2"><FONT COLOR="white"><B>snow_tracks</B></FONT></TD></TR>
+            <TR><TD PORT="snowtrack_id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>snowtrack_id</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="snowtrack_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="transect_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">transect_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="transect_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">date</TD><TD ALIGN="LEFT">date</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sampling_season</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">track_type</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">location</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">municipality</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">observer</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">institution</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">scalp_category</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sampling_type</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">days_after_snowfall</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">minimum_number_of_wolves</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">track_format</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">multilines</TD><TD ALIGN="LEFT">geometry</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">coord_east</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">coord_north</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">coord_zone</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        transects [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#1976d2"><FONT COLOR="white"><B>transects</B></FONT></TD></TR>
+            <TR><TD PORT="transect_id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>transect_id</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="transect_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sector</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">location</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">municipality</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">multilines</TD><TD ALIGN="LEFT">geometry</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="province_code_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province_code</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="province_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+    }
+
+    subgraph cluster_genetics {
+        label="Genetics";
+        color="#ce93d8";
+        style="rounded,dashed";
+
+        wa_results [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>wa_results</B></FONT></TD></TR>
+            <TR><TD PORT="wa_code_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>wa_code</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="wa_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">package_sent</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">pack</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">extraction_lab_apam_id</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="genotype_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">genotype_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="genotype_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">mtdna</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sex_id</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">recapture_old_individual</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">individual_id</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">matching</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">quality_genotype</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">box_number</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="laboratory_acronym_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>laboratory_acronym</B></TD><TD ALIGN="LEFT">text</TD><TD PORT="laboratory_acronym_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        wa_locus [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>wa_locus</B></FONT></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="wa_code_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">wa_code</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="wa_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="locus_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">locus</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="locus_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">allele</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">val</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">timestamp</TD><TD ALIGN="LEFT">timestamp</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="user_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="user_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">definitive</TD><TD ALIGN="LEFT">boolean</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="laboratory_acronym_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">laboratory_acronym</TD><TD ALIGN="LEFT">text</TD><TD PORT="laboratory_acronym_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        wa_loci_values [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>wa_loci_values</B></FONT></TD></TR>
+            <TR><TD PORT="wa_code_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>wa_code</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="wa_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">loci_values</TD><TD ALIGN="LEFT">jsonb</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="laboratory_acronym_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>laboratory_acronym</B></TD><TD ALIGN="LEFT">text</TD><TD PORT="laboratory_acronym_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        genotypes [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>genotypes</B></FONT></TD></TR>
+            <TR><TD PORT="genotype_id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>genotype_id</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="genotype_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">date</TD><TD ALIGN="LEFT">date</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">pack</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sex</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">age_first_capture</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">status_first_capture</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">dispersal</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">n_recaptures</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">dead_recovery</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">record_status</TD><TD ALIGN="LEFT">varchar NOT NULL</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">tmp_id</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">working_notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">changed_status</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">hybrid</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">mtdna</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="mother_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">mother</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="mother_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="father_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">father</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="father_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        genotype_locus [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>genotype_locus</B></FONT></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="genotype_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">genotype_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="genotype_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="locus_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">locus</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="locus_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">allele</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">val</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">timestamp</TD><TD ALIGN="LEFT">timestamp</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">notes</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="user_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">varchar</TD><TD PORT="user_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">validated</TD><TD ALIGN="LEFT">boolean</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        loci [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>loci</B></FONT></TD></TR>
+            <TR><TD PORT="name_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>name</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="name_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">n_alleles</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">use_with_colony</TD><TD ALIGN="LEFT">boolean</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        laboratories [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#7b1fa2"><FONT COLOR="white"><B>laboratories</B></FONT></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT">bigint</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT">text NOT NULL</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="acronym_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>UQ</B></TD><TD ALIGN="LEFT"><B>acronym</B></TD><TD ALIGN="LEFT">text NOT NULL</TD><TD PORT="acronym_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+    }
+
+    subgraph cluster_metadata {
+        label="Metadata and users";
+        color="#a5d6a7";
+        style="rounded,dashed";
+
+        users [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#388e3c"><FONT COLOR="white"><B>users</B></FONT></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">integer NOT NULL</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="email_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>email</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="email_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">firstname</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">lastname</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">institution</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">deleted</TD><TD ALIGN="LEFT">timestamp</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">allele_modifier</TD><TD ALIGN="LEFT">boolean</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">role</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        dead_wolves_fields_definition [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#388e3c"><FONT COLOR="white"><B>dead_wolves_fields_definition</B></FONT></TD></TR>
+            <TR><TD PORT="field_id_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>field_id</B></TD><TD ALIGN="LEFT">integer</TD><TD PORT="field_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">type</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">allowed_values</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">default_value</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">visible</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">description</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        dead_wolves_values [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#388e3c"><FONT COLOR="white"><B>dead_wolves_values</B></FONT></TD></TR>
+            <TR><TD PORT="id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">integer</TD><TD PORT="id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="field_id_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">field_id</TD><TD ALIGN="LEFT">integer</TD><TD PORT="field_id_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">val</TD><TD ALIGN="LEFT">text</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+    }
+
+    subgraph cluster_geography {
+        label="Geographic reference data";
+        color="#ffcc80";
+        style="rounded,dashed";
+
+        geo_info [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#ef6c00"><FONT COLOR="white"><B>geo_info</B></FONT></TD></TR>
+            <TR><TD PORT="province_code_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>province_code</B></TD><TD ALIGN="LEFT">varchar</TD><TD PORT="province_code_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province_name</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">country</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">province_code_num</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">region_code_num</TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        istat_regioni [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#ef6c00"><FONT COLOR="white"><B>istat_regioni</B></FONT></TD></TR>
+            <TR><TD PORT="cod_reg_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>cod_reg</B></TD><TD ALIGN="LEFT">integer</TD><TD PORT="cod_reg_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">nome_regione</TD><TD ALIGN="LEFT">varchar NOT NULL</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        istat_province [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#ef6c00"><FONT COLOR="white"><B>istat_province</B></FONT></TD></TR>
+            <TR><TD PORT="cod_prov_in" WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>cod_prov</B></TD><TD ALIGN="LEFT">integer</TD><TD PORT="cod_prov_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">nome_provincia</TD><TD ALIGN="LEFT">varchar NOT NULL</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">sigla</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="cod_reg_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cod_reg</TD><TD ALIGN="LEFT">integer NOT NULL</TD><TD PORT="cod_reg_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+
+        comuni [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD COLSPAN="5" BGCOLOR="#ef6c00"><FONT COLOR="white"><B>comuni</B></FONT></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD><B>PK</B></TD><TD ALIGN="LEFT"><B>ogc_fid</B></TD><TD ALIGN="LEFT">integer</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">wkb_geometry</TD><TD ALIGN="LEFT">geometry</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cod_rip</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="cod_reg_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cod_reg</TD><TD ALIGN="LEFT">numeric</TD><TD PORT="cod_reg_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD PORT="cod_prov_in" WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cod_prov</TD><TD ALIGN="LEFT">numeric</TD><TD PORT="cod_prov_out" WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cod_cm</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cod_uts</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">pro_com</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">pro_com_t</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">comune</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">comune_a</TD><TD ALIGN="LEFT">varchar</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">cc_uts</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">shape_leng</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+            <TR><TD WIDTH="8" CELLPADDING="0"></TD><TD></TD><TD ALIGN="LEFT">shape_area</TD><TD ALIGN="LEFT">numeric</TD><TD WIDTH="8" CELLPADDING="0"></TD></TR>
+        </TABLE>>];
+    }
+
+    // Logical relations used by WolfDB (not enforced as PostgreSQL FKs).
+    // Edge ports sit at the table boundary, outside the field/type text.
+    edge [style=dashed, penwidth=1.1];
+
+    scats:path_id_out:e -> paths:path_id_in:w;
+    scats:snowtrack_id_out:e -> snow_tracks:snowtrack_id_in:w;
+    scats:wa_code_out:e -> wa_results:wa_code_in:w;
+    dead_wolves:wa_code_out:e -> wa_results:wa_code_in:w;
+    dead_wolves:genotype_id_out:e -> genotypes:genotype_id_in:w;
+
+    paths:transect_id_out:e -> transects:transect_id_in:w;
+    snow_tracks:transect_id_out:e -> transects:transect_id_in:w;
+    transects:province_code_out:e -> geo_info:province_code_in:w;
+
+    wa_results:genotype_id_out:e -> genotypes:genotype_id_in:w;
+    wa_results:laboratory_acronym_out:e -> laboratories:acronym_in:w;
+    wa_locus:wa_code_out:e -> wa_results:wa_code_in:w;
+    wa_locus:laboratory_acronym_out:e -> wa_results:laboratory_acronym_in:w;
+    wa_locus:locus_out:e -> loci:name_in:w;
+    wa_locus:user_id_out:e -> users:email_in:w;
+    wa_loci_values:wa_code_out:e -> wa_results:wa_code_in:w;
+    wa_loci_values:laboratory_acronym_out:e -> wa_results:laboratory_acronym_in:w;
+
+    genotype_locus:genotype_id_out:e -> genotypes:genotype_id_in:w;
+    genotype_locus:locus_out:e -> loci:name_in:w;
+    genotype_locus:user_id_out:e -> users:email_in:w;
+    // Separate routing labels keep the two parent references distinguishable.
+    {
+        rank=same;
+        mother_reference [shape=plaintext, label="mother", fontcolor="#00897b", fontsize=10];
+        father_reference [shape=plaintext, label="father", fontcolor="#e65100", fontsize=10];
+    }
+    genotypes:mother_out:e -> mother_reference:w [color="#00897b", penwidth=1.6, arrowhead=none];
+    mother_reference:w -> genotypes:genotype_id_out:e [color="#00897b", penwidth=1.6, constraint=false];
+    genotypes:father_out:e -> father_reference:w [color="#e65100", penwidth=1.6, arrowhead=none];
+    father_reference:w -> genotypes:genotype_id_out:e [color="#e65100", penwidth=1.6, constraint=false];
+
+    dead_wolves_values:id_out:e -> dead_wolves:id_in:w;
+    dead_wolves_values:field_id_out:e -> dead_wolves_fields_definition:field_id_in:w;
+
+    istat_province:cod_reg_out:e -> istat_regioni:cod_reg_in:w;
+    comuni:cod_prov_out:e -> istat_province:cod_prov_in:w;
+    comuni:cod_reg_out:e -> istat_regioni:cod_reg_in:w;
+
+    subgraph cluster_legend {
+        label="Legend";
+        color="#cfd8dc";
+        style="rounded";
+
+        legend_keys [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <TR><TD BGCOLOR="#eceff1"><B>Markers</B></TD></TR>
+            <TR><TD ALIGN="LEFT"><B>PK</B> = primary key</TD></TR>
+            <TR><TD ALIGN="LEFT"><B>UQ</B> = unique constraint</TD></TR>
+            <TR><TD ALIGN="LEFT">Dashed edge = logical relation</TD></TR>
+            <TR><TD ALIGN="LEFT">Arrow: referencing field to referenced field</TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#00897b">mother</FONT> / <FONT COLOR="#e65100">father</FONT> = parent genotype</TD></TR>
+            <TR><TD ALIGN="LEFT">Views: see database_views.dot</TD></TR>
+        </TABLE>>];
+    }
+}
