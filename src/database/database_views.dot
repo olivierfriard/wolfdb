@@ -1,38 +1,86 @@
-digraph G {
+digraph wolfdb_views {
+    graph [
+        label="WolfDB — database views dependencies",
+        labelloc="t",
+        fontsize=20,
+        fontname="Helvetica",
+        rankdir=LR,
+        nodesep=0.55,
+        ranksep=0.9,
+        splines=spline,
+        bgcolor="white"
+    ];
 
-    // schema of database tables (square), views (diamond) and materialized views (ellipse)
- {
-        rank=same;
-        scats [shape=square];
-        wa_results [shape=square];
-        dead_wolves_value [shape=square];
-        genotypes [shape=square];
+    node [
+        fontname="Helvetica",
+        fontsize=11,
+        style="filled",
+        color="#455a64",
+        fontcolor="#263238"
+    ];
+
+    edge [
+        color="#78909c",
+        arrowsize=0.7,
+        style=dashed,
+        penwidth=1.1,
+        tailport=e,
+        headport=w
+    ];
+
+    subgraph cluster_tables {
+        label="Tables";
+        color="#90a4ae";
+        style="rounded,dashed";
+
+        node [shape=box, fillcolor="#e3f2fd"];
+        scats;
+        dead_wolves;
+        wa_results;
+        genotypes;
     }
 
-    wa_scat [shape=diamond];
-    wa_dw  [shape=diamond];
+    subgraph cluster_views {
+        label="Views";
+        color="#90a4ae";
+        style="rounded,dashed";
 
-    // Edges
-    scats -> scats_list_mat;
+        node [shape=diamond, fillcolor="#fff8e1"];
+        wa_scat;
+        wa_dw;
+        wa_scat_dw_all;
+        wa_genetic_samples_all;
+        genotypes_list_all;
+        scats_list_all;
+    }
+
+    // Direct view dependencies.
     scats -> wa_scat;
-
     wa_results -> wa_scat;
+
+    dead_wolves -> wa_dw;
     wa_results -> wa_dw;
 
-    wa_dw -> wa_scat_dw_mat;
+    wa_scat -> wa_scat_dw_all;
+    wa_dw -> wa_scat_dw_all;
 
-    wa_scat -> wa_scat_dw_mat;
+    wa_scat_dw_all -> wa_genetic_samples_all;
+    genotypes -> wa_genetic_samples_all;
+    dead_wolves -> wa_genetic_samples_all;
 
-    dead_wolves_value -> dead_wolves_mat;
+    wa_scat_dw_all -> genotypes_list_all;
+    genotypes -> genotypes_list_all;
 
-    dead_wolves_mat -> wa_dw;
-    dead_wolves_mat -> wa_genetic_samples_mat;
+    scats -> scats_list_all;
+    wa_scat_dw_all -> scats_list_all;
 
-    wa_scat_dw_mat -> scats_list_mat;
-    wa_scat_dw_mat -> wa_genetic_samples_mat;
-    wa_scat_dw_mat -> genotypes_list_mat;
+    subgraph cluster_legend {
+        label="Legend";
+        color="#cfd8dc";
+        style="rounded";
 
-    genotypes -> wa_genetic_samples_mat;
-    genotypes -> genotypes_list_mat;
-
+        legend_table [label="Table", shape=box, fillcolor="#e3f2fd"];
+        legend_view [label="View", shape=diamond, fillcolor="#fff8e1"];
+        legend_table -> legend_view [label="  used by", fontsize=9];
+    }
 }
