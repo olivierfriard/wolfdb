@@ -1294,46 +1294,91 @@ def confirm_load_table(filename, mode):
             if mode == "new" and (data["scat_id"] in scats_to_update):
                 continue
 
-            sql = text(
-                "INSERT INTO scats (scat_id, date, wa_code, sampling_season, sampling_type, path_id, snowtrack_id, "
-                "location, municipality, province, region, "
-                "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
-                "coord_east, coord_north, coord_zone, observer, institution,"
-                "geometry_utm, notes, sample_type, box_number) "
-                "VALUES("
-                ":scat_id, :date, :wa_code, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
-                ":location, :municipality, :province, :region, "
-                ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
-                ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
-                f"{data['geometry_utm']}, :notes, :sample_type, :box_number "
-                ") "
-                "ON CONFLICT (scat_id) "
-                "DO UPDATE SET "
-                "date = CASE WHEN EXCLUDED.date IS NOT NULL THEN EXCLUDED.date ELSE scats.date END,"
-                "wa_code = CASE WHEN EXCLUDED.wa_code <> '' THEN EXCLUDED.wa_code ELSE scats.wa_code END,"
-                "sampling_season = CASE WHEN EXCLUDED.sampling_season <> '' THEN EXCLUDED.sampling_season ELSE scats.sampling_season END,"
-                "sampling_type = CASE WHEN EXCLUDED.sampling_type <> '' THEN EXCLUDED.sampling_type ELSE scats.sampling_type END,"
-                "path_id = CASE WHEN EXCLUDED.path_id <> '' THEN EXCLUDED.path_id ELSE scats.path_id END,"
-                "snowtrack_id = CASE WHEN EXCLUDED.snowtrack_id <> '' THEN EXCLUDED.snowtrack_id ELSE scats.snowtrack_id END,"
-                "location = CASE WHEN EXCLUDED.location <> '' THEN EXCLUDED.location ELSE scats.location END,"
-                "municipality = CASE WHEN EXCLUDED.municipality <> '' THEN EXCLUDED.municipality ELSE scats.municipality END,"
-                "province = CASE WHEN EXCLUDED.province <> '' THEN EXCLUDED.province ELSE scats.province END,"
-                "region = CASE WHEN EXCLUDED.region <> '' THEN EXCLUDED.region ELSE scats.region END,"
-                "deposition = CASE WHEN EXCLUDED.deposition <> '' THEN EXCLUDED.deposition ELSE scats.deposition END,"
-                "matrix = CASE WHEN EXCLUDED.matrix <> '' THEN EXCLUDED.matrix ELSE scats.matrix END,"
-                "collected_scat = CASE WHEN EXCLUDED.collected_scat <> '' THEN EXCLUDED.collected_scat ELSE scats.collected_scat END,"
-                "scalp_category = CASE WHEN EXCLUDED.scalp_category <> '' THEN EXCLUDED.scalp_category ELSE scats.scalp_category END,"
-                "genetic_sample = CASE WHEN EXCLUDED.genetic_sample <> '' THEN EXCLUDED.genetic_sample ELSE scats.genetic_sample END,"
-                "coord_east = CASE WHEN EXCLUDED.coord_east  IS NOT NULL  THEN EXCLUDED.coord_east ELSE scats.coord_east END,"
-                "coord_north = CASE WHEN EXCLUDED.coord_north  IS NOT NULL  THEN EXCLUDED.coord_north ELSE scats.coord_north END,"
-                "coord_zone = CASE WHEN EXCLUDED.coord_zone <> '' THEN EXCLUDED.coord_zone ELSE scats.coord_zone END,"
-                "observer = CASE WHEN EXCLUDED.observer <> '' THEN EXCLUDED.observer ELSE scats.observer END,"
-                "institution = CASE WHEN EXCLUDED.institution <> '' THEN EXCLUDED.institution ELSE scats.institution END,"
-                "geometry_utm = CASE WHEN EXCLUDED.geometry_utm <> '' THEN EXCLUDED.geometry_utm ELSE scats.geometry_utm END,"
-                "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE scats.notes END,"
-                "sample_type = CASE WHEN EXCLUDED.sample_type <> '' THEN EXCLUDED.sample_type ELSE scats.sample_type END,"
-                "box_number = CASE WHEN EXCLUDED.box_number <> '' THEN EXCLUDED.box_number ELSE scats.box_number END"
-            )
+            # sql = text(
+            #    "INSERT INTO scats (scat_id, date, wa_code, sampling_season, sampling_type, path_id, snowtrack_id, "
+            #    "location, municipality, province, region, "
+            #    "deposition, matrix, collected_scat, scalp_category, genetic_sample, "
+            #    "coord_east, coord_north, coord_zone, observer, institution,"
+            #    "geometry_utm, notes, sample_type, box_number) "
+            #    "VALUES("
+            #    ":scat_id, :date, :wa_code, :sampling_season, :sampling_type, :path_id, :snowtrack_id, "
+            #    ":location, :municipality, :province, :region, "
+            #    ":deposition, :matrix, :collected_scat, :scalp_category, :genetic_sample,"
+            #    ":coord_east, :coord_north, :coord_zone, :operator, :institution, "
+            #    f"{data['geometry_utm']}, :notes, :sample_type, :box_number "
+            #    ") "
+            #    "ON CONFLICT (scat_id) "
+            #    "DO UPDATE SET "
+            #    "date = CASE WHEN EXCLUDED.date IS NOT NULL THEN EXCLUDED.date ELSE scats.date END,"
+            #    "wa_code = COALESCE(NULLIF(EXCLUDED.wa_code, ''), scats.wa_code) "
+            #    "sampling_season = CASE WHEN EXCLUDED.sampling_season <> '' THEN EXCLUDED.sampling_season ELSE scats.sampling_season END,"
+            #    "sampling_type = CASE WHEN EXCLUDED.sampling_type <> '' THEN EXCLUDED.sampling_type ELSE scats.sampling_type END,"
+            #    "path_id = CASE WHEN EXCLUDED.path_id <> '' THEN EXCLUDED.path_id ELSE scats.path_id END,"
+            #    "snowtrack_id = CASE WHEN EXCLUDED.snowtrack_id <> '' THEN EXCLUDED.snowtrack_id ELSE scats.snowtrack_id END,"
+            #    "location = CASE WHEN EXCLUDED.location <> '' THEN EXCLUDED.location ELSE scats.location END,"
+            #    "municipality = CASE WHEN EXCLUDED.municipality <> '' THEN EXCLUDED.municipality ELSE scats.municipality END,"
+            #    "province = CASE WHEN EXCLUDED.province <> '' THEN EXCLUDED.province ELSE scats.province END,"
+            #    "region = CASE WHEN EXCLUDED.region <> '' THEN EXCLUDED.region ELSE scats.region END,"
+            #    "deposition = CASE WHEN EXCLUDED.deposition <> '' THEN EXCLUDED.deposition ELSE scats.deposition END,"
+            #    "matrix = CASE WHEN EXCLUDED.matrix <> '' THEN EXCLUDED.matrix ELSE scats.matrix END,"
+            #    "collected_scat = CASE WHEN EXCLUDED.collected_scat <> '' THEN EXCLUDED.collected_scat ELSE scats.collected_scat END,"
+            #    "scalp_category = CASE WHEN EXCLUDED.scalp_category <> '' THEN EXCLUDED.scalp_category ELSE scats.scalp_category END,"
+            #    "genetic_sample = CASE WHEN EXCLUDED.genetic_sample <> '' THEN EXCLUDED.genetic_sample ELSE scats.genetic_sample END,"
+            #    "coord_east = CASE WHEN EXCLUDED.coord_east  IS NOT NULL  THEN EXCLUDED.coord_east ELSE scats.coord_east END,"
+            #    "coord_north = CASE WHEN EXCLUDED.coord_north  IS NOT NULL  THEN EXCLUDED.coord_north ELSE scats.coord_north END,"
+            #    "coord_zone = CASE WHEN EXCLUDED.coord_zone <> '' THEN EXCLUDED.coord_zone ELSE scats.coord_zone END,"
+            #    "observer = CASE WHEN EXCLUDED.observer <> '' THEN EXCLUDED.observer ELSE scats.observer END,"
+            #    "institution = CASE WHEN EXCLUDED.institution <> '' THEN EXCLUDED.institution ELSE scats.institution END,"
+            #    "geometry_utm = CASE WHEN EXCLUDED.geometry_utm IS NOT NULL THEN EXCLUDED.geometry_utm ELSE scats.geometry_utm END,"
+            #    "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE scats.notes END,"
+            #    "sample_type = CASE WHEN EXCLUDED.sample_type <> '' THEN EXCLUDED.sample_type ELSE scats.sample_type END,"
+            #    "box_number = CASE WHEN EXCLUDED.box_number <> '' THEN EXCLUDED.box_number ELSE scats.box_number END"
+            # )
+
+            sql = text("""
+    INSERT INTO scats (
+        scat_id, date, wa_code, sampling_season, sampling_type,
+        path_id, snowtrack_id, location, municipality, province,
+        region, deposition, matrix, collected_scat, scalp_category,
+        genetic_sample, coord_east, coord_north, coord_zone,
+        observer, institution, geometry_utm, notes, sample_type,
+        box_number
+    )
+    VALUES (
+        :scat_id, :date, :wa_code, :sampling_season, :sampling_type,
+        :path_id, :snowtrack_id, :location, :municipality, :province,
+        :region, :deposition, :matrix, :collected_scat, :scalp_category,
+        :genetic_sample, :coord_east, :coord_north, :coord_zone,
+        :operator, :institution,
+        ST_SetSRID(ST_MakePoint(:coord_east, :coord_north), 32632),
+        :notes, :sample_type, :box_number
+    )
+    ON CONFLICT (scat_id) DO UPDATE SET
+        date = COALESCE(EXCLUDED.date, scats.date),
+        wa_code = COALESCE(NULLIF(EXCLUDED.wa_code, ''), scats.wa_code),
+        sampling_season = COALESCE(NULLIF(EXCLUDED.sampling_season, ''), scats.sampling_season),
+        sampling_type = COALESCE(NULLIF(EXCLUDED.sampling_type, ''), scats.sampling_type),
+        path_id = COALESCE(NULLIF(EXCLUDED.path_id, ''), scats.path_id),
+        snowtrack_id = COALESCE(NULLIF(EXCLUDED.snowtrack_id, ''), scats.snowtrack_id),
+        location = COALESCE(NULLIF(EXCLUDED.location, ''), scats.location),
+        municipality = COALESCE(NULLIF(EXCLUDED.municipality, ''), scats.municipality),
+        province = COALESCE(NULLIF(EXCLUDED.province, ''), scats.province),
+        region = COALESCE(NULLIF(EXCLUDED.region, ''), scats.region),
+        deposition = COALESCE(NULLIF(EXCLUDED.deposition, ''), scats.deposition),
+        matrix = COALESCE(NULLIF(EXCLUDED.matrix, ''), scats.matrix),
+        collected_scat = COALESCE(NULLIF(EXCLUDED.collected_scat, ''), scats.collected_scat),
+        scalp_category = COALESCE(NULLIF(EXCLUDED.scalp_category, ''), scats.scalp_category),
+        genetic_sample = COALESCE(NULLIF(EXCLUDED.genetic_sample, ''), scats.genetic_sample),
+        coord_east = COALESCE(EXCLUDED.coord_east, scats.coord_east),
+        coord_north = COALESCE(EXCLUDED.coord_north, scats.coord_north),
+        coord_zone = COALESCE(NULLIF(EXCLUDED.coord_zone, ''), scats.coord_zone),
+        observer = COALESCE(NULLIF(EXCLUDED.observer, ''), scats.observer),
+        institution = COALESCE(NULLIF(EXCLUDED.institution, ''), scats.institution),
+        geometry_utm = COALESCE(EXCLUDED.geometry_utm, scats.geometry_utm),
+        notes = COALESCE(NULLIF(EXCLUDED.notes, ''), scats.notes),
+        sample_type = COALESCE(NULLIF(EXCLUDED.sample_type, ''), scats.sample_type),
+        box_number = COALESCE(NULLIF(EXCLUDED.box_number, ''), scats.box_number)
+""")
 
             params = {
                 "scat_id": data["scat_id"].strip(),

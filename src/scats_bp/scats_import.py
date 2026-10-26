@@ -2,17 +2,17 @@
 import scats from spredsheet file
 """
 
-from config import config
-import functions as fn
-
-
-import pathlib as pl
-import pandas as pd
 import datetime as dt
+import pathlib as pl
+
+import pandas as pd
 import utm
 from markupsafe import Markup
 
-DEBUG = False
+import functions as fn
+from config import config
+
+DEBUG = True
 params = config()
 
 
@@ -21,6 +21,7 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
     Extract and check data from a spreadsheet file (XLSX or ODS)
     """
 
+    engine: str = ""
     if pl.Path(filename).suffix.upper() == ".XLSX":
         engine = "openpyxl"
     if pl.Path(filename).suffix.upper() == ".ODS":
@@ -178,6 +179,8 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
             )
 
     # check province code
+    if DEBUG:
+        print("check province")
     for idx, province in enumerate(scats_df["province"]):
         if isinstance(province, int):
             province = f"{province:02}"
@@ -193,8 +196,10 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
     scats_data: dict = {}
     index = 0
 
-    for _, row in scats_df.iterrows():
+    for idx, row in scats_df.iterrows():
         data: dict = {}
+        if DEBUG:
+            print(idx)
 
         for column in columns_list:
             if column == "province" and isinstance(row[column], int):
@@ -268,14 +273,15 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
                 f"ERROR on coordinates zone {row['coord_zone']}. Must be 3 characters"
             )
 
-        hemisphere = data["coord_zone"][-1]
-        if hemisphere not in ("S", "N"):
+        zone_letter = data["coord_zone"][-1]
+        if zone_letter not in "CDEFGHJKLMNPQRSTUVWX":
             out += fn.alert_danger(
                 Markup(
-                    f"Row {index + 2}: the hemisphere of the UTM zone <b>{data['coord_zone']}</b> is not correct. Must be <b>N</b> or <b>S</b>'"
+                    f"Row {index + 2}: the zone letter of the UTM <b>{data['coord_zone']}</b> is not correct. Must be in <b>CDEFGHJKLMNPQRSTUVWX</b>'"
                 )
             )
 
+        zone: int | None = None
         try:
             zone = int(row["coord_zone"][:2])
         except Exception:
@@ -288,14 +294,17 @@ def extract_data_from_spreadsheet(filename: str) -> (bool, str, dict, dict, dict
         # check if coordinates are OK
         try:
             _ = utm.to_latlon(
-                int(data["coord_east"]), int(data["coord_north"]), zone, hemisphere
+                int(data["coord_east"]), int(data["coord_north"]), zone, zone_letter
             )
         except Exception:
             out += fn.alert_danger(
                 f'Row {index + 2}: Check the UTM coordinates. East: "{data["coord_east"]}" North: "{data["coord_north"]} Zone: {data["coord_zone"]}"'
             )
+        if zone_letter in "NPQRSTUVWX":  # north hemisphere
+            srid = 32600 + zone
+        else:  # south hemisphere
+            srid = 32700 + zone
 
-        srid = zone + (32600 if hemisphere == "N" else 32700)
         data["geometry_utm"] = (
             f"ST_GeomFromText('POINT({data['coord_east']} {data['coord_north']})', {srid})"
         )
