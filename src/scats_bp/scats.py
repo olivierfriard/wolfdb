@@ -1415,10 +1415,7 @@ def confirm_load_table(filename, mode):
             try:
                 con.execute(sql, params)
             except Exception:
-                return (
-                    "An error occured during the loading of scats. Contact the administrator.<br>"
-                    + error_info(sys.exc_info())
-                )
+                return f"An error occured during the loading of scats. Contact the administrator.<br>: {error_info(sys.exc_info())}"
 
         """
         # paths

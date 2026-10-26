@@ -200,6 +200,7 @@ SELECT
     s.province_auto,
     s.municipality_auto,
     s.location_auto,
+    s.ispra_id,
     w.genotype_id AS genotype_id2,
     CASE
         WHEN lower(w.mtdna::text) ~~ '%wolf%'::text THEN 'C1'::character varying
