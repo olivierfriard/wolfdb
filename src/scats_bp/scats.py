@@ -1002,21 +1002,20 @@ def edit_scat(scat_id):
 
         with fn.conn_alchemy().connect() as con:
             # check if scat id already exists
-            if scat_id != request.form["scat_id"]:
-                if len(
-                    con.execute(
-                        text("SELECT scat_id FROM scats WHERE scat_id = :scat_id"),
-                        {"scat_id": request.form["scat_id"]},
-                    )
-                    .mappings()
-                    .all()
-                ):
-                    return not_valid(
-                        form,
-                        (
-                            f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). Please check and submit again"
-                        ),
-                    )
+            if scat_id != request.form["scat_id"] and len(
+                con.execute(
+                    text("SELECT scat_id FROM scats WHERE scat_id = :scat_id"),
+                    {"scat_id": request.form["scat_id"]},
+                )
+                .mappings()
+                .all()
+            ):
+                return not_valid(
+                    form,
+                    (
+                        f"Another sample has the same scat ID (<b>{request.form['scat_id']}</b>). Please check and submit again"
+                    ),
+                )
 
             # check date in scat ID
             """
@@ -1034,13 +1033,15 @@ def edit_scat(scat_id):
                 return not_valid(form,"The scat_id value is not correct")
             """
 
+            date = request.form["date"]
+
             # path id
             if request.form["sampling_type"] == "Systematic":
                 # convert XX_NN YYYY-MM-DD to XX_NN|YYMMDD
                 path_id = (
                     request.form["path_id"].split(" ")[0]
                     + "|"
-                    + date[2:].replace("-", "")
+                    + date[2:].replace("-", "")  # -> YYMMDD
                 )
             else:
                 path_id = ""

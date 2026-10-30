@@ -627,16 +627,16 @@ def edit_dead_wolf(id: int):
 
         form = Dead_wolf(
             # for selectfield elements
-            field2=default_values["field2"] if "field2" in default_values else "",
-            field3=default_values["field3"] if "field3" in default_values else "",
-            field12=default_values["field12"] if "field12" in default_values else "",
-            field13=default_values["field13"] if "field13" in default_values else "",
+            field2=default_values.get("field2", ""),
+            field3=default_values.get("field3", ""),
+            field12=default_values.get("field12", ""),
+            field13=default_values.get("field13", ""),
             province=dead_wolf["province"],
-            field26=default_values["field26"] if "field26" in default_values else "",
-            field35=default_values["field34"] if "field34" in default_values else "",
-            field43=default_values["field43"] if "field43" in default_values else "",
-            field82=default_values["field82"] if "field82" in default_values else "",
-            field83=default_values["field83"] if "field83" in default_values else "",
+            field26=default_values.get("field26", ""),
+            field35=default_values.get("field34", ""),
+            field43=default_values.get("field43", ""),
+            field82=default_values.get("field82", ""),
+            field83=default_values.get("field83", ""),
         )
 
         title = f"Edit dead wolf <b>#{id}</b>"
@@ -702,30 +702,29 @@ def edit_dead_wolf(id: int):
 
             con.execute(
                 text(
-                    (
-                        # "UPDATE dead_wolves dw "
-                        # "SET "
-                        # "genotype_id = :genotype_id, "
-                        # "tissue_id = :tissue_id, "
-                        # "discovery_date = :discovery_date, "
-                        # "location = :location, "
-                        # "municipality = :municipality, "
-                        # "province = :province, "
-                        # "region = :region, "
-                        # "wa_code = :wa_code, "
-                        # "utm_east = :utm_east, "
-                        # "utm_north = :utm_north, "
-                        # "utm_zone = :utm_zone, "
-                        # "geometry_utm = ST_GeomFromText(:wkt_point, :srid), "
-                        # "municipality_auto = c.comune "
-                        # "FROM comuni c "
-                        # "WHERE "
-                        # "dw.id = :dead_wolf_id "
-                        # "AND ST_Within( "
-                        # "    ST_GeomFromText(:wkt_point, :srid), "
-                        # "    c.wkb_geometry "
-                        # ") "
-                        """
+                    # "UPDATE dead_wolves dw "
+                    # "SET "
+                    # "genotype_id = :genotype_id, "
+                    # "tissue_id = :tissue_id, "
+                    # "discovery_date = :discovery_date, "
+                    # "location = :location, "
+                    # "municipality = :municipality, "
+                    # "province = :province, "
+                    # "region = :region, "
+                    # "wa_code = :wa_code, "
+                    # "utm_east = :utm_east, "
+                    # "utm_north = :utm_north, "
+                    # "utm_zone = :utm_zone, "
+                    # "geometry_utm = ST_GeomFromText(:wkt_point, :srid), "
+                    # "municipality_auto = c.comune "
+                    # "FROM comuni c "
+                    # "WHERE "
+                    # "dw.id = :dead_wolf_id "
+                    # "AND ST_Within( "
+                    # "    ST_GeomFromText(:wkt_point, :srid), "
+                    # "    c.wkb_geometry "
+                    # ") "
+                    """
                         WITH p AS (
                           SELECT ST_GeomFromText(:wkt_point, :srid) AS geom
                         ),
@@ -759,7 +758,6 @@ def edit_dead_wolf(id: int):
                         WHERE dw.id = :dead_wolf_id;
 
 """
-                    )
                 ),
                 {
                     "dead_wolf_id": id,
