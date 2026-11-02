@@ -2467,6 +2467,22 @@ def view_genetic_data(wa_code: str):
 
         genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
+        other_laboratories = con.execute(
+            text(
+                "SELECT DISTINCT laboratory_acronym FROM wa_locus "
+                "WHERE wa_code = :wa_code "
+                "AND laboratory_acronym <> :laboratory "
+                "ORDER BY laboratory_acronym"
+            ),
+            {"wa_code": wa_code, "laboratory": laboratory},
+        ).scalars().all()
+        laboratory_data = [{"name": laboratory, "loci": wa_loci}]
+        for other_lab in other_laboratories:
+            laboratory_data.append({
+                "name": other_lab,
+                "loci": fn.get_wa_loci_values_redis(other_lab, wa_code),
+            })
+
         for locus in loci_list:
             for allele in ("a", "b"):
                 if allele not in wa_loci[locus]:
@@ -2497,6 +2513,7 @@ def view_genetic_data(wa_code: str):
             sex=sex,
             genotype_id=genotype_id,
             data=wa_loci,
+            laboratory_data=laboratory_data,
             genotype_loci=genotype_loci,
             return_to=return_to,
         )

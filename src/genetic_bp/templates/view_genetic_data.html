@@ -2,6 +2,14 @@
 
 {% block content %}
 
+{% macro allele_value(value, divergent=false) %}
+{% if value is none or value == '' or value == '-' %}
+<span class="text-muted">−</span>
+{% else %}
+<span class="badge locus-value{% if divergent %} locus-divergent{% endif %}"{% if divergent %} title="Different from genotype"{% endif %}>{{ value }}</span>
+{% endif %}
+{% endmacro %}
+
 {% if return_to %}
 <a href="{{ return_to }}" class="btn btn-primary">Previous page</a>
 {% else %}
@@ -26,69 +34,99 @@
 {%endif%}
 
 <br>
-<span style="font-size:24px">&#128312;</span><small>The WA code locus is distinct from the genotype locus.</small>
+<span class="badge locus-divergent">Different from genotype</span>
+<small>The highlighted WA allele differs from the genotype allele.</small>
 
-<table class="table table-striped">
+<style>
+    #genetic-data-table:not(.show-details) .genetic-detail { display: none; }
+    #genetic-data-table { width: auto; }
+    #genetic-data-table th, #genetic-data-table td { vertical-align: middle; }
+    #genetic-data-table thead th { text-align: center; }
+    #genetic-data-table .laboratory-heading,
+    #genetic-data-table .laboratory-start { border-left: 2px solid #adb5bd; }
+    #genetic-data-table .allele-cell { text-align: center; white-space: nowrap; padding: .4rem .5rem; }
+    #genetic-data-table .locus-value {
+        background-color: #e9ecef;
+        color: #212529;
+        min-width: 3.5em;
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+    }
+    .locus-divergent, #genetic-data-table .locus-value.locus-divergent {
+        background-color: #ffc107;
+        color: #212529;
+    }
+</style>
+<button type="button" class="btn btn-secondary mb-2" id="toggle-genetic-details"
+        aria-expanded="false" aria-controls="genetic-data-table">Show details</button>
+<div class="table-responsive">
+<table class="table table-striped table-hover" id="genetic-data-table">
+    <thead>
     <tr>
-        <th>Locus</th>
+        <th rowspan="2">Locus</th>
 {% if genotype_id %}
-<th colspan="2">{{ genotype_id }}</th>
-<th style="border-left: 1px solid black;"></th>
+<th colspan="2" class="laboratory-start">Genotype<br>{{ genotype_id }}</th>
 {% endif %}
-        <th>Allele a</th>
-        <th>Date</th>
-        <th>Notes</th>
-        <th>User</th>
-        <th></th>
-        <th style="border-left: 1px solid black;">Allele b</th>
-        <th>Date</th>
-        <th>Notes</th>
-        <th>User</th>
-        <th style="background: #eeeeee">&nbsp;</th>
-        <th>History</th>
+        {% for lab in laboratory_data %}
+        <th colspan="2" class="laboratory-heading">{{ lab.name }}</th>
+        {% endfor %}
     </tr>
+    <tr>
+        {% if genotype_id %}<th class="laboratory-start">Allele a</th><th>Allele b</th>{% endif %}
+        {% for lab in laboratory_data %}
+            {% for allele in ('a', 'b') %}
+            <th class="{% if allele == 'a' %}laboratory-start{% endif %}">Allele {{ allele }}</th>
+            <th class="genetic-detail">Date</th>
+            <th class="genetic-detail">Notes</th>
+            <th class="genetic-detail">User</th>
+            {% endfor %}
+            <th class="genetic-detail">History</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
     {% for locus in loci_list %}
     <tr>
-        <td>{{ locus }}</td>
+        <th scope="row">{{ locus }}</th>
 
 {% if genotype_id %}
-<td style="border-left: 1px solid black;">{{ genotype_loci[locus]['a']['value'] }}</td>
-<td style="border-right: 1px solid black;">
-{% if 'b' in genotype_loci[locus] %}   {{ genotype_loci[locus].b.value }} {% endif %}
+<td class="allele-cell laboratory-start">{{ allele_value(genotype_loci[locus]['a']['value']) }}</td>
+<td class="allele-cell">
+{% if 'b' in genotype_loci[locus] %}{{ allele_value(genotype_loci[locus].b.value) }}{% endif %}
 </td>
-<td></td>
 {% endif %}
 
-{% for allele in ('a', 'b') if allele in data[locus] %}
-
-<td {% if allele == 'b' %}style="border-left: 1px solid black;"{%endif%}
-style="background:{{ data[locus][allele]['bgcolor'] }}">
-{{ data[locus][allele]['value'] }}
-{% if genotype_loci and data[locus][allele]['value'] != genotype_loci[locus][allele]['value'] and data[locus][allele]['value'] not in (0, '-')%}
-<span>&#128312;</span>
+{% for lab in laboratory_data %}
+{% for allele in ('a', 'b') %}
+{% set entry = lab.loci.get(locus, {}).get(allele) %}
+<td class="allele-cell {% if allele == 'a' %}laboratory-start{% endif %}" style="background:{{ entry.get('bgcolor', '#ffffff00') if entry else '#ffffff00' }}">
+{% if entry %}
+{% set divergent = lab.name == laboratory and genotype_loci and allele in genotype_loci.get(locus, {}) and entry.value != genotype_loci[locus][allele]['value'] and entry.value not in (0, '-') %}
+{{ allele_value(entry.value, divergent) }}
 {% endif %}
-
-{# &nbsp;{{ data[locus][allele]['divergent_allele'] }} #}
 </td>
-
-<td><small>{{ data[locus][allele]['date'] }}</small></td>
-
-<td>    
-<small>{{ data[locus][allele]['notes'] if data[locus][allele]['notes'] is not none else '' }} </small>
-</td>
-<td>    
-{{ data[locus][allele]['user_id'] }}
-</td>
-
-<td style="background: #eeeeee">&nbsp;</td>
-
+<td class="genetic-detail"><small>{{ entry.date if entry else '' }}</small></td>
+<td class="genetic-detail"><small>{{ (entry.notes or '') if entry else '' }}</small></td>
+<td class="genetic-detail">{{ entry.user_id if entry else '' }}</td>
 {% endfor %}
-
-<td><a class="btn btn-sm btn-primary" href="{{ url_for('genetic.view_genetic_data_history', wa_code=wa_code, locus=locus, laboratory=laboratory) }}">view</a></td>
-
+<td class="genetic-detail"><a class="btn btn-sm btn-primary" href="{{ url_for('genetic.view_genetic_data_history', wa_code=wa_code, locus=locus, laboratory=lab.name) }}">view</a></td>
+{% endfor %}
 </tr>
 {% endfor %}
 
+    </tbody>
 </table>
+</div>
+<script>
+document.getElementById('toggle-genetic-details').addEventListener('click', function () {
+    const table = document.getElementById('genetic-data-table');
+    const expanded = table.classList.toggle('show-details');
+    this.setAttribute('aria-expanded', String(expanded));
+    this.textContent = expanded ? 'Hide details' : 'Show details';
+    table.querySelectorAll('.laboratory-heading').forEach(function (heading) {
+        heading.colSpan = expanded ? 9 : 2;
+    });
+});
+</script>
 
 {% endblock %}
