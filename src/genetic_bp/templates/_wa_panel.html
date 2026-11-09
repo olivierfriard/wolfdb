@@ -24,7 +24,9 @@
             {# begin filters #}
             {% set wa_url = url_for('genetic.wa') %}
 
-            <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="d-flex flex-column gap-3">
+
+                <div class="d-flex flex-wrap align-items-center gap-2 order-0 border-bottom pb-3">
 
                 {% if offset > 0 %}
                 <button class="btn btn-outline-secondary btn-sm" type="button" hx-get="{{ wa_url }}"
@@ -66,9 +68,9 @@
                     </select>
                 </div>
 
-                <div class="vr mx-1"></div>
+                </div>
 
-                <div class="d-flex flex-wrap align-items-center gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-3 order-2">
 
                     <div class="form-check mb-0">
                         <input class="form-check-input" type="checkbox" id="with_genotype_notes"
@@ -110,25 +112,34 @@
                         </label>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="form-label mb-0 small" for="laboratories">Laboratories</label>
-                        <select id="laboratories" class="form-select form-select-sm" name="laboratories" multiple
-                            size="3" style="min-width: 190px;" hx-get="{{ wa_url }}" hx-trigger="change"
-                            hx-target="#wa-panel" hx-swap="innerHTML" hx-include="#wa-filters"
-                            hx-vals='{{ {"offset": 0} | tojson }}'>
-                            {% for laboratory in laboratories %}
-                            <option value="{{ laboratory.acronym }}" {% if laboratory.acronym in selected_laboratories %}selected{% endif %}>
-                                {{ laboratory.name }} — {{ laboratory.acronym }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
                 </div>
 
-                <div class="vr mx-1"></div>
+                <details id="laboratories" class="order-3 border rounded bg-light p-3 mb-0"
+                    {% if request.args.get('laboratories_open') == '1' %}open{% endif %}
+                    ontoggle="this.querySelector('[name=laboratories_open]').value = this.open ? '1' : '0'">
+                    <summary class="fs-6" style="cursor: pointer;">Laboratories
+                        <span class="badge bg-secondary ms-2" id="laboratories-count" aria-live="polite">{{ laboratories | selectattr('acronym', 'in', selected_laboratories) | list | length }} selected</span>
+                    </summary>
+                    <input type="hidden" name="laboratories_open" value="{{ '1' if request.args.get('laboratories_open') == '1' else '0' }}">
+                    <div class="d-flex flex-wrap gap-2 mt-3" role="group" aria-label="Laboratories" aria-describedby="laboratories-help">
+                        {% for laboratory in laboratories %}
+                        <input type="checkbox" class="btn-check" id="wa-laboratory-{{ loop.index }}"
+                            name="laboratories" value="{{ laboratory.acronym }}" autocomplete="off"
+                            aria-label="{{ laboratory.name }} — {{ laboratory.acronym }}"
+                            {% if laboratory.acronym in selected_laboratories %}checked{% endif %}
+                            onclick="if (!this.checked && !this.form.querySelector('input[name=laboratories]:checked')) { event.preventDefault(); }"
+                            hx-on:change="document.getElementById('laboratories-count').textContent = this.form.querySelectorAll('input[name=laboratories]:checked').length + ' selected'"
+                            hx-get="{{ wa_url }}" hx-trigger="change consume" hx-target="#wa-panel"
+                            hx-swap="innerHTML" hx-include="#wa-filters" hx-vals='{{ {"offset": 0} | tojson }}'>
+                        <label class="btn btn-outline-primary btn-sm" for="wa-laboratory-{{ loop.index }}"
+                            title="{{ laboratory.name }}">{{ laboratory.acronym }}</label>
+                        {% endfor %}
+                    </div>
+                    <small id="laboratories-help" class="text-muted d-block mt-2">Select one or more laboratories. At least one must remain selected.</small>
+                </details>
 
-                <div class="input-group input-group-sm" style="width: 280px;">
+                <div class="d-flex flex-wrap align-items-center gap-3 order-1">
+                <div class="input-group input-group-sm" style="width: 100%; max-width: 420px;">
                     <input id="wa-search" class="form-control" type="text" name="search_str" value="{{ search_str }}"
                         placeholder="Search..." aria-label="Search WA"
                         hx-on:keydown="if (event.key === 'Enter') event.preventDefault()">
@@ -251,6 +262,7 @@
                         </li>
                     </ul>
                 </div>
+            </div>
             </div>
 
 

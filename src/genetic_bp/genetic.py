@@ -4293,7 +4293,7 @@ def load_wa_from_spreadsheet():
             return redirect(url_for("genetic.load_wa_from_spreadsheet"))
 
         else:
-            # check if tissue_id already in DB
+            # check if wa code already in DB
             with fn.conn_alchemy().connect() as con:
                 wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
                 sql = text(
