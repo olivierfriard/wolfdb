@@ -31,7 +31,7 @@ def extract_wa_data_from_spreadsheet(filename: str):
         genetic_df = pd.read_excel(
             Path(params["upload_folder"]) / Path(filename), sheet_name=0, engine=engine
         )
-    except Exception:
+    except Exception:  # noqa: BLE001
         return (
             True,
             fn.alert_danger("Error reading the file. Check your XLSX/ODS file"),
@@ -55,16 +55,29 @@ def extract_wa_data_from_spreadsheet(filename: str):
     )
 
     # check columns
+    missing_columns: list = []
     for column, column_lower in zip(
         required_columns, [x.lower() for x in required_columns]
     ):
         if column_lower not in list(genetic_df.columns):
+            missing_columns.append(column)
+    if missing_columns:
+        if "WA code" in missing_columns or "mtDNA" in missing_columns:
             return (
                 True,
-                fn.alert_danger(Markup(f"ERROR Column <b>{column}</b> is missing")),
+                fn.alert_danger(
+                    Markup(
+                        f"ERROR following columns not found: <b>{'</b>,<b> '.join(missing_columns)}</b>"
+                    )
+                ),
                 {},
                 {},
             )
+        else:
+            # add required columns with NA value
+            for col in [x.lower() for x in required_columns]:
+                if col not in list(genetic_df.columns):
+                    genetic_df[col] = pd.NA
 
     # check if WA code are missing
     if genetic_df["wa code"].isnull().any():
@@ -95,7 +108,9 @@ def extract_wa_data_from_spreadsheet(filename: str):
     with fn.conn_alchemy().connect() as con:
         rows = con.execute(
             text(
-                "(SELECT CONCAT(name, '_a') AS n, position FROM loci WHERE name != 'SRY' UNION SELECT CONCAT(name, '_b') AS n, position FROM loci WHERE name != 'SRY') ORDER BY position, n "
+                "(SELECT CONCAT(name, '_a') AS n, position FROM loci WHERE name != 'SRY' "
+                "UNION "
+                "SELECT CONCAT(name, '_b') AS n, position FROM loci WHERE name != 'SRY') ORDER BY position, n "
             ),
         ).all()
         loci_list: list = [row[0] for row in rows]
@@ -109,11 +124,45 @@ def extract_wa_data_from_spreadsheet(filename: str):
         data["wa_code"] = row["wa code"].strip()
         data["pack"] = row["pack"].strip() if not pd.isna(row["pack"]) else None
         data["notes"] = row["note"].strip() if not pd.isna(row["note"]) else None
-        data["genotype_id"] = (
-            row["genotype id"].strip() if not pd.isna(row["genotype id"]) else None
-        )
+        if pd.isna(row["genotype id"]):
+            # search genotype id in DB
+            with fn.conn_alchemy().connect() as con:
+                sql_result = (
+                    con.execute(
+                        text(
+                            "SELECT genotype_id FROM wa_results WHERE wa_code = :wa_code AND laboratory_acronym = 'NGC'"
+                        ),  # TODO: add reference lab?
+                        {"wa_code": data["wa_code"]},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+            data["genotype_id"] = (
+                sql_result["genotype_id"] if sql_result is not None else None
+            )
+        else:
+            data["genotype_id"] = row["genotype id"].strip()
+
         data["mtdna"] = row["mtdna"].strip() if not pd.isna(row["mtdna"]) else None
-        data["sex_id"] = row["sex id"].strip() if not pd.isna(row["sex id"]) else None
+
+        if pd.isna(row["sex id"]):
+            # search sex id in DB
+            with fn.conn_alchemy().connect() as con:
+                sql_result = (
+                    con.execute(
+                        text(
+                            "SELECT sex_id FROM wa_results WHERE wa_code = :wa_code AND laboratory_acronym = 'NGC'"
+                        ),  # TODO: add reference lab?
+                        {"wa_code": data["wa_code"]},
+                    )
+                    .mappings()
+                    .fetchone()
+                )
+            data["sex_id"] = sql_result["sex_id"] if sql_result is not None else None
+        else:
+            data["sex_id"] = row["sex id"].strip()
+
+        # data["sex_id"] = row["sex id"].strip() if not pd.isna(row["sex id"]) else None
         data["individual_id"] = (
             str(row["other id"]).strip() if not pd.isna(row["other id"]) else None
         )
@@ -136,7 +185,10 @@ def extract_wa_data_from_spreadsheet(filename: str):
         data["wa_code"] = row["wa code"].strip()
 
         for locus, locus_lower in zip(loci_list, [x.lower() for x in loci_list]):
-            if pd.isna(row[locus_lower]):
+            if locus_lower not in row:
+                data[locus] = "-"
+
+            elif pd.isna(row[locus_lower]):
                 return (
                     True,
                     fn.alert_danger(
@@ -145,7 +197,8 @@ def extract_wa_data_from_spreadsheet(filename: str):
                     {},
                     {},
                 )
-            data[locus] = str(row[locus_lower])
+            else:
+                data[locus] = str(row[locus_lower])
 
         wa_loci[index] = dict(data)
 

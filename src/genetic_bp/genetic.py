@@ -17,8 +17,8 @@ import jinja2
 import matplotlib
 import redis
 from flask import (
-    abort,
     Blueprint,
+    abort,
     current_app,
     flash,
     jsonify,
@@ -76,9 +76,9 @@ def update_loci_values_cache(
                 wa_code, loci_list, con=db_con, laboratory=laboratory
             )
     laboratory = resolve_wa_laboratory(con, wa_code, laboratory)
-    loci_values = fn.get_wa_loci_values_by_lab(
-        laboratory, wa_code, loci_list, con=con
-    )[0]
+    loci_values = fn.get_wa_loci_values_by_lab(laboratory, wa_code, loci_list, con=con)[
+        0
+    ]
     sql = text(
         "INSERT INTO wa_loci_values (wa_code, laboratory_acronym, loci_values) "
         "VALUES (:wa_code, :laboratory, :loci_values) "
@@ -851,9 +851,7 @@ def plot_wa_clusters(distance: int):
 
         flag_ok = False
 
-        d = fn.get_wa_loci_values_redis(
-            row["laboratory_acronym"], row["wa_code"]
-        )
+        d = fn.get_wa_loci_values_redis(row["laboratory_acronym"], row["wa_code"])
 
         for locus in d:
             for allele in d[locus]:
@@ -1081,7 +1079,9 @@ def wa_genetic_samples(offset: int, limit: int | str, filter="all", mode="web"):
             True if (row["notes"] is not None and row["notes"]) else False
         )
 
-        loci_val = fn.get_wa_loci_values_redis(row["laboratory_acronym"], row["wa_code"])
+        loci_val = fn.get_wa_loci_values_redis(
+            row["laboratory_acronym"], row["wa_code"]
+        )
         loci_values[row["loci_key"]] = dict(loci_val)
 
         has_loci_notes = False
@@ -1452,8 +1452,7 @@ def get_wa(
 
     # offset and limit
     sql_base += (
-        " ORDER BY wgs.wa_code, wgs.laboratory_acronym, wgs.sample_id "
-        "OFFSET :offset "
+        " ORDER BY wgs.wa_code, wgs.laboratory_acronym, wgs.sample_id OFFSET :offset "
     )
     if limit == "All":
         sql_base += "LIMIT ALL "
@@ -1876,10 +1875,7 @@ def get_genotypes_from_wa(wa_list: list, laboratory: str | None = None):
         if laboratory is not None:
             sql += "AND laboratory_acronym = :laboratory_acronym "
             values["laboratory_acronym"] = laboratory
-        sql += (
-            "GROUP BY genotype_id "
-            "ORDER BY genotype_id ASC"
-        )
+        sql += "GROUP BY genotype_id ORDER BY genotype_id ASC"
         genotype_id = (
             con.execute(
                 text(sql),
@@ -2441,19 +2437,11 @@ def view_genetic_data(wa_code: str):
             )
             query_params = {"wa_code": wa_code}
 
-        row = (
-            con.execute(sql, query_params)
-            .mappings()
-            .fetchone()
-        )
+        row = con.execute(sql, query_params).mappings().fetchone()
 
         if row is None:
             laboratory_message = f" for laboratory {laboratory}" if laboratory else ""
-            flash(
-                fn.alert_danger(
-                    f"WA code {wa_code} not found{laboratory_message}"
-                )
-            )
+            flash(fn.alert_danger(f"WA code {wa_code} not found{laboratory_message}"))
             return redirect(return_to)
 
         laboratory = row["laboratory_acronym"]
@@ -2467,21 +2455,27 @@ def view_genetic_data(wa_code: str):
 
         genotype_loci = fn.get_genotype_loci_values_redis(row["genotype_id"])
 
-        other_laboratories = con.execute(
-            text(
-                "SELECT DISTINCT laboratory_acronym FROM wa_locus "
-                "WHERE wa_code = :wa_code "
-                "AND laboratory_acronym <> :laboratory "
-                "ORDER BY laboratory_acronym"
-            ),
-            {"wa_code": wa_code, "laboratory": laboratory},
-        ).scalars().all()
+        other_laboratories = (
+            con.execute(
+                text(
+                    "SELECT DISTINCT laboratory_acronym FROM wa_locus "
+                    "WHERE wa_code = :wa_code "
+                    "AND laboratory_acronym <> :laboratory "
+                    "ORDER BY laboratory_acronym"
+                ),
+                {"wa_code": wa_code, "laboratory": laboratory},
+            )
+            .scalars()
+            .all()
+        )
         laboratory_data = [{"name": laboratory, "loci": wa_loci}]
         for other_lab in other_laboratories:
-            laboratory_data.append({
-                "name": other_lab,
-                "loci": fn.get_wa_loci_values_redis(other_lab, wa_code),
-            })
+            laboratory_data.append(
+                {
+                    "name": other_lab,
+                    "loci": fn.get_wa_loci_values_redis(other_lab, wa_code),
+                }
+            )
 
         for locus in loci_list:
             for allele in ("a", "b"):
@@ -2557,11 +2551,7 @@ def add_genetic_data(wa_code: str):
         row = con.execute(sql, query_params).mappings().fetchone()
         if row is None:
             laboratory_message = f" for laboratory {laboratory}" if laboratory else ""
-            flash(
-                fn.alert_danger(
-                    f"WA code {wa_code} not found{laboratory_message}"
-                )
-            )
+            flash(fn.alert_danger(f"WA code {wa_code} not found{laboratory_message}"))
             return redirect(request.referrer or url_for("genetic.wa_genetic_samples3"))
 
         laboratory = row["laboratory_acronym"]
@@ -2685,9 +2675,7 @@ def add_genetic_data(wa_code: str):
                             },
                         )
 
-            update_loci_values_cache(
-                wa_code, loci_list, con=con, laboratory=laboratory
-            )
+            update_loci_values_cache(wa_code, loci_list, con=con, laboratory=laboratory)
 
             # update genotype_locus
 
@@ -2889,7 +2877,9 @@ def wa_locus_note(wa_code: str, locus: str, allele: str):
             con, wa_code, request.values.get("laboratory")
         )
         data = {
-            "wa_code": wa_code, "locus": locus, "allele": allele,
+            "wa_code": wa_code,
+            "locus": locus,
+            "allele": allele,
             "laboratory": laboratory,
         }
 
@@ -3252,7 +3242,9 @@ def genotype_locus_note(genotype_id: str, locus: str, allele: str):
                 )
 
                 update_loci_values_cache(
-                    row["wa_code"], loci_list, con=con,
+                    row["wa_code"],
+                    loci_list,
+                    con=con,
                     laboratory=row["laboratory_acronym"],
                 )
 
@@ -3388,10 +3380,14 @@ def set_wa_genotype(wa_code: str):
                             f"<strong>Attention!</strong><br>The genotype <strong>{request.form['genotype_id']}</strong> does not exits."
                         )
                     )
-                    return redirect(url_for(
-                        "genetic.set_wa_genotype", wa_code=wa_code,
-                        laboratory=laboratory, return_to=return_to,
-                    ))
+                    return redirect(
+                        url_for(
+                            "genetic.set_wa_genotype",
+                            wa_code=wa_code,
+                            laboratory=laboratory,
+                            return_to=return_to,
+                        )
+                    )
 
             with fn.conn_alchemy().connect() as con:
                 sql = text(
@@ -3407,7 +3403,11 @@ def set_wa_genotype(wa_code: str):
                     },
                 )
 
-            return redirect(return_to or session.get("url_wa_list") or url_for("genetic.wa_genetic_samples3"))
+            return redirect(
+                return_to
+                or session.get("url_wa_list")
+                or url_for("genetic.wa_genetic_samples3")
+            )
 
 
 @app.route(
@@ -4210,7 +4210,12 @@ def check_genetic_profile():
                     and row["loci_values"].split(";") == genetic_profile
                 ):
                     print(row["wa_code"])
-                    out.append({"wa_code": row["wa_code"], "laboratory": row["laboratory_acronym"]})
+                    out.append(
+                        {
+                            "wa_code": row["wa_code"],
+                            "laboratory": row["laboratory_acronym"],
+                        }
+                    )
 
         return render_template(
             "check_genetic_profile.html",
@@ -4269,7 +4274,7 @@ def load_wa_from_spreadsheet():
         try:
             filename = str(uuid.uuid4()) + str(Path(new_file.filename).suffix.upper())
             new_file.save(Path(params["upload_folder"]) / Path(filename))
-        except Exception:
+        except Exception:  # noqa: BLE001
             flash(
                 fn.alert_danger("Error with the uploaded file")
                 + f"({fn.error_info(sys.exc_info())})"
@@ -4296,7 +4301,10 @@ def load_wa_from_spreadsheet():
                     "AND laboratory_acronym = :laboratory"
                 )
                 wa_to_update = [
-                    row["wa_code"] for row in con.execute(sql, {"laboratory": laboratory_name}).mappings().all()
+                    row["wa_code"]
+                    for row in con.execute(sql, {"laboratory": laboratory_name})
+                    .mappings()
+                    .all()
                 ]
 
             return render_template(

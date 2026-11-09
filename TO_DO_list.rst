@@ -1,7 +1,10 @@
 TO DO list
 ===================================
 
-* check if materialized views can be replaced by views
+-  import wa: search for genotype id from a reference lab?
+see line 152
+
+
 
 * check if postgres can replace redis
 
@@ -9,21 +12,21 @@ TO DO list
 * fix:
 
 wolf=# SELECT wa_code, count(*) FROM wa_scat group by wa_code having count(*) > 1;
- wa_code  | count 
+ wa_code  | count
 ----------+-------
  WA3112   |     2
  FEM65319 |     2
 (2 rows)
 
 wolf=# SELECT wa_code, count(*) FROM wa_dw group by wa_code having count(*) > 1;
- wa_code | count 
+ wa_code | count
 ---------+-------
  WA990   |     2
  WA2216  |     2
 (2 rows)
 
 wolf=# SELECT wa_code, count(*) FROM wa_scat_dw_mat group by wa_code having count(*) > 1;
- wa_code  | count 
+ wa_code  | count
 ----------+-------
  FEM65319 |     2
  WA2216   |     2
