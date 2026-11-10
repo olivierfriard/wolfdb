@@ -2824,13 +2824,11 @@ def view_genetic_data_history(wa_code: str, locus: str):
         locus_values = (
             con.execute(
                 text(
-                    (
-                        "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp, notes, user_id, "
-                        "CASE WHEN definitive IS NULL THEN ''::text ELSE definitive::text END "
-                        "FROM wa_locus WHERE wa_code = :wa_code "
-                        "AND laboratory_acronym = :laboratory "
-                        "AND locus = :locus ORDER BY allele, timestamp ASC"
-                    )
+                    "SELECT allele, val, to_char(timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp, notes, user_id, "
+                    "CASE WHEN definitive IS NULL THEN ''::text ELSE definitive::text END "
+                    "FROM wa_locus WHERE wa_code = :wa_code "
+                    "AND laboratory_acronym = :laboratory "
+                    "AND locus = :locus ORDER BY allele, timestamp ASC"
                 ),
                 {
                     "wa_code": wa_code,
@@ -4341,10 +4339,6 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
 
     with fn.conn_alchemy().connect() as con:
         # check if wa already in DB
-        # wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
-        # sql = text(f"SELECT wa_code FROM wa_results WHERE wa_code in ('{wa_list}')")
-        # wa_to_update = [row["wa_code"] for row in con.execute(sql).mappings().all()]
-
         wa_codes = [wa_results[idx]["wa_code"] for idx in wa_results]
 
         sql = text(
@@ -4365,12 +4359,28 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
             ).mappings()
         ]
 
+        # check wa code without scat_id
+        query = text("""
+            SELECT DISTINCT w.wa_code
+            FROM unnest(CAST(:wa_codes AS varchar[])) AS w(wa_code)
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM scats s
+                WHERE s.wa_code = w.wa_code
+            )
+        """)
+
+        missing_scats = con.execute(query, {"wa_codes": wa_codes}).scalars().all()
+
+        print(missing_scats)
+
         count_added: int = 0
         count_updated: int = 0
 
         for idx in wa_results:
             data = dict(wa_results[idx])
 
+            # skip WA already in DB if mode new
             if mode == "new" and (data["wa_code"] in wa_to_update):
                 continue
 
@@ -4390,19 +4400,6 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
                 "sex_id = COALESCE(NULLIF(EXCLUDED.sex_id, ''), wa_results.sex_id), "
                 "individual_id = COALESCE(NULLIF(EXCLUDED.individual_id, ''), wa_results.individual_id), "
                 "quality_genotype = COALESCE(NULLIF(EXCLUDED.quality_genotype, ''), wa_results.quality_genotype)"
-                # "INSERT INTO wa_results (wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym) "
-                # "VALUES("
-                # ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym "
-                # ") "
-                # "ON CONFLICT (wa_code) "
-                # "DO UPDATE SET "
-                # "pack = CASE WHEN EXCLUDED.pack <> '' THEN EXCLUDED.pack ELSE wa_results.pack END,"
-                # "notes = CASE WHEN EXCLUDED.notes <> '' THEN EXCLUDED.notes ELSE wa_results.notes END,"
-                # "genotype_id = CASE WHEN EXCLUDED.genotype_id <> '' THEN EXCLUDED.genotype_id ELSE wa_results.genotype_id END,"
-                # "mtdna = CASE WHEN EXCLUDED.mtdna <> '' THEN EXCLUDED.mtdna ELSE wa_results.mtdna END,"
-                # "sex_id = CASE WHEN EXCLUDED.sex_id <> '' THEN EXCLUDED.sex_id ELSE wa_results.sex_id END,"
-                # "individual_id = CASE WHEN EXCLUDED.individual_id <> '' THEN EXCLUDED.individual_id ELSE wa_results.individual_id END,"
-                # "quality_genotype = CASE WHEN EXCLUDED.quality_genotype <> '' THEN EXCLUDED.quality_genotype ELSE wa_results.quality_genotype END"
             )
 
             params = {
@@ -4423,7 +4420,7 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
                 count_added += 1
             try:
                 con.execute(sql, params)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 return f"An error occured during the loading of data. Contact the administrator.<br> {fn.error_info(sys.exc_info())}"
 
         for idx in wa_loci:
