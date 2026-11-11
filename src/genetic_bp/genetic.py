@@ -4145,7 +4145,7 @@ def check_genetic_profile():
         # check if loci values are numeric
         try:
             [int(x) for x in genetic_profile if x != ""]
-        except Exception:
+        except Exception:  # noqa: BLE001
             flash(fn.alert_danger("Some value are not numeric"))
             return render_template(
                 "check_genetic_profile.html",
@@ -4158,46 +4158,25 @@ def check_genetic_profile():
             for row in (
                 con.execute(
                     text(
-                        (
-                            "SELECT "
-                            "  wl.wa_code, wl.laboratory_acronym, "
-                            "  STRING_AGG(wl.val_text::text, ';' ORDER BY ld.position, wl.allele) AS loci_values "
-                            "FROM ( "
-                            "  SELECT DISTINCT ON (wa_code, laboratory_acronym, locus, allele) "
-                            "    wa_code, laboratory_acronym, "
-                            "    locus, "
-                            "    allele, "
-                            "COALESCE(val::text, '') AS val_text, "
-                            "    timestamp "
-                            "  FROM "
-                            "    wa_locus "
-                            "  WHERE locus <> 'SRY' "
-                            "  ORDER BY "
-                            "    wa_code, laboratory_acronym, locus, allele, timestamp DESC "
-                            ") wl "
-                            "JOIN "
-                            "  loci ld ON wl.locus = ld.name "
-                            "GROUP BY wl.wa_code, wl.laboratory_acronym; "
-                            #                            "SELECT "
-                            #                            "  wl.wa_code, "
-                            #                            "  STRING_AGG(wl.val::text, ';' ORDER BY ld.position, wl.allele) AS loci_values "
-                            #                            "FROM ( "
-                            #                            "  SELECT DISTINCT ON (wa_code, locus, allele) "
-                            #                            "    wa_code, "
-                            #                            "    locus, "
-                            #                            "    allele, "
-                            #                            "    val, "
-                            #                            "    timestamp "
-                            #                            "  FROM "
-                            #                            "    wa_locus "
-                            #                            "  ORDER BY "
-                            #                            "    wa_code, locus, allele, timestamp DESC "
-                            #                            ") wl "
-                            #                            "JOIN "
-                            #                            "  loci ld ON wl.locus = ld.name "
-                            #                            "GROUP BY wl.wa_code "
-                            #                            "ORDER BY wl.wa_code; "
-                        )
+                        "SELECT "
+                        "  wl.wa_code, wl.laboratory_acronym, "
+                        "  STRING_AGG(wl.val_text::text, ';' ORDER BY ld.position, wl.allele) AS loci_values "
+                        "FROM ( "
+                        "  SELECT DISTINCT ON (wa_code, laboratory_acronym, locus, allele) "
+                        "    wa_code, laboratory_acronym, "
+                        "    locus, "
+                        "    allele, "
+                        "COALESCE(val::text, '') AS val_text, "
+                        "    timestamp "
+                        "  FROM "
+                        "    wa_locus "
+                        "  WHERE locus <> 'SRY' "
+                        "  ORDER BY "
+                        "    wa_code, laboratory_acronym, locus, allele, timestamp DESC "
+                        ") wl "
+                        "JOIN "
+                        "  loci ld ON wl.locus = ld.name "
+                        "GROUP BY wl.wa_code, wl.laboratory_acronym "
                     )
                 )
                 .mappings()
@@ -4278,10 +4257,11 @@ def load_wa_from_spreadsheet():
                 + f"({fn.error_info(sys.exc_info())})"
             )
             return redirect(url_for("genetic.load_wa_from_spreadsheet"))
-
+        # t0 = time.time()
         r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(
             filename
         )
+        # print(f"{time.time() - t0=}")  # remove before release
         if r:
             flash(
                 Markup(f"File name: <b>{new_file.filename}</b>")
@@ -4291,24 +4271,58 @@ def load_wa_from_spreadsheet():
             return redirect(url_for("genetic.load_wa_from_spreadsheet"))
 
         else:
-            # check if wa code already in DB
             with fn.conn_alchemy().connect() as con:
-                wa_list = "','".join([wa_results[idx]["wa_code"] for idx in wa_results])
+                wa_codes = [wa_results[idx]["wa_code"] for idx in wa_results]
+
+                # check if wa code already in DB
                 sql = text(
-                    f"SELECT wa_code FROM wa_results WHERE wa_code IN ('{wa_list}') "
+                    "SELECT wa_code FROM wa_results WHERE wa_code IN :wa_codes "
                     "AND laboratory_acronym = :laboratory"
-                )
+                ).bindparams(bindparam("wa_codes", expanding=True))
+
                 wa_to_update = [
                     row["wa_code"]
-                    for row in con.execute(sql, {"laboratory": laboratory_name})
+                    for row in con.execute(
+                        sql, {"wa_codes": wa_codes, "laboratory": laboratory_name}
+                    )
                     .mappings()
                     .all()
                 ]
+
+                # check wa code without scat_id
+                query = text("""
+                    SELECT DISTINCT w.wa_code
+                    FROM unnest(CAST(:wa_codes AS varchar[])) AS w(wa_code)
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM scats s
+                        WHERE s.wa_code = w.wa_code
+                    )
+                """)
+
+                missing_scats = (
+                    con.execute(query, {"wa_codes": wa_codes}).scalars().all()
+                )
+
+            # insert data from spreadsheet in Redis
+            spreadsheet_data = {
+                "user_id": session["email"],
+                "laboratory": laboratory_name,
+                "wa_results": wa_results,
+                "wa_loci": wa_loci,
+            }
+
+            rdis.setex(
+                f"wa_import:{filename}",
+                3600,  # expiration after one hout
+                json.dumps(spreadsheet_data),
+            )
 
             return render_template(
                 "confirm_load_wa_spreadsheet.html",
                 n_wa=len(wa_results),
                 wa_to_update=wa_to_update,
+                missing_scats=missing_scats,
                 wa_results=wa_results,
                 filename=filename,
                 laboratory_name=laboratory_name,
@@ -4325,136 +4339,150 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
 
     if mode not in ("new", "all"):
         flash(fn.alert_danger("Error: mode not allowed"))
-        return redirect(url_for("load_wa_from_spreadsheet"))
+        return redirect(url_for("genetic.load_wa_from_spreadsheet"))
 
     if lab_name not in {lab["acronym"] for lab in get_laboratories()}:
         abort(400, description="A valid laboratory is required for the import")
 
+    raw = rdis.get(f"wa_import:{filename}")
+    if raw is None:
+        flash(fn.alert_danger("Error. Try again"))
+        return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+    spreadsheet_data = json.loads(raw)
+    if spreadsheet_data["user_id"] != session["email"]:
+        flash(fn.alert_danger("User name error"))
+        return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+    if spreadsheet_data["laboratory"] != lab_name:
+        flash(fn.alert_danger("Laboratory name error. Try again"))
+        return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+    wa_results = spreadsheet_data["wa_results"]
+    wa_loci = spreadsheet_data["wa_loci"]
+
+    """
     r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(filename)
     if r:
         flash(msg)
         return redirect(url_for("load_wa_from_spreadsheet"))
-
+    """
     loci_list = fn.get_loci_list()
 
+    try:
+        with fn.conn_alchemy().connect() as con:
+            con = con.execution_options(isolation_level="READ COMMITTED")
+            with con.begin():
+                # check if wa already in DB
+                wa_codes = [wa_results[idx]["wa_code"] for idx in wa_results]
+
+                sql = text(
+                    "SELECT wa_code "
+                    "FROM wa_results "
+                    "WHERE wa_code IN :wa_codes "
+                    "AND laboratory_acronym = :laboratory_acronym"
+                ).bindparams(bindparam("wa_codes", expanding=True))
+
+                wa_to_update = [
+                    row["wa_code"]
+                    for row in con.execute(
+                        sql,
+                        {
+                            "wa_codes": wa_codes,
+                            "laboratory_acronym": lab_name,
+                        },
+                    ).mappings()
+                ]
+
+                count_added: int = 0
+                count_updated: int = 0
+
+                for idx in wa_results:
+                    data = dict(wa_results[idx])
+
+                    # skip WA already in DB if mode new
+                    if mode == "new" and (data["wa_code"] in wa_to_update):
+                        continue
+
+                    sql = text(
+                        "INSERT INTO wa_results ("
+                        "wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym"
+                        ") "
+                        "VALUES ("
+                        ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym"
+                        ") "
+                        "ON CONFLICT (wa_code, laboratory_acronym) "
+                        "DO UPDATE SET "
+                        "pack = COALESCE(NULLIF(EXCLUDED.pack, ''), wa_results.pack), "
+                        "notes = COALESCE(NULLIF(EXCLUDED.notes, ''), wa_results.notes), "
+                        "genotype_id = COALESCE(NULLIF(EXCLUDED.genotype_id, ''), wa_results.genotype_id), "
+                        "mtdna = COALESCE(NULLIF(EXCLUDED.mtdna, ''), wa_results.mtdna), "
+                        "sex_id = COALESCE(NULLIF(EXCLUDED.sex_id, ''), wa_results.sex_id), "
+                        "individual_id = COALESCE(NULLIF(EXCLUDED.individual_id, ''), wa_results.individual_id), "
+                        "quality_genotype = COALESCE(NULLIF(EXCLUDED.quality_genotype, ''), wa_results.quality_genotype)"
+                    )
+
+                    params = {
+                        "wa_code": data["wa_code"],
+                        "pack": data["pack"],
+                        "notes": data["notes"],
+                        "genotype_id": data["genotype_id"],
+                        "mtdna": data["mtdna"],
+                        "sex_id": data["sex_id"],
+                        "individual_id": data["individual_id"],
+                        "quality_genotype": data["quality_genotype"],
+                        "laboratory_acronym": lab_name,
+                    }
+
+                    if data["wa_code"] in wa_to_update:
+                        count_updated += 1
+                    else:
+                        count_added += 1
+
+                    con.execute(sql, params)
+
+                for idx in wa_loci:
+                    data = dict(wa_loci[idx])
+                    if mode == "new" and data["wa_code"] in wa_to_update:
+                        continue
+                    sql = text(
+                        "INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp, user_id, definitive, laboratory_acronym) "
+                        "VALUES ("
+                        ":wa_code, :locus, :allele, :val, NOW(), :user_id, TRUE, :laboratory_acronym"
+                        ")"
+                    )
+
+                    for k in data:
+                        if k == "wa_code":
+                            continue
+                        locus, allele = k.split("_")
+                        val = data[k] if data[k] != "-" else None
+                        params = {
+                            "wa_code": data["wa_code"],
+                            "locus": locus,
+                            "allele": allele,
+                            "val": val,
+                            "user_id": session.get("user_name", session["email"]),
+                            "laboratory_acronym": lab_name,
+                        }
+                        con.execute(sql, params)
+
+    except Exception:
+        # ROLLBACK
+        flash(
+            fn.alert_danger("<big><b>Import failed!</b> No changes were saved.</big>")
+        )
+        return redirect(url_for("genetic.load_wa_from_spreadsheet"))
+
+    # redis cache update
     with fn.conn_alchemy().connect() as con:
-        # check if wa already in DB
-        wa_codes = [wa_results[idx]["wa_code"] for idx in wa_results]
-
-        sql = text(
-            "SELECT wa_code "
-            "FROM wa_results "
-            "WHERE wa_code IN :wa_codes "
-            "AND laboratory_acronym = :laboratory_acronym"
-        ).bindparams(bindparam("wa_codes", expanding=True))
-
-        wa_to_update = [
-            row["wa_code"]
-            for row in con.execute(
-                sql,
-                {
-                    "wa_codes": wa_codes,
-                    "laboratory_acronym": lab_name,
-                },
-            ).mappings()
-        ]
-
-        # check wa code without scat_id
-        query = text("""
-            SELECT DISTINCT w.wa_code
-            FROM unnest(CAST(:wa_codes AS varchar[])) AS w(wa_code)
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM scats s
-                WHERE s.wa_code = w.wa_code
-            )
-        """)
-
-        missing_scats = con.execute(query, {"wa_codes": wa_codes}).scalars().all()
-
-        print(missing_scats)
-
-        count_added: int = 0
-        count_updated: int = 0
-
-        for idx in wa_results:
-            data = dict(wa_results[idx])
-
-            # skip WA already in DB if mode new
-            if mode == "new" and (data["wa_code"] in wa_to_update):
-                continue
-
-            sql = text(
-                "INSERT INTO wa_results ("
-                "wa_code, pack, notes, genotype_id, mtdna, sex_id, individual_id, quality_genotype, laboratory_acronym"
-                ") "
-                "VALUES ("
-                ":wa_code, :pack, :notes, :genotype_id, :mtdna, :sex_id, :individual_id, :quality_genotype, :laboratory_acronym"
-                ") "
-                "ON CONFLICT (wa_code, laboratory_acronym) "
-                "DO UPDATE SET "
-                "pack = COALESCE(NULLIF(EXCLUDED.pack, ''), wa_results.pack), "
-                "notes = COALESCE(NULLIF(EXCLUDED.notes, ''), wa_results.notes), "
-                "genotype_id = COALESCE(NULLIF(EXCLUDED.genotype_id, ''), wa_results.genotype_id), "
-                "mtdna = COALESCE(NULLIF(EXCLUDED.mtdna, ''), wa_results.mtdna), "
-                "sex_id = COALESCE(NULLIF(EXCLUDED.sex_id, ''), wa_results.sex_id), "
-                "individual_id = COALESCE(NULLIF(EXCLUDED.individual_id, ''), wa_results.individual_id), "
-                "quality_genotype = COALESCE(NULLIF(EXCLUDED.quality_genotype, ''), wa_results.quality_genotype)"
-            )
-
-            params = {
-                "wa_code": data["wa_code"],
-                "pack": data["pack"],
-                "notes": data["notes"],
-                "genotype_id": data["genotype_id"],
-                "mtdna": data["mtdna"],
-                "sex_id": data["sex_id"],
-                "individual_id": data["individual_id"],
-                "quality_genotype": data["quality_genotype"],
-                "laboratory_acronym": lab_name,
-            }
-
-            if data["wa_code"] in wa_to_update:
-                count_updated += 1
-            else:
-                count_added += 1
-            try:
-                con.execute(sql, params)
-            except Exception:  # noqa: BLE001
-                return f"An error occured during the loading of data. Contact the administrator.<br> {fn.error_info(sys.exc_info())}"
-
         for idx in wa_loci:
             data = dict(wa_loci[idx])
-            if mode == "new" and data["wa_code"] in wa_to_update:
-                continue
-            sql = text(
-                "INSERT INTO wa_locus (wa_code, locus, allele, val, timestamp, user_id, definitive, laboratory_acronym) "
-                "VALUES ("
-                ":wa_code, :locus, :allele, :val, NOW(), :user_id, TRUE, :laboratory_acronym"
-                ")"
-            )
-
-            for k in data:
-                if k == "wa_code":
-                    continue
-                locus, allele = k.split("_")
-                val = data[k] if data[k] != "-" else None
-                params = {
-                    "wa_code": data["wa_code"],
-                    "locus": locus,
-                    "allele": allele,
-                    "val": val,
-                    "user_id": session.get("user_name", session["email"]),
-                    "laboratory_acronym": lab_name,
-                }
-                con.execute(sql, params)
-
-            # update cache
             update_loci_values_cache(
                 data["wa_code"], loci_list, con=con, laboratory=lab_name
             )
 
-    msg = f"WA code successfully loaded from spreadsheet file. {count_added} wa code(s) added, {count_updated} wa code(s) updated."
+    msg = f"WA codes successfully loaded from spreadsheet file. <b>{count_added}</b> wa code(s) added, <b>{count_updated}</b> wa code(s) updated."
     flash(fn.alert_success(msg))
 
     return redirect("/")

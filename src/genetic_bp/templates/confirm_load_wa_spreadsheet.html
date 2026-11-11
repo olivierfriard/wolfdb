@@ -5,8 +5,7 @@
         {% with messages = get_flashed_messages() %} {% if messages %}
         <ul class="flashes">
             {% for message in messages %}
-            <strong>{{ message }}</strong
-            ><br />
+            <strong>{{ message }}</strong><br />
             {% endfor %}
         </ul>
         {% endif %} {% endwith %} {% block body %}{% endblock %}
@@ -17,51 +16,44 @@
             Laboratory name: <strong>{{ laboratory_name }}</strong>
         </div>
 
-        <b>{{ n_wa }}</b> WA found in spreadsheet file.<br />
-        <b>{{ wa_to_update|count }}</b> are already present in the database
-        (displayed with red background).<br />
+        <b>{{ n_wa }}</b> WA codes found in spreadsheet file.<br />
+        <b>{{ wa_to_update|count }}</b> are already present in the database.<br />
+        <b>{{ missing_scats|count }}</b> have no corresponding sample.<br />
         <br />
 
-        <a
-            href="{{ url_for('genetic.confirm_load_wa_spreadsheet', filename=filename, mode='all', lab_name=laboratory_name) }}"
-            class="btn btn-primary"
-            >Confirm insertion (WA already present will be updated)</a
-        >
+        <a href="{{ url_for('genetic.confirm_load_wa_spreadsheet', filename=filename, mode='all', lab_name=laboratory_name) }}"
+            class="btn btn-danger">Confirm insertion (WA already present will be updated)</a>
 
-        <a
-            href="{{ url_for('genetic.confirm_load_wa_spreadsheet', filename=filename, mode='new', lab_name=laboratory_name) }}"
-            class="btn btn-primary"
-            >Insert only new WA</a
-        >
+        <a href="{{ url_for('genetic.confirm_load_wa_spreadsheet', filename=filename, mode='new', lab_name=laboratory_name) }}"
+            class="btn btn-danger">Insert only new WA</a>
 
-        <a href="{{ url_for('home') }}" class="btn btn-primary"
-            >Cancel insertion</a
-        >
+        <a href="{{ url_for('home') }}" class="btn btn-primary">Cancel import</a>
 
         <br />
         <br />
-        {% if wa_to_update|count %}
-        <div class="alert alert-danger" role="alert">
-            <b>The WA with red background already exists in the database.</b>
-        </div>
-        <br /><br />
-        {% endif %}
 
         <table class="table table-striped">
             <tr>
                 <th>WA code</th>
+                <th>Notes</th>
             </tr>
 
-            {% for idx in wa_results %} {% if wa_results[idx]['wa_code'] in
-            wa_to_update %}
-            <tr class="table-danger">
-                {% else %}
-            </tr>
-
+            {% for idx in wa_results %}
             <tr>
-                {% endif %}
                 <td>{{ wa_results[idx]['wa_code'] }}</td>
+                <td>
+                    {% if wa_results[idx]['wa_code'] in wa_to_update %}
+                    <span class="badge bg-warning text-dark">WA already in DB</span>
+                    {% endif %}
+
+                    {% if wa_results[idx]['wa_code'] in missing_scats %}
+                    <span class="badge bg-danger">No corresponging sample found</span>
+                    {% endif %}
+
+
+                </td>
             </tr>
+
 
             {% endfor %}
         </table>
