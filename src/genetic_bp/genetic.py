@@ -4344,6 +4344,7 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
     if lab_name not in {lab["acronym"] for lab in get_laboratories()}:
         abort(400, description="A valid laboratory is required for the import")
 
+    # load spreadsheet data from redis
     raw = rdis.get(f"wa_import:{filename}")
     if raw is None:
         flash(fn.alert_danger("Error. Try again"))
@@ -4440,6 +4441,16 @@ def confirm_load_wa_spreadsheet(filename, mode, lab_name: str = ""):
                         count_added += 1
 
                     con.execute(sql, params)
+
+                    # update ispra id in scats (if any)
+                    if data["ispra_id"]:
+                        sql = text(
+                            "UPDATE scats SET ispra_id = :ispra_id WHERE wa_code = :wa_code"
+                        )
+                        con.execute(
+                            sql,
+                            {"ispra_id": data["ispra_id"], "wa_code": data["wa_code"]},
+                        )
 
                 for idx in wa_loci:
                     data = dict(wa_loci[idx])

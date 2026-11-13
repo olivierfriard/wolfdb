@@ -379,7 +379,9 @@ def plot_all_scats_markerclusters():
         )
 
 
-def get_scats(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
+def get_scats(
+    search_term: str = "", offset: int = 0, limit: str | int = "ALL"
+) -> (int, dict):
     """
     Search scats.
 
@@ -436,17 +438,18 @@ def get_scats(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
                 x.strip() for x in search_term.split(";") if x.strip()
             ):
                 if ":" not in field_term:
-                    raise ValueError(
-                        "Invalid search syntax. Use 'field:value' or free text."
+                    return (
+                        1,
+                        "<pre>Invalid search syntax. Use 'field:value' or free text.</pre>",
                     )
 
                 field, value = [x.strip() for x in field_term.split(":", 1)]
                 field_key = field.lower()
 
                 if field_key not in research_fields:
-                    raise ValueError(
-                        "Search field not found. Must be one of: "
-                        + ", ".join(research_fields.keys())
+                    return (
+                        2,
+                        f"<pre>Search field not found. Must be one of: {',<br> '.join(research_fields.keys())}</pre>",
                     )
 
                 sql += f" AND ({research_fields[field_key]} ILIKE :search{idx}) "
@@ -492,71 +495,7 @@ def get_scats(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
     with fn.conn_alchemy().connect() as con:
         results = con.execute(text(sql), values).mappings().all()
 
-    return results
-
-
-'''
-def get_scats_old(search_term: str = "", offset: int = 0, limit: str | int = "ALL"):
-    """ """
-
-    if search_term:
-        sql_search = text(
-            (
-                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE ("
-                "scat_id ILIKE :search "
-                "OR date::text ILIKE :search "
-                "OR sampling_type ILIKE :search "
-                "OR sample_type ILIKE :search "
-                "OR wa_code ILIKE :search "
-                "OR genotype_id2 ILIKE :search "
-                "OR location ILIKE :search "
-                "OR municipality ILIKE :search "
-                "OR province ILIKE :search "
-                "OR region ILIKE :search "
-                "OR observer ILIKE :search "
-                "OR institution ILIKE :search "
-                "OR notes ILIKE :search "
-                ") "
-                "AND (date BETWEEN :start_date AND :end_date) "
-            )
-        )
-        with fn.conn_alchemy().connect() as con:
-            results = (
-                con.execute(
-                    sql_search,
-                    {
-                        "search": f"%{search_term}%",
-                        "start_date": session["start_date"],
-                        "end_date": session["end_date"],
-                    },
-                )
-                .mappings()
-                .all()
-            )
-        return results
-
-    else:
-        sql_all = text(
-            (
-                "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date "
-                f"LIMIT {limit} "
-                f"OFFSET {offset}"
-            )
-        )
-        with fn.conn_alchemy().connect() as con:
-            results = (
-                con.execute(
-                    sql_all,
-                    {
-                        "start_date": session["start_date"],
-                        "end_date": session["end_date"],
-                    },
-                )
-                .mappings()
-                .all()
-            )
-        return results
-'''
+    return 0, results
 
 
 @app.route(
@@ -630,20 +569,9 @@ def scats_list_limit(offset: int, limit: int | str, mode: str = ""):
             else:
                 search_term = request.args.get("search")
 
-            results = get_scats(search_term)
-
-            # results = (
-            #    con.execute(
-            #        sql_search,
-            #        {
-            #            "search": f"%{search_term}%",
-            #            "start_date": session["start_date"],
-            #            "end_date": session["end_date"],
-            #        },
-            #    )
-            #    .mappings()
-            #    .all()
-            # )
+            return_code, results = get_scats(search_term)
+            if return_code:
+                return results
 
         elif request.method == "GET":
             if request.args.get("search") is not None:
@@ -651,28 +579,10 @@ def scats_list_limit(offset: int, limit: int | str, mode: str = ""):
             else:
                 search_term: str = ""
 
-            results = get_scats(search_term, offset, limit)
+            return_code, results = get_scats(search_term, offset, limit)
 
-            # sql_all = text(
-            #    (
-            #        "SELECT *, count(*) OVER() AS n_scats FROM scats_list_all WHERE date BETWEEN :start_date AND :end_date "
-            #        f"LIMIT {limit} "
-            #        f"OFFSET {offset}"
-            #    )
-            # )
-            #
-            # results = (
-            #    con.execute(
-            #        sql_all if not search_term else sql_search,
-            #        {
-            #            "search": f"%{search_term}%",
-            #            "start_date": session["start_date"],
-            #            "end_date": session["end_date"],
-            #        },
-            #    )
-            #    .mappings()
-            #    .all()
-            # )
+            if return_code:
+                return results
 
     session["url_scats_list"] = (
         f"/scats_list_limit/{offset}/{limit}?search={search_term}"
@@ -709,7 +619,7 @@ def export_scats(format: str = "tsv", search_term: str = ""):
         return "Format error"
 
     file_content = scats_export.export_scats_pandas(
-        get_scats(search_term),
+        get_scats(search_term)[1],  # 1 -> skip return_code
         file_format=format,
     )
 
@@ -879,7 +789,7 @@ def new_scat():
 @fn.check_login
 def edit_scat(scat_id):
     """
-    Let user edit a scat
+    Edit a scat
     """
 
     def not_valid(form, msg):
@@ -1074,20 +984,18 @@ def edit_scat(scat_id):
 
             # check if WA code exists for another sample
             if request.form["wa_code"]:
-                if len(
-                    con.execute(
-                        text(
-                            "SELECT sample_id FROM wa_scat_dw_all WHERE sample_id !=:scat_id AND wa_code = :wa_code"
-                        ),
-                        {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
-                    )
-                    .mappings()
-                    .all()
-                ):
+                rows = con.execute(
+                    text(
+                        "SELECT sample_id, sample_type FROM wa_scat_dw_all WHERE sample_id !=:scat_id AND wa_code = :wa_code"
+                    ),
+                    {"scat_id": scat_id, "wa_code": request.form["wa_code"]},
+                ).all()
+
+                if len(rows):
                     return not_valid(
                         form,
                         (
-                            f"Another sample has the same WA code ({request.form['wa_code']}). Please check and submit again"
+                            f"Another sample has the same WA code ({request.form['wa_code']}):<br>{rows}<br><br>Please check and submit again"
                         ),
                     )
 

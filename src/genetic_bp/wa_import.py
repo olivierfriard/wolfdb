@@ -52,6 +52,7 @@ def extract_wa_data_from_spreadsheet(filename: str):
         "Sex ID",
         "Pack",
         "Note",
+        "CAMP_ISPRA_ID",
     )
 
     # check columns
@@ -62,6 +63,7 @@ def extract_wa_data_from_spreadsheet(filename: str):
         if column_lower not in list(genetic_df.columns):
             missing_columns.append(column)
     if missing_columns:
+        # check very mandatory columns
         if "WA code" in missing_columns or "mtDNA" in missing_columns:
             return (
                 True,
@@ -124,6 +126,9 @@ def extract_wa_data_from_spreadsheet(filename: str):
         data["wa_code"] = row["wa code"].strip()
         data["pack"] = row["pack"].strip() if not pd.isna(row["pack"]) else None
         data["notes"] = row["note"].strip() if not pd.isna(row["note"]) else None
+        data["ispra_id"] = (
+            row["camp_ispra_id"].strip() if not pd.isna(row["camp_ispra_id"]) else None
+        )
         if pd.isna(row["genotype id"]):
             # search genotype id in DB
             with fn.conn_alchemy().connect() as con:

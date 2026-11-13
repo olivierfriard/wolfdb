@@ -517,21 +517,17 @@ def edit_transect(transect_id):
 def del_transect(transect_id):
     with fn.conn_alchemy().connect() as con:
         # check if path based on transect exist
-        result = (
-            con.execute(
-                text(
-                    "SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = :transect_id"
-                ),
-                {"transect_id": transect_id},
-            )
-            .mappings()
-            .all()
-        )
-        if result["n_paths"] > 0:
+        n_paths = con.execute(
+            text(
+                "SELECT COUNT(*) AS n_paths FROM paths WHERE transect_id = :transect_id"
+            ),
+            {"transect_id": transect_id},
+        ).scalar()
+        if n_paths > 0:
             return "Some paths are based on this transect. Please remove them before"
 
         con.execute(
-            "DELETE FROM transects WHERE transect_id = :transect_id",
+            text("DELETE FROM transects WHERE transect_id = :transect_id"),
             {"transect_id": transect_id},
         )
         return redirect("/transects_list")
