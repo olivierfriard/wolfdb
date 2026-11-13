@@ -40,7 +40,12 @@
 
             {% for idx in wa_results %}
             <tr>
-                <td>{{ wa_results[idx]['wa_code'] }} (ISPRA ID: {{ wa_results[idx]['ispra_id'] }})</td>
+                <td>{{ wa_results[idx]['wa_code'] }}
+                    {%if wa_results[idx]['ispra_id'] %}
+                    (ISPRA ID: {{ wa_results[idx]['ispra_id'] }})
+                    {%endif%}
+
+                </td>
                 <td>
                     {% if wa_results[idx]['wa_code'] in wa_to_update %}
                     <span class="badge bg-warning text-dark">WA already in DB</span>

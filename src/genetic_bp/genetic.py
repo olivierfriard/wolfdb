@@ -4224,8 +4224,6 @@ def load_wa_from_spreadsheet():
                 .mappings()
                 .fetchall()
             )
-            print(laboratories)
-
         return render_template(
             "load_wa_spreadsheet.html",
             header_title="Load WA code from spreadsheet file",
@@ -4261,6 +4259,7 @@ def load_wa_from_spreadsheet():
         r, msg, wa_results, wa_loci = wa_import.extract_wa_data_from_spreadsheet(
             filename
         )
+
         # print(f"{time.time() - t0=}")  # remove before release
         if r:
             flash(
